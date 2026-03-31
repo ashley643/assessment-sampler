@@ -124,20 +124,15 @@ export default function AssessmentEntryPage() {
       <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8 overflow-y-auto">
         <div className="w-full max-w-md animate-slide-up py-6">
 
-          {/* Brand mark — full logo on dark pill */}
+          {/* Brand mark */}
           <div className="mb-8">
-            <div
-              className="inline-flex items-center rounded-xl"
-              style={{ background: '#1a2744', padding: '10px 16px' }}
-            >
-              <Image
-                src="/Logo_Transparent_Background.png"
-                alt="Impacter Pathway"
-                width={120}
-                height={36}
-                className="object-contain"
-              />
-            </div>
+            <Image
+              src="/Logo_Transparent_Background.png"
+              alt="Impacter Pathway"
+              width={140}
+              height={42}
+              className="object-contain"
+            />
           </div>
 
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
