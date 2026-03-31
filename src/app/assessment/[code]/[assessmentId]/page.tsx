@@ -216,51 +216,25 @@ export default function AssessmentPlayerPage() {
 
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* iframe area */}
-          <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-            <div className="max-w-4xl mx-auto">
-              <iframe
-                key={currentQ.id}
-                src={currentQ.embedUrl}
-                allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-                width="100%"
-                height="600"
-                style={{ border: 'none', borderRadius: 24, display: 'block' }}
-                title={currentQ.title}
-              />
-
-              {/* Mark Complete button */}
-              <div className="mt-5 flex justify-center">
-                {completion[currentQ.id] ? (
-                  <div
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold"
-                    style={{ color: '#1D9E75', background: '#E1F5EE' }}
-                  >
-                    <svg width="16" height="13" viewBox="0 0 16 13" fill="none" aria-hidden="true">
-                      <path
-                        d="M1.5 6.5L6 11L14.5 1.5"
-                        stroke="#1D9E75"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    Completed
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleMarkComplete}
-                    className="px-6 py-2.5 rounded-xl text-sm font-medium border-2 border-gray-300 text-gray-600 hover:border-green-400 hover:text-green-600 hover:bg-green-50 transition-all"
-                  >
-                    Mark as Complete
-                  </button>
-                )}
-              </div>
-            </div>
+          {/* iframe — fills all remaining vertical space */}
+          <div className="flex-1 overflow-hidden p-4 bg-gray-50">
+            <iframe
+              key={currentQ.id}
+              src={currentQ.embedUrl}
+              allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
+              style={{
+                border: 'none',
+                borderRadius: 20,
+                display: 'block',
+                width: '100%',
+                height: '100%',
+              }}
+              title={currentQ.title}
+            />
           </div>
 
-          {/* ── Bottom navigation ───────────────────────── */}
-          <div className="flex-shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-white">
+          {/* ── Bottom navigation + Mark Complete ───────────── */}
+          <div className="flex-shrink-0 border-t border-gray-200 px-6 py-3 flex items-center justify-between bg-white gap-4">
             <button
               onClick={goPrev}
               disabled={currentIdx === 0}
@@ -269,25 +243,46 @@ export default function AssessmentPlayerPage() {
               ← Previous
             </button>
 
-            {/* Dot indicators */}
-            <div className="flex items-center gap-2">
-              {questions.map((q, idx) => (
+            {/* Center: dot indicators + Mark Complete */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                {questions.map((q, idx) => (
+                  <button
+                    key={q.id}
+                    onClick={() => setCurrentIdx(idx)}
+                    title={q.title}
+                    className="rounded-full transition-all duration-200 hover:opacity-80"
+                    style={{
+                      width:  idx === currentIdx ? 10 : 8,
+                      height: idx === currentIdx ? 10 : 8,
+                      background: completion[q.id]
+                        ? '#1D9E75'
+                        : idx === currentIdx
+                        ? '#4a6fa5'
+                        : '#d1d5db',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {completion[currentQ.id] ? (
+                <div
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold"
+                  style={{ color: '#1D9E75', background: '#E1F5EE' }}
+                >
+                  <svg width="12" height="10" viewBox="0 0 12 10" fill="none" aria-hidden="true">
+                    <path d="M1 5L4.5 8.5L11 1.5" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Completed
+                </div>
+              ) : (
                 <button
-                  key={q.id}
-                  onClick={() => setCurrentIdx(idx)}
-                  title={q.title}
-                  className="rounded-full transition-all duration-200 hover:opacity-80"
-                  style={{
-                    width:  idx === currentIdx ? 10 : 8,
-                    height: idx === currentIdx ? 10 : 8,
-                    background: completion[q.id]
-                      ? '#1D9E75'
-                      : idx === currentIdx
-                      ? '#4a6fa5'
-                      : '#d1d5db',
-                  }}
-                />
-              ))}
+                  onClick={handleMarkComplete}
+                  className="px-4 py-1.5 rounded-lg text-xs font-medium border border-gray-300 text-gray-500 hover:border-green-400 hover:text-green-600 hover:bg-green-50 transition-all"
+                >
+                  Mark as Complete
+                </button>
+              )}
             </div>
 
             <button

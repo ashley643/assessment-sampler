@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import codesData from '@/data/codes.json';
 
@@ -61,13 +62,13 @@ export default function AssessmentEntryPage() {
       >
         {/* Logo */}
         <div className="mb-6 z-10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/Logo_Transparent_Background.svg"
+          <Image
+            src="/Logo_Transparent_Background.png"
             alt="Impacter Pathway"
             width={210}
             height={63}
-            style={{ objectFit: 'contain' }}
+            className="object-contain"
+            priority
           />
         </div>
 
@@ -76,13 +77,13 @@ export default function AssessmentEntryPage() {
           className="animate-spin-slow mb-8 z-10"
           style={{ width: 340, height: 340 }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/Anchor_Words_Wheel_Solo.svg"
+          <Image
+            src="/Anchor_Words_Wheel_Solo.png"
             alt="Impacter Pathway Anchor Attributes Wheel"
             width={340}
             height={340}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            className="w-full h-full object-contain"
+            priority
           />
         </div>
 
@@ -127,13 +128,12 @@ export default function AssessmentEntryPage() {
               className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: '#1a2744' }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/Logo_Transparent_Background.svg"
+              <Image
+                src="/Logo_Transparent_Background.png"
                 alt=""
                 width={22}
                 height={22}
-                style={{ objectFit: 'contain' }}
+                className="object-contain"
               />
             </div>
             <div className="leading-none">
@@ -150,7 +150,7 @@ export default function AssessmentEntryPage() {
           </div>
 
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Access Your Sample Dashboard
+            Try Our Assessments
           </h2>
           <p className="text-gray-500 mb-8 leading-relaxed">
             Enter the access code provided by your Impacter Pathway representative.
@@ -173,7 +173,7 @@ export default function AssessmentEntryPage() {
                   setCode(e.target.value.toUpperCase());
                   setError('');
                 }}
-                placeholder="e.g. SMFCSD2026"
+                placeholder="e.g. SAMPLE2026"
                 autoComplete="off"
                 autoCapitalize="characters"
                 spellCheck={false}
