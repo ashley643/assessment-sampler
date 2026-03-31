@@ -125,12 +125,12 @@ export default function AssessmentEntryPage() {
         <div className="w-full max-w-md animate-slide-up py-6">
 
           {/* Brand mark */}
-          <div className="mb-8">
+          <div className="mb-8 inline-flex rounded-xl" style={{ background: '#1a2744', padding: '8px 14px' }}>
             <Image
               src="/Logo_Transparent_Background.png"
               alt="Impacter Pathway"
-              width={140}
-              height={42}
+              width={130}
+              height={39}
               className="object-contain"
             />
           </div>
