@@ -124,34 +124,19 @@ export default function AssessmentEntryPage() {
       <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8 overflow-y-auto">
         <div className="w-full max-w-md animate-slide-up py-6">
 
-          {/* Brand mark */}
-          <div className="mb-8 flex items-center gap-3">
+          {/* Brand mark — full logo on dark pill */}
+          <div className="mb-8">
             <div
-              className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden"
-              style={{ background: '#1a2744' }}
+              className="inline-flex items-center rounded-xl"
+              style={{ background: '#1a2744', padding: '10px 16px' }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/Logo_Transparent_Background.png"
-                alt=""
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'left center',
-                }}
+                alt="Impacter Pathway"
+                width={120}
+                height={36}
+                className="object-contain"
               />
-            </div>
-            <div className="leading-tight">
-              <div
-                className="text-sm font-bold tracking-wide"
-                style={{ color: '#1a2744' }}
-              >
-                Impacter
-              </div>
-              <div className="text-xs font-medium tracking-wide text-gray-400">
-                Pathway®
-              </div>
             </div>
           </div>
 
