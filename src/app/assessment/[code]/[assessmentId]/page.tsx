@@ -217,46 +217,46 @@ export default function AssessmentPlayerPage() {
 
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* iframe — fills all remaining vertical space, capped width */}
-          <div className="flex-1 overflow-hidden flex flex-col items-center px-6 pt-4 pb-2 bg-gray-50 gap-3">
-            {/* Language toggle */}
-            {currentQ.spanishEmbedUrl && (
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {spanish ? (
-                  <>
-                    <span className="text-xs text-gray-400">Viewing in Spanish</span>
-                    <button
-                      onClick={() => setSpanish(false)}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100 transition-all"
-                    >
-                      Switch to English
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setSpanish(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                    style={{ background: '#e8735a' }}
-                  >
-                    <span>🌐</span>
-                    Try in Spanish
-                  </button>
-                )}
-              </div>
-            )}
 
+          {/* Spanish toggle — thin row, right-aligned, only when available */}
+          {currentQ.spanishEmbedUrl && (
+            <div className="flex-shrink-0 flex items-center justify-end px-6 pt-3 pb-1 bg-gray-50">
+              {spanish ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400">🌐 Viewing in Spanish</span>
+                  <button
+                    onClick={() => setSpanish(false)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    Switch to English
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setSpanish(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={{ background: '#e8735a' }}
+                >
+                  <span>🌐</span>
+                  Try in Spanish
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* iframe — fills all remaining vertical space */}
+          <div className="flex-1 overflow-hidden flex items-stretch justify-center px-6 py-4 bg-gray-50">
             <iframe
               key={`${currentQ.id}-${spanish}`}
               src={spanish && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl}
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
               style={{
                 border: 'none',
-                borderRadius: 20,
+                borderRadius: 16,
                 display: 'block',
                 width: '100%',
-                maxWidth: 860,
+                maxWidth: 900,
                 height: '100%',
-                minHeight: 0,
               }}
               title={currentQ.title}
             />
