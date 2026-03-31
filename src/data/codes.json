@@ -9,40 +9,40 @@
           "id": "bhs-2",
           "title": "Behavioral Health Screener 2.0",
           "type": "behavioral-health",
-          "typeLabel": "Behavioral health",
+          "typeLabel": "Behavioral Health",
           "accentColor": "#4a6fa5",
           "badgeBg": "#E6F1FB",
           "badgeText": "#0C447C",
           "description": "A comprehensive screener covering reflective growth, emotional resilience, conflict resolution, and help-seeking behaviors.",
           "questions": [
-            { "id": "bhs2-q1", "order": 1, "title": "Reflective Growth", "embedUrl": "https://flex.impacterpathway.com/fvtnb1z5e" },
-            { "id": "bhs2-q2", "order": 2, "title": "Relational Awareness", "embedUrl": "https://flex.impacterpathway.com/fnf4khgtf" },
-            { "id": "bhs2-q3", "order": 3, "title": "Emotional Resilience", "embedUrl": "https://flex.impacterpathway.com/f3kebc2lk" },
-            { "id": "bhs2-q4", "order": 4, "title": "Self-Insight", "embedUrl": "https://flex.impacterpathway.com/f1vvm2aam" },
-            { "id": "bhs2-q5", "order": 5, "title": "Conflict Resolution", "embedUrl": "https://flex.impacterpathway.com/f94y5l3vy" },
-            { "id": "bhs2-q6", "order": 6, "title": "Effective Help-Seeking", "embedUrl": "https://flex.impacterpathway.com/fh13kktok" }
+            { "id": "bhs2-q1", "order": 1, "title": "Reflective Growth", "embedUrl": "https://flex.impacterpathway.com/fvtnb1z5e", "spanishEmbedUrl": "https://flex.impacterpathway.com/fklte45t6" },
+            { "id": "bhs2-q2", "order": 2, "title": "Relational Awareness", "embedUrl": "https://flex.impacterpathway.com/fnf4khgtf", "spanishEmbedUrl": "https://flex.impacterpathway.com/fnn4gs8he" },
+            { "id": "bhs2-q3", "order": 3, "title": "Emotional Resilience", "embedUrl": "https://flex.impacterpathway.com/f3kebc2lk", "spanishEmbedUrl": "https://flex.impacterpathway.com/fifnpktxs" },
+            { "id": "bhs2-q4", "order": 4, "title": "Self-Insight", "embedUrl": "https://flex.impacterpathway.com/f1vvm2aam", "spanishEmbedUrl": "https://flex.impacterpathway.com/fl1niuvk5" },
+            { "id": "bhs2-q5", "order": 5, "title": "Conflict Resolution", "embedUrl": "https://flex.impacterpathway.com/f94y5l3vy", "spanishEmbedUrl": "https://flex.impacterpathway.com/fywz1hnys" },
+            { "id": "bhs2-q6", "order": 6, "title": "Effective Help-Seeking", "embedUrl": "https://flex.impacterpathway.com/fh13kktok", "spanishEmbedUrl": "https://flex.impacterpathway.com/fm22ub4kj" }
           ]
         },
         {
           "id": "bhs-elem",
           "title": "Behavioral Health Screener for Lower Elementary",
           "type": "behavioral-health-elementary",
-          "typeLabel": "Lower elementary",
+          "typeLabel": "Lower Elementary",
           "accentColor": "#7B68C4",
           "badgeBg": "#EEEDFE",
           "badgeText": "#3C3489",
           "description": "An age-appropriate behavioral health screener designed for younger students, focusing on relational awareness, emotional resilience, and help-seeking.",
           "questions": [
-            { "id": "bhse-q1", "order": 1, "title": "Relational Awareness", "embedUrl": "https://flex.impacterpathway.com/fjzzdvxk8" },
-            { "id": "bhse-q2", "order": 2, "title": "Emotional Resilience", "embedUrl": "https://flex.impacterpathway.com/fi4mgwelx" },
-            { "id": "bhse-q3", "order": 3, "title": "Effective Help-Seeking", "embedUrl": "https://flex.impacterpathway.com/f96z46iz7" }
+            { "id": "bhse-q1", "order": 1, "title": "Relational Awareness", "embedUrl": "https://flex.impacterpathway.com/fjzzdvxk8", "spanishEmbedUrl": "https://flex.impacterpathway.com/f53lclcrk" },
+            { "id": "bhse-q2", "order": 2, "title": "Emotional Resilience", "embedUrl": "https://flex.impacterpathway.com/fi4mgwelx", "spanishEmbedUrl": "https://flex.impacterpathway.com/fj2srdn5v" },
+            { "id": "bhse-q3", "order": 3, "title": "Effective Help-Seeking", "embedUrl": "https://flex.impacterpathway.com/f96z46iz7", "spanishEmbedUrl": "https://flex.impacterpathway.com/fgk6ln51z" }
           ]
         },
         {
           "id": "lp",
           "title": "Learner Portrait",
           "type": "learner-portrait",
-          "typeLabel": "Learner portrait",
+          "typeLabel": "Learner Portrait",
           "accentColor": "#e8735a",
           "badgeBg": "#FAECE7",
           "badgeText": "#712B13",
@@ -62,16 +62,16 @@
           "id": "csa",
           "title": "Community Schools Assessment",
           "type": "community-schools",
-          "typeLabel": "Community schools",
+          "typeLabel": "Community Schools",
           "accentColor": "#1D9E75",
           "badgeBg": "#E1F5EE",
           "badgeText": "#085041",
           "description": "Evaluates the four pillars of community schools — integrated supports, family engagement, collaborative leadership, and enriched learning time.",
           "questions": [
-            { "id": "csa-q1", "order": 1, "title": "Integrated Student Supports", "embedUrl": "https://smfcsd.impacterpathway.com/fruq4wkiw" },
-            { "id": "csa-q2", "order": 2, "title": "Active Family & Community Engagement", "embedUrl": "https://smfcsd.impacterpathway.com/fovwv0ybv" },
-            { "id": "csa-q3", "order": 3, "title": "Collaborative Leadership & Practice", "embedUrl": "https://smfcsd.impacterpathway.com/f63r7zzuy" },
-            { "id": "csa-q4", "order": 4, "title": "Expanded & Enriched Learning Time", "embedUrl": "https://smfcsd.impacterpathway.com/fwjpg96dx" }
+            { "id": "csa-q1", "order": 1, "title": "Integrated Student Supports", "embedUrl": "https://smfcsd.impacterpathway.com/fruq4wkiw", "spanishEmbedUrl": "https://smfcsd.impacterpathway.com/ffsu02byw" },
+            { "id": "csa-q2", "order": 2, "title": "Active Family & Community Engagement", "embedUrl": "https://smfcsd.impacterpathway.com/fovwv0ybv", "spanishEmbedUrl": "https://smfcsd.impacterpathway.com/fsxs3er4s" },
+            { "id": "csa-q3", "order": 3, "title": "Collaborative Leadership & Practice", "embedUrl": "https://smfcsd.impacterpathway.com/f63r7zzuy", "spanishEmbedUrl": "https://smfcsd.impacterpathway.com/ftxzft3yj" },
+            { "id": "csa-q4", "order": 4, "title": "Expanded & Enriched Learning Time", "embedUrl": "https://smfcsd.impacterpathway.com/fwjpg96dx", "spanishEmbedUrl": "https://smfcsd.impacterpathway.com/fz0z2h17g" }
           ]
         }
       ]

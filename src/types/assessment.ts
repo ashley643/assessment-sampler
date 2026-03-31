@@ -3,6 +3,7 @@ export interface Question {
   order: number;
   title: string;
   embedUrl: string;
+  spanishEmbedUrl?: string;
 }
 
 export interface Assessment {

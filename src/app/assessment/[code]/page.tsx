@@ -41,7 +41,7 @@ export default function AssessmentSelectorPage() {
         style={{ background: '#1a2744' }}
       >
         <Image
-          src="/Logo_Transparent_Background.png"
+          src="/Logo Transparent Background.png"
           alt="Impacter Pathway"
           width={130}
           height={39}

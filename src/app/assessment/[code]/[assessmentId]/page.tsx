@@ -111,6 +111,7 @@ export default function AssessmentPlayerPage() {
   const assessment = codeData?.assessments.find((a) => a.id === assessmentId) as Assessment | undefined;
 
   const [currentIdx, setCurrentIdx]           = useState(0);
+  const [spanish, setSpanish]                 = useState(false);
   // Lazy-init from localStorage (returns {} during SSR, real data on client)
   const [completion, setCompletion]           = useState<Record<string, boolean>>(
     () => (typeof window !== 'undefined' ? (getProgress(code)[assessmentId] ?? {}) : {}),
@@ -143,8 +144,8 @@ export default function AssessmentPlayerPage() {
     }
   };
 
-  const goPrev = () => setCurrentIdx((i) => Math.max(0, i - 1));
-  const goNext = () => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1));
+  const goPrev = () => { setCurrentIdx((i) => Math.max(0, i - 1)); setSpanish(false); };
+  const goNext = () => { setCurrentIdx((i) => Math.min(questions.length - 1, i + 1)); setSpanish(false); };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
@@ -208,7 +209,7 @@ export default function AssessmentPlayerPage() {
                 q={q}
                 isActive={idx === currentIdx}
                 isComplete={!!completion[q.id]}
-                onClick={() => setCurrentIdx(idx)}
+                onClick={() => { setCurrentIdx(idx); setSpanish(false); }}
               />
             ))}
           </div>
@@ -217,10 +218,36 @@ export default function AssessmentPlayerPage() {
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* iframe — fills all remaining vertical space, capped width */}
-          <div className="flex-1 overflow-hidden flex items-stretch justify-center px-6 py-4 bg-gray-50">
+          <div className="flex-1 overflow-hidden flex flex-col items-center px-6 pt-4 pb-2 bg-gray-50 gap-3">
+            {/* Language toggle */}
+            {currentQ.spanishEmbedUrl && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {spanish ? (
+                  <>
+                    <span className="text-xs text-gray-400">Viewing in Spanish</span>
+                    <button
+                      onClick={() => setSpanish(false)}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100 transition-all"
+                    >
+                      Switch to English
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setSpanish(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                    style={{ background: '#e8735a' }}
+                  >
+                    <span>🌐</span>
+                    Try in Spanish
+                  </button>
+                )}
+              </div>
+            )}
+
             <iframe
-              key={currentQ.id}
-              src={currentQ.embedUrl}
+              key={`${currentQ.id}-${spanish}`}
+              src={spanish && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl}
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
               style={{
                 border: 'none',
@@ -229,6 +256,7 @@ export default function AssessmentPlayerPage() {
                 width: '100%',
                 maxWidth: 860,
                 height: '100%',
+                minHeight: 0,
               }}
               title={currentQ.title}
             />
@@ -250,7 +278,7 @@ export default function AssessmentPlayerPage() {
                 {questions.map((q, idx) => (
                   <button
                     key={q.id}
-                    onClick={() => setCurrentIdx(idx)}
+                    onClick={() => { setCurrentIdx(idx); setSpanish(false); }}
                     title={q.title}
                     className="rounded-full transition-all duration-200 hover:opacity-80"
                     style={{
