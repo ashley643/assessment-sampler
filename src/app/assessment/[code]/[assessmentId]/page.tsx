@@ -216,8 +216,8 @@ export default function AssessmentPlayerPage() {
 
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* iframe — fills all remaining vertical space */}
-          <div className="flex-1 overflow-hidden p-4 bg-gray-50">
+          {/* iframe — fills all remaining vertical space, capped width */}
+          <div className="flex-1 overflow-hidden flex items-stretch justify-center px-6 py-4 bg-gray-50">
             <iframe
               key={currentQ.id}
               src={currentQ.embedUrl}
@@ -227,6 +227,7 @@ export default function AssessmentPlayerPage() {
                 borderRadius: 20,
                 display: 'block',
                 width: '100%',
+                maxWidth: 860,
                 height: '100%',
               }}
               title={currentQ.title}
