@@ -66,7 +66,7 @@ export default function AssessmentEntryPage() {
           style={{ opacity: 0.18 }}
         >
           <Image
-            src="/Anchor Words Wheel Solo.png"
+            src="/Anchor_Words_Wheel_Solo.png"
             alt=""
             width={520}
             height={520}
@@ -80,7 +80,7 @@ export default function AssessmentEntryPage() {
           {/* Logo */}
           <div className="mb-10">
             <Image
-              src="/Logo Transparent Background.png"
+              src="/Logo_Transparent_Background.png"
               alt="Impacter Pathway"
               width={190}
               height={57}
@@ -132,7 +132,7 @@ export default function AssessmentEntryPage() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/Logo Transparent Background.png"
+                src="/Logo_Transparent_Background.png"
                 alt=""
                 style={{
                   width: '100%',
