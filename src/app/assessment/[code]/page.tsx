@@ -1,0 +1,172 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
+import codesData from '@/data/codes.json';
+import { getProgress } from '@/lib/progress';
+import type { AccessCode, Assessment } from '@/types/assessment';
+
+export default function AssessmentSelectorPage() {
+  const params = useParams();
+  const router = useRouter();
+  const code = (params.code as string).toUpperCase();
+
+  const codeData = codesData.codes.find((c) => c.code === code) as AccessCode | undefined;
+
+  // Lazy-init from localStorage (returns {} during SSR, real data on client)
+  const [completion] = useState<Record<string, Record<string, boolean>>>(
+    () => (typeof window !== 'undefined' ? getProgress(code) : {}),
+  );
+
+  // Redirect-only effect – no setState called here
+  useEffect(() => {
+    if (!codeData) router.replace('/assessment');
+  }, [codeData, router]);
+
+  if (!codeData) return null;
+
+  const isComplete = (a: Assessment) =>
+    a.questions.length > 0 &&
+    a.questions.every((q) => !!(completion[a.id] ?? {})[q.id]);
+
+  const completedCount = (a: Assessment) =>
+    a.questions.filter((q) => !!(completion[a.id] ?? {})[q.id]).length;
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc' }}>
+      {/* ── Nav bar ───────────────────────────────────────── */}
+      <nav
+        className="flex items-center justify-between px-8 py-4 flex-shrink-0"
+        style={{ background: '#1a2744' }}
+      >
+        <Image
+          src="/Logo_Transparent_Background.png"
+          alt="Impacter Pathway"
+          width={130}
+          height={39}
+          className="object-contain"
+        />
+
+        <div className="flex items-center gap-3">
+          <span className="text-white/60 text-sm">{codeData.label}</span>
+          <span className="bg-white/10 text-white/70 text-xs px-3 py-1 rounded-full font-mono">
+            {code}
+          </span>
+        </div>
+
+        <button
+          onClick={() => router.push('/assessment')}
+          className="text-white/50 hover:text-white text-sm transition-colors"
+        >
+          Sign Out
+        </button>
+      </nav>
+
+      {/* ── Content ───────────────────────────────────────── */}
+      <div className="flex-1 max-w-6xl mx-auto w-full px-8 py-12 animate-slide-up">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome, {codeData.label}
+          </h1>
+          <p className="text-gray-500 text-lg leading-relaxed max-w-2xl">
+            Select an assessment below to explore sample questions and experience
+            how Impacter Pathway captures student voice.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {(codeData.assessments as Assessment[]).map((assessment) => {
+            const done = isComplete(assessment);
+            const nDone = completedCount(assessment);
+            const estMins = assessment.questions.length * 2;
+            const pct = assessment.questions.length
+              ? Math.round((nDone / assessment.questions.length) * 100)
+              : 0;
+
+            return (
+              <div
+                key={assessment.id}
+                onClick={() =>
+                  router.push(`/assessment/${code}/${assessment.id}`)
+                }
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ')
+                    router.push(`/assessment/${code}/${assessment.id}`);
+                }}
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group focus:outline-none focus:ring-2 focus:ring-blue-400"
+                style={{
+                  borderTopWidth: '4px',
+                  borderTopColor: assessment.accentColor,
+                }}
+              >
+                <div className="p-6">
+                  {/* Badges row */}
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <span
+                      className="text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
+                      style={{
+                        background: assessment.badgeBg,
+                        color: assessment.badgeText,
+                      }}
+                    >
+                      {assessment.typeLabel}
+                    </span>
+
+                    {done && (
+                      <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
+                        <svg width="10" height="9" viewBox="0 0 10 9" fill="none" aria-hidden="true">
+                          <path
+                            d="M1 4.5L3.5 7L9 1.5"
+                            stroke="#15803d"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        Complete
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h3
+                    className="font-bold text-gray-900 mb-2 text-base leading-snug"
+                    style={done ? { color: '#15803d' } : undefined}
+                  >
+                    {assessment.title}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-gray-500 text-sm mb-4 leading-relaxed line-clamp-3">
+                    {assessment.description}
+                  </p>
+
+                  {/* Metadata */}
+                  <div className="text-xs text-gray-400">
+                    {assessment.questions.length} questions · ~{estMins} min
+                  </div>
+
+                  {/* Progress bar (only when in progress) */}
+                  {nDone > 0 && !done && (
+                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${pct}%`,
+                          background: assessment.accentColor,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,80 @@
+{
+  "codes": [
+    {
+      "code": "SAMPLE2026",
+      "expires": "2026-12-31",
+      "label": "Demo District",
+      "assessments": [
+        {
+          "id": "bhs-2",
+          "title": "Behavioral Health Screener 2.0",
+          "type": "behavioral-health",
+          "typeLabel": "Behavioral health",
+          "accentColor": "#4a6fa5",
+          "badgeBg": "#E6F1FB",
+          "badgeText": "#0C447C",
+          "description": "A comprehensive screener covering reflective growth, emotional resilience, conflict resolution, and help-seeking behaviors.",
+          "questions": [
+            { "id": "bhs2-q1", "order": 1, "title": "Reflective Growth", "embedUrl": "https://flex.impacterpathway.com/fvtnb1z5e" },
+            { "id": "bhs2-q2", "order": 2, "title": "Relational Awareness", "embedUrl": "https://flex.impacterpathway.com/fnf4khgtf" },
+            { "id": "bhs2-q3", "order": 3, "title": "Emotional Resilience", "embedUrl": "https://flex.impacterpathway.com/f3kebc2lk" },
+            { "id": "bhs2-q4", "order": 4, "title": "Self-Insight", "embedUrl": "https://flex.impacterpathway.com/f1vvm2aam" },
+            { "id": "bhs2-q5", "order": 5, "title": "Conflict Resolution", "embedUrl": "https://flex.impacterpathway.com/f94y5l3vy" },
+            { "id": "bhs2-q6", "order": 6, "title": "Effective Help-Seeking", "embedUrl": "https://flex.impacterpathway.com/fh13kktok" }
+          ]
+        },
+        {
+          "id": "bhs-elem",
+          "title": "Behavioral Health Screener for Lower Elementary",
+          "type": "behavioral-health-elementary",
+          "typeLabel": "Lower elementary",
+          "accentColor": "#7B68C4",
+          "badgeBg": "#EEEDFE",
+          "badgeText": "#3C3489",
+          "description": "An age-appropriate behavioral health screener designed for younger students, focusing on relational awareness, emotional resilience, and help-seeking.",
+          "questions": [
+            { "id": "bhse-q1", "order": 1, "title": "Relational Awareness", "embedUrl": "https://flex.impacterpathway.com/fjzzdvxk8" },
+            { "id": "bhse-q2", "order": 2, "title": "Emotional Resilience", "embedUrl": "https://flex.impacterpathway.com/fi4mgwelx" },
+            { "id": "bhse-q3", "order": 3, "title": "Effective Help-Seeking", "embedUrl": "https://flex.impacterpathway.com/f96z46iz7" }
+          ]
+        },
+        {
+          "id": "lp",
+          "title": "Learner Portrait",
+          "type": "learner-portrait",
+          "typeLabel": "Learner portrait",
+          "accentColor": "#e8735a",
+          "badgeBg": "#FAECE7",
+          "badgeText": "#712B13",
+          "description": "Maps the full learner identity across eight anchor attributes — from curiosity and grit to compassion and gratitude.",
+          "questions": [
+            { "id": "lp-q1", "order": 1, "title": "Curiosity", "embedUrl": "https://flex.impacterpathway.com/fgl56dog5" },
+            { "id": "lp-q2", "order": 2, "title": "Perspective-Taking", "embedUrl": "https://flex.impacterpathway.com/fzs8wcp9n" },
+            { "id": "lp-q3", "order": 3, "title": "Purpose", "embedUrl": "https://flex.impacterpathway.com/fd8l47ysr" },
+            { "id": "lp-q4", "order": 4, "title": "Self-Control", "embedUrl": "https://flex.impacterpathway.com/fjaz0tu7i" },
+            { "id": "lp-q5", "order": 5, "title": "Grit", "embedUrl": "https://flex.impacterpathway.com/f416xj4t7" },
+            { "id": "lp-q6", "order": 6, "title": "Growth Mindset", "embedUrl": "https://flex.impacterpathway.com/fdmgpwqmg" },
+            { "id": "lp-q7", "order": 7, "title": "Compassion", "embedUrl": "https://flex.impacterpathway.com/fks9sqp9g" },
+            { "id": "lp-q8", "order": 8, "title": "Gratitude", "embedUrl": "https://flex.impacterpathway.com/f9n1bhgk0" }
+          ]
+        },
+        {
+          "id": "csa",
+          "title": "Community Schools Assessment",
+          "type": "community-schools",
+          "typeLabel": "Community schools",
+          "accentColor": "#1D9E75",
+          "badgeBg": "#E1F5EE",
+          "badgeText": "#085041",
+          "description": "Evaluates the four pillars of community schools — integrated supports, family engagement, collaborative leadership, and enriched learning time.",
+          "questions": [
+            { "id": "csa-q1", "order": 1, "title": "Integrated Student Supports", "embedUrl": "https://smfcsd.impacterpathway.com/fruq4wkiw" },
+            { "id": "csa-q2", "order": 2, "title": "Active Family & Community Engagement", "embedUrl": "https://smfcsd.impacterpathway.com/fovwv0ybv" },
+            { "id": "csa-q3", "order": 3, "title": "Collaborative Leadership & Practice", "embedUrl": "https://smfcsd.impacterpathway.com/f63r7zzuy" },
+            { "id": "csa-q4", "order": 4, "title": "Expanded & Enriched Learning Time", "embedUrl": "https://smfcsd.impacterpathway.com/fwjpg96dx" }
+          ]
+        }
+      ]
+    }
+  ]
+}
