@@ -52,98 +52,104 @@ export default function AssessmentEntryPage() {
 
   return (
     <div className="flex h-screen overflow-hidden font-sans">
+
       {/* ── Left hero panel ────────────────────────────────── */}
       <div
-        className="hidden md:flex md:w-[55%] relative flex-col items-center justify-center p-12 overflow-hidden"
+        className="hidden md:flex md:w-[55%] relative flex-col justify-center p-14 overflow-hidden"
         style={{
-          background:
-            'linear-gradient(160deg, #1a2744 0%, #2d4a7a 45%, #c75a3a 100%)',
+          background: 'linear-gradient(160deg, #1a2744 0%, #2d4a7a 45%, #c75a3a 100%)',
         }}
       >
-        {/* Logo */}
-        <div className="mb-6 z-10">
+        {/* Wheel — large background watermark, not in flow */}
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none animate-spin-slow"
+          style={{ opacity: 0.18 }}
+        >
           <Image
-            src="/Logo Transparent Background.png"
-            alt="Impacter Pathway"
-            width={210}
-            height={63}
+            src="/Anchor Words Wheel Solo.png"
+            alt=""
+            width={520}
+            height={520}
             className="object-contain"
             priority
           />
         </div>
 
-        {/* Spinning wheel */}
-        <div
-          className="animate-spin-slow mb-8 z-10"
-          style={{ width: 340, height: 340 }}
-        >
-          <Image
-            src="/Anchor Words Wheel Solo.png"
-            alt="Impacter Pathway Anchor Attributes Wheel"
-            width={340}
-            height={340}
-            className="w-full h-full object-contain"
-            priority
-          />
-        </div>
+        {/* Foreground content — left-aligned */}
+        <div className="relative z-10">
+          {/* Logo */}
+          <div className="mb-10">
+            <Image
+              src="/Logo Transparent Background.png"
+              alt="Impacter Pathway"
+              width={190}
+              height={57}
+              className="object-contain"
+              priority
+            />
+          </div>
 
-        {/* Headline */}
-        <div className="text-center mb-8 z-10">
+          {/* Headline */}
           <h1 className="text-5xl font-bold text-white leading-tight mb-4">
             Student Voice.<br />
             Powered by{' '}
             <span style={{ color: '#e8735a' }}>AI.</span>
           </h1>
-          <p className="text-white/70 text-lg max-w-md leading-relaxed">
+          <p className="text-white/70 text-lg max-w-sm leading-relaxed mb-10">
             Real-time insights from student assessments — helping districts
             listen deeper and act faster.
           </p>
-        </div>
 
-        {/* Stat badges */}
-        <div className="flex gap-4 z-10">
-          {STATS.map((s) => (
-            <div
-              key={s.label}
-              className="flex flex-col items-center px-5 py-3 rounded-xl text-center"
-              style={{
-                background: 'rgba(255,255,255,0.10)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-              }}
-            >
-              <span className="text-white font-bold text-xl">{s.value}</span>
-              <span className="text-white/80 text-sm whitespace-nowrap">{s.label}</span>
-            </div>
-          ))}
+          {/* Stat badges */}
+          <div className="flex gap-3">
+            {STATS.map((s) => (
+              <div
+                key={s.label}
+                className="flex flex-col px-5 py-3 rounded-xl"
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+              >
+                <span className="text-white font-bold text-xl">{s.value}</span>
+                <span className="text-white/80 text-sm whitespace-nowrap">{s.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* ── Right form panel ───────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8">
-        <div className="w-full max-w-md animate-slide-up">
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8 overflow-y-auto">
+        <div className="w-full max-w-md animate-slide-up py-6">
+
           {/* Brand mark */}
-          <div className="mb-8 flex items-center gap-2.5">
+          <div className="mb-8 flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden"
               style={{ background: '#1a2744' }}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/Logo Transparent Background.png"
                 alt=""
-                width={22}
-                height={22}
-                className="object-contain"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'left center',
+                }}
               />
             </div>
-            <div className="leading-none">
+            <div className="leading-tight">
               <div
-                className="text-sm font-bold tracking-widest uppercase"
+                className="text-sm font-bold tracking-wide"
                 style={{ color: '#1a2744' }}
               >
                 Impacter
               </div>
-              <div className="text-xs font-medium tracking-wider uppercase text-gray-400">
+              <div className="text-xs font-medium tracking-wide text-gray-400">
                 Pathway®
               </div>
             </div>
