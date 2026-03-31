@@ -63,12 +63,13 @@ export default function AssessmentEntryPage() {
         {/* Logo */}
         <div className="mb-6 z-10">
           <Image
-            src="/Logo_Transparent_Background.png"
+            src="/Logo_Transparent_Background.svg"
             alt="Impacter Pathway"
             width={210}
             height={63}
             className="object-contain"
             priority
+            unoptimized
           />
         </div>
 
@@ -78,12 +79,13 @@ export default function AssessmentEntryPage() {
           style={{ width: 340, height: 340 }}
         >
           <Image
-            src="/Anchor_Words_Wheel_Solo.png"
+            src="/Anchor_Words_Wheel_Solo.svg"
             alt="Impacter Pathway Anchor Attributes Wheel"
             width={340}
             height={340}
             className="w-full h-full object-contain"
             priority
+            unoptimized
           />
         </div>
 
@@ -129,11 +131,12 @@ export default function AssessmentEntryPage() {
               style={{ background: '#1a2744' }}
             >
               <Image
-                src="/Logo_Transparent_Background.png"
+                src="/Logo_Transparent_Background.svg"
                 alt=""
                 width={22}
                 height={22}
                 className="object-contain"
+                unoptimized
               />
             </div>
             <div className="leading-none">
