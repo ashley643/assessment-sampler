@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+});
+
 export const metadata: Metadata = {
-  title: "Impacter Report Builder",
-  description: "Turn your data into compelling impact reports with AI",
+  title: "Impacter Pathway",
+  description: "Student Voice. Powered by AI.",
 };
 
 export default function RootLayout({
@@ -13,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className={`${dmSans.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
 }
