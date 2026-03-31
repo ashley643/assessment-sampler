@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import codesData from '@/data/codes.json';
 
@@ -62,13 +61,13 @@ export default function AssessmentEntryPage() {
       >
         {/* Logo */}
         <div className="mb-6 z-10">
-          <Image
-            src="/Logo_Transparent_Background.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/Logo_Transparent_Background.svg"
             alt="Impacter Pathway"
             width={210}
             height={63}
-            className="object-contain"
-            priority
+            style={{ objectFit: 'contain' }}
           />
         </div>
 
@@ -77,13 +76,13 @@ export default function AssessmentEntryPage() {
           className="animate-spin-slow mb-8 z-10"
           style={{ width: 340, height: 340 }}
         >
-          <Image
-            src="/Anchor_Words_Wheel_Solo.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/Anchor_Words_Wheel_Solo.svg"
             alt="Impacter Pathway Anchor Attributes Wheel"
             width={340}
             height={340}
-            className="w-full h-full object-contain"
-            priority
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
         </div>
 
@@ -128,12 +127,13 @@ export default function AssessmentEntryPage() {
               className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: '#1a2744' }}
             >
-              <Image
-                src="/Logo_Transparent_Background.png"
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/Logo_Transparent_Background.svg"
                 alt=""
                 width={22}
                 height={22}
-                className="object-contain"
+                style={{ objectFit: 'contain' }}
               />
             </div>
             <div className="leading-none">
