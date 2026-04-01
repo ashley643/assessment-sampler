@@ -253,6 +253,12 @@ export default function AssessmentPlayerPage() {
 
           {/* Mobile-only question title (sidebar hidden on mobile) */}
           <div className="md:hidden flex-shrink-0 px-4 pt-3 pb-1 bg-gray-50">
+            <span
+              className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1.5"
+              style={{ background: assessment.badgeBg, color: assessment.badgeText }}
+            >
+              {assessment.typeLabel}
+            </span>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Question {currentQ.order} of {questions.length}
             </p>
