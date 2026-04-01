@@ -218,47 +218,35 @@ export default function AssessmentPlayerPage() {
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
 
-          {/* Mode toggle strip — right-aligned, only when alternate modes exist */}
+          {/* Mode toggle strip — both buttons always visible when available */}
           {(currentQ.spanishEmbedUrl || currentQ.textEmbedUrl) && (
             <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 pt-3 pb-1 bg-gray-50">
-              {mode !== 'video' ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-400">
-                    {mode === 'spanish' ? '🌐 Viewing in Spanish' : '⌨️ Typing mode'}
-                  </span>
-                  <button
-                    onClick={() => setMode('video')}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition-all"
-                  >
-                    Switch to video
-                  </button>
-                </div>
-              ) : (
-                <>
-                  {currentQ.spanishEmbedUrl && (
-                    <button
-                      onClick={() => setMode('spanish')}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                      style={{ background: '#e8735a' }}
-                    >
-                      <span>🌐</span>
-                      Try in Spanish
-                    </button>
-                  )}
-                  {currentQ.textEmbedUrl && (
-                    <button
-                      onClick={() => setMode('text')}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                      style={{ background: '#4a6fa5' }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                        <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
-                        <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                      </svg>
-                      I prefer to type
-                    </button>
-                  )}
-                </>
+              {currentQ.spanishEmbedUrl && (
+                <button
+                  onClick={() => setMode(mode === 'spanish' ? 'video' : 'spanish')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={mode === 'spanish'
+                    ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' }
+                    : { background: '#e8735a', color: 'white' }}
+                >
+                  <span>🌐</span>
+                  Try in Spanish
+                </button>
+              )}
+              {currentQ.textEmbedUrl && (
+                <button
+                  onClick={() => setMode(mode === 'text' ? 'video' : 'text')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={mode === 'text'
+                    ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' }
+                    : { background: '#4a6fa5', color: 'white' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  I prefer to type
+                </button>
               )}
             </div>
           )}
