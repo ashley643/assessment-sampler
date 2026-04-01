@@ -111,7 +111,7 @@ export default function AssessmentPlayerPage() {
   const assessment = codeData?.assessments.find((a) => a.id === assessmentId) as Assessment | undefined;
 
   const [currentIdx, setCurrentIdx]           = useState(0);
-  const [spanish, setSpanish]                 = useState(false);
+  const [mode, setMode]                       = useState<'video' | 'spanish' | 'text'>('video');
   // Lazy-init from localStorage (returns {} during SSR, real data on client)
   const [completion, setCompletion]           = useState<Record<string, boolean>>(
     () => (typeof window !== 'undefined' ? (getProgress(code)[assessmentId] ?? {}) : {}),
@@ -144,8 +144,8 @@ export default function AssessmentPlayerPage() {
     }
   };
 
-  const goPrev = () => { setCurrentIdx((i) => Math.max(0, i - 1)); setSpanish(false); };
-  const goNext = () => { setCurrentIdx((i) => Math.min(questions.length - 1, i + 1)); setSpanish(false); };
+  const goPrev = () => { setCurrentIdx((i) => Math.max(0, i - 1)); setMode('video'); };
+  const goNext = () => { setCurrentIdx((i) => Math.min(questions.length - 1, i + 1)); setMode('video'); };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
@@ -209,7 +209,7 @@ export default function AssessmentPlayerPage() {
                 q={q}
                 isActive={idx === currentIdx}
                 isComplete={!!completion[q.id]}
-                onClick={() => { setCurrentIdx(idx); setSpanish(false); }}
+                onClick={() => { setCurrentIdx(idx); setMode('video'); }}
               />
             ))}
           </div>
@@ -218,28 +218,47 @@ export default function AssessmentPlayerPage() {
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
 
-          {/* Spanish toggle — thin row, right-aligned, only when available */}
-          {currentQ.spanishEmbedUrl && (
-            <div className="flex-shrink-0 flex items-center justify-end px-6 pt-3 pb-1 bg-gray-50">
-              {spanish ? (
+          {/* Mode toggle strip — right-aligned, only when alternate modes exist */}
+          {(currentQ.spanishEmbedUrl || currentQ.textEmbedUrl) && (
+            <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 pt-3 pb-1 bg-gray-50">
+              {mode !== 'video' ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-400">🌐 Viewing in Spanish</span>
+                  <span className="text-xs text-gray-400">
+                    {mode === 'spanish' ? '🌐 Viewing in Spanish' : '⌨️ Typing mode'}
+                  </span>
                   <button
-                    onClick={() => setSpanish(false)}
+                    onClick={() => setMode('video')}
                     className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition-all"
                   >
-                    Switch to English
+                    Switch to video
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setSpanish(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                  style={{ background: '#e8735a' }}
-                >
-                  <span>🌐</span>
-                  Try in Spanish
-                </button>
+                <>
+                  {currentQ.spanishEmbedUrl && (
+                    <button
+                      onClick={() => setMode('spanish')}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                      style={{ background: '#e8735a' }}
+                    >
+                      <span>🌐</span>
+                      Try in Spanish
+                    </button>
+                  )}
+                  {currentQ.textEmbedUrl && (
+                    <button
+                      onClick={() => setMode('text')}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                      style={{ background: '#4a6fa5' }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                        <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                        <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                      </svg>
+                      I prefer to type
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -247,8 +266,12 @@ export default function AssessmentPlayerPage() {
           {/* iframe — fills all remaining vertical space */}
           <div className="flex-1 overflow-hidden flex items-stretch justify-center px-16 py-5 bg-gray-50">
             <iframe
-              key={`${currentQ.id}-${spanish}`}
-              src={spanish && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl}
+              key={`${currentQ.id}-${mode}`}
+              src={
+                mode === 'spanish' && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl :
+                mode === 'text'    && currentQ.textEmbedUrl    ? currentQ.textEmbedUrl :
+                currentQ.embedUrl
+              }
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
               style={{
                 border: 'none',
@@ -278,7 +301,7 @@ export default function AssessmentPlayerPage() {
                 {questions.map((q, idx) => (
                   <button
                     key={q.id}
-                    onClick={() => { setCurrentIdx(idx); setSpanish(false); }}
+                    onClick={() => { setCurrentIdx(idx); setMode('video'); }}
                     title={q.title}
                     className="rounded-full transition-all duration-200 hover:opacity-80"
                     style={{

@@ -4,6 +4,7 @@ export interface Question {
   title: string;
   embedUrl: string;
   spanishEmbedUrl?: string;
+  textEmbedUrl?: string;
 }
 
 export interface Assessment {
