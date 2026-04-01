@@ -51,7 +51,7 @@ export default function AssessmentEntryPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans">
+    <div className="flex h-[100dvh] overflow-hidden font-sans">
 
       {/* ── Left hero panel ────────────────────────────────── */}
       <div

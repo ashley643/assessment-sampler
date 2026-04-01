@@ -148,7 +148,7 @@ export default function AssessmentPlayerPage() {
   const goNext = () => { setCurrentIdx((i) => Math.min(questions.length - 1, i + 1)); setMode('video'); };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-white">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
       {/* ── Top bar ─────────────────────────────────────────── */}
       <div
         className="flex items-center justify-between px-6 py-3 flex-shrink-0"
@@ -181,7 +181,7 @@ export default function AssessmentPlayerPage() {
       {/* ── Body ────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar ─────────────────────────────────────── */}
-        <aside className="w-60 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <aside className="hidden md:flex w-60 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex-col">
           <div className="px-4 pt-5 pb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
               Questions
@@ -220,7 +220,7 @@ export default function AssessmentPlayerPage() {
 
           {/* Mode toggle strip — both buttons always visible when available */}
           {(currentQ.spanishEmbedUrl || currentQ.textEmbedUrl) && (
-            <div className="flex-shrink-0 flex items-center justify-end gap-2 px-6 pt-3 pb-1 bg-gray-50">
+            <div className="flex-shrink-0 flex items-center justify-end flex-wrap gap-2 px-4 md:px-6 pt-3 pb-1 bg-gray-50">
               {currentQ.spanishEmbedUrl && (
                 <button
                   onClick={() => setMode(mode === 'spanish' ? 'video' : 'spanish')}
@@ -251,8 +251,8 @@ export default function AssessmentPlayerPage() {
             </div>
           )}
 
-          {/* iframe — fills all remaining vertical space */}
-          <div className="flex-1 overflow-hidden flex items-stretch justify-center px-16 py-5 bg-gray-50">
+          {/* iframe — aspect-ratio on mobile, fills height on desktop */}
+          <div className="md:flex-1 md:overflow-hidden md:flex md:items-stretch md:justify-center px-4 md:px-16 py-4 md:py-5 bg-gray-50">
             <iframe
               key={`${currentQ.id}-${mode}`}
               src={
@@ -261,20 +261,14 @@ export default function AssessmentPlayerPage() {
                 currentQ.embedUrl
               }
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              style={{
-                border: 'none',
-                borderRadius: 16,
-                display: 'block',
-                width: '100%',
-                maxWidth: 720,
-                height: '100%',
-              }}
+              className="w-full aspect-[4/3] md:aspect-auto md:h-full md:max-w-[720px]"
+              style={{ border: 'none', borderRadius: 16, display: 'block' }}
               title={currentQ.title}
             />
           </div>
 
           {/* ── Bottom navigation + Mark Complete ───────────── */}
-          <div className="flex-shrink-0 border-t border-gray-200 px-6 py-3 flex items-center justify-between bg-white gap-4">
+          <div className="flex-shrink-0 border-t border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between bg-white gap-4">
             <button
               onClick={goPrev}
               disabled={currentIdx === 0}
