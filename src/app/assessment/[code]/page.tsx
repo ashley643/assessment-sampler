@@ -140,7 +140,7 @@ export default function AssessmentSelectorPage() {
                   </h3>
 
                   {/* Description */}
-                  <p className="text-gray-500 text-sm mb-4 leading-relaxed line-clamp-3">
+                  <p className="text-gray-500 text-sm mb-4 leading-relaxed">
                     {assessment.description}
                   </p>
 
