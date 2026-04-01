@@ -161,7 +161,7 @@ export default function AssessmentPlayerPage() {
           ← Back to assessments
         </button>
 
-        <div className="flex items-center gap-2.5">
+        <div className="hidden md:flex items-center gap-2.5">
           <span
             className="text-xs font-semibold px-3 py-1 rounded-full"
             style={{ background: assessment.badgeBg, color: assessment.badgeText }}
