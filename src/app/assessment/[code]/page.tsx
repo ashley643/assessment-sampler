@@ -79,7 +79,7 @@ export default function AssessmentSelectorPage() {
           {(codeData.assessments as Assessment[]).map((assessment) => {
             const done = isComplete(assessment);
             const nDone = completedCount(assessment);
-            const estMins = assessment.questions.length * 2;
+            const estMins = assessment.questions.length * 3;
             const pct = assessment.questions.length
               ? Math.round((nDone / assessment.questions.length) * 100)
               : 0;
