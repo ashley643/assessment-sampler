@@ -216,7 +216,7 @@ export default function AssessmentPlayerPage() {
         </aside>
 
         {/* ── Main content ────────────────────────────────── */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-y-auto md:overflow-hidden">
 
           {/* Mode toggle strip — both buttons always visible when available */}
           {(currentQ.spanishEmbedUrl || currentQ.textEmbedUrl) && (
@@ -251,7 +251,15 @@ export default function AssessmentPlayerPage() {
             </div>
           )}
 
-          {/* iframe — aspect-ratio on mobile, fills height on desktop */}
+          {/* Mobile-only question title (sidebar hidden on mobile) */}
+          <div className="md:hidden flex-shrink-0 px-4 pt-3 pb-1 bg-gray-50">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Question {currentQ.order} of {questions.length}
+            </p>
+            <p className="text-sm font-semibold text-gray-800 mt-0.5">{currentQ.title}</p>
+          </div>
+
+          {/* iframe — portrait aspect-ratio on mobile, fills height on desktop */}
           <div className="md:flex-1 md:overflow-hidden md:flex md:items-stretch md:justify-center px-4 md:px-16 py-4 md:py-5 bg-gray-50">
             <iframe
               key={`${currentQ.id}-${mode}`}
@@ -261,7 +269,7 @@ export default function AssessmentPlayerPage() {
                 currentQ.embedUrl
               }
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              className="w-full aspect-[4/3] md:aspect-auto md:h-full md:max-w-[720px]"
+              className="w-full aspect-[3/4] md:aspect-auto md:h-full md:max-w-[720px]"
               style={{ border: 'none', borderRadius: 16, display: 'block' }}
               title={currentQ.title}
             />
