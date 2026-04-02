@@ -27,7 +27,7 @@ function ConfettiPiece({ index: i }: { index: number }) {
   );
 }
 
-/* ─── Tooltip wrapper ──────────────────────────────────────── */
+/* ─── Tooltip wrapper (desktop hover only) ─────────────────── */
 function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
   const [visible, setVisible] = useState(false);
   return (
@@ -38,7 +38,7 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
     >
       {children}
       {visible && (
-        <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs rounded-xl z-20 text-center leading-relaxed shadow-lg">
+        <div className="hidden md:block pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs rounded-xl z-20 text-center leading-relaxed shadow-lg">
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-200" />
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 translate-y-[1px] border-4 border-transparent border-b-white" />
           {text}
@@ -101,6 +101,7 @@ export default function AssessmentPlayerPage() {
   );
   const [showCelebration, setShowCelebration] = useState(false);
   const celebrationShownRef = useRef(false);
+  const typingPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -114,6 +115,15 @@ export default function AssessmentPlayerPage() {
   }, [code, assessmentId]);
 
   useEffect(() => { if (notFound) router.replace('/assessment'); }, [notFound, router]);
+
+  // Scroll typing panel into view on mobile when it opens
+  useEffect(() => {
+    if (showTyping && typingPanelRef.current) {
+      setTimeout(() => {
+        typingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50); // slight delay so the panel has rendered
+    }
+  }, [showTyping]);
 
   if (!codeData) return null;
 
@@ -212,7 +222,7 @@ export default function AssessmentPlayerPage() {
         <div className="flex-1 flex flex-col overflow-y-auto">
 
           {/* Mode toggle strip */}
-          <div className="flex-shrink-0 flex items-center justify-end flex-wrap gap-2 px-4 md:px-6 pt-3 pb-1 bg-gray-50">
+          <div className="flex-shrink-0 flex flex-col items-end px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-1">
             {currentQ.spanishEmbedUrl && (
               <Tooltip text="Assessments can be configured for additional prompt languages depending on the population being served.">
                 <button
@@ -237,6 +247,12 @@ export default function AssessmentPlayerPage() {
                 I prefer to type
               </button>
             </Tooltip>
+          {/* Mobile-only Spanish context note */}
+          {spanishMode && (
+            <p className="md:hidden text-xs text-gray-400 text-right leading-relaxed px-1">
+              Other prompt languages can be configured for your population.
+            </p>
+          )}
           </div>
 
           {/* Mobile question header */}
@@ -262,7 +278,7 @@ export default function AssessmentPlayerPage() {
 
           {/* Text input panel */}
           {showTyping && (
-            <div className="flex-shrink-0 flex justify-center px-4 md:px-16 pb-3 bg-gray-50">
+            <div ref={typingPanelRef} className="flex-shrink-0 flex justify-center px-4 md:px-16 pb-3 bg-gray-50">
               <div className="w-full md:max-w-[720px] bg-white rounded-2xl border border-gray-200 shadow-sm">
                 <div className="px-5 py-3 border-b border-gray-100">
                   <p className="text-sm font-semibold text-gray-800">{currentQ.title}</p>
@@ -297,6 +313,10 @@ export default function AssessmentPlayerPage() {
                       >
                         Submit Response
                       </button>
+                      {/* Mobile-only context note (replaces hover tooltip) */}
+                      <p className="md:hidden text-xs text-gray-400 text-center leading-relaxed">
+                        Typed responses can be enabled as an alternative to audio or video recording.
+                      </p>
                     </>
                   )}
                 </div>
