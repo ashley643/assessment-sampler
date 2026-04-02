@@ -15,18 +15,35 @@ interface AnalyticsData {
 export default function DashboardPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [days, setDays] = useState(30);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/admin/analytics?days=${days}`)
+    const params = new URLSearchParams({ days: String(days) });
+    if (selectedCode) params.set('code', selectedCode);
+    fetch(`/api/admin/analytics?${params}`)
       .then(r => r.json())
       .then(setData);
-  }, [days]);
+  }, [days, selectedCode]);
 
   return (
     <AdminShell>
       <div className="max-w-4xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+            {selectedCode && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full">
+                {selectedCode}
+                <button
+                  onClick={() => setSelectedCode(null)}
+                  className="ml-1 hover:text-blue-900 font-bold leading-none"
+                  title="Clear filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
           <select
             value={days}
             onChange={e => setDays(Number(e.target.value))}
@@ -48,14 +65,41 @@ export default function DashboardPage() {
               <StatCard label="Total Events" value={data.events} />
             </div>
 
-            {/* By code */}
+            {/* By code — clickable for drill-down */}
             {Object.keys(data.byCode).length > 0 && (
-              <Section title="Sessions by Access Code">
-                <Table
-                  rows={Object.entries(data.byCode).sort((a, b) => b[1] - a[1])}
-                  colA="Code"
-                  colB="Sessions"
-                />
+              <Section title={selectedCode ? `Sessions — ${selectedCode}` : 'Sessions by Access Code'}>
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Code</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500">Sessions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {Object.entries(data.byCode)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([code, count]) => (
+                        <tr
+                          key={code}
+                          className={`cursor-pointer transition-colors ${
+                            selectedCode === code
+                              ? 'bg-blue-50'
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => setSelectedCode(selectedCode === code ? null : code)}
+                          title={selectedCode === code ? 'Click to clear filter' : `Click to filter by ${code}`}
+                        >
+                          <td className="px-4 py-2.5 font-mono text-xs text-gray-900 flex items-center gap-2">
+                            {selectedCode === code && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+                            )}
+                            {code}
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-gray-700 tabular-nums">{count}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
               </Section>
             )}
 
@@ -106,7 +150,9 @@ export default function DashboardPage() {
             )}
 
             {data.sessions === 0 && (
-              <p className="text-sm text-gray-400 mt-4">No data yet for this period.</p>
+              <p className="text-sm text-gray-400 mt-4">
+                No data yet{selectedCode ? ` for ${selectedCode}` : ' for this period'}.
+              </p>
             )}
           </>
         )}

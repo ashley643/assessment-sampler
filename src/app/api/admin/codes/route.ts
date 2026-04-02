@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAdminSession } from '@/lib/auth';
+import { auth } from '@/lib/auth-config';
+import { logAudit } from '@/lib/audit';
 
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -25,11 +27,11 @@ export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { code, label, starts_at, expires_at, assessment_ids } = body;
+  const { code, label, starts_at, expires_at, assessment_ids, is_active } = body;
 
   const { data: newCode, error } = await supabaseAdmin
     .from('access_codes')
-    .insert({ code: code.trim().toUpperCase(), label, starts_at, expires_at })
+    .insert({ code: code.trim().toUpperCase(), label, starts_at, expires_at, is_active: is_active ?? true })
     .select()
     .single();
 
@@ -44,6 +46,15 @@ export async function POST(req: Request) {
       })),
     );
   }
+
+  const session = await auth();
+  await logAudit({
+    actor_email: session?.user?.email ?? 'unknown',
+    action: 'create_code',
+    entity_type: 'access_code',
+    entity_id: newCode.id,
+    after: { code: newCode.code, label, assessment_ids },
+  });
 
   return NextResponse.json(newCode, { status: 201 });
 }
