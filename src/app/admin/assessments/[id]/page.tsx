@@ -10,7 +10,6 @@ interface Question {
   title: string;
   embed_url: string;
   spanish_embed_url: string;
-  text_embed_url: string;
 }
 
 interface Assessment {
@@ -35,7 +34,6 @@ function newQuestion(order: number): Question {
     title: '',
     embed_url: '',
     spanish_embed_url: '',
-    text_embed_url: '',
   };
 }
 
@@ -218,9 +216,6 @@ export default function EditAssessmentPage() {
                   </F>
                   <F label="Spanish Embed URL (optional)">
                     <input value={q.spanish_embed_url ?? ''} onChange={e => updateQuestion(i, 'spanish_embed_url', e.target.value)} placeholder="https://..." className={INPUT} />
-                  </F>
-                  <F label="Text Embed URL (optional)">
-                    <input value={q.text_embed_url ?? ''} onChange={e => updateQuestion(i, 'text_embed_url', e.target.value)} placeholder="https://..." className={INPUT} />
                   </F>
                 </div>
               ))}

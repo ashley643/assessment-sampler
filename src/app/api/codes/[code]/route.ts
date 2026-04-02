@@ -13,7 +13,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         sort_order,
         assessments (
           id, title, type, type_label, accent_color, badge_bg, badge_text, description,
-          questions ( id, sort_order, title, embed_url, spanish_embed_url, text_embed_url )
+          questions ( id, sort_order, title, embed_url, spanish_embed_url )
         )
       )
     `)
@@ -54,7 +54,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         title: string;
         embed_url: string;
         spanish_embed_url: string | null;
-        text_embed_url: string | null;
       }[];
     };
   }[]).sort((a, b) => a.sort_order - b.sort_order);
@@ -80,7 +79,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
           title: q.title,
           embedUrl: q.embed_url,
           spanishEmbedUrl: q.spanish_embed_url ?? undefined,
-          textEmbedUrl: q.text_embed_url ?? undefined,
         })),
     })),
   };
