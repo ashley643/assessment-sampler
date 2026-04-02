@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminShell from '@/components/admin/AdminShell';
@@ -20,18 +20,51 @@ export default function AssessmentsPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const dragIdx = useRef<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   async function load() {
     const res = await fetch('/api/admin/assessments');
-    setAssessments(await res.json());
+    const data = await res.json();
+    setAssessments(data.sort((a: Assessment, b: Assessment) => a.sort_order - b.sort_order));
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
 
+  function onDragStart(idx: number) {
+    dragIdx.current = idx;
+  }
+
+  function onDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    setDragOver(idx);
+  }
+
+  async function onDrop(dropIndex: number) {
+    const from = dragIdx.current;
+    if (from === null || from === dropIndex) { setDragOver(null); return; }
+
+    const reordered = [...assessments];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(dropIndex, 0, moved);
+    const updated = reordered.map((a, i) => ({ ...a, sort_order: i }));
+    setAssessments(updated);
+    setDragOver(null);
+    dragIdx.current = null;
+
+    setSaving(true);
+    await fetch('/api/admin/assessments/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated.map(a => ({ id: a.id, sort_order: a.sort_order }))),
+    });
+    setSaving(false);
+  }
+
   async function handleDuplicate(a: Assessment) {
     setDuplicating(a.id);
-    // Fetch full assessment with questions
     const res = await fetch(`/api/admin/assessments/${a.id}`);
     const full = await res.json();
 
@@ -53,7 +86,6 @@ export default function AssessmentsPage() {
 
     await load();
     setDuplicating(null);
-    // Navigate to edit the copy
     router.push(`/admin/assessments/${newId}`);
   }
 
@@ -61,7 +93,10 @@ export default function AssessmentsPage() {
     <AdminShell>
       <div className="max-w-4xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Assessments</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-gray-900">Assessments</h1>
+            {saving && <span className="text-xs text-gray-400">Saving order…</span>}
+          </div>
           <Link
             href="/admin/assessments/new"
             className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] transition-colors"
@@ -79,28 +114,39 @@ export default function AssessmentsPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
+                  <th className="px-2 py-3 w-8" />
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Title</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Questions</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Order</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {assessments.map(a => (
-                  <tr key={a.id} className="hover:bg-gray-50">
+                {assessments.map((a, idx) => (
+                  <tr
+                    key={a.id}
+                    draggable
+                    onDragStart={() => onDragStart(idx)}
+                    onDragOver={e => onDragOver(e, idx)}
+                    onDrop={() => onDrop(idx)}
+                    onDragEnd={() => setDragOver(null)}
+                    className={`transition-colors ${dragOver === idx ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  >
+                    <td className="px-2 py-3 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+                        <circle cx="4" cy="3" r="1.2"/><circle cx="10" cy="3" r="1.2"/>
+                        <circle cx="4" cy="7" r="1.2"/><circle cx="10" cy="7" r="1.2"/>
+                        <circle cx="4" cy="11" r="1.2"/><circle cx="10" cy="11" r="1.2"/>
+                      </svg>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ background: a.accent_color }}
-                        />
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: a.accent_color }} />
                         <span className="text-gray-900 font-medium">{a.title}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{a.type_label}</td>
                     <td className="px-4 py-3 text-gray-500">{a.questions?.length ?? 0}</td>
-                    <td className="px-4 py-3 text-gray-500">{a.sort_order}</td>
                     <td className="px-4 py-3 text-right flex items-center justify-end gap-4">
                       <button
                         onClick={() => handleDuplicate(a)}
@@ -109,10 +155,7 @@ export default function AssessmentsPage() {
                       >
                         {duplicating === a.id ? 'Copying…' : 'Duplicate'}
                       </button>
-                      <Link
-                        href={`/admin/assessments/${a.id}`}
-                        className="text-xs text-blue-600 hover:underline"
-                      >
+                      <Link href={`/admin/assessments/${a.id}`} className="text-xs text-blue-600 hover:underline">
                         Edit
                       </Link>
                     </td>
