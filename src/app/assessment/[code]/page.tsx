@@ -91,7 +91,7 @@ export default function AssessmentSelectorPage() {
           {(codeData.assessments as Assessment[]).map((assessment) => {
             const done = isComplete(assessment);
             const nDone = completedCount(assessment);
-            const estMins = assessment.questions.length * 2;
+            const estMins = assessment.questions.length * 3;
             const pct = assessment.questions.length
               ? Math.round((nDone / assessment.questions.length) * 100)
               : 0;
@@ -152,7 +152,7 @@ export default function AssessmentSelectorPage() {
                   </h3>
 
                   {/* Description */}
-                  <p className="text-gray-500 text-sm mb-4 leading-relaxed line-clamp-3">
+                  <p className="text-gray-500 text-sm mb-4 leading-relaxed">
                     {assessment.description}
                   </p>
 
