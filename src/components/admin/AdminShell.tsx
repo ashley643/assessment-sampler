@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 
 const NAV = [
-  { href: '/admin/dashboard', label: 'Dashboard' },
   { href: '/admin/codes', label: 'Access Codes' },
+  { href: '/admin/dashboard', label: 'Activity Log' },
   { href: '/admin/assessments', label: 'Assessments' },
   { href: '/admin/audit', label: 'Audit Log' },
 ];
