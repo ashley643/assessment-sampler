@@ -102,7 +102,6 @@ export default function AssessmentPlayerPage() {
   const [showCelebration, setShowCelebration] = useState(false);
   const celebrationShownRef = useRef(false);
   const typingPanelRef = useRef<HTMLDivElement>(null);
-  const handleMarkCompleteRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -126,26 +125,6 @@ export default function AssessmentPlayerPage() {
     }
   }, [showTyping]);
 
-  // Listen for VideoAsk submission postMessage events
-  useEffect(() => {
-    function onMessage(e: MessageEvent) {
-      // Log all iframe messages so we can identify the correct event name
-      if (e.data && typeof e.data === 'object') {
-        console.log('[VideoAsk postMessage]', e.data);
-      }
-      if (
-        e.data?.type === 'videoask:question:submitted' ||
-        e.data?.type === 'videoask:flow:ended' ||
-        e.data?.type === 'videoask_submitted' ||
-        e.data?.type === 'videoask:submitted' ||
-        (typeof e.data?.type === 'string' && e.data.type.includes('videoask') && e.data.type.includes('submit'))
-      ) {
-        handleMarkCompleteRef.current();
-      }
-    }
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, []);
 
   if (!codeData) return null;
 
@@ -187,8 +166,6 @@ export default function AssessmentPlayerPage() {
     finishQuestion(currentQ.id, next);
   };
 
-  // Keep ref in sync so the stable postMessage listener always calls the latest version
-  handleMarkCompleteRef.current = handleMarkComplete;
 
   const handleTypedSubmit = () => {
     if (!typedAnswer.trim()) return;
