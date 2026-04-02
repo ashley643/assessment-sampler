@@ -224,7 +224,7 @@ export default function AssessmentPlayerPage() {
         <div className="flex-1 flex flex-col overflow-y-auto">
 
           {/* Mode toggle strip */}
-          <div className="flex-shrink-0 flex flex-col items-end px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-1">
+          <div className="order-2 md:order-1 flex-shrink-0 flex flex-col items-end px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-1">
             {currentQ.spanishEmbedUrl && (
               <Tooltip text="Assessments can be configured for additional prompt languages depending on the population being served.">
                 <button
@@ -258,7 +258,7 @@ export default function AssessmentPlayerPage() {
           </div>
 
           {/* Mobile question header */}
-          <div className="md:hidden flex-shrink-0 px-4 pt-3 pb-1 bg-gray-50">
+          <div className="order-1 md:order-2 md:hidden flex-shrink-0 px-4 pt-3 pb-1 bg-gray-50">
             <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1.5" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>
               {assessment.typeLabel}
             </span>
