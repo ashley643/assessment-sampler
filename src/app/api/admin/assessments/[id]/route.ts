@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAdminSession } from '@/lib/auth';
+import { auth } from '@/lib/auth-config';
+import { logAudit } from '@/lib/audit';
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -52,6 +54,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
   }
 
+  const session = await auth();
+  await logAudit({
+    actor_email: session?.user?.email ?? 'unknown',
+    action: 'update_assessment',
+    entity_type: 'assessment',
+    entity_id: title ?? id,
+    after: { title, questions: questions?.length },
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -61,5 +72,14 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
   const { error } = await supabaseAdmin.from('assessments').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const session = await auth();
+  await logAudit({
+    actor_email: session?.user?.email ?? 'unknown',
+    action: 'delete_assessment',
+    entity_type: 'assessment',
+    entity_id: id,
+  });
+
   return NextResponse.json({ ok: true });
 }

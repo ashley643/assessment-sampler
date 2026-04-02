@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAdminSession } from '@/lib/auth';
+import { auth } from '@/lib/auth-config';
+import { logAudit } from '@/lib/audit';
 
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,6 +46,15 @@ export async function POST(req: Request) {
       })),
     );
   }
+
+  const session = await auth();
+  await logAudit({
+    actor_email: session?.user?.email ?? 'unknown',
+    action: 'create_assessment',
+    entity_type: 'assessment',
+    entity_id: title,
+    after: { title, type_label, questions: body.questions?.length ?? 0 },
+  });
 
   return NextResponse.json(data, { status: 201 });
 }

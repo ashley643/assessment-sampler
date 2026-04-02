@@ -15,13 +15,24 @@ interface AuditRow {
 }
 
 const ACTION_LABELS: Record<string, string> = {
-  create_code: 'Created code',
-  update_code: 'Updated code',
-  delete_code: 'Deleted code',
+  create_code: 'Created access code',
+  update_code: 'Updated access code',
+  delete_code: 'Deleted access code',
   create_assessment: 'Created assessment',
-  update_assessment: 'Updated assessment',
+  update_assessment: 'Saved assessment',
   delete_assessment: 'Deleted assessment',
 };
+
+function friendlyEntity(row: AuditRow) {
+  const name = row.entity_id ?? row.entity_type;
+  if (!name) return null;
+  // If it looks like a raw UUID or slug ID, prefer the title from after/before
+  const title = (row.after as Record<string, unknown> | null)?.title
+    ?? (row.before as Record<string, unknown> | null)?.title
+    ?? (row.after as Record<string, unknown> | null)?.code
+    ?? (row.before as Record<string, unknown> | null)?.code;
+  return (title as string | undefined) ?? name;
+}
 
 export default function AuditLogPage() {
   const [rows, setRows] = useState<AuditRow[]>([]);
@@ -71,8 +82,7 @@ export default function AuditLogPage() {
                         {ACTION_LABELS[row.action] ?? row.action}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">
-                        {row.entity_type && <span className="font-mono">{row.entity_type}</span>}
-                        {row.entity_id && <span className="ml-1 text-gray-400">#{row.entity_id}</span>}
+                        {friendlyEntity(row) && <span>{friendlyEntity(row)}</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {(row.before || row.after) && (
