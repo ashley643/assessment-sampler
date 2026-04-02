@@ -38,9 +38,9 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
     >
       {children}
       {visible && (
-        <div className="hidden md:block pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs rounded-xl z-20 text-center leading-relaxed shadow-lg">
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-200" />
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 translate-y-[1px] border-4 border-transparent border-b-white" />
+        <div className="hidden md:block pointer-events-none absolute top-full right-0 mt-2 w-60 px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs rounded-xl z-20 text-center leading-relaxed shadow-lg">
+          <div className="absolute bottom-full right-4 border-4 border-transparent border-b-gray-200" />
+          <div className="absolute bottom-full right-4 translate-y-[1px] border-4 border-transparent border-b-white" />
           {text}
         </div>
       )}
