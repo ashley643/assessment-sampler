@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import codesData from '@/data/codes.json';
 import { getProgress, markQuestionComplete } from '@/lib/progress';
+import { track } from '@/lib/track';
 import type { AccessCode, Assessment, Question } from '@/types/assessment';
 
 /* ─── Confetti piece (pure CSS animation) ─────────────────── */
@@ -102,32 +102,47 @@ function QuestionItem({
 
 /* ─── Main page ────────────────────────────────────────────── */
 export default function AssessmentPlayerPage() {
-  const params   = useParams();
-  const router   = useRouter();
+  const params       = useParams();
+  const router       = useRouter();
   const code         = (params.code as string).toUpperCase();
   const assessmentId = params.assessmentId as string;
 
-  const codeData   = codesData.codes.find((c) => c.code === code) as AccessCode | undefined;
-  const assessment = codeData?.assessments.find((a) => a.id === assessmentId) as Assessment | undefined;
+  const [codeData, setCodeData]     = useState<AccessCode | null>(null);
+  const [notFound, setNotFound]     = useState(false);
 
   const [currentIdx, setCurrentIdx]           = useState(0);
   const [mode, setMode]                       = useState<'video' | 'spanish' | 'text'>('video');
-  // Lazy-init from localStorage (returns {} during SSR, real data on client)
   const [completion, setCompletion]           = useState<Record<string, boolean>>(
     () => (typeof window !== 'undefined' ? (getProgress(code)[assessmentId] ?? {}) : {}),
   );
   const [showCelebration, setShowCelebration] = useState(false);
   const celebrationShownRef                   = useRef(false);
 
-  // Redirect-only effect – no setState called here
   useEffect(() => {
-    if (!codeData || !assessment) router.replace('/assessment');
-  }, [codeData, assessment, router]);
+    fetch(`/api/codes/${code}`)
+      .then(async res => {
+        if (!res.ok) { setNotFound(true); return; }
+        const data: AccessCode = await res.json();
+        setCodeData(data);
+        track('assessment_open', code, { assessment_id: assessmentId });
+      })
+      .catch(() => setNotFound(true));
+  }, [code, assessmentId]);
 
-  if (!codeData || !assessment) return null;
+  useEffect(() => {
+    if (notFound) router.replace('/assessment');
+  }, [notFound, router]);
 
-  const questions     = [...assessment.questions].sort((a, b) => a.order - b.order);
-  const currentQ      = questions[currentIdx];
+  if (!codeData) return null;
+
+  const assessment = codeData.assessments.find(a => a.id === assessmentId) as Assessment | undefined;
+  if (!assessment) {
+    router.replace(`/assessment/${code}`);
+    return null;
+  }
+
+  const questions      = [...assessment.questions].sort((a, b) => a.order - b.order);
+  const currentQ       = questions[currentIdx];
   const completedCount = questions.filter((q) => !!completion[q.id]).length;
 
   const handleMarkComplete = () => {
@@ -135,17 +150,24 @@ export default function AssessmentPlayerPage() {
     markQuestionComplete(code, assessmentId, currentQ.id);
     const next = { ...completion, [currentQ.id]: true };
     setCompletion(next);
+    track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
 
-    // Show celebration once all are done
     const nowAllDone = questions.every((q) => !!next[q.id]);
     if (nowAllDone && !celebrationShownRef.current) {
       celebrationShownRef.current = true;
+      track('assessment_complete', code, { assessment_id: assessmentId });
       setTimeout(() => setShowCelebration(true), 400);
     }
   };
 
-  const goPrev = () => { setCurrentIdx((i) => Math.max(0, i - 1)); setMode('video'); };
-  const goNext = () => { setCurrentIdx((i) => Math.min(questions.length - 1, i + 1)); setMode('video'); };
+  const goToQuestion = (idx: number) => {
+    setCurrentIdx(idx);
+    setMode('video');
+    track('question_view', code, { assessment_id: assessmentId, question_id: questions[idx].id });
+  };
+
+  const goPrev = () => goToQuestion(Math.max(0, currentIdx - 1));
+  const goNext = () => goToQuestion(Math.min(questions.length - 1, currentIdx + 1));
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
@@ -209,7 +231,7 @@ export default function AssessmentPlayerPage() {
                 q={q}
                 isActive={idx === currentIdx}
                 isComplete={!!completion[q.id]}
-                onClick={() => { setCurrentIdx(idx); setMode('video'); }}
+                onClick={() => goToQuestion(idx)}
               />
             ))}
           </div>
@@ -223,7 +245,11 @@ export default function AssessmentPlayerPage() {
             <div className="flex-shrink-0 flex items-center justify-end flex-wrap gap-2 px-4 md:px-6 pt-3 pb-1 bg-gray-50">
               {currentQ.spanishEmbedUrl && (
                 <button
-                  onClick={() => setMode(mode === 'spanish' ? 'video' : 'spanish')}
+                  onClick={() => {
+                    const next = mode === 'spanish' ? 'video' : 'spanish';
+                    setMode(next);
+                    track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: next } });
+                  }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                   style={mode === 'spanish'
                     ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' }
@@ -235,7 +261,11 @@ export default function AssessmentPlayerPage() {
               )}
               {currentQ.textEmbedUrl && (
                 <button
-                  onClick={() => setMode(mode === 'text' ? 'video' : 'text')}
+                  onClick={() => {
+                    const next = mode === 'text' ? 'video' : 'text';
+                    setMode(next);
+                    track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: next } });
+                  }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                   style={mode === 'text'
                     ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' }
@@ -297,7 +327,7 @@ export default function AssessmentPlayerPage() {
                 {questions.map((q, idx) => (
                   <button
                     key={q.id}
-                    onClick={() => { setCurrentIdx(idx); setMode('video'); }}
+                    onClick={() => goToQuestion(idx)}
                     title={q.title}
                     className="rounded-full transition-all duration-200 hover:opacity-80"
                     style={{
