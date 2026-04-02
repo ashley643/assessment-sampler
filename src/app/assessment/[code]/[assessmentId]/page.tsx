@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import codesData from '@/data/codes.json';
 import { getProgress, markQuestionComplete } from '@/lib/progress';
+import { track } from '@/lib/track';
 import type { AccessCode, Assessment, Question } from '@/types/assessment';
 
 /* ─── Confetti piece (pure CSS animation) ─────────────────── */
@@ -102,31 +102,47 @@ function QuestionItem({
 
 /* ─── Main page ────────────────────────────────────────────── */
 export default function AssessmentPlayerPage() {
-  const params   = useParams();
-  const router   = useRouter();
+  const params       = useParams();
+  const router       = useRouter();
   const code         = (params.code as string).toUpperCase();
   const assessmentId = params.assessmentId as string;
 
-  const codeData   = codesData.codes.find((c) => c.code === code) as AccessCode | undefined;
-  const assessment = codeData?.assessments.find((a) => a.id === assessmentId) as Assessment | undefined;
+  const [codeData, setCodeData]     = useState<AccessCode | null>(null);
+  const [notFound, setNotFound]     = useState(false);
 
   const [currentIdx, setCurrentIdx]           = useState(0);
-  // Lazy-init from localStorage (returns {} during SSR, real data on client)
+  const [mode, setMode]                       = useState<'video' | 'spanish' | 'text'>('video');
   const [completion, setCompletion]           = useState<Record<string, boolean>>(
     () => (typeof window !== 'undefined' ? (getProgress(code)[assessmentId] ?? {}) : {}),
   );
   const [showCelebration, setShowCelebration] = useState(false);
   const celebrationShownRef                   = useRef(false);
 
-  // Redirect-only effect – no setState called here
   useEffect(() => {
-    if (!codeData || !assessment) router.replace('/assessment');
-  }, [codeData, assessment, router]);
+    fetch(`/api/codes/${code}`)
+      .then(async res => {
+        if (!res.ok) { setNotFound(true); return; }
+        const data: AccessCode = await res.json();
+        setCodeData(data);
+        track('assessment_open', code, { assessment_id: assessmentId });
+      })
+      .catch(() => setNotFound(true));
+  }, [code, assessmentId]);
 
-  if (!codeData || !assessment) return null;
+  useEffect(() => {
+    if (notFound) router.replace('/assessment');
+  }, [notFound, router]);
 
-  const questions     = [...assessment.questions].sort((a, b) => a.order - b.order);
-  const currentQ      = questions[currentIdx];
+  if (!codeData) return null;
+
+  const assessment = codeData.assessments.find(a => a.id === assessmentId) as Assessment | undefined;
+  if (!assessment) {
+    router.replace(`/assessment/${code}`);
+    return null;
+  }
+
+  const questions      = [...assessment.questions].sort((a, b) => a.order - b.order);
+  const currentQ       = questions[currentIdx];
   const completedCount = questions.filter((q) => !!completion[q.id]).length;
 
   const handleMarkComplete = () => {
@@ -134,20 +150,27 @@ export default function AssessmentPlayerPage() {
     markQuestionComplete(code, assessmentId, currentQ.id);
     const next = { ...completion, [currentQ.id]: true };
     setCompletion(next);
+    track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
 
-    // Show celebration once all are done
     const nowAllDone = questions.every((q) => !!next[q.id]);
     if (nowAllDone && !celebrationShownRef.current) {
       celebrationShownRef.current = true;
+      track('assessment_complete', code, { assessment_id: assessmentId });
       setTimeout(() => setShowCelebration(true), 400);
     }
   };
 
-  const goPrev = () => setCurrentIdx((i) => Math.max(0, i - 1));
-  const goNext = () => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1));
+  const goToQuestion = (idx: number) => {
+    setCurrentIdx(idx);
+    setMode('video');
+    track('question_view', code, { assessment_id: assessmentId, question_id: questions[idx].id });
+  };
+
+  const goPrev = () => goToQuestion(Math.max(0, currentIdx - 1));
+  const goNext = () => goToQuestion(Math.min(questions.length - 1, currentIdx + 1));
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-white">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
       {/* ── Top bar ─────────────────────────────────────────── */}
       <div
         className="flex items-center justify-between px-6 py-3 flex-shrink-0"
@@ -160,7 +183,7 @@ export default function AssessmentPlayerPage() {
           ← Back to assessments
         </button>
 
-        <div className="flex items-center gap-2.5">
+        <div className="hidden md:flex items-center gap-2.5">
           <span
             className="text-xs font-semibold px-3 py-1 rounded-full"
             style={{ background: assessment.badgeBg, color: assessment.badgeText }}
@@ -180,7 +203,7 @@ export default function AssessmentPlayerPage() {
       {/* ── Body ────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar ─────────────────────────────────────── */}
-        <aside className="w-60 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <aside className="hidden md:flex w-60 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex-col">
           <div className="px-4 pt-5 pb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
               Questions
@@ -208,33 +231,88 @@ export default function AssessmentPlayerPage() {
                 q={q}
                 isActive={idx === currentIdx}
                 isComplete={!!completion[q.id]}
-                onClick={() => setCurrentIdx(idx)}
+                onClick={() => goToQuestion(idx)}
               />
             ))}
           </div>
         </aside>
 
         {/* ── Main content ────────────────────────────────── */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* iframe — fills all remaining vertical space */}
-          <div className="flex-1 overflow-hidden p-4 bg-gray-50">
+        <div className="flex-1 flex flex-col overflow-y-auto md:overflow-hidden">
+
+          {/* Mode toggle strip — both buttons always visible when available */}
+          {(currentQ.spanishEmbedUrl || currentQ.textEmbedUrl) && (
+            <div className="flex-shrink-0 flex items-center justify-end flex-wrap gap-2 px-4 md:px-6 pt-3 pb-1 bg-gray-50">
+              {currentQ.spanishEmbedUrl && (
+                <button
+                  onClick={() => {
+                    const next = mode === 'spanish' ? 'video' : 'spanish';
+                    setMode(next);
+                    track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: next } });
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={mode === 'spanish'
+                    ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' }
+                    : { background: '#e8735a', color: 'white' }}
+                >
+                  <span>🌐</span>
+                  Try in Spanish
+                </button>
+              )}
+              {currentQ.textEmbedUrl && (
+                <button
+                  onClick={() => {
+                    const next = mode === 'text' ? 'video' : 'text';
+                    setMode(next);
+                    track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: next } });
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={mode === 'text'
+                    ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' }
+                    : { background: '#4a6fa5', color: 'white' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  I prefer to type
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Mobile-only question title (sidebar hidden on mobile) */}
+          <div className="md:hidden flex-shrink-0 px-4 pt-3 pb-1 bg-gray-50">
+            <span
+              className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1.5"
+              style={{ background: assessment.badgeBg, color: assessment.badgeText }}
+            >
+              {assessment.typeLabel}
+            </span>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Question {currentQ.order} of {questions.length}
+            </p>
+            <p className="text-sm font-semibold text-gray-800 mt-0.5">{currentQ.title}</p>
+          </div>
+
+          {/* iframe — portrait aspect-ratio on mobile, fills height on desktop */}
+          <div className="md:flex-1 md:overflow-hidden md:flex md:items-stretch md:justify-center px-4 md:px-16 py-4 md:py-5 bg-gray-50">
             <iframe
-              key={currentQ.id}
-              src={currentQ.embedUrl}
+              key={`${currentQ.id}-${mode}`}
+              src={
+                mode === 'spanish' && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl :
+                mode === 'text'    && currentQ.textEmbedUrl    ? currentQ.textEmbedUrl :
+                currentQ.embedUrl
+              }
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              style={{
-                border: 'none',
-                borderRadius: 20,
-                display: 'block',
-                width: '100%',
-                height: '100%',
-              }}
+              className="w-full aspect-[3/4] md:aspect-auto md:h-full md:max-w-[720px]"
+              style={{ border: 'none', borderRadius: 16, display: 'block' }}
               title={currentQ.title}
             />
           </div>
 
           {/* ── Bottom navigation + Mark Complete ───────────── */}
-          <div className="flex-shrink-0 border-t border-gray-200 px-6 py-3 flex items-center justify-between bg-white gap-4">
+          <div className="flex-shrink-0 border-t border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between bg-white gap-4">
             <button
               onClick={goPrev}
               disabled={currentIdx === 0}
@@ -249,7 +327,7 @@ export default function AssessmentPlayerPage() {
                 {questions.map((q, idx) => (
                   <button
                     key={q.id}
-                    onClick={() => setCurrentIdx(idx)}
+                    onClick={() => goToQuestion(idx)}
                     title={q.title}
                     className="rounded-full transition-all duration-200 hover:opacity-80"
                     style={{

@@ -3,15 +3,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import codesData from '@/data/codes.json';
-
-function validateCode(input: string): { valid: boolean; expired: boolean } {
-  const normalized = input.trim().toUpperCase();
-  const entry = codesData.codes.find((c) => c.code === normalized);
-  if (!entry) return { valid: false, expired: false };
-  const expired = new Date() > new Date(entry.expires);
-  return { valid: true, expired };
-}
 
 const STATS = [
   { value: '5',    label: 'SEL Competencies' },
@@ -31,23 +22,24 @@ export default function AssessmentEntryPage() {
     setTimeout(() => setShaking(false), 700);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = validateCode(code);
-
-    if (!result.valid) {
-      setError('Invalid access code. Please check and try again.');
-      triggerShake();
-      return;
-    }
-    if (result.expired) {
-      setError('This access code has expired. Contact your representative for a new one.');
-      triggerShake();
-      return;
-    }
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) return;
 
     setLoading(true);
-    router.push(`/assessment/${code.trim().toUpperCase()}`);
+    setError('');
+
+    const res = await fetch(`/api/codes/${normalized}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Invalid access code. Please check and try again.');
+      triggerShake();
+      setLoading(false);
+      return;
+    }
+
+    router.push(`/assessment/${normalized}`);
   };
 
   return (

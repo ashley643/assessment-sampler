@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import codesData from '@/data/codes.json';
 import { getProgress } from '@/lib/progress';
+import { track } from '@/lib/track';
 import type { AccessCode, Assessment } from '@/types/assessment';
 
 export default function AssessmentSelectorPage() {
@@ -12,17 +12,29 @@ export default function AssessmentSelectorPage() {
   const router = useRouter();
   const code = (params.code as string).toUpperCase();
 
-  const codeData = codesData.codes.find((c) => c.code === code) as AccessCode | undefined;
+  const [codeData, setCodeData] = useState<AccessCode | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   // Lazy-init from localStorage (returns {} during SSR, real data on client)
   const [completion] = useState<Record<string, Record<string, boolean>>>(
     () => (typeof window !== 'undefined' ? getProgress(code) : {}),
   );
 
-  // Redirect-only effect – no setState called here
   useEffect(() => {
-    if (!codeData) router.replace('/assessment');
-  }, [codeData, router]);
+    fetch(`/api/codes/${code}`)
+      .then(async res => {
+        if (!res.ok) { setNotFound(true); return; }
+        const data: AccessCode = await res.json();
+        setCodeData(data);
+        // Track session start
+        track('session_start', code);
+      })
+      .catch(() => setNotFound(true));
+  }, [code]);
+
+  useEffect(() => {
+    if (notFound) router.replace('/assessment');
+  }, [notFound, router]);
 
   if (!codeData) return null;
 
