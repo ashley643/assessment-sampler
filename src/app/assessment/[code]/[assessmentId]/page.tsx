@@ -223,47 +223,49 @@ export default function AssessmentPlayerPage() {
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-y-auto">
 
-          {/* Mode toggle strip */}
-          <div className="order-2 md:order-1 flex-shrink-0 flex flex-col items-end px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-1">
-            {currentQ.spanishEmbedUrl && (
-              <Tooltip text="Assessments can be configured for additional prompt languages depending on the population being served.">
+          {/* Header + mode toggle strip */}
+          <div className="flex-shrink-0 flex items-start justify-between px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-3">
+            {/* Mobile-only question info (left side) */}
+            <div className="md:hidden flex-1 min-w-0">
+              <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>
+                {assessment.typeLabel}
+              </span>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Question {currentQ.order} of {questions.length}</p>
+              <p className="text-sm font-semibold text-gray-800 mt-0.5 leading-snug">{currentQ.title}</p>
+            </div>
+
+            {/* Buttons (right side on mobile, full width column on desktop) */}
+            <div className="flex flex-col items-end gap-1 flex-shrink-0 md:flex-1">
+              {currentQ.spanishEmbedUrl && (
+                <Tooltip text="Assessments can be configured for additional prompt languages depending on the population being served.">
+                  <button
+                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                    style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
+                  >
+                    <span>🌐</span> Try in Spanish
+                  </button>
+                </Tooltip>
+              )}
+              <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
                 <button
-                  onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
+                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                  style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
+                  style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
                 >
-                  <span>🌐</span> Try in Spanish
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  I prefer to type
                 </button>
               </Tooltip>
-            )}
-            <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
-              <button
-                onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
-              >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                  <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
-                  <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                </svg>
-                I prefer to type
-              </button>
-            </Tooltip>
-          {/* Mobile-only Spanish context note */}
-          {spanishMode && (
-            <p className="md:hidden text-xs text-gray-400 text-right leading-relaxed px-1">
-              Other prompt languages can be configured for your population.
-            </p>
-          )}
-          </div>
-
-          {/* Mobile question header */}
-          <div className="order-1 md:order-2 md:hidden flex-shrink-0 px-4 pt-3 pb-1 bg-gray-50">
-            <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1.5" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>
-              {assessment.typeLabel}
-            </span>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Question {currentQ.order} of {questions.length}</p>
-            <p className="text-sm font-semibold text-gray-800 mt-0.5">{currentQ.title}</p>
+              {spanishMode && (
+                <p className="md:hidden text-xs text-gray-400 text-right leading-relaxed px-1">
+                  Other prompt languages can be configured for your population.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
