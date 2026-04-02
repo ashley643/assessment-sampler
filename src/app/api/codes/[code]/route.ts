@@ -12,7 +12,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
       code_assessments (
         sort_order,
         assessments (
-          id, title, type, type_label, accent_color, badge_bg, badge_text, description,
+          id, title, type, type_label, accent_color, badge_bg, badge_text, description, sort_order,
           questions ( id, sort_order, title, embed_url, spanish_embed_url )
         )
       )
@@ -48,6 +48,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
       badge_bg: string;
       badge_text: string;
       description: string;
+      sort_order: number;
       questions: {
         id: string;
         sort_order: number;
@@ -56,7 +57,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         spanish_embed_url: string | null;
       }[];
     };
-  }[]).sort((a, b) => a.sort_order - b.sort_order);
+  }[]).sort((a, b) => a.assessments.sort_order - b.assessments.sort_order);
 
   const normalized: AccessCode = {
     code: data.code,
