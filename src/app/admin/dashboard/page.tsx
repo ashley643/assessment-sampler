@@ -1,6 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
+const EVENT_LABELS: Record<string, string> = {
+  assessment_open: 'Opened assessment',
+  question_view: 'Viewed question',
+  question_complete: 'Completed question',
+  assessment_complete: 'Completed assessment',
+  mode_change: 'Switched response mode',
+  text_response: 'Submitted typed response',
+};
 import AdminShell from '@/components/admin/AdminShell';
 
 interface AnalyticsData {
@@ -191,7 +200,7 @@ function Table({ rows, colA, colB }: { rows: [string, number][]; colA: string; c
       <tbody className="divide-y divide-gray-50">
         {rows.map(([key, val]) => (
           <tr key={key} className="hover:bg-gray-50">
-            <td className="px-4 py-2.5 text-gray-800 font-mono text-xs">{key}</td>
+            <td className="px-4 py-2.5 text-gray-800 text-xs">{EVENT_LABELS[key] ?? key}</td>
             <td className="px-4 py-2.5 text-right text-gray-700 tabular-nums">{val}</td>
           </tr>
         ))}
