@@ -38,9 +38,10 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
     >
       {children}
       {visible && (
-        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg z-20 text-center leading-relaxed shadow-lg">
+        <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs rounded-xl z-20 text-center leading-relaxed shadow-lg">
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-200" />
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 translate-y-[1px] border-4 border-transparent border-b-white" />
           {text}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
         </div>
       )}
     </div>
@@ -248,12 +249,12 @@ export default function AssessmentPlayerPage() {
           </div>
 
           {/* iframe */}
-          <div className={`md:overflow-hidden md:flex md:items-stretch md:justify-center px-4 md:px-16 py-4 md:py-5 bg-gray-50 transition-all ${showTyping ? 'md:h-52 flex-shrink-0' : 'md:flex-1'}`}>
+          <div className="md:flex-1 md:overflow-hidden md:flex md:items-stretch md:justify-center px-4 md:px-16 py-4 md:py-4 bg-gray-50">
             <iframe
               key={`${currentQ.id}-${spanishMode}`}
               src={embedSrc}
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              className={`w-full ${showTyping ? 'h-44 md:h-full md:max-w-[720px]' : 'aspect-[3/4] md:aspect-auto md:h-full md:max-w-[720px]'}`}
+              className="w-full aspect-[3/4] md:aspect-auto md:h-full md:max-w-[720px]"
               style={{ border: 'none', borderRadius: 16, display: 'block' }}
               title={currentQ.title}
             />
@@ -261,8 +262,8 @@ export default function AssessmentPlayerPage() {
 
           {/* Text input panel */}
           {showTyping && (
-            <div className="flex-1 md:overflow-hidden flex flex-col px-4 md:px-16 pb-2 bg-gray-50">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col flex-1 overflow-hidden">
+            <div className="flex-shrink-0 flex justify-center px-4 md:px-16 pb-3 bg-gray-50">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col w-full md:max-w-[720px] overflow-hidden">
                 <div className="px-5 py-3 border-b border-gray-100">
                   <p className="text-sm font-semibold text-gray-800">{currentQ.title}</p>
                   <p className="text-xs text-gray-400 mt-0.5">Type your response below</p>
@@ -284,7 +285,8 @@ export default function AssessmentPlayerPage() {
                         value={typedAnswer}
                         onChange={e => setTypedAnswer(e.target.value)}
                         placeholder="Type your response here…"
-                        className="flex-1 w-full resize-none px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 min-h-[80px]"
+                        rows={5}
+                        className="w-full resize-none px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
                       />
                       <button
                         onClick={handleTypedSubmit}
