@@ -102,6 +102,7 @@ export default function AssessmentPlayerPage() {
   const [showCelebration, setShowCelebration] = useState(false);
   const celebrationShownRef = useRef(false);
   const typingPanelRef = useRef<HTMLDivElement>(null);
+  const handleMarkCompleteRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -124,6 +125,20 @@ export default function AssessmentPlayerPage() {
       }, 50); // slight delay so the panel has rendered
     }
   }, [showTyping]);
+
+  // Listen for VideoAsk submission postMessage events
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (
+        e.data?.type === 'videoask:question:submitted' ||
+        e.data?.type === 'videoask:flow:ended'
+      ) {
+        handleMarkCompleteRef.current();
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   if (!codeData) return null;
 
@@ -164,6 +179,9 @@ export default function AssessmentPlayerPage() {
     track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
     finishQuestion(currentQ.id, next);
   };
+
+  // Keep ref in sync so the stable postMessage listener always calls the latest version
+  handleMarkCompleteRef.current = handleMarkComplete;
 
   const handleTypedSubmit = () => {
     if (!typedAnswer.trim()) return;
