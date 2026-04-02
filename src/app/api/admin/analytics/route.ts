@@ -27,6 +27,14 @@ export async function GET(req: Request) {
   if (code) eventsQuery = eventsQuery.eq('code', code);
   const { data: events } = await eventsQuery;
 
+  // Look up assessment titles
+  const assessmentIds = [...new Set((events ?? []).map(e => e.assessment_id).filter(Boolean))];
+  const { data: assessments } = assessmentIds.length
+    ? await supabaseAdmin.from('assessments').select('id, title').in('id', assessmentIds)
+    : { data: [] };
+  const assessmentTitles: Record<string, string> = {};
+  for (const a of assessments ?? []) assessmentTitles[a.id] = a.title;
+
   // Aggregate by event type
   const byType: Record<string, number> = {};
   const byAssessment: Record<string, number> = {};
@@ -35,7 +43,8 @@ export async function GET(req: Request) {
   for (const ev of events ?? []) {
     byType[ev.event_type] = (byType[ev.event_type] ?? 0) + 1;
     if (ev.assessment_id) {
-      byAssessment[ev.assessment_id] = (byAssessment[ev.assessment_id] ?? 0) + 1;
+      const label = assessmentTitles[ev.assessment_id] ?? ev.assessment_id;
+      byAssessment[label] = (byAssessment[label] ?? 0) + 1;
     }
     byCode[ev.code] = (byCode[ev.code] ?? 0) + 1;
   }
