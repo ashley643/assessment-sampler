@@ -27,5 +27,24 @@ export async function POST(req: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Insert questions if provided
+  if (body.questions?.length) {
+    await supabaseAdmin.from('questions').insert(
+      body.questions.map((q: {
+        id: string; title: string; sort_order: number;
+        embed_url: string; spanish_embed_url?: string; text_embed_url?: string;
+      }) => ({
+        id: q.id,
+        assessment_id: id,
+        sort_order: q.sort_order,
+        title: q.title,
+        embed_url: q.embed_url,
+        spanish_embed_url: q.spanish_embed_url || null,
+        text_embed_url: q.text_embed_url || null,
+      })),
+    );
+  }
+
   return NextResponse.json(data, { status: 201 });
 }
