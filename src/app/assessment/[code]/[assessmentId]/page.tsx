@@ -129,9 +129,16 @@ export default function AssessmentPlayerPage() {
   // Listen for VideoAsk submission postMessage events
   useEffect(() => {
     function onMessage(e: MessageEvent) {
+      // Log all iframe messages so we can identify the correct event name
+      if (e.data && typeof e.data === 'object') {
+        console.log('[VideoAsk postMessage]', e.data);
+      }
       if (
         e.data?.type === 'videoask:question:submitted' ||
-        e.data?.type === 'videoask:flow:ended'
+        e.data?.type === 'videoask:flow:ended' ||
+        e.data?.type === 'videoask_submitted' ||
+        e.data?.type === 'videoask:submitted' ||
+        (typeof e.data?.type === 'string' && e.data.type.includes('videoask') && e.data.type.includes('submit'))
       ) {
         handleMarkCompleteRef.current();
       }
