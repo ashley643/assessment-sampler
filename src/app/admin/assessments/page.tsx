@@ -44,7 +44,7 @@ export default function AssessmentsPage() {
         id: newId,
         title: `${full.title} (Copy)`,
         sort_order: full.sort_order + 1,
-        questions: full.questions.map((q: { id: string; title: string; sort_order: number; embed_url: string; spanish_embed_url: string | null; text_embed_url: string | null }) => ({
+        questions: full.questions.map((q: { id: string; title: string; sort_order: number; embed_url: string; spanish_embed_url: string | null }) => ({
           ...q,
           id: `${q.id}-copy-${Date.now()}`,
         })),
