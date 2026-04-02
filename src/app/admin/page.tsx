@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
@@ -14,12 +13,13 @@ export default function AdminLoginPage() {
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     setError('');
-    const res = await signIn('google', { callbackUrl: '/admin/dashboard', redirect: false });
-    if (res?.error) {
-      setError('Google sign-in failed. Make sure you use an @impacterpathway.com account.');
+    // Dynamically import to avoid errors when NextAuth isn't configured
+    try {
+      const { signIn } = await import('next-auth/react');
+      await signIn('google', { callbackUrl: '/admin/dashboard' });
+    } catch {
+      setError('Google sign-in is not configured yet.');
       setGoogleLoading(false);
-    } else if (res?.url) {
-      router.push(res.url);
     }
   }
 
@@ -27,16 +27,18 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = await signIn('credentials', {
-      password,
-      callbackUrl: '/admin/dashboard',
-      redirect: false,
+    // Use the original cookie-based login — works without NextAuth env vars
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: password }),
     });
-    if (res?.error) {
-      setError('Incorrect password.');
+    if (res.ok) {
+      router.push('/admin/dashboard');
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Incorrect password.');
       setLoading(false);
-    } else if (res?.url) {
-      router.push(res.url);
     }
   }
 
@@ -69,7 +71,6 @@ export default function AdminLoginPage() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
-        {/* Password fallback */}
         <form onSubmit={handlePasswordSubmit} className="space-y-3">
           <input
             type="password"
@@ -77,6 +78,7 @@ export default function AdminLoginPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
           />
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button

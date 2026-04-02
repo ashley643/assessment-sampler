@@ -29,13 +29,20 @@ function ConfettiPiece({ index: i }: { index: number }) {
 
 /* ─── Tooltip wrapper ──────────────────────────────────────── */
 function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [visible, setVisible] = useState(false);
   return (
-    <div className="relative group/tip inline-flex">
+    <div
+      className="relative inline-flex"
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+    >
       {children}
-      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-20 text-center leading-relaxed shadow-lg">
-        {text}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-      </div>
+      {visible && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg z-20 text-center leading-relaxed shadow-lg">
+          {text}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+        </div>
+      )}
     </div>
   );
 }
