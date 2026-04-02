@@ -209,7 +209,7 @@ export default function AssessmentPlayerPage() {
         </aside>
 
         {/* ── Main content ────────────────────────────────── */}
-        <div className="flex-1 flex flex-col overflow-y-auto md:overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-y-auto">
 
           {/* Mode toggle strip */}
           <div className="flex-shrink-0 flex items-center justify-end flex-wrap gap-2 px-4 md:px-6 pt-3 pb-1 bg-gray-50">
@@ -248,13 +248,13 @@ export default function AssessmentPlayerPage() {
             <p className="text-sm font-semibold text-gray-800 mt-0.5">{currentQ.title}</p>
           </div>
 
-          {/* iframe */}
-          <div className="md:flex-1 md:overflow-hidden md:flex md:items-stretch md:justify-center px-4 md:px-16 py-4 md:py-4 bg-gray-50">
+          {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
+          <div className={`flex justify-center px-4 md:px-16 py-4 bg-gray-50 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}>
             <iframe
               key={`${currentQ.id}-${spanishMode}`}
               src={embedSrc}
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              className="w-full aspect-[3/4] md:aspect-auto md:h-full md:max-w-[720px]"
+              className={`w-full md:max-w-[720px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
               style={{ border: 'none', borderRadius: 16, display: 'block' }}
               title={currentQ.title}
             />
@@ -263,14 +263,14 @@ export default function AssessmentPlayerPage() {
           {/* Text input panel */}
           {showTyping && (
             <div className="flex-shrink-0 flex justify-center px-4 md:px-16 pb-3 bg-gray-50">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col w-full md:max-w-[720px] overflow-hidden">
+              <div className="w-full md:max-w-[720px] bg-white rounded-2xl border border-gray-200 shadow-sm">
                 <div className="px-5 py-3 border-b border-gray-100">
                   <p className="text-sm font-semibold text-gray-800">{currentQ.title}</p>
                   <p className="text-xs text-gray-400 mt-0.5">Type your response below</p>
                 </div>
-                <div className="flex-1 flex flex-col p-4 gap-3 min-h-0">
+                <div className="p-4 space-y-3">
                   {typedSubmitted ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+                    <div className="py-6 flex flex-col items-center gap-3 text-center">
                       <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: '#E1F5EE' }}>
                         <svg width="22" height="18" viewBox="0 0 22 18" fill="none" aria-hidden="true">
                           <path d="M1 9L7.5 15.5L21 2" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -285,13 +285,14 @@ export default function AssessmentPlayerPage() {
                         value={typedAnswer}
                         onChange={e => setTypedAnswer(e.target.value)}
                         placeholder="Type your response here…"
-                        rows={5}
-                        className="w-full resize-none px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        rows={6}
+                        style={{ height: 'auto' }}
+                        className="w-full resize-none px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 block"
                       />
                       <button
                         onClick={handleTypedSubmit}
                         disabled={!typedAnswer.trim()}
-                        className="flex-shrink-0 w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
                         style={{ background: '#4a6fa5' }}
                       >
                         Submit Response
