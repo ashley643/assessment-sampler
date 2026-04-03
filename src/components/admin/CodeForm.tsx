@@ -9,6 +9,15 @@ interface Assessment {
   type_label: string;
 }
 
+interface Bundle {
+  id: string;
+  title: string;
+  description: string | null;
+  accent_color: string;
+  badge_bg: string;
+  badge_text: string;
+}
+
 interface CodeFormProps {
   codeId?: string; // undefined = new
 }
@@ -23,7 +32,9 @@ export default function CodeForm({ codeId }: CodeFormProps) {
   const [expiresAt, setExpiresAt] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedBundleIds, setSelectedBundleIds] = useState<string[]>([]);
   const [allAssessments, setAllAssessments] = useState<Assessment[]>([]);
+  const [allBundles, setAllBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -32,6 +43,9 @@ export default function CodeForm({ codeId }: CodeFormProps) {
     fetch('/api/admin/assessments')
       .then(r => r.json())
       .then((data: Assessment[]) => setAllAssessments(data));
+    fetch('/api/admin/bundles')
+      .then(r => r.json())
+      .then((data: Bundle[]) => setAllBundles(data));
   }, []);
 
   useEffect(() => {
@@ -47,13 +61,28 @@ export default function CodeForm({ codeId }: CodeFormProps) {
         const sorted = (data.code_assessments ?? []).sort(
           (a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order
         );
-        setSelectedIds(sorted.map((ca: { assessment_id: string }) => ca.assessment_id));
+        setSelectedIds(
+          sorted
+            .filter((ca: { assessment_id: string | null }) => ca.assessment_id)
+            .map((ca: { assessment_id: string }) => ca.assessment_id)
+        );
+        setSelectedBundleIds(
+          sorted
+            .filter((ca: { bundle_id: string | null }) => ca.bundle_id)
+            .map((ca: { bundle_id: string }) => ca.bundle_id)
+        );
         setLoading(false);
       });
   }, [codeId]);
 
   function toggleAssessment(id: string) {
     setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
+    );
+  }
+
+  function toggleBundle(id: string) {
+    setSelectedBundleIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
     );
   }
@@ -70,6 +99,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
       expires_at: expiresAt || null,
       is_active: isActive,
       assessment_ids: selectedIds,
+      bundle_ids: selectedBundleIds,
     };
 
     const res = isNew
@@ -142,7 +172,31 @@ export default function CodeForm({ codeId }: CodeFormProps) {
         </label>
       </Field>
 
-      <Field label="Assessments">
+      {allBundles.length > 0 && (
+        <Field label="Bundles">
+          <div className="space-y-2">
+            {allBundles.map(b => (
+              <label key={b.id} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedBundleIds.includes(b.id)}
+                  onChange={() => toggleBundle(b.id)}
+                  className="rounded border-gray-300"
+                />
+                <span
+                  className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style={{ background: b.badge_bg, color: b.badge_text }}
+                >
+                  {b.title}
+                </span>
+                {b.description && <span className="text-xs text-gray-400">{b.description}</span>}
+              </label>
+            ))}
+          </div>
+        </Field>
+      )}
+
+      <Field label="Individual Assessments">
         <div className="space-y-2">
           {allAssessments.map(a => (
             <label key={a.id} className="flex items-center gap-2 cursor-pointer">
@@ -157,9 +211,6 @@ export default function CodeForm({ codeId }: CodeFormProps) {
             </label>
           ))}
         </div>
-        {selectedIds.length > 0 && (
-          <p className="text-xs text-gray-400 mt-2">Order reflects selection order above.</p>
-        )}
       </Field>
 
       {error && <p className="text-sm text-red-500">{error}</p>}

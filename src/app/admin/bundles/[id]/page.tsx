@@ -1,0 +1,238 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import AdminShell from '@/components/admin/AdminShell';
+
+interface Assessment {
+  id: string;
+  title: string;
+  type_label: string;
+  accent_color: string;
+}
+
+interface BundleForm {
+  id: string;
+  title: string;
+  description: string;
+  accent_color: string;
+  badge_bg: string;
+  badge_text: string;
+  sort_order: number;
+}
+
+const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+export default function EditBundlePage() {
+  const params = useParams();
+  const id = params.id as string;
+  const isNew = id === 'new';
+  const router = useRouter();
+
+  const [form, setForm] = useState<BundleForm>({
+    id: '',
+    title: '',
+    description: '',
+    accent_color: '#4a6fa5',
+    badge_bg: '#E6F1FB',
+    badge_text: '#0C447C',
+    sort_order: 0,
+  });
+  const [allAssessments, setAllAssessments] = useState<Assessment[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Load all available individual assessments
+    fetch('/api/admin/assessments')
+      .then(r => r.json())
+      .then(data => setAllAssessments(data.sort((a: Assessment & { sort_order: number }, b: Assessment & { sort_order: number }) => a.sort_order - b.sort_order)));
+
+    if (!isNew) {
+      fetch(`/api/admin/bundles/${id}`)
+        .then(r => r.json())
+        .then(data => {
+          setForm({
+            id: data.id,
+            title: data.title,
+            description: data.description ?? '',
+            accent_color: data.accent_color,
+            badge_bg: data.badge_bg,
+            badge_text: data.badge_text,
+            sort_order: data.sort_order,
+          });
+          const sorted = [...(data.bundle_assessments ?? [])].sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order);
+          setSelectedIds(sorted.map((ba: { assessment_id: string }) => ba.assessment_id));
+        });
+    }
+  }, [id, isNew]);
+
+  function set(field: keyof BundleForm, value: string | number) {
+    setForm(f => ({ ...f, [field]: value }));
+  }
+
+  function toggleAssessment(aid: string) {
+    setSelectedIds(ids =>
+      ids.includes(aid) ? ids.filter(i => i !== aid) : [...ids, aid],
+    );
+  }
+
+  function moveUp(aid: string) {
+    setSelectedIds(ids => {
+      const idx = ids.indexOf(aid);
+      if (idx <= 0) return ids;
+      const next = [...ids];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return next;
+    });
+  }
+
+  function moveDown(aid: string) {
+    setSelectedIds(ids => {
+      const idx = ids.indexOf(aid);
+      if (idx >= ids.length - 1) return ids;
+      const next = [...ids];
+      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+      return next;
+    });
+  }
+
+  async function handleSave() {
+    if (!form.title.trim()) { setError('Title is required'); return; }
+    if (!isNew && !form.id.trim()) { setError('ID is required'); return; }
+    setSaving(true);
+    setError('');
+
+    const payload = {
+      ...form,
+      id: isNew ? `bundle-${Date.now()}` : form.id,
+      assessment_ids: selectedIds,
+    };
+
+    const res = await fetch(
+      isNew ? '/api/admin/bundles' : `/api/admin/bundles/${form.id}`,
+      {
+        method: isNew ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error ?? 'Failed to save');
+      setSaving(false);
+      return;
+    }
+
+    router.push('/admin/bundles');
+  }
+
+  const selectedAssessments = selectedIds
+    .map(id => allAssessments.find(a => a.id === id))
+    .filter(Boolean) as Assessment[];
+
+  const unselected = allAssessments.filter(a => !selectedIds.includes(a.id));
+
+  return (
+    <AdminShell>
+      <div className="max-w-2xl">
+        <div className="flex items-center gap-4 mb-6">
+          <button onClick={() => router.push('/admin/bundles')} className="text-sm text-gray-400 hover:text-gray-600">← Bundles</button>
+          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Bundle' : 'Edit Bundle'}</h1>
+        </div>
+
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+
+        <div className="space-y-6">
+          {/* Basic info */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-gray-700">Details</h2>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Bundle Name</label>
+              <input className={INPUT} value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Behavioral Health Screener" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+              <input className={INPUT} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Short description shown to users" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Sort Order</label>
+              <input className={INPUT} type="number" value={form.sort_order} onChange={e => set('sort_order', parseInt(e.target.value) || 0)} />
+            </div>
+          </div>
+
+          {/* Colors */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-gray-700">Colors</h2>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'Accent Color', field: 'accent_color' as const },
+                { label: 'Badge Background', field: 'badge_bg' as const },
+                { label: 'Badge Text Color', field: 'badge_text' as const },
+              ].map(({ label, field }) => (
+                <div key={field}>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={form[field]} onChange={e => set(field, e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-200" />
+                    <input className={INPUT} value={form[field]} onChange={e => set(field, e.target.value)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400">
+              Preview: <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: form.badge_bg, color: form.badge_text }}>{form.title || 'Bundle'}</span>
+            </p>
+          </div>
+
+          {/* Assessment membership */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-gray-700">Assessments in this Bundle</h2>
+            <p className="text-xs text-gray-400">These will appear as cards on the selector screen. Order matters.</p>
+
+            {selectedAssessments.length > 0 && (
+              <div className="space-y-2">
+                {selectedAssessments.map((a, idx) => (
+                  <div key={a.id} className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: a.accent_color }} />
+                    <span className="flex-1 text-sm font-medium text-gray-800">{a.title}</span>
+                    <span className="text-xs text-gray-400">{a.type_label}</span>
+                    <button onClick={() => moveUp(a.id)} disabled={idx === 0} className="text-gray-300 hover:text-gray-600 disabled:opacity-20 text-xs px-1">↑</button>
+                    <button onClick={() => moveDown(a.id)} disabled={idx === selectedAssessments.length - 1} className="text-gray-300 hover:text-gray-600 disabled:opacity-20 text-xs px-1">↓</button>
+                    <button onClick={() => toggleAssessment(a.id)} className="text-red-400 hover:text-red-600 text-xs ml-1">Remove</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {unselected.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs text-gray-400 font-medium mt-2">Add assessments:</p>
+                {unselected.map(a => (
+                  <button
+                    key={a.id}
+                    onClick={() => toggleAssessment(a.id)}
+                    className="w-full flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                  >
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: a.accent_color }} />
+                    <span className="flex-1 text-sm text-gray-600">{a.title}</span>
+                    <span className="text-xs text-gray-400">{a.type_label}</span>
+                    <span className="text-xs text-blue-500 font-medium">+ Add</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={() => router.push('/admin/bundles')} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-[#4a6fa5] text-white text-sm font-medium hover:bg-[#3d5d8f] disabled:opacity-50">
+              {saving ? 'Saving…' : 'Save Bundle'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </AdminShell>
+  );
+}

@@ -9,8 +9,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const { id } = await params;
 
   const { data, error } = await supabaseAdmin
-    .from('access_codes')
-    .select(`*, code_assessments ( sort_order, assessment_id, bundle_id, assessments ( * ), bundles ( * ) )`)
+    .from('bundles')
+    .select(`*, bundle_assessments ( sort_order, assessment_id, assessments ( id, title, type_label, accent_color ) )`)
     .eq('id', id)
     .single();
 
@@ -22,41 +22,35 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
-  const { label, starts_at, expires_at, is_active, assessment_ids, bundle_ids } = body;
-
-  // Snapshot before
-  const { data: before } = await supabaseAdmin.from('access_codes').select('*').eq('id', id).single();
+  const { title, description, accent_color, badge_bg, badge_text, sort_order, assessment_ids } = body;
 
   const { error } = await supabaseAdmin
-    .from('access_codes')
-    .update({ label, starts_at, expires_at, is_active })
+    .from('bundles')
+    .update({ title, description, accent_color, badge_bg, badge_text, sort_order })
     .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  if (assessment_ids !== undefined || bundle_ids !== undefined) {
-    await supabaseAdmin.from('code_assessments').delete().eq('code_id', id);
-    const rows: { code_id: string; assessment_id?: string; bundle_id?: string; sort_order: number }[] = [];
-    let i = 0;
-    for (const aid of (assessment_ids ?? [])) {
-      rows.push({ code_id: id, assessment_id: aid, sort_order: i++ });
-    }
-    for (const bid of (bundle_ids ?? [])) {
-      rows.push({ code_id: id, bundle_id: bid, sort_order: i++ });
-    }
-    if (rows.length) {
-      await supabaseAdmin.from('code_assessments').insert(rows);
+  if (assessment_ids !== undefined) {
+    await supabaseAdmin.from('bundle_assessments').delete().eq('bundle_id', id);
+    if (assessment_ids.length) {
+      await supabaseAdmin.from('bundle_assessments').insert(
+        assessment_ids.map((aid: string, i: number) => ({
+          bundle_id: id,
+          assessment_id: aid,
+          sort_order: i,
+        })),
+      );
     }
   }
 
   const session = await auth();
   await logAudit({
     actor_email: session?.user?.email ?? 'unknown',
-    action: 'update_code',
-    entity_type: 'access_code',
-    entity_id: id,
-    before: before ?? undefined,
-    after: { label, starts_at, expires_at, is_active, assessment_ids, bundle_ids },
+    action: 'update_bundle',
+    entity_type: 'bundle',
+    entity_id: title ?? id,
+    after: { title, assessment_ids },
   });
 
   return NextResponse.json({ ok: true });
@@ -66,17 +60,15 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
 
-  const { data: before } = await supabaseAdmin.from('access_codes').select('*').eq('id', id).single();
-  const { error } = await supabaseAdmin.from('access_codes').delete().eq('id', id);
+  const { error } = await supabaseAdmin.from('bundles').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const session = await auth();
   await logAudit({
     actor_email: session?.user?.email ?? 'unknown',
-    action: 'delete_code',
-    entity_type: 'access_code',
+    action: 'delete_bundle',
+    entity_type: 'bundle',
     entity_id: id,
-    before: before ?? undefined,
   });
 
   return NextResponse.json({ ok: true });

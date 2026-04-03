@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { code, label, starts_at, expires_at, assessment_ids, is_active } = body;
+  const { code, label, starts_at, expires_at, assessment_ids, bundle_ids, is_active } = body;
 
   const { data: newCode, error } = await supabaseAdmin
     .from('access_codes')
@@ -37,14 +37,20 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  const rows: { code_id: string; assessment_id?: string; bundle_id?: string; sort_order: number }[] = [];
+  let i = 0;
   if (assessment_ids?.length) {
-    await supabaseAdmin.from('code_assessments').insert(
-      assessment_ids.map((id: string, i: number) => ({
-        code_id: newCode.id,
-        assessment_id: id,
-        sort_order: i,
-      })),
-    );
+    for (const aid of assessment_ids) {
+      rows.push({ code_id: newCode.id, assessment_id: aid, sort_order: i++ });
+    }
+  }
+  if (bundle_ids?.length) {
+    for (const bid of bundle_ids) {
+      rows.push({ code_id: newCode.id, bundle_id: bid, sort_order: i++ });
+    }
+  }
+  if (rows.length) {
+    await supabaseAdmin.from('code_assessments').insert(rows);
   }
 
   const session = await auth();
@@ -53,7 +59,7 @@ export async function POST(req: Request) {
     action: 'create_code',
     entity_type: 'access_code',
     entity_id: newCode.id,
-    after: { code: newCode.code, label, assessment_ids },
+    after: { code: newCode.code, label, assessment_ids, bundle_ids },
   });
 
   return NextResponse.json(newCode, { status: 201 });
