@@ -356,24 +356,6 @@ export default function AssessmentPlayerPage() {
                   </button>
                 </Tooltip>
               )}
-              <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
-                <button
-                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                  style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
-                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                  </svg>
-                  I prefer to type
-                </button>
-              </Tooltip>
-              {spanishMode && (
-                <p className="md:hidden text-xs text-gray-400 text-right leading-relaxed px-1">
-                  Other prompt languages can be configured for your population.
-                </p>
-              )}
               {/* Mobile benchmark switcher */}
               {assessment.type === 'benchmark_group' && assessment.childAssessments && (
                 <div className="md:hidden flex gap-1.5 mt-1">
@@ -391,6 +373,24 @@ export default function AssessmentPlayerPage() {
                     </button>
                   ))}
                 </div>
+              )}
+              <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
+                <button
+                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  I prefer to type
+                </button>
+              </Tooltip>
+              {spanishMode && (
+                <p className="md:hidden text-xs text-gray-400 text-right leading-relaxed px-1">
+                  Other prompt languages can be configured for your population.
+                </p>
               )}
             </div>
           </div>
