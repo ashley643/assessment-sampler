@@ -23,53 +23,23 @@ CREATE TABLE IF NOT EXISTS bundle_assessments (
   sort_order int default 0
 );
 
--- 3. Restructure code_assessments to support both assessments and bundles
-DO $$
-DECLARE
-  pk_name text;
-BEGIN
-  -- 3a. Add bundle_id column if missing
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'code_assessments' AND column_name = 'bundle_id'
-  ) THEN
-    ALTER TABLE code_assessments
-      ADD COLUMN bundle_id text references bundles(id) on delete cascade;
-  END IF;
+-- 3. Recreate code_assessments with nullable assessment_id + bundle_id support
+--    (safer than ALTER on a composite PK table)
+CREATE TABLE IF NOT EXISTS code_assessments_new (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  code_id uuid REFERENCES access_codes(id) ON DELETE CASCADE,
+  assessment_id text REFERENCES assessments(id) ON DELETE CASCADE,
+  bundle_id text REFERENCES bundles(id) ON DELETE CASCADE,
+  sort_order int DEFAULT 0
+);
 
-  -- 3b. Add surrogate id column if missing
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'code_assessments' AND column_name = 'id'
-  ) THEN
-    ALTER TABLE code_assessments
-      ADD COLUMN id uuid DEFAULT gen_random_uuid();
-    -- Populate id for existing rows
-    UPDATE code_assessments SET id = gen_random_uuid() WHERE id IS NULL;
-  END IF;
+INSERT INTO code_assessments_new (code_id, assessment_id, sort_order)
+SELECT code_id, assessment_id, sort_order FROM code_assessments;
 
-  -- 3c. Drop whatever primary key currently exists (may include assessment_id)
-  SELECT constraint_name INTO pk_name
-  FROM information_schema.table_constraints
-  WHERE table_name = 'code_assessments' AND constraint_type = 'PRIMARY KEY';
+DROP TABLE code_assessments;
+ALTER TABLE code_assessments_new RENAME TO code_assessments;
 
-  IF pk_name IS NOT NULL THEN
-    EXECUTE format('ALTER TABLE code_assessments DROP CONSTRAINT %I', pk_name);
-  END IF;
-
-  -- 3d. Set new PK on id if not already primary key
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE table_name = 'code_assessments' AND constraint_type = 'PRIMARY KEY'
-  ) THEN
-    ALTER TABLE code_assessments ADD PRIMARY KEY (id);
-  END IF;
-
-  -- 3e. Make assessment_id nullable (it is no longer in a PK)
-  ALTER TABLE code_assessments ALTER COLUMN assessment_id DROP NOT NULL;
-END $$;
-
--- 4. Migrate existing lp-group → new bundles table
+-- 4. Migrate lp-group into bundles
 INSERT INTO bundles (id, title, description, accent_color, badge_bg, badge_text, sort_order)
 VALUES ('lp-group', 'Learner Portrait', 'Choose a benchmark to explore the Anchor Attribute Assessment.', '#e8735a', '#FAECE7', '#712B13', 10)
 ON CONFLICT (id) DO NOTHING;
@@ -81,11 +51,10 @@ INSERT INTO bundle_assessments (bundle_id, assessment_id, sort_order) VALUES
   ('lp-group', 'lp-b4', 4)
 ON CONFLICT DO NOTHING;
 
--- 5. Move any existing code_assessments rows for lp-group over to bundle_id
+-- 5. Move lp-group code_assessments rows to use bundle_id
 UPDATE code_assessments
 SET bundle_id = assessment_id, assessment_id = NULL
 WHERE assessment_id = 'lp-group';
 
--- 6. Remove the old lp-group assessment (now replaced by bundles table)
---    Run this only after confirming the migration looks correct:
+-- 6. Cleanup (run after confirming everything works):
 -- DELETE FROM assessments WHERE id = 'lp-group';
