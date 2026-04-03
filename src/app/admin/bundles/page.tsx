@@ -12,7 +12,7 @@ interface Bundle {
   badge_text: string;
   description: string | null;
   sort_order: number;
-  bundle_assessments: { assessment_id: string; assessments: { title: string } }[];
+  bundle_assessments: { assessment_id: string; sort_order: number; assessments: { title: string } }[];
 }
 
 export default function BundlesPage() {
