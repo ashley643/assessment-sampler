@@ -95,7 +95,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
       .in('id', bundleIds);
 
     for (const b of bundles ?? []) {
-      const childAssessments = ((b.bundle_assessments ?? []) as { sort_order: number; assessments: RawAssessment }[])
+      const childAssessments = ((b.bundle_assessments ?? []) as unknown as { sort_order: number; assessments: RawAssessment }[])
         .sort((x, y) => x.sort_order - y.sort_order)
         .map(ba => normalizeAssessment(ba.assessments));
       bundleMap.set(b.id, { ...b, childAssessments });
