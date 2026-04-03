@@ -24,9 +24,35 @@ CREATE TABLE IF NOT EXISTS bundle_assessments (
 );
 
 -- 3. Allow code_assessments to reference either an assessment or a bundle
+-- First add an id column if there isn't one (needed to drop PK that includes assessment_id)
 ALTER TABLE code_assessments
-  ALTER COLUMN assessment_id DROP NOT NULL,
   ADD COLUMN IF NOT EXISTS bundle_id text references bundles(id) on delete cascade;
+
+-- Drop any primary key that includes assessment_id, then make it nullable
+DO $$
+DECLARE
+  pk_name text;
+BEGIN
+  SELECT constraint_name INTO pk_name
+  FROM information_schema.table_constraints
+  WHERE table_name = 'code_assessments' AND constraint_type = 'PRIMARY KEY';
+
+  IF pk_name IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE code_assessments DROP CONSTRAINT %I', pk_name);
+  END IF;
+
+  -- Add a surrogate PK if there isn't already an id column
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'code_assessments' AND column_name = 'id'
+  ) THEN
+    ALTER TABLE code_assessments ADD COLUMN id uuid DEFAULT gen_random_uuid() PRIMARY KEY;
+  ELSE
+    ALTER TABLE code_assessments ADD PRIMARY KEY (id);
+  END IF;
+END $$;
+
+ALTER TABLE code_assessments ALTER COLUMN assessment_id DROP NOT NULL;
 
 -- 4. Migrate existing lp-group → new bundles table
 INSERT INTO bundles (id, title, description, accent_color, badge_bg, badge_text, sort_order)
