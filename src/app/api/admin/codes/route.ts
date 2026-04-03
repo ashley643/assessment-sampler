@@ -14,7 +14,9 @@ export async function GET() {
       code_assessments (
         sort_order,
         assessment_id,
-        assessments ( id, title, type_label )
+        bundle_id,
+        assessments ( id, title, type_label ),
+        bundles ( id, title )
       )
     `)
     .order('created_at', { ascending: false });
