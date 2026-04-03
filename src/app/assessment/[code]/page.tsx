@@ -154,27 +154,17 @@ export default function AssessmentSelectorPage() {
                   </p>
 
                   {isBundle ? (
-                    <>
-                      {/* Bundle: show child assessment chips — each navigates directly */}
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {(assessment.childAssessments ?? []).map(child => (
-                          <button
-                            key={child.id}
-                            onClick={e => {
-                              e.stopPropagation();
-                              router.push(`/assessment/${code}/${child.id}`);
-                            }}
-                            className="text-xs px-2.5 py-1 rounded-full border transition-opacity hover:opacity-70"
-                            style={{ borderColor: assessment.accentColor + '60', color: assessment.badgeText, background: assessment.badgeBg }}
-                          >
-                            {child.title}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="flex items-center justify-between">
                       <div className="text-xs text-gray-400">
-                        Tap a option above, or click to browse
+                        {childCount} version{childCount !== 1 ? 's' : ''} available
                       </div>
-                    </>
+                      <div className="text-xs font-medium flex items-center gap-1" style={{ color: assessment.accentColor }}>
+                        Select a version
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                          <path d="M4.5 2.5L7.5 6L4.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <div className="text-xs text-gray-400">
