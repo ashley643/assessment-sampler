@@ -185,7 +185,7 @@ export default function AssessmentPlayerPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent flex items-end p-4">
                       <div>
                         <span className="text-white font-bold text-base leading-tight block">{child.title}</span>
-                        <span className="text-white/70 text-sm mt-0.5 block">{child.description}</span>
+                        <span className="text-white/70 text-sm mt-0.5 block line-clamp-2">{child.playerLabel ?? child.description}</span>
                       </div>
                     </div>
                     {/* Hover play icon */}
