@@ -23,16 +23,32 @@ CREATE TABLE IF NOT EXISTS bundle_assessments (
   sort_order int default 0
 );
 
--- 3. Allow code_assessments to reference either an assessment or a bundle
--- First add an id column if there isn't one (needed to drop PK that includes assessment_id)
-ALTER TABLE code_assessments
-  ADD COLUMN IF NOT EXISTS bundle_id text references bundles(id) on delete cascade;
-
--- Drop any primary key that includes assessment_id, then make it nullable
+-- 3. Restructure code_assessments to support both assessments and bundles
 DO $$
 DECLARE
   pk_name text;
 BEGIN
+  -- 3a. Add bundle_id column if missing
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'code_assessments' AND column_name = 'bundle_id'
+  ) THEN
+    ALTER TABLE code_assessments
+      ADD COLUMN bundle_id text references bundles(id) on delete cascade;
+  END IF;
+
+  -- 3b. Add surrogate id column if missing
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'code_assessments' AND column_name = 'id'
+  ) THEN
+    ALTER TABLE code_assessments
+      ADD COLUMN id uuid DEFAULT gen_random_uuid();
+    -- Populate id for existing rows
+    UPDATE code_assessments SET id = gen_random_uuid() WHERE id IS NULL;
+  END IF;
+
+  -- 3c. Drop whatever primary key currently exists (may include assessment_id)
   SELECT constraint_name INTO pk_name
   FROM information_schema.table_constraints
   WHERE table_name = 'code_assessments' AND constraint_type = 'PRIMARY KEY';
@@ -41,18 +57,17 @@ BEGIN
     EXECUTE format('ALTER TABLE code_assessments DROP CONSTRAINT %I', pk_name);
   END IF;
 
-  -- Add a surrogate PK if there isn't already an id column
+  -- 3d. Set new PK on id if not already primary key
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'code_assessments' AND column_name = 'id'
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE table_name = 'code_assessments' AND constraint_type = 'PRIMARY KEY'
   ) THEN
-    ALTER TABLE code_assessments ADD COLUMN id uuid DEFAULT gen_random_uuid() PRIMARY KEY;
-  ELSE
     ALTER TABLE code_assessments ADD PRIMARY KEY (id);
   END IF;
-END $$;
 
-ALTER TABLE code_assessments ALTER COLUMN assessment_id DROP NOT NULL;
+  -- 3e. Make assessment_id nullable (it is no longer in a PK)
+  ALTER TABLE code_assessments ALTER COLUMN assessment_id DROP NOT NULL;
+END $$;
 
 -- 4. Migrate existing lp-group → new bundles table
 INSERT INTO bundles (id, title, description, accent_color, badge_bg, badge_text, sort_order)
