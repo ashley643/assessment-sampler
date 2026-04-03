@@ -133,7 +133,7 @@ export default function AssessmentPlayerPage() {
   if (!assessment) { router.replace(`/assessment/${code}`); return null; }
 
   // Benchmark group: show selector before player
-  if (assessment.type === 'benchmark_group' && !selectedBenchmark) {
+  if ((assessment.type === 'benchmark_group' || assessment.type === 'bundle') && !selectedBenchmark) {
     return (
       <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
         {/* Top bar */}
@@ -207,7 +207,7 @@ export default function AssessmentPlayerPage() {
   }
 
   // Use selected benchmark's questions if this is a benchmark group
-  const activeAssessment = (assessment.type === 'benchmark_group' && selectedBenchmark) ? selectedBenchmark : assessment;
+  const activeAssessment = ((assessment.type === 'benchmark_group' || assessment.type === 'bundle') && selectedBenchmark) ? selectedBenchmark : assessment;
 
   const questions      = [...activeAssessment.questions].sort((a, b) => a.order - b.order);
   const currentQ       = questions[currentIdx];
@@ -295,7 +295,7 @@ export default function AssessmentPlayerPage() {
         {/* ── Sidebar ─────────────────────────────────────── */}
         <aside className="hidden md:flex w-60 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex-col">
           {/* Benchmark switcher (desktop) */}
-          {assessment.type === 'benchmark_group' && assessment.childAssessments && (
+          {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && (
             <div className="px-4 pt-4 pb-3 border-b border-gray-200">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Benchmark</p>
               <div className="flex flex-col gap-1">
@@ -357,7 +357,7 @@ export default function AssessmentPlayerPage() {
                 </Tooltip>
               )}
               {/* Mobile benchmark switcher */}
-              {assessment.type === 'benchmark_group' && assessment.childAssessments && (
+              {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && (
                 <div className="md:hidden flex gap-1.5 mt-1">
                   {assessment.childAssessments.map((child, i) => (
                     <button
