@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getProgress, markQuestionComplete } from '@/lib/progress';
 import { track } from '@/lib/track';
 import type { AccessCode, Assessment, Question } from '@/types/assessment';
@@ -92,6 +92,8 @@ export default function AssessmentPlayerPage() {
   const [codeData, setCodeData]   = useState<AccessCode | null>(null);
   const [notFound, setNotFound]   = useState(false);
   const [selectedBenchmark, setSelectedBenchmark] = useState<Assessment | null>(null);
+  const searchParams = useSearchParams();
+  const isPreview = searchParams.get('preview') === 'true';
   const [currentIdx, setCurrentIdx]           = useState(0);
   const [spanishMode, setSpanishMode]         = useState(false);
   const [showTyping, setShowTyping]           = useState(false);
@@ -110,7 +112,7 @@ export default function AssessmentPlayerPage() {
         if (!res.ok) { setNotFound(true); return; }
         const data: AccessCode = await res.json();
         setCodeData(data);
-        track('assessment_open', code, { assessment_id: assessmentId });
+        if (!isPreview) track('assessment_open', code, { assessment_id: assessmentId });
       })
       .catch(() => setNotFound(true));
   }, [code, assessmentId]);
@@ -136,6 +138,7 @@ export default function AssessmentPlayerPage() {
   if ((assessment.type === 'benchmark_group' || assessment.type === 'bundle') && !selectedBenchmark) {
     return (
       <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
+      {isPreview && <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-1.5 tracking-wide flex-shrink-0">PREVIEW MODE — activity is not being tracked</div>}
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" style={{ background: '#1a2744' }}>
           <button onClick={() => router.push(`/assessment/${code}`)} className="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
@@ -162,7 +165,7 @@ export default function AssessmentPlayerPage() {
                   key={child.id}
                   onClick={() => {
                     setSelectedBenchmark(child);
-                    track('question_view', code, { assessment_id: child.id, question_id: child.questions[0]?.id });
+                    if (!isPreview) track('question_view', code, { assessment_id: child.id, question_id: child.questions[0]?.id });
                   }}
                   className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-lg hover:border-[#e8735a] transition-all text-left group"
                 >
@@ -232,7 +235,7 @@ export default function AssessmentPlayerPage() {
     setShowTyping(false);
     setTypedAnswer('');
     setTypedSubmitted(false);
-    track('question_view', code, { assessment_id: assessmentId, question_id: questions[idx].id });
+    if (!isPreview) track('question_view', code, { assessment_id: assessmentId, question_id: questions[idx].id });
   };
 
   const goPrev = () => goToQuestion(Math.max(0, currentIdx - 1));
@@ -242,7 +245,7 @@ export default function AssessmentPlayerPage() {
     const nowAllDone = questions.every(q => !!next[q.id]);
     if (nowAllDone && !celebrationShownRef.current) {
       celebrationShownRef.current = true;
-      track('assessment_complete', code, { assessment_id: assessmentId });
+      if (!isPreview) track('assessment_complete', code, { assessment_id: assessmentId });
       setTimeout(() => setShowCelebration(true), 400);
     }
     void qId;
@@ -253,14 +256,14 @@ export default function AssessmentPlayerPage() {
     markQuestionComplete(code, assessmentId, currentQ.id);
     const next = { ...completion, [currentQ.id]: true };
     setCompletion(next);
-    track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
+    if (!isPreview) track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
     finishQuestion(currentQ.id, next);
   };
 
 
   const handleTypedSubmit = () => {
     if (!typedAnswer.trim()) return;
-    track('text_response', code, {
+    if (!isPreview) track('text_response', code, {
       assessment_id: assessmentId,
       question_id: currentQ.id,
       metadata: { text: typedAnswer.trim() },
@@ -270,7 +273,7 @@ export default function AssessmentPlayerPage() {
       markQuestionComplete(code, assessmentId, currentQ.id);
       const next = { ...completion, [currentQ.id]: true };
       setCompletion(next);
-      track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
+      if (!isPreview) track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
       finishQuestion(currentQ.id, next);
     }
   };
@@ -279,6 +282,7 @@ export default function AssessmentPlayerPage() {
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
+      {isPreview && <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-1.5 tracking-wide flex-shrink-0">PREVIEW MODE — activity is not being tracked</div>}
       {/* ── Top bar ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" style={{ background: '#1a2744' }}>
         <button onClick={() => router.push(`/assessment/${code}`)} className="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
@@ -351,7 +355,7 @@ export default function AssessmentPlayerPage() {
               {currentQ.spanishEmbedUrl && (
                 <Tooltip text="Assessments can be configured for additional prompt languages depending on the population being served.">
                   <button
-                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
+                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                     style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
                   >
@@ -379,7 +383,7 @@ export default function AssessmentPlayerPage() {
               )}
               <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
                 <button
-                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
+                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                   style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
                 >

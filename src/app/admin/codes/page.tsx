@@ -85,19 +85,17 @@ export default function CodesPage() {
                         {c.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/codes/${c.id}`}
-                        className="text-xs text-blue-600 hover:underline mr-4"
+                    <td className="px-4 py-3 text-right flex items-center justify-end gap-4">
+                      <a
+                        href={`/assessment/${c.code}?preview=true`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-gray-400 hover:text-gray-600"
                       >
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(c.id, c.code)}
-                        className="text-xs text-red-400 hover:text-red-600"
-                      >
-                        Delete
-                      </button>
+                        Preview
+                      </a>
+                      <Link href={`/admin/codes/${c.id}`} className="text-xs text-blue-600 hover:underline">Edit</Link>
+                      <button onClick={() => handleDelete(c.id, c.code)} className="text-xs text-red-400 hover:text-red-600">Delete</button>
                     </td>
                   </tr>
                 ))}

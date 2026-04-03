@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { getProgress } from '@/lib/progress';
 import { track } from '@/lib/track';
 import type { AccessCode, Assessment } from '@/types/assessment';
@@ -12,6 +13,8 @@ export default function AssessmentSelectorPage() {
   const router = useRouter();
   const code = (params.code as string).toUpperCase();
 
+  const searchParams = useSearchParams();
+  const isPreview = searchParams.get('preview') === 'true';
   const [codeData, setCodeData] = useState<AccessCode | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -26,8 +29,7 @@ export default function AssessmentSelectorPage() {
         if (!res.ok) { setNotFound(true); return; }
         const data: AccessCode = await res.json();
         setCodeData(data);
-        // Track session start
-        track('session_start', code);
+        if (!isPreview) track('session_start', code);
       })
       .catch(() => setNotFound(true));
   }, [code]);
@@ -47,6 +49,11 @@ export default function AssessmentSelectorPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc' }}>
+      {isPreview && (
+        <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-1.5 tracking-wide">
+          PREVIEW MODE — activity is not being tracked
+        </div>
+      )}
       {/* ── Nav bar ───────────────────────────────────────── */}
       <nav
         className="flex items-center justify-between px-8 py-4 flex-shrink-0"
@@ -103,13 +110,13 @@ export default function AssessmentSelectorPage() {
               <div
                 key={assessment.id}
                 onClick={() =>
-                  router.push(`/assessment/${code}/${assessment.id}`)
+                  router.push(`/assessment/${code}/${assessment.id}${isPreview ? '?preview=true' : ''}`)
                 }
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ')
-                    router.push(`/assessment/${code}/${assessment.id}`);
+                    router.push(`/assessment/${code}/${assessment.id}${isPreview ? '?preview=true' : ''}`);
                 }}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group focus:outline-none focus:ring-2 focus:ring-blue-400"
                 style={{
