@@ -21,6 +21,8 @@ export default function AssessmentsPage() {
   const [loading, setLoading] = useState(true);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Assessment | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const dragIdx = useRef<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
 
@@ -33,19 +35,12 @@ export default function AssessmentsPage() {
 
   useEffect(() => { load(); }, []);
 
-  function onDragStart(idx: number) {
-    dragIdx.current = idx;
-  }
-
-  function onDragOver(e: React.DragEvent, idx: number) {
-    e.preventDefault();
-    setDragOver(idx);
-  }
+  function onDragStart(idx: number) { dragIdx.current = idx; }
+  function onDragOver(e: React.DragEvent, idx: number) { e.preventDefault(); setDragOver(idx); }
 
   async function onDrop(dropIndex: number) {
     const from = dragIdx.current;
     if (from === null || from === dropIndex) { setDragOver(null); return; }
-
     const reordered = [...assessments];
     const [moved] = reordered.splice(from, 1);
     reordered.splice(dropIndex, 0, moved);
@@ -53,7 +48,6 @@ export default function AssessmentsPage() {
     setAssessments(updated);
     setDragOver(null);
     dragIdx.current = null;
-
     setSaving(true);
     await fetch('/api/admin/assessments/reorder', {
       method: 'POST',
@@ -67,7 +61,6 @@ export default function AssessmentsPage() {
     setDuplicating(a.id);
     const res = await fetch(`/api/admin/assessments/${a.id}`);
     const full = await res.json();
-
     const newId = `${a.id}-copy-${Date.now()}`;
     await fetch('/api/admin/assessments', {
       method: 'POST',
@@ -83,10 +76,18 @@ export default function AssessmentsPage() {
         })),
       }),
     });
-
     await load();
     setDuplicating(null);
     router.push(`/admin/assessments/${newId}`);
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    await fetch(`/api/admin/assessments/${confirmDelete.id}`, { method: 'DELETE' });
+    setConfirmDelete(null);
+    setDeleting(false);
+    await load();
   }
 
   return (
@@ -97,10 +98,7 @@ export default function AssessmentsPage() {
             <h1 className="text-2xl font-semibold text-gray-900">Assessments</h1>
             {saving && <span className="text-xs text-gray-400">Saving order…</span>}
           </div>
-          <Link
-            href="/admin/assessments/new"
-            className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] transition-colors"
-          >
+          <Link href="/admin/assessments/new" className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] transition-colors">
             + New Assessment
           </Link>
         </div>
@@ -158,6 +156,12 @@ export default function AssessmentsPage() {
                       <Link href={`/admin/assessments/${a.id}`} className="text-xs text-blue-600 hover:underline">
                         Edit
                       </Link>
+                      <button
+                        onClick={() => setConfirmDelete(a)}
+                        className="text-xs text-red-400 hover:text-red-600"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -166,6 +170,33 @@ export default function AssessmentsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Delete assessment?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              <strong>{confirmDelete.title}</strong> and all its questions will be permanently deleted. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminShell>
   );
 }
