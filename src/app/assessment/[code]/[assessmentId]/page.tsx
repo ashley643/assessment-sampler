@@ -215,7 +215,6 @@ export default function AssessmentPlayerPage() {
 
   const switchBenchmark = (child: Assessment) => {
     setSelectedBenchmark(child);
-    setCurrentIdx(0);
     setSpanishMode(false);
     setShowTyping(false);
     setTypedAnswer('');
