@@ -59,29 +59,66 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
     };
   }[]).sort((a, b) => a.assessments.sort_order - b.assessments.sort_order);
 
+  function normalizeQuestions(questions: { id: string; sort_order: number; title: string; embed_url: string; spanish_embed_url: string | null }[]) {
+    return questions
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(q => ({
+        id: q.id,
+        order: q.sort_order,
+        title: q.title,
+        embedUrl: q.embed_url,
+        spanishEmbedUrl: q.spanish_embed_url ?? undefined,
+      }));
+  }
+
+  // For benchmark_group assessments, fetch child assessments by question IDs
+  const assessmentList = await Promise.all(sorted.map(async ca => {
+    const a = ca.assessments;
+    const base = {
+      id: a.id,
+      title: a.title,
+      type: a.type,
+      typeLabel: a.type_label,
+      accentColor: a.accent_color,
+      badgeBg: a.badge_bg,
+      badgeText: a.badge_text,
+      description: a.description,
+      questions: normalizeQuestions(a.questions),
+    };
+
+    if (a.type === 'benchmark_group') {
+      const childIds = a.questions.map((q: { id: string }) => q.id);
+      const { data: children } = await supabaseAdmin
+        .from('assessments')
+        .select('id, title, type, type_label, accent_color, badge_bg, badge_text, description, sort_order, questions ( id, sort_order, title, embed_url, spanish_embed_url )')
+        .in('id', childIds);
+
+      return {
+        ...base,
+        childAssessments: (children ?? [])
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map(child => ({
+            id: child.id,
+            title: child.title,
+            type: child.type,
+            typeLabel: child.type_label,
+            accentColor: child.accent_color,
+            badgeBg: child.badge_bg,
+            badgeText: child.badge_text,
+            description: child.description,
+            questions: normalizeQuestions(child.questions),
+          })),
+      };
+    }
+
+    return base;
+  }));
+
   const normalized: AccessCode = {
     code: data.code,
     expires: data.expires_at ?? '',
     label: data.label,
-    assessments: sorted.map(ca => ({
-      id: ca.assessments.id,
-      title: ca.assessments.title,
-      type: ca.assessments.type,
-      typeLabel: ca.assessments.type_label,
-      accentColor: ca.assessments.accent_color,
-      badgeBg: ca.assessments.badge_bg,
-      badgeText: ca.assessments.badge_text,
-      description: ca.assessments.description,
-      questions: ca.assessments.questions
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map(q => ({
-          id: q.id,
-          order: q.sort_order,
-          title: q.title,
-          embedUrl: q.embed_url,
-          spanishEmbedUrl: q.spanish_embed_url ?? undefined,
-        })),
-    })),
+    assessments: assessmentList,
   };
 
   return NextResponse.json(normalized);

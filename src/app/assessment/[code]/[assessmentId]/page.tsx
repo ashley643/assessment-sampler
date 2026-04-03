@@ -91,6 +91,7 @@ export default function AssessmentPlayerPage() {
 
   const [codeData, setCodeData]   = useState<AccessCode | null>(null);
   const [notFound, setNotFound]   = useState(false);
+  const [selectedBenchmark, setSelectedBenchmark] = useState<Assessment | null>(null);
   const [currentIdx, setCurrentIdx]           = useState(0);
   const [spanishMode, setSpanishMode]         = useState(false);
   const [showTyping, setShowTyping]           = useState(false);
@@ -131,7 +132,84 @@ export default function AssessmentPlayerPage() {
   const assessment = codeData.assessments.find(a => a.id === assessmentId) as Assessment | undefined;
   if (!assessment) { router.replace(`/assessment/${code}`); return null; }
 
-  const questions      = [...assessment.questions].sort((a, b) => a.order - b.order);
+  // Benchmark group: show selector before player
+  if (assessment.type === 'benchmark_group' && !selectedBenchmark) {
+    return (
+      <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" style={{ background: '#1a2744' }}>
+          <button onClick={() => router.push(`/assessment/${code}`)} className="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
+            ← Back to assessments
+          </button>
+          <span className="text-white font-semibold text-sm">{assessment.title}</span>
+          <div className="w-28" />
+        </div>
+
+        {/* Selector body */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 px-4 py-6">
+          <div className="max-w-2xl mx-auto">
+            <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-3" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>
+              {assessment.typeLabel}
+            </span>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">{assessment.title}</h1>
+            <p className="text-sm text-gray-500 mb-6">{assessment.description}</p>
+
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Choose a benchmark to begin</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              {(assessment.childAssessments ?? []).map(child => (
+                <button
+                  key={child.id}
+                  onClick={() => {
+                    setSelectedBenchmark(child);
+                    track('question_view', code, { assessment_id: child.id, question_id: child.questions[0]?.id });
+                  }}
+                  className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md hover:border-[#7B68C4] transition-all text-left group"
+                >
+                  {/* Scaled iframe preview */}
+                  <div className="relative overflow-hidden bg-gray-100" style={{ height: 150 }}>
+                    <iframe
+                      src={child.questions[0]?.embedUrl}
+                      style={{
+                        width: '300%',
+                        height: '450px',
+                        transform: 'scale(0.333)',
+                        transformOrigin: 'top left',
+                        pointerEvents: 'none',
+                        border: 'none',
+                      }}
+                      title={child.title}
+                      tabIndex={-1}
+                    />
+                    {/* Gradient overlay + label */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent flex items-end p-3">
+                      <div>
+                        <span className="text-white font-bold text-sm leading-tight block">{child.title}</span>
+                        <span className="text-white/70 text-xs">{child.description}</span>
+                      </div>
+                    </div>
+                    {/* Hover play icon */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                          <path d="M3 2l9 5-9 5V2z" fill="#1a2744"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Use selected benchmark's questions if this is a benchmark group
+  const activeAssessment = (assessment.type === 'benchmark_group' && selectedBenchmark) ? selectedBenchmark : assessment;
+
+  const questions      = [...activeAssessment.questions].sort((a, b) => a.order - b.order);
   const currentQ       = questions[currentIdx];
   const completedCount = questions.filter(q => !!completion[q.id]).length;
 
@@ -194,10 +272,10 @@ export default function AssessmentPlayerPage() {
           ← Back to assessments
         </button>
         <div className="hidden md:flex items-center gap-2.5">
-          <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>
-            {assessment.typeLabel}
+          <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: activeAssessment.badgeBg, color: activeAssessment.badgeText }}>
+            {activeAssessment.typeLabel}
           </span>
-          <span className="text-white font-semibold text-sm hidden sm:block">{assessment.title}</span>
+          <span className="text-white font-semibold text-sm hidden sm:block">{activeAssessment.title}</span>
         </div>
         <span className="text-white/50 text-sm whitespace-nowrap">{completedCount} of {questions.length} complete</span>
       </div>
@@ -227,8 +305,8 @@ export default function AssessmentPlayerPage() {
           <div className="flex-shrink-0 flex items-start justify-between px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-3">
             {/* Mobile-only question info (left side) */}
             <div className="md:hidden flex-1 min-w-0">
-              <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>
-                {assessment.typeLabel}
+              <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1" style={{ background: activeAssessment.badgeBg, color: activeAssessment.badgeText }}>
+                {activeAssessment.typeLabel}
               </span>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Question {currentQ.order} of {questions.length}</p>
               <p className="text-sm font-semibold text-gray-800 mt-0.5 leading-snug">{currentQ.title}</p>
@@ -371,7 +449,7 @@ export default function AssessmentPlayerPage() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Assessment Complete!</h2>
             <p className="text-gray-500 mb-8 leading-relaxed">
-              You&apos;ve completed all <strong>{questions.length}</strong> questions in <strong>{assessment.title}</strong>.
+              You&apos;ve completed all <strong>{questions.length}</strong> questions in <strong>{activeAssessment.title}</strong>.
             </p>
             <button onClick={() => { setShowCelebration(false); router.push(`/assessment/${code}`); }}
               className="w-full py-3 rounded-xl text-white font-semibold transition-all hover:opacity-90 active:scale-[0.99]" style={{ background: '#1D9E75' }}>

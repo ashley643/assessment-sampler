@@ -16,6 +16,7 @@ export interface Assessment {
   badgeText: string;
   description: string;
   questions: Question[];
+  childAssessments?: Assessment[]; // populated for benchmark_group type
 }
 
 export interface AccessCode {
