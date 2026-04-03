@@ -154,7 +154,7 @@ export default function AssessmentPlayerPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{assessment.title}</h1>
             <p className="text-sm text-gray-500 mb-8">{assessment.description}</p>
 
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Choose a benchmark to begin</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Choose one to begin</p>
 
             <div className="grid grid-cols-2 gap-4 md:gap-6">
               {(assessment.childAssessments ?? []).map(child => (
