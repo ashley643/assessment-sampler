@@ -22,11 +22,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
-  const { title, type, type_label, accent_color, badge_bg, badge_text, description, sort_order, questions } = body;
+  const { title, type, type_label, accent_color, badge_bg, badge_text, description, player_label, sort_order, questions } = body;
 
   const { error } = await supabaseAdmin
     .from('assessments')
-    .update({ title, type, type_label, accent_color, badge_bg, badge_text, description, sort_order })
+    .update({ title, type, type_label, accent_color, badge_bg, badge_text, description, player_label: player_label || null, sort_order })
     .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

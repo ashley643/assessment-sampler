@@ -221,6 +221,9 @@ export default function AssessmentPlayerPage() {
     setTypedSubmitted(false);
     celebrationShownRef.current = false;
     setShowCelebration(false);
+    // Clamp index if new assessment has fewer questions
+    const childQuestions = [...child.questions].sort((a, b) => a.order - b.order);
+    setCurrentIdx(prev => Math.min(prev, Math.max(0, childQuestions.length - 1)));
   };
 
   const goToQuestion = (idx: number) => {
@@ -309,7 +312,7 @@ export default function AssessmentPlayerPage() {
                         : 'text-gray-500 hover:bg-gray-200'
                     }`}
                   >
-                    {i + 1} – {child.description}
+                    {i + 1} – {child.playerLabel ?? child.description}
                   </button>
                 ))}
               </div>

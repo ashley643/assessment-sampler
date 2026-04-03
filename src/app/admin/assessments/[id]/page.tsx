@@ -21,6 +21,7 @@ interface Assessment {
   badge_bg: string;
   badge_text: string;
   description: string;
+  player_label: string;
   sort_order: number;
   questions: Question[];
 }
@@ -52,6 +53,7 @@ export default function EditAssessmentPage() {
     badge_bg: '#E6F1FB',
     badge_text: '#0C447C',
     description: '',
+    player_label: '',
     sort_order: 0,
   });
   const [questions, setQuestions] = useState<Question[]>([newQuestion(1)]);
@@ -148,11 +150,19 @@ export default function EditAssessmentPage() {
               </F>
 
             </div>
-            <F label="Description">
+            <F label="Description" hint="Shown on the assessment card">
               <textarea
                 value={form.description}
                 onChange={e => updateForm('description', e.target.value)}
                 rows={3}
+                className={INPUT}
+              />
+            </F>
+            <F label="Player Label (optional)" hint="Short label shown in the bundle switcher sidebar — leave blank to use description">
+              <input
+                value={form.player_label}
+                onChange={e => updateForm('player_label', e.target.value)}
+                placeholder="e.g. Grades 3–4"
                 className={INPUT}
               />
             </F>
@@ -260,11 +270,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function F({ label, children }: { label: string; children: React.ReactNode }) {
+function F({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
       {children}
+      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
   );
 }

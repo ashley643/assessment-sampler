@@ -14,7 +14,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         assessment_id,
         bundle_id,
         assessments (
-          id, title, type, type_label, accent_color, badge_bg, badge_text, description, sort_order,
+          id, title, type, type_label, accent_color, badge_bg, badge_text, description, player_label, sort_order,
           questions ( id, sort_order, title, embed_url, spanish_embed_url )
         )
       )
@@ -47,7 +47,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   type RawAssessment = {
     id: string; title: string; type: string; type_label: string;
     accent_color: string; badge_bg: string; badge_text: string;
-    description: string; sort_order: number;
+    description: string; player_label: string | null; sort_order: number;
     questions: { id: string; sort_order: number; title: string; embed_url: string; spanish_embed_url: string | null }[];
   };
 
@@ -55,7 +55,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
     return {
       id: a.id, title: a.title, type: a.type, typeLabel: a.type_label,
       accentColor: a.accent_color, badgeBg: a.badge_bg, badgeText: a.badge_text,
-      description: a.description, questions: normalizeQuestions(a.questions),
+      description: a.description, playerLabel: a.player_label ?? undefined, questions: normalizeQuestions(a.questions),
     };
   }
 
@@ -87,7 +87,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         bundle_assessments (
           sort_order,
           assessments (
-            id, title, type, type_label, accent_color, badge_bg, badge_text, description, sort_order,
+            id, title, type, type_label, accent_color, badge_bg, badge_text, description, player_label, sort_order,
             questions ( id, sort_order, title, embed_url, spanish_embed_url )
           )
         )
