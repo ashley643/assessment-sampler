@@ -141,7 +141,7 @@ export default function AssessmentPlayerPage() {
       {isPreview && <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-1.5 tracking-wide flex-shrink-0">PREVIEW MODE — activity is not being tracked</div>}
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" style={{ background: '#1a2744' }}>
-          <button onClick={() => router.push(`/assessment/${code}`)} className="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
+          <button onClick={() => router.push(`/assessment/${code}${isPreview ? '?preview=true' : ''}`)} className="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
             ← Back to assessments
           </button>
           <span className="text-white font-semibold text-sm">{assessment.title}</span>
@@ -285,7 +285,7 @@ export default function AssessmentPlayerPage() {
       {isPreview && <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-1.5 tracking-wide flex-shrink-0">PREVIEW MODE — activity is not being tracked</div>}
       {/* ── Top bar ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" style={{ background: '#1a2744' }}>
-        <button onClick={() => router.push(`/assessment/${code}`)} className="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
+        <button onClick={() => router.push(`/assessment/${code}${isPreview ? '?preview=true' : ''}`)} className="text-white/60 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
           ← Back to assessments
         </button>
         <div className="hidden md:flex items-center gap-2.5">
