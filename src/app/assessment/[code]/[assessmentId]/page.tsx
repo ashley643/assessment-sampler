@@ -253,7 +253,7 @@ export default function AssessmentPlayerPage() {
 
   const handleMarkComplete = () => {
     if (completion[currentQ.id]) return;
-    markQuestionComplete(code, assessmentId, currentQ.id);
+    if (!isPreview) markQuestionComplete(code, assessmentId, currentQ.id);
     const next = { ...completion, [currentQ.id]: true };
     setCompletion(next);
     if (!isPreview) track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
@@ -270,7 +270,7 @@ export default function AssessmentPlayerPage() {
     });
     setTypedSubmitted(true);
     if (!completion[currentQ.id]) {
-      markQuestionComplete(code, assessmentId, currentQ.id);
+      if (!isPreview) markQuestionComplete(code, assessmentId, currentQ.id);
       const next = { ...completion, [currentQ.id]: true };
       setCompletion(next);
       if (!isPreview) track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
