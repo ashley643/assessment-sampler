@@ -23,7 +23,8 @@ export default function BundlesPage() {
 
   async function load() {
     const res = await fetch('/api/admin/bundles');
-    setBundles(await res.json());
+    const data = await res.json();
+    setBundles(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
@@ -80,7 +81,7 @@ export default function BundlesPage() {
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       <div className="flex flex-wrap gap-1">
                         {(b.bundle_assessments ?? [])
-                          .sort((a, b) => a.assessment_id.localeCompare(b.assessment_id))
+                          .sort((a, b) => a.sort_order - b.sort_order)
                           .map(ba => (
                             <span key={ba.assessment_id} className="px-2 py-0.5 bg-gray-100 rounded text-gray-600 text-xs">
                               {ba.assessments?.title}
