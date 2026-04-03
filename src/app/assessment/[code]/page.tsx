@@ -155,24 +155,24 @@ export default function AssessmentSelectorPage() {
 
                   {isBundle ? (
                     <>
-                      {/* Bundle: show child assessment chips */}
+                      {/* Bundle: show child assessment chips — each navigates directly */}
                       <div className="flex flex-wrap gap-1.5 mb-3">
                         {(assessment.childAssessments ?? []).map(child => (
-                          <span
+                          <button
                             key={child.id}
-                            className="text-xs px-2 py-0.5 rounded-full border"
+                            onClick={e => {
+                              e.stopPropagation();
+                              router.push(`/assessment/${code}/${child.id}`);
+                            }}
+                            className="text-xs px-2.5 py-1 rounded-full border transition-opacity hover:opacity-70"
                             style={{ borderColor: assessment.accentColor + '60', color: assessment.badgeText, background: assessment.badgeBg }}
                           >
                             {child.title}
-                          </span>
+                          </button>
                         ))}
                       </div>
-                      <div className="text-xs text-gray-400 flex items-center gap-1">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                          <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
-                          <path d="M4 6h4M6 4v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                        </svg>
-                        {childCount} option{childCount !== 1 ? 's' : ''} · choose one
+                      <div className="text-xs text-gray-400">
+                        Tap a option above, or click to browse
                       </div>
                     </>
                   ) : (
