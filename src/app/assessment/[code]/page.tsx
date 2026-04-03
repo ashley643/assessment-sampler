@@ -96,6 +96,9 @@ export default function AssessmentSelectorPage() {
               ? Math.round((nDone / assessment.questions.length) * 100)
               : 0;
 
+            const isBundle = assessment.type === 'bundle';
+            const childCount = assessment.childAssessments?.length ?? 0;
+
             return (
               <div
                 key={assessment.id}
@@ -127,16 +130,10 @@ export default function AssessmentSelectorPage() {
                       {assessment.typeLabel}
                     </span>
 
-                    {done && (
+                    {done && !isBundle && (
                       <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
                         <svg width="10" height="9" viewBox="0 0 10 9" fill="none" aria-hidden="true">
-                          <path
-                            d="M1 4.5L3.5 7L9 1.5"
-                            stroke="#15803d"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
+                          <path d="M1 4.5L3.5 7L9 1.5" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         Complete
                       </span>
@@ -146,7 +143,7 @@ export default function AssessmentSelectorPage() {
                   {/* Title */}
                   <h3
                     className="font-bold text-gray-900 mb-2 text-base leading-snug"
-                    style={done ? { color: '#15803d' } : undefined}
+                    style={done && !isBundle ? { color: '#15803d' } : undefined}
                   >
                     {assessment.title}
                   </h3>
@@ -156,22 +153,42 @@ export default function AssessmentSelectorPage() {
                     {assessment.description}
                   </p>
 
-                  {/* Metadata */}
-                  <div className="text-xs text-gray-400">
-                    {assessment.questions.length} questions · ~{estMins} min
-                  </div>
-
-                  {/* Progress bar (only when in progress) */}
-                  {nDone > 0 && !done && (
-                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${pct}%`,
-                          background: assessment.accentColor,
-                        }}
-                      />
-                    </div>
+                  {isBundle ? (
+                    <>
+                      {/* Bundle: show child assessment chips */}
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {(assessment.childAssessments ?? []).map(child => (
+                          <span
+                            key={child.id}
+                            className="text-xs px-2 py-0.5 rounded-full border"
+                            style={{ borderColor: assessment.accentColor + '60', color: assessment.badgeText, background: assessment.badgeBg }}
+                          >
+                            {child.title}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="text-xs text-gray-400 flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                          <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
+                          <path d="M4 6h4M6 4v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                        </svg>
+                        {childCount} option{childCount !== 1 ? 's' : ''} · choose one
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xs text-gray-400">
+                        {assessment.questions.length} questions · ~{estMins} min
+                      </div>
+                      {nDone > 0 && !done && (
+                        <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${pct}%`, background: assessment.accentColor }}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
