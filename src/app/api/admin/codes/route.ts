@@ -39,14 +39,14 @@ export async function POST(req: Request) {
 
   const rows: { code_id: string; assessment_id?: string; bundle_id?: string; sort_order: number }[] = [];
   let i = 0;
-  if (assessment_ids?.length) {
-    for (const aid of assessment_ids) {
-      rows.push({ code_id: newCode.id, assessment_id: aid, sort_order: i++ });
-    }
-  }
   if (bundle_ids?.length) {
     for (const bid of bundle_ids) {
       rows.push({ code_id: newCode.id, bundle_id: bid, sort_order: i++ });
+    }
+  }
+  if (assessment_ids?.length) {
+    for (const aid of assessment_ids) {
+      rows.push({ code_id: newCode.id, assessment_id: aid, sort_order: i++ });
     }
   }
   if (rows.length) {

@@ -98,8 +98,8 @@ export default function CodeForm({ codeId }: CodeFormProps) {
       starts_at: startsAt || null,
       expires_at: expiresAt || null,
       is_active: isActive,
-      assessment_ids: selectedIds,
       bundle_ids: selectedBundleIds,
+      assessment_ids: selectedIds,
     };
 
     const res = isNew

@@ -157,10 +157,6 @@ export default function EditBundlePage() {
               <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
               <input className={INPUT} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Short description shown to users" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Sort Order</label>
-              <input className={INPUT} type="number" value={form.sort_order} onChange={e => set('sort_order', parseInt(e.target.value) || 0)} />
-            </div>
           </div>
 
           {/* Colors */}

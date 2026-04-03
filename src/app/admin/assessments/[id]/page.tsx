@@ -146,9 +146,7 @@ export default function EditAssessmentPage() {
               <F label="Type Label">
                 <input value={form.type_label} onChange={e => updateForm('type_label', e.target.value)} placeholder="e.g. Behavioral Health" className={INPUT} required />
               </F>
-              <F label="Sort Order">
-                <input type="number" value={form.sort_order} onChange={e => updateForm('sort_order', Number(e.target.value))} className={INPUT} />
-              </F>
+
             </div>
             <F label="Description">
               <textarea

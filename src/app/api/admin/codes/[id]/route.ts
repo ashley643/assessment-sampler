@@ -38,11 +38,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     await supabaseAdmin.from('code_assessments').delete().eq('code_id', id);
     const rows: { code_id: string; assessment_id?: string; bundle_id?: string; sort_order: number }[] = [];
     let i = 0;
-    for (const aid of (assessment_ids ?? [])) {
-      rows.push({ code_id: id, assessment_id: aid, sort_order: i++ });
-    }
     for (const bid of (bundle_ids ?? [])) {
       rows.push({ code_id: id, bundle_id: bid, sort_order: i++ });
+    }
+    for (const aid of (assessment_ids ?? [])) {
+      rows.push({ code_id: id, assessment_id: aid, sort_order: i++ });
     }
     if (rows.length) {
       await supabaseAdmin.from('code_assessments').insert(rows);
