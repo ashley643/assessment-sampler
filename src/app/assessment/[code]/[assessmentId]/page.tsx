@@ -213,6 +213,17 @@ export default function AssessmentPlayerPage() {
   const currentQ       = questions[currentIdx];
   const completedCount = questions.filter(q => !!completion[q.id]).length;
 
+  const switchBenchmark = (child: Assessment) => {
+    setSelectedBenchmark(child);
+    setCurrentIdx(0);
+    setSpanishMode(false);
+    setShowTyping(false);
+    setTypedAnswer('');
+    setTypedSubmitted(false);
+    celebrationShownRef.current = false;
+    setShowCelebration(false);
+  };
+
   const goToQuestion = (idx: number) => {
     setCurrentIdx(idx);
     setSpanishMode(false);
@@ -284,6 +295,27 @@ export default function AssessmentPlayerPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar ─────────────────────────────────────── */}
         <aside className="hidden md:flex w-60 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex-col">
+          {/* Benchmark switcher (desktop) */}
+          {assessment.type === 'benchmark_group' && assessment.childAssessments && (
+            <div className="px-4 pt-4 pb-3 border-b border-gray-200">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Benchmark</p>
+              <div className="flex flex-col gap-1">
+                {assessment.childAssessments.map(child => (
+                  <button
+                    key={child.id}
+                    onClick={() => switchBenchmark(child)}
+                    className={`text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      selectedBenchmark?.id === child.id
+                        ? 'bg-[#e8735a] text-white'
+                        : 'text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {child.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="px-4 pt-5 pb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Questions</p>
             <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1">
@@ -345,6 +377,25 @@ export default function AssessmentPlayerPage() {
               )}
             </div>
           </div>
+
+          {/* Mobile benchmark switcher */}
+          {assessment.type === 'benchmark_group' && assessment.childAssessments && (
+            <div className="md:hidden flex-shrink-0 flex gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100 overflow-x-auto">
+              {assessment.childAssessments.map(child => (
+                <button
+                  key={child.id}
+                  onClick={() => switchBenchmark(child)}
+                  className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    selectedBenchmark?.id === child.id
+                      ? 'bg-[#e8735a] text-white'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {child.title}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
           <div className={`flex justify-center px-4 md:px-16 py-4 bg-gray-50 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}>
