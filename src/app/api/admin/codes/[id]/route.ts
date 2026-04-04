@@ -10,7 +10,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   const { data, error } = await supabaseAdmin
     .from('access_codes')
-    .select(`*, code_assessments ( sort_order, assessment_id, bundle_id, assessments ( * ), bundles ( * ) )`)
+    .select(`*, code_assignments ( sort_order, assessment_id, bundle_id, assessments ( * ), bundles ( * ) )`)
     .eq('id', id)
     .single();
 
@@ -35,7 +35,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   if (assessment_ids !== undefined || bundle_ids !== undefined) {
-    await supabaseAdmin.from('code_assessments').delete().eq('code_id', id);
+    await supabaseAdmin.from('code_assignments').delete().eq('code_id', id);
     const rows: { code_id: string; assessment_id?: string; bundle_id?: string; sort_order: number }[] = [];
     let i = 0;
     for (const bid of (bundle_ids ?? [])) {
@@ -45,7 +45,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       rows.push({ code_id: id, assessment_id: aid, sort_order: i++ });
     }
     if (rows.length) {
-      await supabaseAdmin.from('code_assessments').insert(rows);
+      await supabaseAdmin.from('code_assignments').insert(rows);
     }
   }
 

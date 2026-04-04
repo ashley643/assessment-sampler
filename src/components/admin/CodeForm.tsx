@@ -59,7 +59,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
         setStartsAt(data.starts_at ? data.starts_at.slice(0, 10) : '');
         setExpiresAt(data.expires_at ? data.expires_at.slice(0, 10) : '');
         setIsActive(data.is_active ?? true);
-        const sorted = (data.code_assessments ?? []).sort(
+        const sorted = (data.code_assignments ?? []).sort(
           (a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order
         );
         setSelectedIds(

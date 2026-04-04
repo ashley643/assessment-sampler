@@ -17,7 +17,7 @@ export interface Assessment {
   description: string;
   playerLabel?: string; // short label shown in bundle switcher sidebar
   questions: Question[];
-  childAssessments?: Assessment[]; // populated for benchmark_group type
+  childAssessments?: Assessment[]; // populated for bundle type
 }
 
 export interface AccessCode {

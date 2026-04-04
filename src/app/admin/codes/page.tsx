@@ -12,7 +12,7 @@ interface Code {
   expires_at: string | null;
   is_active: boolean;
   created_at: string;
-  code_assessments: { sort_order: number; assessment_id: string | null; bundle_id: string | null; assessments: { title: string } | null; bundles: { title: string } | null }[];
+  code_assignments: { sort_order: number; assessment_id: string | null; bundle_id: string | null; assessments: { title: string } | null; bundles: { title: string } | null }[];
 }
 
 export default function CodesPage() {
@@ -69,7 +69,7 @@ export default function CodesPage() {
                     <td className="px-4 py-3 font-mono text-xs text-gray-900">{c.code}</td>
                     <td className="px-4 py-3 text-gray-700">{c.label}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
-                      {c.code_assessments
+                      {c.code_assignments
                         .sort((a, b) => a.sort_order - b.sort_order)
                         .map(ca => ca.bundles?.title ?? ca.assessments?.title)
                         .filter(Boolean)

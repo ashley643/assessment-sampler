@@ -11,7 +11,7 @@ export async function GET() {
     .from('access_codes')
     .select(`
       *,
-      code_assessments (
+      code_assignments (
         sort_order,
         assessment_id,
         bundle_id,
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     }
   }
   if (rows.length) {
-    await supabaseAdmin.from('code_assessments').insert(rows);
+    await supabaseAdmin.from('code_assignments').insert(rows);
   }
 
   const session = await auth();

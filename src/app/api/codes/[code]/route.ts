@@ -9,7 +9,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
     .from('access_codes')
     .select(`
       id, code, label, starts_at, expires_at, is_active,
-      code_assessments (
+      code_assignments (
         sort_order,
         assessment_id,
         bundle_id,
@@ -66,7 +66,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
     assessments: RawAssessment | null;
   };
 
-  const sorted = ((data.code_assessments as unknown) as RawCodeAssessment[])
+  const sorted = ((data.code_assignments as unknown) as RawCodeAssessment[])
     .sort((a, b) => a.sort_order - b.sort_order);
 
   // Collect all bundle IDs that need to be fetched
@@ -121,7 +121,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
     const a = ca.assessments;
     const base = normalizeAssessment(a);
 
-    if (a.type === 'benchmark_group') {
+    if (a.type === 'bundle') {
       const childIds = a.questions.map(q => q.id);
       const { data: children } = await supabaseAdmin
         .from('assessments')

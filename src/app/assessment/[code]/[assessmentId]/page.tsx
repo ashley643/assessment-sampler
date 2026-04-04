@@ -115,7 +115,7 @@ export default function AssessmentPlayerPage() {
         setCodeData(data);
         // Only track assessment_open for standalone assessments — bundles track when a child is selected
         const thisAssessment = data.assessments.find((a: Assessment) => a.id === assessmentId);
-        const isBundle = thisAssessment?.type === 'bundle' || thisAssessment?.type === 'benchmark_group';
+        const isBundle = thisAssessment?.type === 'bundle';
         if (!isPreview && !isBundle) track('assessment_open', code, { assessment_id: assessmentId });
       })
       .catch(() => setNotFound(true));
@@ -138,8 +138,8 @@ export default function AssessmentPlayerPage() {
   const assessment = codeData.assessments.find(a => a.id === assessmentId) as Assessment | undefined;
   if (!assessment) { router.replace(`/assessment/${code}`); return null; }
 
-  // Benchmark group: show selector before player
-  if ((assessment.type === 'benchmark_group' || assessment.type === 'bundle') && !selectedBenchmark) {
+  // Bundle: show version selector before player
+  if ((assessment.type === 'bundle') && !selectedBenchmark) {
     return (
       <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
       {isPreview && <div className="bg-amber-400 text-amber-900 text-xs font-semibold text-center py-1.5 tracking-wide flex-shrink-0">PREVIEW MODE — activity is not being tracked</div>}
@@ -216,8 +216,8 @@ export default function AssessmentPlayerPage() {
     );
   }
 
-  // Use selected benchmark's questions if this is a benchmark group
-  const activeAssessment = ((assessment.type === 'benchmark_group' || assessment.type === 'bundle') && selectedBenchmark) ? selectedBenchmark : assessment;
+  // Use selected child's questions if this is a bundle
+  const activeAssessment = ((assessment.type === 'bundle') && selectedBenchmark) ? selectedBenchmark : assessment;
 
   const questions      = [...activeAssessment.questions].sort((a, b) => a.order - b.order);
   const currentQ       = questions[currentIdx];
@@ -311,7 +311,7 @@ export default function AssessmentPlayerPage() {
         {/* ── Sidebar ─────────────────────────────────────── */}
         <aside className="hidden md:flex w-60 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex-col">
           {/* Benchmark switcher (desktop) */}
-          {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && (
+          {(assessment.type === 'bundle') && assessment.childAssessments && (
             <div className="px-4 pt-4 pb-3 border-b border-gray-200">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Version</p>
               <div className="flex flex-col gap-1">
@@ -373,7 +373,7 @@ export default function AssessmentPlayerPage() {
                 </Tooltip>
               )}
               {/* Mobile version picker button */}
-              {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && (
+              {(assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && (
                 <div className="md:hidden mt-1">
                   <button
                     onClick={() => setVersionDropdownOpen(true)}
@@ -390,7 +390,7 @@ export default function AssessmentPlayerPage() {
               )}
 
               {/* Mobile version bottom sheet */}
-              {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && versionDropdownOpen && (
+              {(assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && versionDropdownOpen && (
                 <div className="md:hidden">
                   {/* Backdrop */}
                   <div
