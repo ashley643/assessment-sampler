@@ -376,7 +376,7 @@ export default function AssessmentPlayerPage() {
                           : 'bg-gray-200 text-gray-500'
                       }`}
                     >
-                      B{i + 1}
+                      V{i + 1}
                     </button>
                   ))}
                 </div>
