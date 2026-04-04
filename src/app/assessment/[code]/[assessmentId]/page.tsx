@@ -230,7 +230,10 @@ export default function AssessmentPlayerPage() {
     setTypedSubmitted(false);
     celebrationShownRef.current = false;
     setShowCelebration(false);
-    if (!isPreview) track('assessment_open', code, { assessment_id: child.id });
+    if (!isPreview) {
+      track('assessment_open', code, { assessment_id: child.id });
+      track('version_switch', code, { assessment_id: child.id });
+    }
     // Clamp index if new assessment has fewer questions
     const childQuestions = [...child.questions].sort((a, b) => a.order - b.order);
     setCurrentIdx(prev => Math.min(prev, Math.max(0, childQuestions.length - 1)));
@@ -361,7 +364,7 @@ export default function AssessmentPlayerPage() {
               {currentQ.spanishEmbedUrl && (
                 <Tooltip text="Other prompt languages can be configured for your population.">
                   <button
-                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
+                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('language_switch', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { language: spanishMode ? 'english' : 'spanish' } }); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                     style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
                   >
@@ -437,7 +440,7 @@ export default function AssessmentPlayerPage() {
               )}
               <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
                 <button
-                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
+                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('format_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { format: showTyping ? 'video' : 'text' } }); }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                   style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
                 >

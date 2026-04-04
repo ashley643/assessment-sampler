@@ -8,8 +8,12 @@ const EVENT_LABELS: Record<string, string> = {
   question_view: 'Viewed a question',
   question_complete: 'Completed a question',
   assessment_complete: 'Completed an assessment',
-  mode_change: 'Switched to a different response format',
+  language_switch: 'Switched to Spanish',
+  format_change: 'Switched to typed response',
+  version_switch: 'Switched versions',
   text_response: 'Submitted a typed response',
+  // legacy — kept for historical data
+  mode_change: 'Switched response mode',
 };
 import AdminShell from '@/components/admin/AdminShell';
 
