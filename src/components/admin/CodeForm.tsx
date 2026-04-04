@@ -126,7 +126,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
   if (loading) return <p className="text-sm text-gray-400">Loading…</p>;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
+    <form id="code-form" onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       <Field label="Code">
         <input
           type="text"
@@ -214,23 +214,6 @@ export default function CodeForm({ codeId }: CodeFormProps) {
       </Field>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
-
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-5 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors"
-        >
-          {saving ? 'Saving…' : isNew ? 'Create Code' : 'Save Changes'}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push('/admin/codes')}
-          className="px-5 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
     </form>
   );
 }

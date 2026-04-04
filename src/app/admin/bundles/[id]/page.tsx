@@ -138,9 +138,17 @@ export default function EditBundlePage() {
   return (
     <AdminShell>
       <div className="max-w-2xl">
-        <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => router.push('/admin/bundles')} className="text-sm text-gray-400 hover:text-gray-600">← Bundles</button>
-          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Bundle' : 'Edit Bundle'}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <button onClick={() => router.push('/admin/bundles')} className="text-sm text-gray-400 hover:text-gray-600">← Bundles</button>
+            <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Bundle' : 'Edit Bundle'}</h1>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => router.push('/admin/bundles')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
+              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+            </button>
+          </div>
         </div>
 
         {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
@@ -221,12 +229,6 @@ export default function EditBundlePage() {
             )}
           </div>
 
-          <div className="flex gap-3">
-            <button onClick={() => router.push('/admin/bundles')} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-[#4a6fa5] text-white text-sm font-medium hover:bg-[#3d5d8f] disabled:opacity-50">
-              {saving ? 'Saving…' : 'Save Bundle'}
-            </button>
-          </div>
         </div>
       </div>
     </AdminShell>

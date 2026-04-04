@@ -121,10 +121,29 @@ export default function EditAssessmentPage() {
   return (
     <AdminShell>
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          {isNew ? 'New Assessment' : 'Edit Assessment'}
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {isNew ? 'New Assessment' : 'Edit Assessment'}
+          </h1>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/admin/assessments')}
+              className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="assessment-form"
+              disabled={saving}
+              className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+            </button>
+          </div>
+        </div>
+        <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Basic info */}
           <Section title="Details">
             <div className="grid grid-cols-2 gap-4">
@@ -238,23 +257,6 @@ export default function EditAssessmentPage() {
           </Section>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-5 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Saving…' : isNew ? 'Create Assessment' : 'Save Changes'}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/admin/assessments')}
-              className="px-5 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
         </form>
       </div>
     </AdminShell>

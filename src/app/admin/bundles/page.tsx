@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import AdminShell from '@/components/admin/AdminShell';
 
@@ -20,15 +20,40 @@ export default function BundlesPage() {
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<Bundle | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const dragIdx = useRef<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
   async function load() {
     const res = await fetch('/api/admin/bundles');
     const data = await res.json();
-    setBundles(Array.isArray(data) ? data : []);
+    setBundles(Array.isArray(data) ? data.sort((a: Bundle, b: Bundle) => a.sort_order - b.sort_order) : []);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
+
+  function onDragStart(idx: number) { dragIdx.current = idx; }
+  function onDragOver(e: React.DragEvent, idx: number) { e.preventDefault(); setDragOver(idx); }
+
+  async function onDrop(dropIndex: number) {
+    const from = dragIdx.current;
+    if (from === null || from === dropIndex) { setDragOver(null); return; }
+    const reordered = [...bundles];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(dropIndex, 0, moved);
+    const updated = reordered.map((b, i) => ({ ...b, sort_order: i }));
+    setBundles(updated);
+    setDragOver(null);
+    dragIdx.current = null;
+    setSaving(true);
+    await fetch('/api/admin/bundles/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated.map(b => ({ id: b.id, sort_order: b.sort_order }))),
+    });
+    setSaving(false);
+  }
 
   async function handleDelete() {
     if (!confirmDelete) return;
@@ -43,9 +68,9 @@ export default function BundlesPage() {
     <AdminShell>
       <div className="max-w-4xl">
         <div className="flex items-center justify-between mb-6">
-          <div>
+          <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-gray-900">Bundles</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Group related assessments into a selector experience</p>
+            {saving && <span className="text-xs text-gray-400">Saving order…</span>}
           </div>
           <Link href="/admin/bundles/new" className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] transition-colors">
             + New Bundle
@@ -61,14 +86,30 @@ export default function BundlesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
+                  <th className="px-2 py-3 w-8" />
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Bundle</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Assessments</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {bundles.map(b => (
-                  <tr key={b.id} className="hover:bg-gray-50">
+                {bundles.map((b, idx) => (
+                  <tr
+                    key={b.id}
+                    draggable
+                    onDragStart={() => onDragStart(idx)}
+                    onDragOver={e => onDragOver(e, idx)}
+                    onDrop={() => onDrop(idx)}
+                    onDragEnd={() => setDragOver(null)}
+                    className={`transition-colors ${dragOver === idx ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  >
+                    <td className="px-2 py-3 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 select-none">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+                        <circle cx="4" cy="3" r="1.2"/><circle cx="10" cy="3" r="1.2"/>
+                        <circle cx="4" cy="7" r="1.2"/><circle cx="10" cy="7" r="1.2"/>
+                        <circle cx="4" cy="11" r="1.2"/><circle cx="10" cy="11" r="1.2"/>
+                      </svg>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: b.accent_color }} />
