@@ -12,8 +12,6 @@ const EVENT_LABELS: Record<string, string> = {
   format_change: 'Switched to typed response',
   version_switch: 'Switched versions',
   text_response: 'Submitted a typed response',
-  // legacy — kept for historical data
-  mode_change: 'Switched response mode',
 };
 import AdminShell from '@/components/admin/AdminShell';
 
