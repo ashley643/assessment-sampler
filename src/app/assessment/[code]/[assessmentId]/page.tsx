@@ -369,11 +369,9 @@ export default function AssessmentPlayerPage() {
                     onClick={() => setVersionDropdownOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 active:bg-gray-200 transition-colors max-w-[220px]"
                   >
-                    <span className="text-gray-400 font-bold flex-shrink-0">
-                      V{assessment.childAssessments.findIndex(c => c.id === selectedBenchmark.id) + 1}
+                    <span className="truncate">
+                      {assessment.childAssessments.findIndex(c => c.id === selectedBenchmark.id) + 1} – {selectedBenchmark.playerLabel ?? selectedBenchmark.description}
                     </span>
-                    <span className="mx-0.5 text-gray-300">·</span>
-                    <span className="truncate">{selectedBenchmark.playerLabel ?? selectedBenchmark.description}</span>
                     <svg className="w-3 h-3 flex-shrink-0 ml-0.5 text-gray-400" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <path d="M1 1l4 4 4-4"/>
                     </svg>
@@ -413,11 +411,8 @@ export default function AssessmentPlayerPage() {
                               isActive ? 'bg-blue-50' : 'active:bg-gray-50'
                             }`}
                           >
-                            <span className={`text-xs font-bold w-7 flex-shrink-0 ${isActive ? 'text-[#4a6fa5]' : 'text-gray-400'}`}>
-                              V{i + 1}
-                            </span>
                             <span className={`text-base flex-1 ${isActive ? 'font-semibold text-[#4a6fa5]' : 'text-gray-700'}`}>
-                              {child.playerLabel ?? child.description}
+                              {i + 1} – {child.playerLabel ?? child.description}
                             </span>
                             {isActive && (
                               <svg className="w-4 h-4 flex-shrink-0 text-[#4a6fa5]" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
