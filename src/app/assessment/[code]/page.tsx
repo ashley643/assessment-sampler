@@ -74,12 +74,24 @@ export default function AssessmentSelectorPage() {
           </span>
         </div>
 
-        <button
-          onClick={() => router.push('/assessment')}
-          className="text-white/50 hover:text-white text-sm transition-colors"
-        >
-          Sign Out
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push(`/feed/${code}`)}
+            className="text-white/70 hover:text-white text-sm transition-colors flex items-center gap-1.5"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M5 5l3.5 2L5 9V5z" fill="currentColor"/>
+            </svg>
+            Sample Responses
+          </button>
+          <button
+            onClick={() => router.push('/assessment')}
+            className="text-white/50 hover:text-white text-sm transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
       </nav>
 
       {/* ── Content ───────────────────────────────────────── */}

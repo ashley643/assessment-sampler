@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       body.questions.map((q: {
         id: string; title: string; sort_order: number;
         embed_url: string; spanish_embed_url?: string;
+        sample_embed_url?: string; sample_spanish_embed_url?: string;
       }) => ({
         id: q.id,
         assessment_id: id,
@@ -43,6 +44,8 @@ export async function POST(req: Request) {
         title: q.title,
         embed_url: q.embed_url,
         spanish_embed_url: q.spanish_embed_url || null,
+        sample_embed_url: q.sample_embed_url || null,
+        sample_spanish_embed_url: q.sample_spanish_embed_url || null,
       })),
     );
   }

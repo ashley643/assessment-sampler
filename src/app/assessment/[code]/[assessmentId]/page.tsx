@@ -104,6 +104,7 @@ export default function AssessmentPlayerPage() {
   );
   const [showCelebration, setShowCelebration] = useState(false);
   const [versionDropdownOpen, setVersionDropdownOpen] = useState(false);
+  const [showSample, setShowSample] = useState(false);
   const celebrationShownRef = useRef(false);
   const typingPanelRef = useRef<HTMLDivElement>(null);
 
@@ -242,6 +243,7 @@ export default function AssessmentPlayerPage() {
   const goToQuestion = (idx: number) => {
     setCurrentIdx(idx);
     setShowTyping(false);
+    setShowSample(false);
     setTypedAnswer('');
     setTypedSubmitted(false);
     if (!isPreview) track('question_view', code, { assessment_id: activeAssessment.id, question_id: questions[idx].id });
@@ -287,7 +289,13 @@ export default function AssessmentPlayerPage() {
     }
   };
 
-  const embedSrc = spanishMode && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl;
+  const hasSample = !!(showSample && (spanishMode ? currentQ.sampleSpanishEmbedUrl || currentQ.sampleEmbedUrl : currentQ.sampleEmbedUrl));
+  const embedSrc = hasSample
+    ? (spanishMode && currentQ.sampleSpanishEmbedUrl ? currentQ.sampleSpanishEmbedUrl : currentQ.sampleEmbedUrl!)
+    : (spanishMode && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl);
+
+  // Reset sample view when question changes
+  const sampleAvailable = !!(currentQ.sampleEmbedUrl);
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
@@ -451,6 +459,19 @@ export default function AssessmentPlayerPage() {
                   I prefer to type
                 </button>
               </Tooltip>
+              {sampleAvailable && (
+                <button
+                  onClick={() => setShowSample(s => !s)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={showSample ? { background: '#1D9E75', color: 'white', outline: '2px solid #0f6e50' } : { background: '#1D9E75', color: 'white' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                    <circle cx="7.5" cy="7.5" r="6" stroke="white" strokeWidth="1.4"/>
+                    <path d="M5.5 5.5l4 2-4 2V5.5z" fill="white"/>
+                  </svg>
+                  {showSample ? 'Back to question' : 'See a sample response'}
+                </button>
+              )}
             </div>
           </div>
 

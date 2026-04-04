@@ -11,6 +11,8 @@ interface Question {
   title: string;
   embed_url: string;
   spanish_embed_url: string;
+  sample_embed_url: string;
+  sample_spanish_embed_url: string;
 }
 
 interface Assessment {
@@ -38,7 +40,7 @@ interface TypePreset {
 const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 function newQuestion(order: number): Question {
-  return { id: `q-${Date.now()}-${order}`, sort_order: order, title: '', embed_url: '', spanish_embed_url: '' };
+  return { id: `q-${Date.now()}-${order}`, sort_order: order, title: '', embed_url: '', spanish_embed_url: '', sample_embed_url: '', sample_spanish_embed_url: '' };
 }
 
 export default function EditAssessmentPage() {
@@ -348,6 +350,12 @@ export default function EditAssessmentPage() {
                   </F>
                   <F label="Spanish Embed URL (optional)">
                     <input value={q.spanish_embed_url ?? ''} onChange={e => updateQuestion(i, 'spanish_embed_url', e.target.value)} placeholder="https://..." className={INPUT} />
+                  </F>
+                  <F label="Sample Response (English)">
+                    <input value={q.sample_embed_url ?? ''} onChange={e => updateQuestion(i, 'sample_embed_url', e.target.value)} placeholder="VideoAsk share link for example response" className={INPUT} />
+                  </F>
+                  <F label="Sample Response (Spanish)">
+                    <input value={q.sample_spanish_embed_url ?? ''} onChange={e => updateQuestion(i, 'sample_spanish_embed_url', e.target.value)} placeholder="VideoAsk share link for Spanish example response" className={INPUT} />
                   </F>
                 </div>
               ))}
