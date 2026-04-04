@@ -57,6 +57,9 @@ export default function EditAssessmentPage() {
   const [error, setError] = useState('');
   const [typePresets, setTypePresets] = useState<TypePreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string | 'custom'>('');
+  const [editingPreset, setEditingPreset] = useState<string | null>(null);
+  const [editingPresetForm, setEditingPresetForm] = useState<TypePreset | null>(null);
+  const [presetSaving, setPresetSaving] = useState(false);
 
   useEffect(() => {
     // Derive unique type presets from existing assessments
@@ -106,6 +109,47 @@ export default function EditAssessmentPage() {
   function selectCustom() {
     setSelectedPreset('custom');
     setForm(prev => ({ ...prev, type: '', type_label: '', accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C' }));
+  }
+
+  function startEditPreset(preset: TypePreset) {
+    setEditingPreset(preset.type);
+    setEditingPresetForm({ ...preset });
+  }
+
+  function cancelEditPreset() {
+    setEditingPreset(null);
+    setEditingPresetForm(null);
+  }
+
+  async function savePresetEdit() {
+    if (!editingPreset || !editingPresetForm) return;
+    setPresetSaving(true);
+    const res = await fetch(`/api/admin/types/${encodeURIComponent(editingPreset)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editingPresetForm),
+    });
+    setPresetSaving(false);
+    if (!res.ok) return;
+    setTypePresets(prev => prev.map(p => p.type === editingPreset ? { ...editingPresetForm } : p));
+    if (selectedPreset === editingPreset) {
+      setSelectedPreset(editingPresetForm.type);
+      setForm(prev => ({ ...prev, ...editingPresetForm }));
+    }
+    setEditingPreset(null);
+    setEditingPresetForm(null);
+  }
+
+  async function deletePreset(preset: TypePreset) {
+    const confirmed = confirm(`Delete type "${preset.type_label}"? This will permanently delete all assessments of this type.`);
+    if (!confirmed) return;
+    const res = await fetch(`/api/admin/types/${encodeURIComponent(preset.type)}`, { method: 'DELETE' });
+    if (!res.ok) return;
+    setTypePresets(prev => prev.filter(p => p.type !== preset.type));
+    if (selectedPreset === preset.type) {
+      setSelectedPreset('');
+      setForm(prev => ({ ...prev, type: '', type_label: '', accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C' }));
+    }
   }
 
   function updateQuestion(idx: number, key: keyof Question, value: string) {
@@ -178,24 +222,33 @@ export default function EditAssessmentPage() {
             <p className="text-xs text-gray-500 mb-3">Select an existing type to inherit its label and colors, or add a new one.</p>
             <div className="flex flex-wrap gap-2 mb-4">
               {typePresets.map(preset => (
-                <button
+                <div
                   key={preset.type}
-                  type="button"
-                  onClick={() => applyPreset(preset)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                  className={`group flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm transition-all ${
                     selectedPreset === preset.type
                       ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5]'
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   }`}
                 >
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.accent_color }} />
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: preset.badge_bg, color: preset.badge_text }}
-                  >
-                    {preset.type_label}
-                  </span>
-                </button>
+                  <button type="button" onClick={() => applyPreset(preset)} className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.accent_color }} />
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: preset.badge_bg, color: preset.badge_text }}>
+                      {preset.type_label}
+                    </span>
+                  </button>
+                  <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onClick={() => startEditPreset(preset)} title="Edit type" className="p-0.5 text-gray-400 hover:text-gray-700 rounded">
+                      <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M11.5 2.5l2 2-9 9H2.5v-2l9-9z"/>
+                      </svg>
+                    </button>
+                    <button type="button" onClick={() => deletePreset(preset)} title="Delete type" className="p-0.5 text-gray-400 hover:text-red-500 rounded">
+                      <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               ))}
               <button
                 type="button"
@@ -210,8 +263,35 @@ export default function EditAssessmentPage() {
               </button>
             </div>
 
+            {/* Inline edit form — shown when editing an existing type */}
+            {editingPreset && editingPresetForm && (
+              <div className="pt-3 border-t border-gray-100 space-y-4">
+                <p className="text-xs font-medium text-gray-500">Editing type — changes apply to all assessments of this type</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <F label="Type ID (slug)">
+                    <input value={editingPresetForm.type} onChange={e => setEditingPresetForm(prev => prev ? { ...prev, type: e.target.value.toLowerCase().replace(/\s+/g, '-') } : prev)} className={INPUT} />
+                  </F>
+                  <F label="Type Label">
+                    <input value={editingPresetForm.type_label} onChange={e => setEditingPresetForm(prev => prev ? { ...prev, type_label: e.target.value } : prev)} className={INPUT} />
+                  </F>
+                </div>
+                <ColorPalettePicker
+                  values={{ accent_color: editingPresetForm.accent_color, badge_bg: editingPresetForm.badge_bg, badge_text: editingPresetForm.badge_text }}
+                  onChange={v => setEditingPresetForm(prev => prev ? { ...prev, ...v } : prev)}
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={savePresetEdit} disabled={presetSaving} className="px-3 py-1.5 bg-[#4a6fa5] text-white text-xs font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50">
+                    {presetSaving ? 'Saving…' : 'Save changes'}
+                  </button>
+                  <button type="button" onClick={cancelEditPreset} className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Custom fields — only shown when "New type" selected */}
-            {isCustom && (
+            {isCustom && !editingPreset && (
               <div className="pt-3 border-t border-gray-100 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <F label="Type ID (slug)">
@@ -229,7 +309,7 @@ export default function EditAssessmentPage() {
             )}
 
             {/* Preview for preset selections */}
-            {selectedPreset && selectedPreset !== 'custom' && form.type_label && (
+            {selectedPreset && selectedPreset !== 'custom' && form.type_label && !editingPreset && (
               <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                 <span className="text-xs text-gray-500">Preview:</span>
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: form.accent_color }} />

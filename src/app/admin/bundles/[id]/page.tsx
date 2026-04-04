@@ -52,6 +52,9 @@ export default function EditBundlePage() {
   const [error, setError] = useState('');
   const [colorPresets, setColorPresets] = useState<ColorPreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [editingColor, setEditingColor] = useState<string | null>(null); // old accent_color being edited
+  const [editingColorForm, setEditingColorForm] = useState<{ accent_color: string; badge_bg: string; badge_text: string } | null>(null);
+  const [colorSaving, setColorSaving] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/assessments')
@@ -96,6 +99,37 @@ export default function EditBundlePage() {
 
   function set(field: keyof BundleForm, value: string | number) {
     setForm(f => ({ ...f, [field]: value }));
+  }
+
+  function startEditColor(preset: ColorPreset) {
+    setEditingColor(preset.accent_color);
+    setEditingColorForm({ accent_color: preset.accent_color, badge_bg: preset.badge_bg, badge_text: preset.badge_text });
+  }
+
+  function cancelEditColor() {
+    setEditingColor(null);
+    setEditingColorForm(null);
+  }
+
+  async function saveColorEdit() {
+    if (!editingColor || !editingColorForm) return;
+    setColorSaving(true);
+    const res = await fetch('/api/admin/bundles/bulk-color', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_accent_color: editingColor, ...editingColorForm }),
+    });
+    setColorSaving(false);
+    if (!res.ok) return;
+    setColorPresets(prev => prev.map(p =>
+      p.accent_color === editingColor ? { ...p, ...editingColorForm } : p
+    ));
+    if (selectedPreset === editingColor) {
+      setSelectedPreset(editingColorForm.accent_color);
+      setForm(f => ({ ...f, ...editingColorForm }));
+    }
+    setEditingColor(null);
+    setEditingColorForm(null);
   }
 
   function toggleAssessment(aid: string) {
@@ -201,22 +235,36 @@ export default function EditBundlePage() {
                 <p className="text-xs text-gray-500">Pick from an existing color scheme or customize.</p>
                 <div className="flex flex-wrap gap-2">
                   {colorPresets.map(preset => (
-                    <button
+                    <div
                       key={preset.accent_color}
-                      type="button"
-                      onClick={() => {
-                        setSelectedPreset(preset.accent_color);
-                        setForm(f => ({ ...f, accent_color: preset.accent_color, badge_bg: preset.badge_bg, badge_text: preset.badge_text }));
-                      }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                      className={`group flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm transition-all ${
                         selectedPreset === preset.accent_color
                           ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5]'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: preset.accent_color }} />
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: preset.badge_bg, color: preset.badge_text }}>{preset.label}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPreset(preset.accent_color);
+                          setForm(f => ({ ...f, accent_color: preset.accent_color, badge_bg: preset.badge_bg, badge_text: preset.badge_text }));
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: preset.accent_color }} />
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: preset.badge_bg, color: preset.badge_text }}>{preset.label}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEditColor(preset)}
+                        title="Edit color scheme"
+                        className="ml-1 p-0.5 text-gray-400 hover:text-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M11.5 2.5l2 2-9 9H2.5v-2l9-9z"/>
+                        </svg>
+                      </button>
+                    </div>
                   ))}
                   <button
                     type="button"
@@ -232,7 +280,26 @@ export default function EditBundlePage() {
                 </div>
               </>
             )}
-            {(selectedPreset === 'custom' || colorPresets.length === 0) && (
+            {/* Inline color edit panel */}
+            {editingColor && editingColorForm && (
+              <div className="pt-3 border-t border-gray-100 space-y-4">
+                <p className="text-xs font-medium text-gray-500">Editing color scheme — changes apply to all bundles using this color</p>
+                <ColorPalettePicker
+                  values={editingColorForm}
+                  onChange={v => setEditingColorForm(prev => prev ? { ...prev, ...v } : prev)}
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={saveColorEdit} disabled={colorSaving} className="px-3 py-1.5 bg-[#4a6fa5] text-white text-xs font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50">
+                    {colorSaving ? 'Saving…' : 'Save changes'}
+                  </button>
+                  <button type="button" onClick={cancelEditColor} className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(selectedPreset === 'custom' || colorPresets.length === 0) && !editingColor && (
               <div className="pt-3 border-t border-gray-100">
                 <ColorPalettePicker
                   values={{ accent_color: form.accent_color, badge_bg: form.badge_bg, badge_text: form.badge_text }}
