@@ -367,12 +367,12 @@ export default function AssessmentPlayerPage() {
                 <div className="md:hidden mt-1">
                   <button
                     onClick={() => setVersionDropdownOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 active:bg-gray-200 transition-colors max-w-[220px]"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white active:opacity-90 transition-colors max-w-[220px]" style={{ background: '#e8735a' }}
                   >
                     <span className="truncate">
                       {assessment.childAssessments.findIndex(c => c.id === selectedBenchmark.id) + 1} – {selectedBenchmark.playerLabel ?? selectedBenchmark.description}
                     </span>
-                    <svg className="w-3 h-3 flex-shrink-0 ml-0.5 text-gray-400" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <svg className="w-3 h-3 flex-shrink-0 ml-0.5 text-white/70" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <path d="M1 1l4 4 4-4"/>
                     </svg>
                   </button>
