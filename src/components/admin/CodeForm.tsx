@@ -225,9 +225,6 @@ export default function CodeForm({ codeId }: CodeFormProps) {
                   />
                   <span className={`text-sm ${isCovered ? 'text-gray-400' : 'text-gray-700'}`}>{a.title}</span>
                   <span className="text-xs text-gray-400">({a.type_label})</span>
-                  {isCovered && (
-                    <span className="text-xs text-gray-400 italic">via bundle</span>
-                  )}
                 </label>
                 {isCovered && (
                   <div className="absolute left-5 top-full mt-1 z-10 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
