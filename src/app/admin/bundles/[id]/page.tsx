@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/AdminShell';
+import ColorPalettePicker from '@/components/admin/ColorPalettePicker';
 
 interface Assessment {
   id: string;
@@ -232,25 +233,13 @@ export default function EditBundlePage() {
               </>
             )}
             {(selectedPreset === 'custom' || colorPresets.length === 0) && (
-              <div className="grid grid-cols-3 gap-4 pt-3 border-t border-gray-100">
-                {([
-                  { label: 'Accent Color', field: 'accent_color' as const },
-                  { label: 'Badge Background', field: 'badge_bg' as const },
-                  { label: 'Badge Text Color', field: 'badge_text' as const },
-                ]).map(({ label, field }) => (
-                  <div key={field}>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-                    <div className="flex items-center gap-2">
-                      <input type="color" value={form[field]} onChange={e => set(field, e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-200" />
-                      <input className={INPUT} value={form[field]} onChange={e => set(field, e.target.value)} />
-                    </div>
-                  </div>
-                ))}
+              <div className="pt-3 border-t border-gray-100">
+                <ColorPalettePicker
+                  values={{ accent_color: form.accent_color, badge_bg: form.badge_bg, badge_text: form.badge_text }}
+                  onChange={v => setForm(f => ({ ...f, ...v }))}
+                />
               </div>
             )}
-            <p className="text-xs text-gray-400 pt-1">
-              Preview: <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: form.badge_bg, color: form.badge_text }}>{form.title || 'Bundle'}</span>
-            </p>
           </div>
 
           {/* Assessment membership */}

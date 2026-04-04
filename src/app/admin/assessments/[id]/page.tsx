@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/AdminShell';
+import ColorPalettePicker from '@/components/admin/ColorPalettePicker';
 
 interface Question {
   id: string;
@@ -211,37 +212,25 @@ export default function EditAssessmentPage() {
 
             {/* Custom fields — only shown when "New type" selected */}
             {isCustom && (
-              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
-                <F label="Type ID (slug)">
-                  <input value={form.type} onChange={e => updateForm('type', e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. community-schools" className={INPUT} required />
-                </F>
-                <F label="Type Label">
-                  <input value={form.type_label} onChange={e => updateForm('type_label', e.target.value)} placeholder="e.g. Community Schools" className={INPUT} required />
-                </F>
-                <F label="Accent Color">
-                  <div className="flex gap-2 items-center">
-                    <input type="color" value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                    <input value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className={INPUT} />
-                  </div>
-                </F>
-                <F label="Badge Background">
-                  <div className="flex gap-2 items-center">
-                    <input type="color" value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                    <input value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className={INPUT} />
-                  </div>
-                </F>
-                <F label="Badge Text Color">
-                  <div className="flex gap-2 items-center">
-                    <input type="color" value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                    <input value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className={INPUT} />
-                  </div>
-                </F>
+              <div className="pt-3 border-t border-gray-100 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <F label="Type ID (slug)">
+                    <input value={form.type} onChange={e => updateForm('type', e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. community-schools" className={INPUT} required />
+                  </F>
+                  <F label="Type Label">
+                    <input value={form.type_label} onChange={e => updateForm('type_label', e.target.value)} placeholder="e.g. Community Schools" className={INPUT} required />
+                  </F>
+                </div>
+                <ColorPalettePicker
+                  values={{ accent_color: form.accent_color, badge_bg: form.badge_bg, badge_text: form.badge_text }}
+                  onChange={v => setForm(prev => ({ ...prev, ...v }))}
+                />
               </div>
             )}
 
-            {/* Always show preview */}
-            {(selectedPreset && form.type_label) && (
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+            {/* Preview for preset selections */}
+            {selectedPreset && selectedPreset !== 'custom' && form.type_label && (
+              <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                 <span className="text-xs text-gray-500">Preview:</span>
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: form.accent_color }} />
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: form.badge_bg, color: form.badge_text }}>
