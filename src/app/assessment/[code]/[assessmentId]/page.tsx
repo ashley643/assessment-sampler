@@ -218,7 +218,6 @@ export default function AssessmentPlayerPage() {
 
   const switchBenchmark = (child: Assessment) => {
     setSelectedBenchmark(child);
-    setSpanishMode(false);
     setShowTyping(false);
     setTypedAnswer('');
     setTypedSubmitted(false);
@@ -231,7 +230,6 @@ export default function AssessmentPlayerPage() {
 
   const goToQuestion = (idx: number) => {
     setCurrentIdx(idx);
-    setSpanishMode(false);
     setShowTyping(false);
     setTypedAnswer('');
     setTypedSubmitted(false);
@@ -304,7 +302,7 @@ export default function AssessmentPlayerPage() {
           {/* Benchmark switcher (desktop) */}
           {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && (
             <div className="px-4 pt-4 pb-3 border-b border-gray-200">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Benchmark</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Version</p>
               <div className="flex flex-col gap-1">
                 {assessment.childAssessments.map((child, i) => (
                   <button
@@ -359,7 +357,7 @@ export default function AssessmentPlayerPage() {
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                     style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
                   >
-                    <span>🌐</span> Try in Spanish
+                    <span>🌐</span> {spanishMode ? 'Try in English' : 'Try in Spanish'}
                   </button>
                 </Tooltip>
               )}
