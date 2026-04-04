@@ -352,7 +352,7 @@ export default function AssessmentPlayerPage() {
             {/* Buttons (right side on mobile, full width column on desktop) */}
             <div className="flex flex-col items-end gap-1 flex-shrink-0 md:flex-1">
               {currentQ.spanishEmbedUrl && (
-                <Tooltip text="Assessments can be configured for additional prompt languages depending on the population being served.">
+                <Tooltip text="Other prompt languages can be configured for your population.">
                   <button
                     onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
@@ -441,13 +441,15 @@ export default function AssessmentPlayerPage() {
                   I prefer to type
                 </button>
               </Tooltip>
-              {spanishMode && (
-                <p className="md:hidden text-xs text-gray-400 text-right leading-relaxed px-1">
-                  Other prompt languages can be configured for your population.
-                </p>
-              )}
             </div>
           </div>
+
+          {/* Spanish language note — shown above embed when Spanish mode is active */}
+          {spanishMode && (
+            <p className="text-xs text-gray-400 text-center leading-relaxed px-4 pt-2 bg-gray-50">
+              Other prompt languages can be configured for your population.
+            </p>
+          )}
 
           {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
           <div className={`flex justify-center px-4 md:px-16 py-4 bg-gray-50 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}>
