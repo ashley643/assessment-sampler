@@ -289,13 +289,13 @@ export default function AssessmentPlayerPage() {
     }
   };
 
-  const hasSample = !!(showSample && (spanishMode ? currentQ.sampleSpanishEmbedUrl || currentQ.sampleEmbedUrl : currentQ.sampleEmbedUrl));
+  const englishSample = currentQ.samples?.find(s => s.language === 'english');
+  const spanishSample = currentQ.samples?.find(s => s.language === 'spanish');
+  const sampleAvailable = !!englishSample;
+  const hasSample = !!(showSample && sampleAvailable);
   const embedSrc = hasSample
-    ? (spanishMode && currentQ.sampleSpanishEmbedUrl ? currentQ.sampleSpanishEmbedUrl : currentQ.sampleEmbedUrl!)
+    ? (spanishMode && spanishSample ? spanishSample.embedUrl : englishSample!.embedUrl)
     : (spanishMode && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl);
-
-  // Reset sample view when question changes
-  const sampleAvailable = !!(currentQ.sampleEmbedUrl);
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">

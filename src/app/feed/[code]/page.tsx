@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import type { AccessCode, Assessment, Question } from '@/types/assessment';
+import type { AccessCode, Assessment, Question, QuestionSample } from '@/types/assessment';
 
 interface FeedItem {
   question: Question;
+  sample: QuestionSample;
   assessment: Assessment;
   bundleTitle?: string;
 }
@@ -20,7 +21,6 @@ export default function FeedPage() {
   const [notFound, setNotFound] = useState(false);
   const [filterAssessment, setFilterAssessment] = useState<string | null>(null);
   const [filterBundle, setFilterBundle] = useState<string | null>(null);
-  const [spanishStates, setSpanishStates] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -37,23 +37,23 @@ export default function FeedPage() {
 
   if (!codeData) return null;
 
-  // Collect all feed items: questions with at least an English sample
+  // One feed item per sample
   const allItems: FeedItem[] = [];
+  function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string) {
+    for (const q of questions) {
+      for (const sample of q.samples ?? []) {
+        allItems.push({ question: q, sample, assessment, bundleTitle });
+      }
+    }
+  }
+
   for (const assessment of codeData.assessments) {
     if (assessment.type === 'bundle') {
       for (const child of assessment.childAssessments ?? []) {
-        for (const q of child.questions) {
-          if (q.sampleEmbedUrl) {
-            allItems.push({ question: q, assessment: child, bundleTitle: assessment.title });
-          }
-        }
+        collectQuestions(child.questions, child, assessment.title);
       }
     } else {
-      for (const q of assessment.questions) {
-        if (q.sampleEmbedUrl) {
-          allItems.push({ question: q, assessment });
-        }
-      }
+      collectQuestions(assessment.questions, assessment);
     }
   }
 
@@ -122,58 +122,43 @@ export default function FeedPage() {
           <p className="text-sm text-gray-400">No sample responses available yet.</p>
         ) : (
           <div className="space-y-8">
-            {filtered.map(({ question, assessment, bundleTitle }) => {
-              const isSpanish = !!spanishStates[question.id];
-              const src = isSpanish && question.sampleSpanishEmbedUrl
-                ? question.sampleSpanishEmbedUrl
-                : question.sampleEmbedUrl!;
-
-              return (
-                <div key={question.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-                  {/* Card header */}
-                  <div className="px-5 pt-4 pb-3 border-b border-gray-100">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      {bundleTitle && (
-                        <span className="text-xs text-gray-400">{bundleTitle}</span>
-                      )}
-                      {bundleTitle && <span className="text-gray-200 text-xs">›</span>}
-                      <span
-                        className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                        style={{ background: assessment.badgeBg, color: assessment.badgeText }}
-                      >
-                        {assessment.typeLabel}
+            {filtered.map(({ question, sample, assessment, bundleTitle }) => (
+              <div key={sample.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                {/* Card header */}
+                <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    {bundleTitle && (
+                      <span className="text-xs text-gray-400">{bundleTitle}</span>
+                    )}
+                    {bundleTitle && <span className="text-gray-200 text-xs">›</span>}
+                    <span
+                      className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                      style={{ background: assessment.badgeBg, color: assessment.badgeText }}
+                    >
+                      {assessment.typeLabel}
+                    </span>
+                    <span className="text-xs font-medium text-gray-700">{assessment.title}</span>
+                    {sample.language === 'spanish' && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#fde8e3', color: '#c0432a' }}>
+                        En Español
                       </span>
-                      <span className="text-xs font-medium text-gray-700">{assessment.title}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
-                      {question.sampleSpanishEmbedUrl && (
-                        <button
-                          onClick={() => setSpanishStates(s => ({ ...s, [question.id]: !s[question.id] }))}
-                          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all"
-                          style={isSpanish ? { background: '#e8735a', color: 'white' } : { background: '#f3f4f6', color: '#374151' }}
-                        >
-                          <span>🌐</span>
-                          {isSpanish ? 'En Español' : 'Try in Spanish'}
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
-
-                  {/* Embedded sample */}
-                  <div className="aspect-video bg-gray-50">
-                    <iframe
-                      key={`${question.id}-${isSpanish}`}
-                      src={src}
-                      allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-                      className="w-full h-full"
-                      style={{ border: 'none' }}
-                      title={`Sample response — ${question.title}`}
-                    />
-                  </div>
+                  <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
                 </div>
-              );
-            })}
+
+                {/* Embedded sample */}
+                <div className="aspect-video bg-gray-50">
+                  <iframe
+                    src={sample.embedUrl}
+                    allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
+                    className="w-full h-full"
+                    style={{ border: 'none' }}
+                    title={`Sample response — ${question.title}`}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
