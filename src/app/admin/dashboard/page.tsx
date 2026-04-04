@@ -115,28 +115,6 @@ export default function DashboardPage() {
               </Section>
             )}
 
-            {/* By assessment */}
-            {Object.keys(data.byAssessment).length > 0 && (
-              <Section title="Activity by Assessment">
-                <Table
-                  rows={Object.entries(data.byAssessment).sort((a, b) => b[1] - a[1])}
-                  colA="Assessment"
-                  colB="Actions"
-                />
-              </Section>
-            )}
-
-            {/* By event type */}
-            {Object.keys(data.byType).length > 0 && (
-              <Section title="Activity Breakdown">
-                <Table
-                  rows={Object.entries(data.byType).sort((a, b) => b[1] - a[1])}
-                  colA="Action"
-                  colB="Count"
-                />
-              </Section>
-            )}
-
             {/* Daily chart */}
             {data.daily.length > 0 && (
               <Section title="Daily Visits">
@@ -158,6 +136,28 @@ export default function DashboardPage() {
                     );
                   })}
                 </div>
+              </Section>
+            )}
+
+            {/* By event type */}
+            {Object.keys(data.byType).length > 0 && (
+              <Section title="Activity Breakdown">
+                <Table
+                  rows={Object.entries(data.byType).sort((a, b) => b[1] - a[1])}
+                  colA="Action"
+                  colB="Count"
+                />
+              </Section>
+            )}
+
+            {/* By assessment */}
+            {Object.keys(data.byAssessment).length > 0 && (
+              <Section title="Activity by Assessment">
+                <Table
+                  rows={Object.entries(data.byAssessment).sort((a, b) => b[1] - a[1])}
+                  colA="Assessment"
+                  colB="Actions"
+                />
               </Section>
             )}
 
