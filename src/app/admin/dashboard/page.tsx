@@ -20,6 +20,7 @@ interface AnalyticsData {
   events: number;
   byType: Record<string, number>;
   byAssessment: Record<string, number>;
+  byBundle: Record<string, number>;
   byCode: Record<string, number>;
   daily: { date: string; count: number }[];
 }
@@ -181,6 +182,27 @@ export default function DashboardPage() {
                   colA="Assessment"
                   colB="Actions"
                 />
+              </Section>
+            )}
+
+            {/* By bundle — bar graph */}
+            {Object.keys(data.byBundle).length > 0 && (
+              <Section title="Activity by Bundle">
+                <div className="p-4 space-y-3">
+                  {Object.entries(data.byBundle).sort((a, b) => b[1] - a[1]).map(([name, count]) => {
+                    const max = Math.max(...Object.values(data.byBundle));
+                    const pct = max > 0 ? (count / max) * 100 : 0;
+                    return (
+                      <div key={name} className="flex items-center gap-3 text-sm">
+                        <span className="w-40 text-xs text-gray-600 truncate flex-shrink-0 text-right">{name}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-2.5">
+                          <div className="bg-[#4a6fa5] h-2.5 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="w-8 text-right text-xs text-gray-700 tabular-nums flex-shrink-0">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </Section>
             )}
 

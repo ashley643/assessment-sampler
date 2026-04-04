@@ -40,35 +40,36 @@ export async function GET(req: Request) {
 
   // Look up assessment titles
   const allIds = [...new Set((events ?? []).map(e => e.assessment_id).filter(Boolean))];
-  const { data: assessments } = allIds.length
+  const { data: assessmentRows } = allIds.length
     ? await supabaseAdmin.from('assessments').select('id, title').in('id', allIds)
     : { data: [] };
-  const titleMap: Record<string, string> = {};
-  for (const a of assessments ?? []) titleMap[a.id] = a.title;
+  const assessmentTitleMap: Record<string, string> = {};
+  for (const a of assessmentRows ?? []) assessmentTitleMap[a.id] = a.title;
 
-  // Also resolve any IDs not found in assessments against the bundles table
-  const unresolvedIds = allIds.filter(id => !titleMap[id]);
-  const { data: bundles } = unresolvedIds.length
+  // Resolve bundle IDs separately
+  const unresolvedIds = allIds.filter(id => !assessmentTitleMap[id]);
+  const { data: bundleRows } = unresolvedIds.length
     ? await supabaseAdmin.from('bundles').select('id, title').in('id', unresolvedIds)
     : { data: [] };
-  for (const b of bundles ?? []) titleMap[b.id] = b.title;
+  const bundleTitleMap: Record<string, string> = {};
+  for (const b of bundleRows ?? []) bundleTitleMap[b.id] = b.title;
 
-  // Helper: return best human-readable label for an assessment_id
-  function resolveLabel(id: string): string {
-    if (titleMap[id]) return titleMap[id];
-    // Clean up raw slugs/IDs as a last resort
-    return id.replace(/^bundle-\d+$/, 'Unknown bundle').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  }
-
-  // Aggregate filtered events by type and assessment
+  // Aggregate filtered events by type, assessment, and bundle separately
   const byType: Record<string, number> = {};
   const byAssessment: Record<string, number> = {};
+  const byBundle: Record<string, number> = {};
 
   for (const ev of events ?? []) {
     byType[ev.event_type] = (byType[ev.event_type] ?? 0) + 1;
     if (ev.assessment_id) {
-      const label = resolveLabel(ev.assessment_id);
-      byAssessment[label] = (byAssessment[label] ?? 0) + 1;
+      if (assessmentTitleMap[ev.assessment_id]) {
+        const label = assessmentTitleMap[ev.assessment_id];
+        byAssessment[label] = (byAssessment[label] ?? 0) + 1;
+      } else if (bundleTitleMap[ev.assessment_id]) {
+        const label = bundleTitleMap[ev.assessment_id];
+        byBundle[label] = (byBundle[label] ?? 0) + 1;
+      }
+      // orphaned IDs silently dropped
     }
   }
 
@@ -95,6 +96,7 @@ export async function GET(req: Request) {
     events: events?.length ?? 0,
     byType,
     byAssessment,
+    byBundle,
     byCode,
     daily,
   });
