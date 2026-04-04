@@ -19,7 +19,18 @@ export async function GET(req: Request) {
   if (code) sessionsQuery = sessionsQuery.eq('code', code);
   const { count: sessionCount } = await sessionsQuery;
 
-  // Events breakdown
+  // All events unfiltered — used for the full code list
+  const { data: allEvents } = await supabaseAdmin
+    .from('events')
+    .select('code')
+    .gte('created_at', since);
+
+  const byCode: Record<string, number> = {};
+  for (const ev of allEvents ?? []) {
+    byCode[ev.code] = (byCode[ev.code] ?? 0) + 1;
+  }
+
+  // Events filtered by selected code — used for all other metrics
   let eventsQuery = supabaseAdmin
     .from('events')
     .select('event_type, assessment_id, question_id, code, created_at')
@@ -49,10 +60,9 @@ export async function GET(req: Request) {
     return id.replace(/^bundle-\d+$/, 'Unknown bundle').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  // Aggregate by event type
+  // Aggregate filtered events by type and assessment
   const byType: Record<string, number> = {};
   const byAssessment: Record<string, number> = {};
-  const byCode: Record<string, number> = {};
 
   for (const ev of events ?? []) {
     byType[ev.event_type] = (byType[ev.event_type] ?? 0) + 1;
@@ -60,7 +70,6 @@ export async function GET(req: Request) {
       const label = resolveLabel(ev.assessment_id);
       byAssessment[label] = (byAssessment[label] ?? 0) + 1;
     }
-    byCode[ev.code] = (byCode[ev.code] ?? 0) + 1;
   }
 
   // Daily sessions for chart
