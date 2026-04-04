@@ -228,7 +228,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
                 </label>
                 {isCovered && (
                   <div className="absolute left-5 top-full mt-1 z-10 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
-                    Already included in &ldquo;{bundleName}&rdquo;
+                    Already included in &ldquo;{bundleName}&rdquo; bundle
                   </div>
                 )}
               </div>
