@@ -21,7 +21,61 @@ const ACTION_LABELS: Record<string, string> = {
   create_assessment: 'Created assessment',
   update_assessment: 'Saved assessment',
   delete_assessment: 'Deleted assessment',
+  create_bundle: 'Created bundle',
+  update_bundle: 'Saved bundle',
+  delete_bundle: 'Deleted bundle',
 };
+
+const FIELD_LABELS: Record<string, string> = {
+  title: 'Title',
+  description: 'Description',
+  type: 'Type ID',
+  type_label: 'Type',
+  accent_color: 'Accent color',
+  badge_bg: 'Badge background',
+  badge_text: 'Badge text color',
+  player_label: 'Player label',
+  code: 'Access code',
+  label: 'Label',
+  is_active: 'Active',
+  starts_at: 'Start date',
+  expires_at: 'Expiry date',
+  assessment_ids: 'Assessments',
+  bundle_ids: 'Bundles',
+  questions: 'Questions',
+  sort_order: 'Order',
+};
+
+function formatFieldValue(key: string, value: unknown): string {
+  if (value === null || value === undefined) return '—';
+  if (key === 'is_active') return value ? 'Yes' : 'No';
+  if (key === 'starts_at' || key === 'expires_at') {
+    return value ? new Date(value as string).toLocaleDateString() : '—';
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return 'None';
+    return `${value.length} item${value.length === 1 ? '' : 's'}`;
+  }
+  if (typeof value === 'number' && key === 'questions') return `${value} question${value === 1 ? '' : 's'}`;
+  return String(value);
+}
+
+function FieldTable({ label, data }: { label: string; data: Record<string, unknown> }) {
+  const entries = Object.entries(data).filter(([k]) => k !== 'id' && k !== 'sort_order');
+  return (
+    <div>
+      <p className="font-medium text-gray-500 mb-1.5">{label}</p>
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        {entries.map(([key, value]) => (
+          <div key={key} className="flex gap-3 px-3 py-1.5 border-b border-gray-50 last:border-0">
+            <span className="text-gray-400 w-32 flex-shrink-0">{FIELD_LABELS[key] ?? key}</span>
+            <span className="text-gray-700 break-all">{formatFieldValue(key, value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function friendlyEntity(row: AuditRow) {
   const name = row.entity_id ?? row.entity_type;
@@ -99,22 +153,8 @@ export default function AuditLogPage() {
                       <tr key={`${row.id}-detail`} className="bg-gray-50">
                         <td colSpan={5} className="px-4 py-3">
                           <div className="grid grid-cols-2 gap-4 text-xs">
-                            {row.before && (
-                              <div>
-                                <p className="font-medium text-gray-500 mb-1">Before</p>
-                                <pre className="bg-white border border-gray-200 rounded-lg p-3 overflow-auto max-h-48 text-gray-700 font-mono text-[11px]">
-                                  {JSON.stringify(row.before, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                            {row.after && (
-                              <div>
-                                <p className="font-medium text-gray-500 mb-1">After</p>
-                                <pre className="bg-white border border-gray-200 rounded-lg p-3 overflow-auto max-h-48 text-gray-700 font-mono text-[11px]">
-                                  {JSON.stringify(row.after, null, 2)}
-                                </pre>
-                              </div>
-                            )}
+                            {row.before && <FieldTable label="Before" data={row.before} />}
+                            {row.after && <FieldTable label="After" data={row.after} />}
                           </div>
                         </td>
                       </tr>
