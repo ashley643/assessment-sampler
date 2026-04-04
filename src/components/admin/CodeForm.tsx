@@ -16,10 +16,11 @@ interface Bundle {
   accent_color: string;
   badge_bg: string;
   badge_text: string;
+  bundle_assessments: { assessment_id: string }[];
 }
 
 interface CodeFormProps {
-  codeId?: string; // undefined = new
+  codeId?: string;
 }
 
 export default function CodeForm({ codeId }: CodeFormProps) {
@@ -45,7 +46,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
       .then((data: Assessment[]) => setAllAssessments(data));
     fetch('/api/admin/bundles')
       .then(r => r.json())
-      .then((data: Bundle[]) => setAllBundles(data));
+      .then((data: Bundle[]) => setAllBundles(Array.isArray(data) ? data : []));
   }, []);
 
   useEffect(() => {
@@ -75,7 +76,18 @@ export default function CodeForm({ codeId }: CodeFormProps) {
       });
   }, [codeId]);
 
+  // Compute which assessment IDs are already covered by selected bundles
+  const bundleCoverage = new Map<string, string>(); // assessmentId -> bundle title
+  for (const bundle of allBundles) {
+    if (selectedBundleIds.includes(bundle.id)) {
+      for (const ba of bundle.bundle_assessments ?? []) {
+        bundleCoverage.set(ba.assessment_id, bundle.title);
+      }
+    }
+  }
+
   function toggleAssessment(id: string) {
+    if (bundleCoverage.has(id)) return; // blocked — already in a bundle
     setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
     );
@@ -99,7 +111,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
       expires_at: expiresAt || null,
       is_active: isActive,
       bundle_ids: selectedBundleIds,
-      assessment_ids: selectedIds,
+      assessment_ids: selectedIds.filter(id => !bundleCoverage.has(id)),
     };
 
     const res = isNew
@@ -198,18 +210,33 @@ export default function CodeForm({ codeId }: CodeFormProps) {
 
       <Field label="Individual Assessments">
         <div className="space-y-2">
-          {allAssessments.map(a => (
-            <label key={a.id} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(a.id)}
-                onChange={() => toggleAssessment(a.id)}
-                className="rounded border-gray-300"
-              />
-              <span className="text-sm text-gray-700">{a.title}</span>
-              <span className="text-xs text-gray-400">({a.type_label})</span>
-            </label>
-          ))}
+          {allAssessments.map(a => {
+            const bundleName = bundleCoverage.get(a.id);
+            const isCovered = !!bundleName;
+            return (
+              <div key={a.id} className="relative group">
+                <label className={`flex items-center gap-2 ${isCovered ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <input
+                    type="checkbox"
+                    checked={isCovered || selectedIds.includes(a.id)}
+                    onChange={() => toggleAssessment(a.id)}
+                    disabled={isCovered}
+                    className="rounded border-gray-300 disabled:opacity-50"
+                  />
+                  <span className={`text-sm ${isCovered ? 'text-gray-400' : 'text-gray-700'}`}>{a.title}</span>
+                  <span className="text-xs text-gray-400">({a.type_label})</span>
+                  {isCovered && (
+                    <span className="text-xs text-gray-400 italic">via bundle</span>
+                  )}
+                </label>
+                {isCovered && (
+                  <div className="absolute left-5 top-full mt-1 z-10 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+                    Already included in &ldquo;{bundleName}&rdquo;
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </Field>
 
