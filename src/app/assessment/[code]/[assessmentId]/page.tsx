@@ -103,6 +103,7 @@ export default function AssessmentPlayerPage() {
     () => (typeof window !== 'undefined' ? (getProgress(code)[assessmentId] ?? {}) : {}),
   );
   const [showCelebration, setShowCelebration] = useState(false);
+  const [versionDropdownOpen, setVersionDropdownOpen] = useState(false);
   const celebrationShownRef = useRef(false);
   const typingPanelRef = useRef<HTMLDivElement>(null);
 
@@ -361,22 +362,54 @@ export default function AssessmentPlayerPage() {
                   </button>
                 </Tooltip>
               )}
-              {/* Mobile benchmark switcher */}
-              {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && (
-                <div className="md:hidden flex gap-1.5 mt-1">
-                  {assessment.childAssessments.map((child, i) => (
-                    <button
-                      key={child.id}
-                      onClick={() => switchBenchmark(child)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                        selectedBenchmark?.id === child.id
-                          ? 'bg-[#e8735a] text-white'
-                          : 'bg-gray-200 text-gray-500'
-                      }`}
-                    >
-                      V{i + 1}
-                    </button>
-                  ))}
+              {/* Mobile version dropdown */}
+              {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && (
+                <div className="md:hidden relative mt-1">
+                  {/* Overlay to close on outside tap */}
+                  {versionDropdownOpen && (
+                    <div className="fixed inset-0 z-10" onClick={() => setVersionDropdownOpen(false)} />
+                  )}
+                  <button
+                    onClick={() => setVersionDropdownOpen(o => !o)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors max-w-[200px]"
+                  >
+                    <span className="text-gray-400 font-bold flex-shrink-0">
+                      V{assessment.childAssessments.findIndex(c => c.id === selectedBenchmark.id) + 1}
+                    </span>
+                    <span className="mx-0.5 text-gray-300">·</span>
+                    <span className="truncate">{selectedBenchmark.playerLabel ?? selectedBenchmark.description}</span>
+                    <svg className={`w-3 h-3 flex-shrink-0 ml-0.5 text-gray-400 transition-transform ${versionDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M1 1l4 4 4-4"/>
+                    </svg>
+                  </button>
+                  {versionDropdownOpen && (
+                    <div className="absolute bottom-full left-0 mb-1.5 z-20 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden min-w-[200px] max-w-[260px]">
+                      {assessment.childAssessments.map((child, i) => {
+                        const isActive = child.id === selectedBenchmark.id;
+                        return (
+                          <button
+                            key={child.id}
+                            onClick={() => { switchBenchmark(child); setVersionDropdownOpen(false); }}
+                            className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
+                              isActive ? 'bg-blue-50' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <span className={`text-xs font-bold flex-shrink-0 w-6 ${isActive ? 'text-[#4a6fa5]' : 'text-gray-400'}`}>
+                              V{i + 1}
+                            </span>
+                            <span className={`text-sm flex-1 ${isActive ? 'font-semibold text-[#4a6fa5]' : 'text-gray-700'}`}>
+                              {child.playerLabel ?? child.description}
+                            </span>
+                            {isActive && (
+                              <svg className="w-3.5 h-3.5 flex-shrink-0 text-[#4a6fa5]" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M2 6l3 3 5-5"/>
+                              </svg>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
               <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
