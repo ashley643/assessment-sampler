@@ -134,20 +134,17 @@ export default function DashboardPage() {
             {/* Daily chart */}
             {data.daily.length > 0 && (
               <Section title="Daily Visits">
-                <div className="space-y-1.5">
+                <div className="p-4 space-y-3">
                   {data.daily.map(d => {
                     const max = Math.max(...data.daily.map(x => x.count));
                     const pct = max > 0 ? (d.count / max) * 100 : 0;
                     return (
                       <div key={d.date} className="flex items-center gap-3 text-sm">
-                        <span className="w-24 text-gray-500 tabular-nums">{new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-2">
-                          <div
-                            className="bg-blue-400 h-2 rounded-full"
-                            style={{ width: `${pct}%` }}
-                          />
+                        <span className="w-40 text-xs text-gray-600 tabular-nums flex-shrink-0 text-right">{new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-2.5">
+                          <div className="bg-[#4a6fa5] h-2.5 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="w-6 text-right text-gray-700 tabular-nums">{d.count}</span>
+                        <span className="w-8 text-right text-xs text-gray-700 tabular-nums flex-shrink-0">{d.count}</span>
                       </div>
                     );
                   })}
