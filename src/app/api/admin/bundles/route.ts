@@ -7,13 +7,31 @@ import { logAudit } from '@/lib/audit';
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data, error } = await supabaseAdmin
+  const { data: bundles, error } = await supabaseAdmin
     .from('bundles')
-    .select(`*, bundle_assessments ( sort_order, assessment_id, assessments ( id, title ) )`)
+    .select('*')
     .order('sort_order', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+
+  // Fetch bundle_assessments separately to avoid PostgREST FK join issues
+  const bundleIds = (bundles ?? []).map((b: { id: string }) => b.id);
+  const { data: bundleAssessments } = bundleIds.length
+    ? await supabaseAdmin
+        .from('bundle_assessments')
+        .select('bundle_id, assessment_id, sort_order')
+        .in('bundle_id', bundleIds)
+        .order('sort_order', { ascending: true })
+    : { data: [] };
+
+  const result = (bundles ?? []).map((b: { id: string }) => ({
+    ...b,
+    bundle_assessments: (bundleAssessments ?? []).filter(
+      (ba: { bundle_id: string }) => ba.bundle_id === b.id,
+    ),
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST(req: Request) {
