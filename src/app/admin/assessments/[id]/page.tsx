@@ -212,8 +212,19 @@ export default function EditAssessmentPage() {
             <F label="Description" hint="Shown on the assessment card">
               <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} rows={3} className={INPUT} />
             </F>
-            <F label="Player Label (optional)" hint="Short label shown in the bundle switcher sidebar — leave blank to use description">
-              <input value={form.player_label} onChange={e => updateForm('player_label', e.target.value)} placeholder="e.g. Grades 3–4" className={INPUT} />
+            <F label="Player Label (optional)" hint="Short label shown in the bundle version switcher — leave blank to use description">
+              <div className="relative">
+                <input
+                  value={form.player_label}
+                  onChange={e => updateForm('player_label', e.target.value.slice(0, 32))}
+                  placeholder="e.g. Grades 3–4"
+                  maxLength={32}
+                  className={INPUT}
+                />
+                <span className={`absolute right-2 bottom-2 text-xs ${form.player_label.length >= 28 ? 'text-amber-500' : 'text-gray-300'}`}>
+                  {form.player_label.length}/32
+                </span>
+              </div>
             </F>
           </Section>
 

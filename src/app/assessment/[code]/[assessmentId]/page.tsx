@@ -362,46 +362,65 @@ export default function AssessmentPlayerPage() {
                   </button>
                 </Tooltip>
               )}
-              {/* Mobile version dropdown */}
+              {/* Mobile version picker button */}
               {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && (
-                <div className="md:hidden relative mt-1">
-                  {/* Overlay to close on outside tap */}
-                  {versionDropdownOpen && (
-                    <div className="fixed inset-0 z-10" onClick={() => setVersionDropdownOpen(false)} />
-                  )}
+                <div className="md:hidden mt-1">
                   <button
-                    onClick={() => setVersionDropdownOpen(o => !o)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors max-w-[200px]"
+                    onClick={() => setVersionDropdownOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 active:bg-gray-200 transition-colors max-w-[220px]"
                   >
                     <span className="text-gray-400 font-bold flex-shrink-0">
                       V{assessment.childAssessments.findIndex(c => c.id === selectedBenchmark.id) + 1}
                     </span>
                     <span className="mx-0.5 text-gray-300">·</span>
                     <span className="truncate">{selectedBenchmark.playerLabel ?? selectedBenchmark.description}</span>
-                    <svg className={`w-3 h-3 flex-shrink-0 ml-0.5 text-gray-400 transition-transform ${versionDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <svg className="w-3 h-3 flex-shrink-0 ml-0.5 text-gray-400" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <path d="M1 1l4 4 4-4"/>
                     </svg>
                   </button>
-                  {versionDropdownOpen && (
-                    <div className="absolute bottom-full left-0 mb-1.5 z-20 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden min-w-[200px] max-w-[260px]">
+                </div>
+              )}
+
+              {/* Mobile version bottom sheet */}
+              {(assessment.type === 'benchmark_group' || assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && versionDropdownOpen && (
+                <div className="md:hidden">
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40 bg-black/40"
+                    onClick={() => setVersionDropdownOpen(false)}
+                  />
+                  {/* Sheet */}
+                  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl pb-safe">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                      <span className="text-sm font-semibold text-gray-800">Select a version</span>
+                      <button
+                        onClick={() => setVersionDropdownOpen(false)}
+                        className="text-gray-400 hover:text-gray-600 p-1 -mr-1"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M5 5l10 10M15 5L5 15"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="py-2">
                       {assessment.childAssessments.map((child, i) => {
                         const isActive = child.id === selectedBenchmark.id;
                         return (
                           <button
                             key={child.id}
                             onClick={() => { switchBenchmark(child); setVersionDropdownOpen(false); }}
-                            className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
-                              isActive ? 'bg-blue-50' : 'hover:bg-gray-50'
+                            className={`w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors ${
+                              isActive ? 'bg-blue-50' : 'active:bg-gray-50'
                             }`}
                           >
-                            <span className={`text-xs font-bold flex-shrink-0 w-6 ${isActive ? 'text-[#4a6fa5]' : 'text-gray-400'}`}>
+                            <span className={`text-xs font-bold w-7 flex-shrink-0 ${isActive ? 'text-[#4a6fa5]' : 'text-gray-400'}`}>
                               V{i + 1}
                             </span>
-                            <span className={`text-sm flex-1 ${isActive ? 'font-semibold text-[#4a6fa5]' : 'text-gray-700'}`}>
+                            <span className={`text-base flex-1 ${isActive ? 'font-semibold text-[#4a6fa5]' : 'text-gray-700'}`}>
                               {child.playerLabel ?? child.description}
                             </span>
                             {isActive && (
-                              <svg className="w-3.5 h-3.5 flex-shrink-0 text-[#4a6fa5]" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                              <svg className="w-4 h-4 flex-shrink-0 text-[#4a6fa5]" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M2 6l3 3 5-5"/>
                               </svg>
                             )}
@@ -409,7 +428,9 @@ export default function AssessmentPlayerPage() {
                         );
                       })}
                     </div>
-                  )}
+                    {/* Safe area spacer for notched phones */}
+                    <div className="h-6" />
+                  </div>
                 </div>
               )}
               <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
