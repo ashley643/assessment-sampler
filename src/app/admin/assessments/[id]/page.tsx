@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/AdminShell';
+import ColorPalettePicker from '@/components/admin/ColorPalettePicker';
 
 interface QuestionSample {
   id: string;
@@ -32,8 +33,17 @@ interface Assessment {
   badge_bg: string;
   badge_text: string;
   description: string;
+  player_label: string;
   sort_order: number;
   questions: Question[];
+}
+
+interface TypePreset {
+  type: string;
+  type_label: string;
+  accent_color: string;
+  badge_bg: string;
+  badge_text: string;
 }
 
 const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
@@ -63,11 +73,32 @@ export default function EditAssessmentPage() {
   const [form, setForm] = useState<Omit<Assessment, 'questions'>>({
     id: '', title: '', type: '', type_label: '',
     accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C',
-    description: '', sort_order: 0,
+    description: '', player_label: '', sort_order: 0,
   });
   const [questions, setQuestions] = useState<Question[]>([newQuestion(1)]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [typePresets, setTypePresets] = useState<TypePreset[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string | 'custom'>('');
+  const [editingPreset, setEditingPreset] = useState<string | null>(null);
+  const [editingPresetForm, setEditingPresetForm] = useState<TypePreset | null>(null);
+  const [presetSaving, setPresetSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/assessments')
+      .then(r => r.json())
+      .then((data: Assessment[]) => {
+        const seen = new Set<string>();
+        const presets: TypePreset[] = [];
+        for (const a of data) {
+          if (!seen.has(a.type)) {
+            seen.add(a.type);
+            presets.push({ type: a.type, type_label: a.type_label, accent_color: a.accent_color, badge_bg: a.badge_bg, badge_text: a.badge_text });
+          }
+        }
+        setTypePresets(presets);
+      });
+  }, []);
 
   useEffect(() => {
     if (isNew) return;
@@ -82,11 +113,62 @@ export default function EditAssessmentPage() {
             question_samples: (q.question_samples ?? []).sort((a, b) => a.sort_order - b.sort_order),
           }))
         );
+        setSelectedPreset(rest.type);
       });
   }, [id, isNew]);
 
   function updateForm(key: keyof Omit<Assessment, 'questions'>, value: string | number) {
     setForm(prev => ({ ...prev, [key]: value }));
+  }
+
+  function applyPreset(preset: TypePreset) {
+    setSelectedPreset(preset.type);
+    setForm(prev => ({ ...prev, type: preset.type, type_label: preset.type_label, accent_color: preset.accent_color, badge_bg: preset.badge_bg, badge_text: preset.badge_text }));
+  }
+
+  function selectCustom() {
+    setSelectedPreset('custom');
+    setForm(prev => ({ ...prev, type: '', type_label: '', accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C' }));
+  }
+
+  function startEditPreset(preset: TypePreset) {
+    setEditingPreset(preset.type);
+    setEditingPresetForm({ ...preset });
+  }
+
+  function cancelEditPreset() {
+    setEditingPreset(null);
+    setEditingPresetForm(null);
+  }
+
+  async function savePresetEdit() {
+    if (!editingPreset || !editingPresetForm) return;
+    setPresetSaving(true);
+    const res = await fetch(`/api/admin/types/${encodeURIComponent(editingPreset)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editingPresetForm),
+    });
+    setPresetSaving(false);
+    if (!res.ok) return;
+    setTypePresets(prev => prev.map(p => p.type === editingPreset ? { ...editingPresetForm } : p));
+    if (selectedPreset === editingPreset) {
+      setSelectedPreset(editingPresetForm.type);
+      setForm(prev => ({ ...prev, ...editingPresetForm }));
+    }
+    setEditingPreset(null);
+    setEditingPresetForm(null);
+  }
+
+  async function deletePreset(preset: TypePreset) {
+    if (!confirm(`Delete type "${preset.type_label}"? This will permanently delete all assessments of this type.`)) return;
+    const res = await fetch(`/api/admin/types/${encodeURIComponent(preset.type)}`, { method: 'DELETE' });
+    if (!res.ok) return;
+    setTypePresets(prev => prev.filter(p => p.type !== preset.type));
+    if (selectedPreset === preset.type) {
+      setSelectedPreset('');
+      setForm(prev => ({ ...prev, type: '', type_label: '', accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C' }));
+    }
   }
 
   function updateQuestion(idx: number, key: keyof Question, value: string) {
@@ -104,10 +186,7 @@ export default function EditAssessmentPage() {
   function updateSample(qIdx: number, sIdx: number, key: keyof QuestionSample, value: string) {
     setQuestions(prev => prev.map((q, i) => {
       if (i !== qIdx) return q;
-      return {
-        ...q,
-        question_samples: q.question_samples.map((s, j) => j === sIdx ? { ...s, [key]: value } : s),
-      };
+      return { ...q, question_samples: q.question_samples.map((s, j) => j === sIdx ? { ...s, [key]: value } : s) };
     }));
   }
 
@@ -129,7 +208,6 @@ export default function EditAssessmentPage() {
     e.preventDefault();
     setSaving(true);
     setError('');
-
     const payload = {
       ...form,
       questions: questions.map((q, i) => ({
@@ -138,19 +216,9 @@ export default function EditAssessmentPage() {
         question_samples: q.question_samples.map((s, j) => ({ ...s, sort_order: j })),
       })),
     };
-
     const res = isNew
-      ? await fetch('/api/admin/assessments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-      : await fetch(`/api/admin/assessments/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
+      ? await fetch('/api/admin/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      : await fetch(`/api/admin/assessments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (res.ok) {
       router.push('/admin/assessments');
     } else {
@@ -160,73 +228,149 @@ export default function EditAssessmentPage() {
     }
   }
 
+  const isCustom = selectedPreset === 'custom';
+
   return (
     <AdminShell>
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          {isNew ? 'New Assessment' : 'Edit Assessment'}
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+            <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
+              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+            </button>
+          </div>
+        </div>
+
+        <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
+          {/* Details */}
           <Section title="Details">
             <div className="grid grid-cols-2 gap-4">
               {isNew && (
                 <F label="ID (slug, no spaces)">
-                  <input
-                    value={form.id}
-                    onChange={e => updateForm('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                    placeholder="e.g. bhs-3"
-                    className={INPUT}
-                    required
-                  />
+                  <input value={form.id} onChange={e => updateForm('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. bhs-3" className={INPUT} required />
                 </F>
               )}
               <F label="Title">
                 <input value={form.title} onChange={e => updateForm('title', e.target.value)} className={INPUT} required />
               </F>
-              <F label="Type ID">
-                <input value={form.type} onChange={e => updateForm('type', e.target.value)} placeholder="e.g. behavioral-health" className={INPUT} required />
-              </F>
-              <F label="Type Label">
-                <input value={form.type_label} onChange={e => updateForm('type_label', e.target.value)} placeholder="e.g. Behavioral Health" className={INPUT} required />
-              </F>
-              <F label="Sort Order">
-                <input type="number" value={form.sort_order} onChange={e => updateForm('sort_order', Number(e.target.value))} className={INPUT} />
-              </F>
             </div>
-            <F label="Description">
+            <F label="Description" hint="Shown on the assessment card">
               <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} rows={3} className={INPUT} />
+            </F>
+            <F label="Player Label (optional)" hint="Short label shown in the bundle version switcher — leave blank to use description">
+              <div className="relative">
+                <input
+                  value={form.player_label}
+                  onChange={e => updateForm('player_label', e.target.value.slice(0, 32))}
+                  placeholder="e.g. Grades 3–4"
+                  maxLength={32}
+                  className={INPUT}
+                />
+                <span className={`absolute right-2 bottom-2 text-xs ${(form.player_label ?? '').length >= 28 ? 'text-amber-500' : 'text-gray-300'}`}>
+                  {(form.player_label ?? '').length}/32
+                </span>
+              </div>
             </F>
           </Section>
 
-          <Section title="Colors">
-            <div className="grid grid-cols-3 gap-4">
-              <F label="Accent Color">
-                <div className="flex gap-2 items-center">
-                  <input type="color" value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                  <input value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className={INPUT} />
+          {/* Type & Colors */}
+          <Section title="Type & Colors">
+            <p className="text-xs text-gray-500 mb-3">Select an existing type to inherit its label and colors, or add a new one.</p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {typePresets.map(preset => (
+                <div
+                  key={preset.type}
+                  className={`group flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                    selectedPreset === preset.type
+                      ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5]'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <button type="button" onClick={() => applyPreset(preset)} className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.accent_color }} />
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: preset.badge_bg, color: preset.badge_text }}>
+                      {preset.type_label}
+                    </span>
+                  </button>
+                  <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onClick={() => startEditPreset(preset)} title="Edit type" className="p-0.5 text-gray-400 hover:text-gray-700 rounded">
+                      <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11.5 2.5l2 2-9 9H2.5v-2l9-9z"/></svg>
+                    </button>
+                    <button type="button" onClick={() => deletePreset(preset)} title="Delete type" className="p-0.5 text-gray-400 hover:text-red-500 rounded">
+                      <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/></svg>
+                    </button>
+                  </div>
                 </div>
-              </F>
-              <F label="Badge Background">
-                <div className="flex gap-2 items-center">
-                  <input type="color" value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                  <input value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className={INPUT} />
-                </div>
-              </F>
-              <F label="Badge Text Color">
-                <div className="flex gap-2 items-center">
-                  <input type="color" value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                  <input value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className={INPUT} />
-                </div>
-              </F>
+              ))}
+              <button
+                type="button"
+                onClick={selectCustom}
+                className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                  isCustom
+                    ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5] text-[#4a6fa5] font-medium'
+                    : 'border-dashed border-gray-300 text-gray-500 hover:border-gray-400'
+                }`}
+              >
+                + New type…
+              </button>
             </div>
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs text-gray-500">Preview:</span>
-              <span className="text-xs font-medium px-2.5 py-0.5 rounded-full" style={{ background: form.badge_bg, color: form.badge_text }}>
-                {form.type_label || 'Type Label'}
-              </span>
-            </div>
+
+            {/* Inline edit form for existing preset */}
+            {editingPreset && editingPresetForm && (
+              <div className="pt-3 border-t border-gray-100 space-y-4">
+                <p className="text-xs font-medium text-gray-500">Editing type — changes apply to all assessments of this type</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <F label="Type ID (slug)">
+                    <input value={editingPresetForm.type} onChange={e => setEditingPresetForm(prev => prev ? { ...prev, type: e.target.value.toLowerCase().replace(/\s+/g, '-') } : prev)} className={INPUT} />
+                  </F>
+                  <F label="Type Label">
+                    <input value={editingPresetForm.type_label} onChange={e => setEditingPresetForm(prev => prev ? { ...prev, type_label: e.target.value } : prev)} className={INPUT} />
+                  </F>
+                </div>
+                <ColorPalettePicker
+                  values={{ accent_color: editingPresetForm.accent_color, badge_bg: editingPresetForm.badge_bg, badge_text: editingPresetForm.badge_text }}
+                  onChange={v => setEditingPresetForm(prev => prev ? { ...prev, ...v } : prev)}
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={savePresetEdit} disabled={presetSaving} className="px-3 py-1.5 bg-[#4a6fa5] text-white text-xs font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50">
+                    {presetSaving ? 'Saving…' : 'Save changes'}
+                  </button>
+                  <button type="button" onClick={cancelEditPreset} className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200">Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {/* New type fields */}
+            {isCustom && !editingPreset && (
+              <div className="pt-3 border-t border-gray-100 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <F label="Type ID (slug)">
+                    <input value={form.type} onChange={e => updateForm('type', e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. community-schools" className={INPUT} required />
+                  </F>
+                  <F label="Type Label">
+                    <input value={form.type_label} onChange={e => updateForm('type_label', e.target.value)} placeholder="e.g. Community Schools" className={INPUT} required />
+                  </F>
+                </div>
+                <ColorPalettePicker
+                  values={{ accent_color: form.accent_color, badge_bg: form.badge_bg, badge_text: form.badge_text }}
+                  onChange={v => setForm(prev => ({ ...prev, ...v }))}
+                />
+              </div>
+            )}
+
+            {/* Preview for selected preset */}
+            {selectedPreset && selectedPreset !== 'custom' && form.type_label && !editingPreset && (
+              <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                <span className="text-xs text-gray-500">Preview:</span>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: form.accent_color }} />
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: form.badge_bg, color: form.badge_text }}>{form.type_label}</span>
+              </div>
+            )}
           </Section>
 
+          {/* Questions */}
           <Section title="Questions">
             <div className="space-y-6">
               {questions.map((q, qi) => (
@@ -259,60 +403,24 @@ export default function EditAssessmentPage() {
                             {s.language === 'english' ? 'EN' : 'ES'}
                           </span>
                           <div className="flex-1 space-y-1.5">
-                            <input
-                              value={s.embed_url}
-                              onChange={e => updateSample(qi, si, 'embed_url', e.target.value)}
-                              placeholder="VideoAsk share URL…"
-                              className={INPUT_SM}
-                            />
+                            <input value={s.embed_url} onChange={e => updateSample(qi, si, 'embed_url', e.target.value)} placeholder="VideoAsk share URL…" className={INPUT_SM} />
                             <div className="grid grid-cols-2 gap-1.5">
-                              <input
-                                value={s.gender}
-                                onChange={e => updateSample(qi, si, 'gender', e.target.value)}
-                                placeholder="Gender (optional)"
-                                className={INPUT_SM}
-                              />
-                              <input
-                                value={s.grade}
-                                onChange={e => updateSample(qi, si, 'grade', e.target.value)}
-                                placeholder="Grade (optional)"
-                                className={INPUT_SM}
-                              />
+                              <input value={s.gender} onChange={e => updateSample(qi, si, 'gender', e.target.value)} placeholder="Gender (optional)" className={INPUT_SM} />
+                              <input value={s.grade} onChange={e => updateSample(qi, si, 'grade', e.target.value)} placeholder="Grade (optional)" className={INPUT_SM} />
                             </div>
-                            <textarea
-                              value={s.excerpt}
-                              onChange={e => updateSample(qi, si, 'excerpt', e.target.value)}
-                              placeholder="Excerpt — a short quote from the response (optional)"
-                              rows={2}
-                              className={INPUT_SM + ' resize-none'}
-                            />
+                            <textarea value={s.excerpt} onChange={e => updateSample(qi, si, 'excerpt', e.target.value)} placeholder="Excerpt — a short quote from the response (optional)" rows={2} className={INPUT_SM + ' resize-none'} />
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSample(qi, si)}
-                            className="mt-1.5 flex-shrink-0 text-gray-300 hover:text-red-400 transition-colors"
-                            title="Remove sample"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
-                              <path d="M2 2l10 10M12 2L2 12"/>
-                            </svg>
+                          <button type="button" onClick={() => removeSample(qi, si)} className="mt-1.5 flex-shrink-0 text-gray-300 hover:text-red-400 transition-colors" title="Remove sample">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 2l10 10M12 2L2 12"/></svg>
                           </button>
                         </div>
                       ))}
                     </div>
                     <div className="flex gap-2 mt-2.5">
-                      <button
-                        type="button"
-                        onClick={() => addSample(qi, 'english')}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                      >
+                      <button type="button" onClick={() => addSample(qi, 'english')} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
                         + English sample
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => addSample(qi, 'spanish')}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
-                      >
+                      <button type="button" onClick={() => addSample(qi, 'spanish')} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors">
                         + Spanish sample
                       </button>
                     </div>
@@ -320,27 +428,12 @@ export default function EditAssessmentPage() {
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={addQuestion}
-              className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
-            >
+            <button type="button" onClick={addQuestion} className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors">
               + Add Question
             </button>
           </Section>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="flex gap-3">
-            <button type="submit" disabled={saving}
-              className="px-5 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
-              {saving ? 'Saving…' : isNew ? 'Create Assessment' : 'Save Changes'}
-            </button>
-            <button type="button" onClick={() => router.push('/admin/assessments')}
-              className="px-5 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
-              Cancel
-            </button>
-          </div>
         </form>
       </div>
     </AdminShell>
@@ -356,11 +449,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function F({ label, children }: { label: string; children: React.ReactNode }) {
+function F({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
       {children}
+      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
   );
 }
