@@ -10,7 +10,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   const { data, error } = await supabaseAdmin
     .from('assessments')
-    .select(`*, questions ( * )`)
+    .select(`*, questions ( *, question_samples ( * ) )`)
     .eq('id', id)
     .single();
 
@@ -31,15 +31,18 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Sync questions if provided
   if (questions !== undefined) {
-    const questionRows = questions.map((q: {
-      id: string;
-      title: string;
-      embed_url: string;
-      spanish_embed_url?: string;
-      sort_order: number;
-    }) => ({
+    type IncomingSample = {
+      id?: string; embed_url: string; language: string;
+      sort_order: number; gender?: string; grade?: string;
+    };
+    type IncomingQuestion = {
+      id: string; title: string; embed_url: string;
+      spanish_embed_url?: string; sort_order: number;
+      question_samples?: IncomingSample[];
+    };
+
+    const questionRows = (questions as IncomingQuestion[]).map(q => ({
       id: q.id,
       assessment_id: id,
       sort_order: q.sort_order,
@@ -48,12 +51,30 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       spanish_embed_url: q.spanish_embed_url ?? null,
     }));
 
+    // Delete questions (cascades to question_samples), then reinsert
     const { error: delErr } = await supabaseAdmin.from('questions').delete().eq('assessment_id', id);
     if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
 
     if (questionRows.length) {
       const { error: insErr } = await supabaseAdmin.from('questions').insert(questionRows);
       if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
+
+      // Insert question_samples
+      const sampleRows = (questions as IncomingQuestion[]).flatMap((q, qi) =>
+        (q.question_samples ?? []).filter(s => s.embed_url.trim()).map((s, si) => ({
+          question_id: q.id,
+          embed_url: s.embed_url.trim(),
+          language: s.language,
+          sort_order: s.sort_order ?? (qi * 100 + si),
+          gender: s.gender?.trim() || null,
+          grade: s.grade?.trim() || null,
+        }))
+      );
+
+      if (sampleRows.length) {
+        const { error: sampErr } = await supabaseAdmin.from('question_samples').insert(sampleRows);
+        if (sampErr) return NextResponse.json({ error: sampErr.message }, { status: 500 });
+      }
     }
   }
 

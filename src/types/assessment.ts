@@ -3,6 +3,8 @@ export interface QuestionSample {
   embedUrl: string;
   language: 'english' | 'spanish';
   sortOrder: number;
+  gender?: string;
+  grade?: string;
 }
 
 export interface Question {

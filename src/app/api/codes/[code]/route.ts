@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import type { AccessCode } from '@/types/assessment';
+import type { AccessCode, QuestionSample } from '@/types/assessment';
 
 export async function GET(_: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -136,11 +136,69 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
     return base;
   }));
 
+  const filteredList = assessmentList.filter(Boolean) as NonNullable<typeof assessmentList[number]>[];
+
+  // Collect all question IDs across all assessments (including bundle children)
+  const allQuestionIds: string[] = [];
+  function collectQuestionIds(assessments: typeof filteredList) {
+    for (const a of assessments) {
+      for (const q of a.questions) allQuestionIds.push(q.id);
+      if ('childAssessments' in a && a.childAssessments) {
+        collectQuestionIds(a.childAssessments as typeof filteredList);
+      }
+    }
+  }
+  collectQuestionIds(filteredList);
+
+  // Fetch question_samples in bulk and build a map
+  const sampleMap = new Map<string, QuestionSample[]>();
+  if (allQuestionIds.length > 0) {
+    const { data: samplesData } = await supabaseAdmin
+      .from('question_samples')
+      .select('id, question_id, embed_url, language, sort_order, gender, grade')
+      .in('question_id', allQuestionIds)
+      .order('sort_order');
+
+    for (const s of samplesData ?? []) {
+      const list = sampleMap.get(s.question_id) ?? [];
+      list.push({
+        id: s.id,
+        embedUrl: s.embed_url,
+        language: s.language as 'english' | 'spanish',
+        sortOrder: s.sort_order,
+        gender: s.gender ?? undefined,
+        grade: s.grade ?? undefined,
+      });
+      sampleMap.set(s.question_id, list);
+    }
+  }
+
+  // Attach samples to questions
+  function attachSamples<T extends { questions: { id: string }[] }>(assessment: T): T {
+    return {
+      ...assessment,
+      questions: assessment.questions.map(q => ({
+        ...q,
+        samples: sampleMap.get(q.id) ?? [],
+      })),
+    };
+  }
+
+  const withSamples = filteredList.map(a => {
+    if ('childAssessments' in a && a.childAssessments) {
+      return {
+        ...attachSamples(a),
+        childAssessments: (a.childAssessments as typeof filteredList).map(attachSamples),
+      };
+    }
+    return attachSamples(a);
+  });
+
   const normalized: AccessCode = {
     code: data.code,
     expires: data.expires_at ?? '',
     label: data.label,
-    assessments: assessmentList.filter(Boolean) as AccessCode['assessments'],
+    assessments: withSamples as AccessCode['assessments'],
   };
 
   return NextResponse.json(normalized);
