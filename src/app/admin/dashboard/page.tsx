@@ -80,38 +80,61 @@ export default function DashboardPage() {
             {/* By code — clickable for drill-down */}
             {Object.keys(data.byCode).length > 0 && (
               <Section title={selectedCode ? `Visits — ${selectedCode}` : 'Visits by Access Code'}>
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Code</th>
-                      <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500">Visits</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {Object.entries(data.byCode)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([code, count]) => (
-                        <tr
-                          key={code}
-                          className={`cursor-pointer transition-colors ${
-                            selectedCode === code
-                              ? 'bg-blue-50'
-                              : 'hover:bg-gray-50'
-                          }`}
-                          onClick={() => setSelectedCode(selectedCode === code ? null : code)}
-                          title={selectedCode === code ? 'Click to clear filter' : `Click to filter by ${code}`}
-                        >
-                          <td className="px-4 py-2.5 font-mono text-xs text-gray-900 flex items-center gap-2">
-                            {selectedCode === code && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
-                            )}
-                            {code}
-                          </td>
-                          <td className="px-4 py-2.5 text-right text-gray-700 tabular-nums">{count}</td>
+                {!selectedCode && <p className="px-4 pt-2 pb-1 text-xs text-gray-400">Click a code to filter the dashboard by it.</p>}
+                {(() => {
+                  const rows = Object.entries(data.byCode).sort((a, b) => b[1] - a[1]);
+                  const pairs: [string, number, string | null, number | null][] = [];
+                  for (let i = 0; i < rows.length; i += 2) {
+                    pairs.push([rows[i][0], rows[i][1], rows[i + 1]?.[0] ?? null, rows[i + 1]?.[1] ?? null]);
+                  }
+                  return (
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Code</th>
+                          <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Visits</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 border-l border-gray-100">Code</th>
+                          <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Visits</th>
                         </tr>
-                      ))}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {pairs.map(([codeA, countA, codeB, countB]) => (
+                          <tr key={codeA}>
+                            {([
+                              [codeA, countA] as [string, number],
+                              codeB ? [codeB, countB as number] as [string, number] : null,
+                            ]).map((cell, ci) => cell ? (
+                              <>
+                                {ci === 1 && <td key="div" className="border-l border-gray-100" />}
+                                <td
+                                  key={cell[0] + '-code'}
+                                  onClick={() => setSelectedCode(selectedCode === cell[0] ? null : cell[0])}
+                                  className={`px-4 py-2 font-mono text-xs cursor-pointer transition-colors ${selectedCode === cell[0] ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-900 hover:bg-gray-50'}`}
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    {selectedCode === cell[0]
+                                      ? <span className="text-blue-400">▶</span>
+                                      : <span className="text-gray-300">▶</span>}
+                                    {cell[0]}
+                                  </span>
+                                </td>
+                                <td
+                                  key={cell[0] + '-count'}
+                                  onClick={() => setSelectedCode(selectedCode === cell[0] ? null : cell[0])}
+                                  className={`px-4 py-2 text-right tabular-nums text-xs cursor-pointer transition-colors ${selectedCode === cell[0] ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'}`}
+                                >
+                                  {cell[1]}
+                                </td>
+                              </>
+                            ) : (
+                              <><td key="empty-code" className="border-l border-gray-100" /><td /><td /></>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
               </Section>
             )}
 
