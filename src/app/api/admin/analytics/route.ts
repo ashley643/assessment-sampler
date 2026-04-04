@@ -28,12 +28,26 @@ export async function GET(req: Request) {
   const { data: events } = await eventsQuery;
 
   // Look up assessment titles
-  const assessmentIds = [...new Set((events ?? []).map(e => e.assessment_id).filter(Boolean))];
-  const { data: assessments } = assessmentIds.length
-    ? await supabaseAdmin.from('assessments').select('id, title').in('id', assessmentIds)
+  const allIds = [...new Set((events ?? []).map(e => e.assessment_id).filter(Boolean))];
+  const { data: assessments } = allIds.length
+    ? await supabaseAdmin.from('assessments').select('id, title').in('id', allIds)
     : { data: [] };
-  const assessmentTitles: Record<string, string> = {};
-  for (const a of assessments ?? []) assessmentTitles[a.id] = a.title;
+  const titleMap: Record<string, string> = {};
+  for (const a of assessments ?? []) titleMap[a.id] = a.title;
+
+  // Also resolve any IDs not found in assessments against the bundles table
+  const unresolvedIds = allIds.filter(id => !titleMap[id]);
+  const { data: bundles } = unresolvedIds.length
+    ? await supabaseAdmin.from('bundles').select('id, title').in('id', unresolvedIds)
+    : { data: [] };
+  for (const b of bundles ?? []) titleMap[b.id] = b.title;
+
+  // Helper: return best human-readable label for an assessment_id
+  function resolveLabel(id: string): string {
+    if (titleMap[id]) return titleMap[id];
+    // Clean up raw slugs/IDs as a last resort
+    return id.replace(/^bundle-\d+$/, 'Unknown bundle').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
 
   // Aggregate by event type
   const byType: Record<string, number> = {};
@@ -43,7 +57,7 @@ export async function GET(req: Request) {
   for (const ev of events ?? []) {
     byType[ev.event_type] = (byType[ev.event_type] ?? 0) + 1;
     if (ev.assessment_id) {
-      const label = assessmentTitles[ev.assessment_id] ?? ev.assessment_id;
+      const label = resolveLabel(ev.assessment_id);
       byAssessment[label] = (byAssessment[label] ?? 0) + 1;
     }
     byCode[ev.code] = (byCode[ev.code] ?? 0) + 1;
