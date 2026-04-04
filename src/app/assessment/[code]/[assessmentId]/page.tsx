@@ -113,7 +113,10 @@ export default function AssessmentPlayerPage() {
         if (!res.ok) { setNotFound(true); return; }
         const data: AccessCode = await res.json();
         setCodeData(data);
-        if (!isPreview) track('assessment_open', code, { assessment_id: assessmentId });
+        // Only track assessment_open for standalone assessments — bundles track when a child is selected
+        const thisAssessment = data.assessments.find((a: Assessment) => a.id === assessmentId);
+        const isBundle = thisAssessment?.type === 'bundle' || thisAssessment?.type === 'benchmark_group';
+        if (!isPreview && !isBundle) track('assessment_open', code, { assessment_id: assessmentId });
       })
       .catch(() => setNotFound(true));
   }, [code, assessmentId]);
@@ -166,7 +169,10 @@ export default function AssessmentPlayerPage() {
                   key={child.id}
                   onClick={() => {
                     setSelectedBenchmark(child);
-                    if (!isPreview) track('question_view', code, { assessment_id: child.id, question_id: child.questions[0]?.id });
+                    if (!isPreview) {
+                      track('assessment_open', code, { assessment_id: child.id });
+                      track('question_view', code, { assessment_id: child.id, question_id: child.questions[0]?.id });
+                    }
                   }}
                   className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-lg hover:border-[#e8735a] transition-all text-left group"
                 >
@@ -224,6 +230,7 @@ export default function AssessmentPlayerPage() {
     setTypedSubmitted(false);
     celebrationShownRef.current = false;
     setShowCelebration(false);
+    if (!isPreview) track('assessment_open', code, { assessment_id: child.id });
     // Clamp index if new assessment has fewer questions
     const childQuestions = [...child.questions].sort((a, b) => a.order - b.order);
     setCurrentIdx(prev => Math.min(prev, Math.max(0, childQuestions.length - 1)));
@@ -234,7 +241,7 @@ export default function AssessmentPlayerPage() {
     setShowTyping(false);
     setTypedAnswer('');
     setTypedSubmitted(false);
-    if (!isPreview) track('question_view', code, { assessment_id: assessmentId, question_id: questions[idx].id });
+    if (!isPreview) track('question_view', code, { assessment_id: activeAssessment.id, question_id: questions[idx].id });
   };
 
   const goPrev = () => goToQuestion(Math.max(0, currentIdx - 1));
@@ -244,7 +251,7 @@ export default function AssessmentPlayerPage() {
     const nowAllDone = questions.every(q => !!next[q.id]);
     if (nowAllDone && !celebrationShownRef.current) {
       celebrationShownRef.current = true;
-      if (!isPreview) track('assessment_complete', code, { assessment_id: assessmentId });
+      if (!isPreview) track('assessment_complete', code, { assessment_id: activeAssessment.id });
       setTimeout(() => setShowCelebration(true), 400);
     }
     void qId;
@@ -255,7 +262,7 @@ export default function AssessmentPlayerPage() {
     if (!isPreview) markQuestionComplete(code, assessmentId, currentQ.id);
     const next = { ...completion, [currentQ.id]: true };
     setCompletion(next);
-    if (!isPreview) track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
+    if (!isPreview) track('question_complete', code, { assessment_id: activeAssessment.id, question_id: currentQ.id });
     finishQuestion(currentQ.id, next);
   };
 
@@ -263,7 +270,7 @@ export default function AssessmentPlayerPage() {
   const handleTypedSubmit = () => {
     if (!typedAnswer.trim()) return;
     if (!isPreview) track('text_response', code, {
-      assessment_id: assessmentId,
+      assessment_id: activeAssessment.id,
       question_id: currentQ.id,
       metadata: { text: typedAnswer.trim() },
     });
@@ -272,7 +279,7 @@ export default function AssessmentPlayerPage() {
       if (!isPreview) markQuestionComplete(code, assessmentId, currentQ.id);
       const next = { ...completion, [currentQ.id]: true };
       setCompletion(next);
-      if (!isPreview) track('question_complete', code, { assessment_id: assessmentId, question_id: currentQ.id });
+      if (!isPreview) track('question_complete', code, { assessment_id: activeAssessment.id, question_id: currentQ.id });
       finishQuestion(currentQ.id, next);
     }
   };
@@ -354,7 +361,7 @@ export default function AssessmentPlayerPage() {
               {currentQ.spanishEmbedUrl && (
                 <Tooltip text="Other prompt languages can be configured for your population.">
                   <button
-                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
+                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { mode: spanishMode ? 'video' : 'spanish' } }); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                     style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
                   >
@@ -430,7 +437,7 @@ export default function AssessmentPlayerPage() {
               )}
               <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
                 <button
-                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: assessmentId, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
+                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('mode_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { mode: showTyping ? 'video' : 'text' } }); }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                   style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
                 >
