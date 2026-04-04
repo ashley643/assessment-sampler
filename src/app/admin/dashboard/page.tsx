@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 
 const EVENT_LABELS: Record<string, string> = {
-  session_start: 'Started session',
-  assessment_open: 'Opened assessment',
-  question_view: 'Viewed question',
-  question_complete: 'Completed question',
-  assessment_complete: 'Completed assessment',
-  mode_change: 'Switched response mode',
-  text_response: 'Submitted typed response',
+  session_start: 'Started a session',
+  assessment_open: 'Opened an assessment',
+  question_view: 'Viewed a question',
+  question_complete: 'Completed a question',
+  assessment_complete: 'Completed an assessment',
+  mode_change: 'Switched to a different response format',
+  text_response: 'Submitted a typed response',
 };
 import AdminShell from '@/components/admin/AdminShell';
 
@@ -71,18 +71,18 @@ export default function DashboardPage() {
           <>
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <StatCard label="Total Sessions" value={data.sessions} />
-              <StatCard label="Total Events" value={data.events} />
+              <StatCard label="Total Visits" value={data.sessions} />
+              <StatCard label="Total Actions" value={data.events} />
             </div>
 
             {/* By code — clickable for drill-down */}
             {Object.keys(data.byCode).length > 0 && (
-              <Section title={selectedCode ? `Sessions — ${selectedCode}` : 'Sessions by Access Code'}>
+              <Section title={selectedCode ? `Visits — ${selectedCode}` : 'Visits by Access Code'}>
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Code</th>
-                      <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500">Sessions</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500">Visits</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -115,21 +115,21 @@ export default function DashboardPage() {
 
             {/* By assessment */}
             {Object.keys(data.byAssessment).length > 0 && (
-              <Section title="Events by Assessment">
+              <Section title="Activity by Assessment">
                 <Table
                   rows={Object.entries(data.byAssessment).sort((a, b) => b[1] - a[1])}
                   colA="Assessment"
-                  colB="Events"
+                  colB="Actions"
                 />
               </Section>
             )}
 
             {/* By event type */}
             {Object.keys(data.byType).length > 0 && (
-              <Section title="Events by Type">
+              <Section title="Activity Breakdown">
                 <Table
                   rows={Object.entries(data.byType).sort((a, b) => b[1] - a[1])}
-                  colA="Event"
+                  colA="Action"
                   colB="Count"
                 />
               </Section>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
 
             {/* Daily chart */}
             {data.daily.length > 0 && (
-              <Section title="Daily Sessions">
+              <Section title="Daily Visits">
                 <div className="space-y-1.5">
                   {data.daily.map(d => {
                     const max = Math.max(...data.daily.map(x => x.count));
@@ -161,7 +161,7 @@ export default function DashboardPage() {
 
             {data.sessions === 0 && (
               <p className="text-sm text-gray-400 mt-4">
-                No data yet{selectedCode ? ` for ${selectedCode}` : ' for this period'}.
+                No activity yet{selectedCode ? ` for ${selectedCode}` : ' for this period'}.
               </p>
             )}
           </>
