@@ -21,6 +21,13 @@ interface BundleForm {
   sort_order: number;
 }
 
+interface ColorPreset {
+  label: string;
+  accent_color: string;
+  badge_bg: string;
+  badge_text: string;
+}
+
 const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 export default function EditBundlePage() {
@@ -42,12 +49,29 @@ export default function EditBundlePage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [colorPresets, setColorPresets] = useState<ColorPreset[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
 
   useEffect(() => {
-    // Load all available individual assessments
     fetch('/api/admin/assessments')
       .then(r => r.json())
       .then(data => setAllAssessments(data.sort((a: Assessment & { sort_order: number }, b: Assessment & { sort_order: number }) => a.sort_order - b.sort_order)));
+
+    // Derive color presets from existing bundles
+    fetch('/api/admin/bundles')
+      .then(r => r.json())
+      .then((data: BundleForm[]) => {
+        if (!Array.isArray(data)) return;
+        const seen = new Set<string>();
+        const presets: ColorPreset[] = [];
+        for (const b of data) {
+          if (!seen.has(b.accent_color)) {
+            seen.add(b.accent_color);
+            presets.push({ label: b.title, accent_color: b.accent_color, badge_bg: b.badge_bg, badge_text: b.badge_text });
+          }
+        }
+        setColorPresets(presets);
+      });
 
     if (!isNew) {
       fetch(`/api/admin/bundles/${id}`)
@@ -62,6 +86,7 @@ export default function EditBundlePage() {
             badge_text: data.badge_text,
             sort_order: data.sort_order,
           });
+          setSelectedPreset(data.accent_color);
           const sorted = [...(data.bundle_assessments ?? [])].sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order);
           setSelectedIds(sorted.map((ba: { assessment_id: string }) => ba.assessment_id));
         });
@@ -170,22 +195,60 @@ export default function EditBundlePage() {
           {/* Colors */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
             <h2 className="text-sm font-semibold text-gray-700">Colors</h2>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: 'Accent Color', field: 'accent_color' as const },
-                { label: 'Badge Background', field: 'badge_bg' as const },
-                { label: 'Badge Text Color', field: 'badge_text' as const },
-              ].map(({ label, field }) => (
-                <div key={field}>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" value={form[field]} onChange={e => set(field, e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-200" />
-                    <input className={INPUT} value={form[field]} onChange={e => set(field, e.target.value)} />
-                  </div>
+            {colorPresets.length > 0 && (
+              <>
+                <p className="text-xs text-gray-500">Pick from an existing color scheme or customize.</p>
+                <div className="flex flex-wrap gap-2">
+                  {colorPresets.map(preset => (
+                    <button
+                      key={preset.accent_color}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPreset(preset.accent_color);
+                        setForm(f => ({ ...f, accent_color: preset.accent_color, badge_bg: preset.badge_bg, badge_text: preset.badge_text }));
+                      }}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                        selectedPreset === preset.accent_color
+                          ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5]'
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: preset.accent_color }} />
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: preset.badge_bg, color: preset.badge_text }}>{preset.label}</span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPreset('custom')}
+                    className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                      selectedPreset === 'custom'
+                        ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5] text-[#4a6fa5] font-medium'
+                        : 'border-dashed border-gray-300 text-gray-500 hover:border-gray-400'
+                    }`}
+                  >
+                    Custom…
+                  </button>
                 </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400">
+              </>
+            )}
+            {(selectedPreset === 'custom' || colorPresets.length === 0) && (
+              <div className="grid grid-cols-3 gap-4 pt-3 border-t border-gray-100">
+                {([
+                  { label: 'Accent Color', field: 'accent_color' as const },
+                  { label: 'Badge Background', field: 'badge_bg' as const },
+                  { label: 'Badge Text Color', field: 'badge_text' as const },
+                ]).map(({ label, field }) => (
+                  <div key={field}>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={form[field]} onChange={e => set(field, e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-gray-200" />
+                      <input className={INPUT} value={form[field]} onChange={e => set(field, e.target.value)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-400 pt-1">
               Preview: <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: form.badge_bg, color: form.badge_text }}>{form.title || 'Bundle'}</span>
             </p>
           </div>

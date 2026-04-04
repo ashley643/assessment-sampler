@@ -26,16 +26,18 @@ interface Assessment {
   questions: Question[];
 }
 
+interface TypePreset {
+  type: string;
+  type_label: string;
+  accent_color: string;
+  badge_bg: string;
+  badge_text: string;
+}
+
 const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 function newQuestion(order: number): Question {
-  return {
-    id: `q-${Date.now()}-${order}`,
-    sort_order: order,
-    title: '',
-    embed_url: '',
-    spanish_embed_url: '',
-  };
+  return { id: `q-${Date.now()}-${order}`, sort_order: order, title: '', embed_url: '', spanish_embed_url: '' };
 }
 
 export default function EditAssessmentPage() {
@@ -45,20 +47,32 @@ export default function EditAssessmentPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<Omit<Assessment, 'questions'>>({
-    id: '',
-    title: '',
-    type: '',
-    type_label: '',
-    accent_color: '#4a6fa5',
-    badge_bg: '#E6F1FB',
-    badge_text: '#0C447C',
-    description: '',
-    player_label: '',
-    sort_order: 0,
+    id: '', title: '', type: '', type_label: '',
+    accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C',
+    description: '', player_label: '', sort_order: 0,
   });
   const [questions, setQuestions] = useState<Question[]>([newQuestion(1)]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [typePresets, setTypePresets] = useState<TypePreset[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string | 'custom'>('');
+
+  useEffect(() => {
+    // Derive unique type presets from existing assessments
+    fetch('/api/admin/assessments')
+      .then(r => r.json())
+      .then((data: Assessment[]) => {
+        const seen = new Set<string>();
+        const presets: TypePreset[] = [];
+        for (const a of data) {
+          if (!seen.has(a.type)) {
+            seen.add(a.type);
+            presets.push({ type: a.type, type_label: a.type_label, accent_color: a.accent_color, badge_bg: a.badge_bg, badge_text: a.badge_text });
+          }
+        }
+        setTypePresets(presets);
+      });
+  }, []);
 
   useEffect(() => {
     if (isNew) return;
@@ -68,11 +82,29 @@ export default function EditAssessmentPage() {
         const { questions: qs, ...rest } = data;
         setForm(rest);
         setQuestions(qs.sort((a, b) => a.sort_order - b.sort_order));
+        setSelectedPreset(rest.type);
       });
   }, [id, isNew]);
 
   function updateForm(key: keyof Omit<Assessment, 'questions'>, value: string | number) {
     setForm(prev => ({ ...prev, [key]: value }));
+  }
+
+  function applyPreset(preset: TypePreset) {
+    setSelectedPreset(preset.type);
+    setForm(prev => ({
+      ...prev,
+      type: preset.type,
+      type_label: preset.type_label,
+      accent_color: preset.accent_color,
+      badge_bg: preset.badge_bg,
+      badge_text: preset.badge_text,
+    }));
+  }
+
+  function selectCustom() {
+    setSelectedPreset('custom');
+    setForm(prev => ({ ...prev, type: '', type_label: '', accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C' }));
   }
 
   function updateQuestion(idx: number, key: keyof Question, value: string) {
@@ -91,24 +123,10 @@ export default function EditAssessmentPage() {
     e.preventDefault();
     setSaving(true);
     setError('');
-
-    const payload = {
-      ...form,
-      questions: questions.map((q, i) => ({ ...q, sort_order: i + 1 })),
-    };
-
+    const payload = { ...form, questions: questions.map((q, i) => ({ ...q, sort_order: i + 1 })) };
     const res = isNew
-      ? await fetch('/api/admin/assessments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-      : await fetch(`/api/admin/assessments/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
+      ? await fetch('/api/admin/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      : await fetch(`/api/admin/assessments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (res.ok) {
       router.push('/admin/assessments');
     } else {
@@ -118,106 +136,119 @@ export default function EditAssessmentPage() {
     }
   }
 
+  const isCustom = selectedPreset === 'custom';
+
   return (
     <AdminShell>
       <div className="max-w-3xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            {isNew ? 'New Assessment' : 'Edit Assessment'}
-          </h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => router.push('/admin/assessments')}
-              className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="assessment-form"
-              disabled={saving}
-              className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors"
-            >
+            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+            <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
               {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
             </button>
           </div>
         </div>
         <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic info */}
+
+          {/* Details */}
           <Section title="Details">
             <div className="grid grid-cols-2 gap-4">
               {isNew && (
                 <F label="ID (slug, no spaces)">
-                  <input
-                    value={form.id}
-                    onChange={e => updateForm('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                    placeholder="e.g. bhs-3"
-                    className={INPUT}
-                    required
-                  />
+                  <input value={form.id} onChange={e => updateForm('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. bhs-3" className={INPUT} required />
                 </F>
               )}
               <F label="Title">
                 <input value={form.title} onChange={e => updateForm('title', e.target.value)} className={INPUT} required />
               </F>
-              <F label="Type ID">
-                <input value={form.type} onChange={e => updateForm('type', e.target.value)} placeholder="e.g. behavioral-health" className={INPUT} required />
-              </F>
-              <F label="Type Label">
-                <input value={form.type_label} onChange={e => updateForm('type_label', e.target.value)} placeholder="e.g. Behavioral Health" className={INPUT} required />
-              </F>
-
             </div>
             <F label="Description" hint="Shown on the assessment card">
-              <textarea
-                value={form.description}
-                onChange={e => updateForm('description', e.target.value)}
-                rows={3}
-                className={INPUT}
-              />
+              <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} rows={3} className={INPUT} />
             </F>
             <F label="Player Label (optional)" hint="Short label shown in the bundle switcher sidebar — leave blank to use description">
-              <input
-                value={form.player_label}
-                onChange={e => updateForm('player_label', e.target.value)}
-                placeholder="e.g. Grades 3–4"
-                className={INPUT}
-              />
+              <input value={form.player_label} onChange={e => updateForm('player_label', e.target.value)} placeholder="e.g. Grades 3–4" className={INPUT} />
             </F>
           </Section>
 
-          {/* Colors */}
-          <Section title="Colors">
-            <div className="grid grid-cols-3 gap-4">
-              <F label="Accent Color">
-                <div className="flex gap-2 items-center">
-                  <input type="color" value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                  <input value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className={INPUT} />
-                </div>
-              </F>
-              <F label="Badge Background">
-                <div className="flex gap-2 items-center">
-                  <input type="color" value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                  <input value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className={INPUT} />
-                </div>
-              </F>
-              <F label="Badge Text Color">
-                <div className="flex gap-2 items-center">
-                  <input type="color" value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
-                  <input value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className={INPUT} />
-                </div>
-              </F>
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs text-gray-500">Preview:</span>
-              <span
-                className="text-xs font-medium px-2.5 py-0.5 rounded-full"
-                style={{ background: form.badge_bg, color: form.badge_text }}
+          {/* Type + Colors combined as preset picker */}
+          <Section title="Type & Colors">
+            <p className="text-xs text-gray-500 mb-3">Select an existing type to inherit its label and colors, or add a new one.</p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {typePresets.map(preset => (
+                <button
+                  key={preset.type}
+                  type="button"
+                  onClick={() => applyPreset(preset)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                    selectedPreset === preset.type
+                      ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5]'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.accent_color }} />
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: preset.badge_bg, color: preset.badge_text }}
+                  >
+                    {preset.type_label}
+                  </span>
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={selectCustom}
+                className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                  isCustom
+                    ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5] text-[#4a6fa5] font-medium'
+                    : 'border-dashed border-gray-300 text-gray-500 hover:border-gray-400'
+                }`}
               >
-                {form.type_label || 'Type Label'}
-              </span>
+                + New type…
+              </button>
             </div>
+
+            {/* Custom fields — only shown when "New type" selected */}
+            {isCustom && (
+              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                <F label="Type ID (slug)">
+                  <input value={form.type} onChange={e => updateForm('type', e.target.value.toLowerCase().replace(/\s+/g, '-'))} placeholder="e.g. community-schools" className={INPUT} required />
+                </F>
+                <F label="Type Label">
+                  <input value={form.type_label} onChange={e => updateForm('type_label', e.target.value)} placeholder="e.g. Community Schools" className={INPUT} required />
+                </F>
+                <F label="Accent Color">
+                  <div className="flex gap-2 items-center">
+                    <input type="color" value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
+                    <input value={form.accent_color} onChange={e => updateForm('accent_color', e.target.value)} className={INPUT} />
+                  </div>
+                </F>
+                <F label="Badge Background">
+                  <div className="flex gap-2 items-center">
+                    <input type="color" value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
+                    <input value={form.badge_bg} onChange={e => updateForm('badge_bg', e.target.value)} className={INPUT} />
+                  </div>
+                </F>
+                <F label="Badge Text Color">
+                  <div className="flex gap-2 items-center">
+                    <input type="color" value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className="h-9 w-12 p-0.5 border border-gray-300 rounded-lg cursor-pointer" />
+                    <input value={form.badge_text} onChange={e => updateForm('badge_text', e.target.value)} className={INPUT} />
+                  </div>
+                </F>
+              </div>
+            )}
+
+            {/* Always show preview */}
+            {(selectedPreset && form.type_label) && (
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                <span className="text-xs text-gray-500">Preview:</span>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: form.accent_color }} />
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: form.badge_bg, color: form.badge_text }}>
+                  {form.type_label}
+                </span>
+              </div>
+            )}
           </Section>
 
           {/* Questions */}
@@ -227,13 +258,7 @@ export default function EditAssessmentPage() {
                 <div key={q.id} className="border border-gray-200 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-gray-500">Question {i + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeQuestion(i)}
-                      className="text-xs text-red-400 hover:text-red-600"
-                    >
-                      Remove
-                    </button>
+                    <button type="button" onClick={() => removeQuestion(i)} className="text-xs text-red-400 hover:text-red-600">Remove</button>
                   </div>
                   <F label="Title">
                     <input value={q.title} onChange={e => updateQuestion(i, 'title', e.target.value)} className={INPUT} required />
@@ -247,11 +272,7 @@ export default function EditAssessmentPage() {
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={addQuestion}
-              className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
-            >
+            <button type="button" onClick={addQuestion} className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors">
               + Add Question
             </button>
           </Section>
