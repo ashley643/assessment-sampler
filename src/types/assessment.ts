@@ -5,6 +5,7 @@ export interface QuestionSample {
   sortOrder: number;
   gender?: string;
   grade?: string;
+  excerpt?: string;
 }
 
 export interface Question {

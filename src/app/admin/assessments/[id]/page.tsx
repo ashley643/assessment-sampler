@@ -11,6 +11,7 @@ interface QuestionSample {
   embed_url: string;
   gender: string;
   grade: string;
+  excerpt: string;
 }
 
 interface Question {
@@ -39,7 +40,7 @@ const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:
 const INPUT_SM = 'w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-400';
 
 function newSample(language: 'english' | 'spanish', order: number): QuestionSample {
-  return { id: `s-${Date.now()}-${order}`, sort_order: order, language, embed_url: '', gender: '', grade: '' };
+  return { id: `s-${Date.now()}-${order}`, sort_order: order, language, embed_url: '', gender: '', grade: '', excerpt: '' };
 }
 
 function newQuestion(order: number): Question {
@@ -278,6 +279,13 @@ export default function EditAssessmentPage() {
                                 className={INPUT_SM}
                               />
                             </div>
+                            <textarea
+                              value={s.excerpt}
+                              onChange={e => updateSample(qi, si, 'excerpt', e.target.value)}
+                              placeholder="Excerpt — a short quote from the response (optional)"
+                              rows={2}
+                              className={INPUT_SM + ' resize-none'}
+                            />
                           </div>
                           <button
                             type="button"

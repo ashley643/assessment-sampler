@@ -155,7 +155,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   if (allQuestionIds.length > 0) {
     const { data: samplesData } = await supabaseAdmin
       .from('question_samples')
-      .select('id, question_id, embed_url, language, sort_order, gender, grade')
+      .select('id, question_id, embed_url, language, sort_order, gender, grade, excerpt')
       .in('question_id', allQuestionIds)
       .order('sort_order');
 
@@ -168,6 +168,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         sortOrder: s.sort_order,
         gender: s.gender ?? undefined,
         grade: s.grade ?? undefined,
+        excerpt: s.excerpt ?? undefined,
       });
       sampleMap.set(s.question_id, list);
     }

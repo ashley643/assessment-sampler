@@ -34,7 +34,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (questions !== undefined) {
     type IncomingSample = {
       id?: string; embed_url: string; language: string;
-      sort_order: number; gender?: string; grade?: string;
+      sort_order: number; gender?: string; grade?: string; excerpt?: string;
     };
     type IncomingQuestion = {
       id: string; title: string; embed_url: string;
@@ -68,6 +68,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           sort_order: s.sort_order ?? (qi * 100 + si),
           gender: s.gender?.trim() || null,
           grade: s.grade?.trim() || null,
+          excerpt: s.excerpt?.trim() || null,
         }))
       );
 

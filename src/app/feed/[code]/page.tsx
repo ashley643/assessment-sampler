@@ -180,6 +180,15 @@ export default function FeedPage() {
                   <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
                 </div>
 
+                {/* Excerpt */}
+                {sample.excerpt && (
+                  <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
+                    <p className="text-sm text-gray-600 italic leading-relaxed">
+                      &ldquo;{sample.excerpt}&rdquo;
+                    </p>
+                  </div>
+                )}
+
                 {/* Embedded sample */}
                 <div className="aspect-video bg-gray-50">
                   <iframe
