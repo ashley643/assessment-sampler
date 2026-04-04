@@ -1,11 +1,17 @@
+export interface QuestionSample {
+  id: string;
+  embedUrl: string;
+  language: 'english' | 'spanish';
+  sortOrder: number;
+}
+
 export interface Question {
   id: string;
   order: number;
   title: string;
   embedUrl: string;
   spanishEmbedUrl?: string;
-  sampleEmbedUrl?: string;
-  sampleSpanishEmbedUrl?: string;
+  samples?: QuestionSample[];
 }
 
 export interface Assessment {
@@ -17,9 +23,9 @@ export interface Assessment {
   badgeBg: string;
   badgeText: string;
   description: string;
-  playerLabel?: string; // short label shown in bundle switcher sidebar
+  playerLabel?: string;
   questions: Question[];
-  childAssessments?: Assessment[]; // populated for bundle type
+  childAssessments?: Assessment[];
 }
 
 export interface AccessCode {

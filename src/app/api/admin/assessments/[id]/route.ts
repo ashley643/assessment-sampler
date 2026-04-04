@@ -33,28 +33,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   // Sync questions if provided
   if (questions !== undefined) {
-    await supabaseAdmin.from('questions').delete().eq('assessment_id', id);
-    if (questions.length) {
-      await supabaseAdmin.from('questions').insert(
-        questions.map((q: {
-          id: string;
-          title: string;
-          embed_url: string;
-          spanish_embed_url?: string;
-          sample_embed_url?: string;
-          sample_spanish_embed_url?: string;
-          sort_order: number;
-        }) => ({
-          id: q.id,
-          assessment_id: id,
-          sort_order: q.sort_order,
-          title: q.title,
-          embed_url: q.embed_url,
-          spanish_embed_url: q.spanish_embed_url ?? null,
-          sample_embed_url: q.sample_embed_url ?? null,
-          sample_spanish_embed_url: q.sample_spanish_embed_url ?? null,
-        })),
-      );
+    const questionRows = questions.map((q: {
+      id: string;
+      title: string;
+      embed_url: string;
+      spanish_embed_url?: string;
+      sort_order: number;
+    }) => ({
+      id: q.id,
+      assessment_id: id,
+      sort_order: q.sort_order,
+      title: q.title,
+      embed_url: q.embed_url,
+      spanish_embed_url: q.spanish_embed_url ?? null,
+    }));
+
+    const { error: delErr } = await supabaseAdmin.from('questions').delete().eq('assessment_id', id);
+    if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+
+    if (questionRows.length) {
+      const { error: insErr } = await supabaseAdmin.from('questions').insert(questionRows);
+      if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
     }
   }
 

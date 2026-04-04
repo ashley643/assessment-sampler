@@ -15,7 +15,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         bundle_id,
         assessments (
           id, title, type, type_label, accent_color, badge_bg, badge_text, description, player_label, sort_order,
-          questions ( id, sort_order, title, embed_url, spanish_embed_url, sample_embed_url, sample_spanish_embed_url )
+          questions ( id, sort_order, title, embed_url, spanish_embed_url )
         )
       )
     `)
@@ -32,7 +32,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   if (data.expires_at && new Date(data.expires_at) < now) return NextResponse.json({ error: 'Code has expired' }, { status: 403 });
   if (data.starts_at && new Date(data.starts_at) > now) return NextResponse.json({ error: 'Code is not yet active' }, { status: 403 });
 
-  function normalizeQuestions(questions: { id: string; sort_order: number; title: string; embed_url: string; spanish_embed_url: string | null; sample_embed_url: string | null; sample_spanish_embed_url: string | null }[]) {
+  type RawQuestion = { id: string; sort_order: number; title: string; embed_url: string; spanish_embed_url: string | null };
+  type RawAssessment = {
+    id: string; title: string; type: string; type_label: string;
+    accent_color: string; badge_bg: string; badge_text: string;
+    description: string; player_label: string | null; sort_order: number;
+    questions: RawQuestion[];
+  };
+
+  function normalizeQuestions(questions: RawQuestion[]) {
     return (questions ?? [])
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(q => ({
@@ -41,17 +49,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         title: q.title,
         embedUrl: q.embed_url,
         spanishEmbedUrl: q.spanish_embed_url ?? undefined,
-        sampleEmbedUrl: q.sample_embed_url ?? undefined,
-        sampleSpanishEmbedUrl: q.sample_spanish_embed_url ?? undefined,
       }));
   }
-
-  type RawAssessment = {
-    id: string; title: string; type: string; type_label: string;
-    accent_color: string; badge_bg: string; badge_text: string;
-    description: string; player_label: string | null; sort_order: number;
-    questions: { id: string; sort_order: number; title: string; embed_url: string; spanish_embed_url: string | null; sample_embed_url: string | null; sample_spanish_embed_url: string | null }[];
-  };
 
   function normalizeAssessment(a: RawAssessment) {
     return {
@@ -71,10 +70,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   const sorted = ((data.code_assignments as unknown) as RawCodeAssessment[])
     .sort((a, b) => a.sort_order - b.sort_order);
 
-  // Collect all bundle IDs that need to be fetched
   const bundleIds = sorted.filter(ca => ca.bundle_id).map(ca => ca.bundle_id as string);
 
-  // Fetch bundles with their child assessments in one query
   const bundleMap = new Map<string, {
     id: string; title: string; description: string | null;
     accent_color: string; badge_bg: string; badge_text: string;
@@ -90,7 +87,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
           sort_order,
           assessments (
             id, title, type, type_label, accent_color, badge_bg, badge_text, description, player_label, sort_order,
-            questions ( id, sort_order, title, embed_url, spanish_embed_url, sample_embed_url, sample_spanish_embed_url )
+            questions ( id, sort_order, title, embed_url, spanish_embed_url )
           )
         )
       `)
@@ -105,7 +102,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   }
 
   const assessmentList = await Promise.all(sorted.map(async ca => {
-    // Bundle row
     if (ca.bundle_id) {
       const b = bundleMap.get(ca.bundle_id);
       if (!b) return null;
@@ -118,7 +114,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
       };
     }
 
-    // Individual assessment row
     if (!ca.assessments) return null;
     const a = ca.assessments;
     const base = normalizeAssessment(a);
@@ -127,7 +122,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
       const childIds = a.questions.map(q => q.id);
       const { data: children } = await supabaseAdmin
         .from('assessments')
-        .select('id, title, type, type_label, accent_color, badge_bg, badge_text, description, sort_order, questions ( id, sort_order, title, embed_url, spanish_embed_url, sample_embed_url, sample_spanish_embed_url )')
+        .select('id, title, type, type_label, accent_color, badge_bg, badge_text, description, player_label, sort_order, questions ( id, sort_order, title, embed_url, spanish_embed_url )')
         .in('id', childIds);
 
       return {
