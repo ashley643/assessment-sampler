@@ -53,7 +53,8 @@ function excerpt(s: string, n = 180) { return s.length > n ? s.slice(0, n).trim(
 export default function TranscriptFinderPage() {
   const [transcripts, setTranscripts]   = useState<Transcript[]>([]);
   const [needsSamples, setNeedsSamples] = useState<NeedsSample[]>([]);
-  const [loading, setLoading]           = useState(true);
+  const [needsLoading, setNeedsLoading] = useState(true);
+  const [loading, setLoading]           = useState(false);
   const [loadingMore, setLoadingMore]   = useState(false);
   const [page, setPage]                 = useState(1);
   const [hasMore, setHasMore]           = useState(false);
@@ -83,8 +84,13 @@ export default function TranscriptFinderPage() {
   useEffect(() => {
     fetch('/api/admin/transcript-finder?needsOnly=true')
       .then(r => r.json())
-      .then(d => setNeedsSamples((d.needsSamples as NeedsSample[]) ?? []))
-      .catch(() => {});
+      .then(d => {
+        const list = (d.needsSamples as NeedsSample[]) ?? [];
+        setNeedsSamples(list);
+        setExpandedAssessments(new Set(list.map(n => n.assessmentId)));
+        setNeedsLoading(false);
+      })
+      .catch(() => setNeedsLoading(false));
   }, []);
 
   // When a question is selected (or filters/search change): load matching transcripts
@@ -223,7 +229,7 @@ export default function TranscriptFinderPage() {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Questions needing samples</p>
             <p className="text-xs text-gray-400 mt-0.5">{needsSamples.length} questions</p>
           </div>
-          {loading ? (
+          {needsLoading ? (
             <div className="px-4 py-6 text-xs text-gray-400">Loading…</div>
           ) : needsSamples.length === 0 ? (
             <div className="px-4 py-6 text-xs text-gray-400">All questions have samples 🎉</div>
