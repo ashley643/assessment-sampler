@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { AccessCode, Assessment, Question, QuestionSample } from '@/types/assessment';
@@ -14,29 +14,42 @@ interface FeedItem {
 
 type Filters = {
   bundle: string | null;
-  assessment: string | null;
+  assessment: string[];
   language: 'english' | 'spanish' | null;
   media: 'video' | 'audio' | null;
   gender: string | null;
   grade: string | null;
 };
 
-const EMPTY_FILTERS: Filters = { bundle: null, assessment: null, language: null, media: null, gender: null, grade: null };
+const EMPTY_FILTERS: Filters = { bundle: null, assessment: [], language: null, media: null, gender: null, grade: null };
+
+const GRADE_ORDER = ['TK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'Parent', 'Staff'];
+
+function sortGrades(grades: string[]): string[] {
+  return [...grades].sort((a, b) => {
+    const ai = GRADE_ORDER.indexOf(a);
+    const bi = GRADE_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
 
 function applyFilters(items: FeedItem[], f: Filters): FeedItem[] {
   return items.filter(item => {
-    if (f.bundle     && item.bundleTitle !== f.bundle) return false;
-    if (f.assessment && item.assessment.id !== f.assessment) return false;
-    if (f.language   && item.sample.language !== f.language) return false;
-    if (f.media      && (item.sample.mediaType ?? 'video') !== f.media) return false;
-    if (f.gender     && item.sample.gender !== f.gender) return false;
-    if (f.grade      && item.sample.grade !== f.grade) return false;
+    if (f.bundle && item.bundleTitle !== f.bundle) return false;
+    if (f.assessment.length && !f.assessment.includes(item.assessment.id)) return false;
+    if (f.language && item.sample.language !== f.language) return false;
+    if (f.media && (item.sample.mediaType ?? 'video') !== f.media) return false;
+    if (f.gender && item.sample.gender !== f.gender) return false;
+    if (f.grade && item.sample.grade !== f.grade) return false;
     return true;
   });
 }
 
 function activeCount(f: Filters) {
-  return Object.values(f).filter(Boolean).length;
+  return [f.bundle, f.language, f.media, f.gender, f.grade].filter(Boolean).length + f.assessment.length;
 }
 
 export default function FeedPage() {
@@ -48,6 +61,8 @@ export default function FeedPage() {
   const [notFound, setNotFound] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [assessmentOpen, setAssessmentOpen] = useState(false);
+  const assessmentDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -61,6 +76,17 @@ export default function FeedPage() {
   useEffect(() => {
     if (notFound) router.replace('/assessment');
   }, [notFound, router]);
+
+  // Close assessment dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (assessmentDropdownRef.current && !assessmentDropdownRef.current.contains(e.target as Node)) {
+        setAssessmentOpen(false);
+      }
+    }
+    if (assessmentOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [assessmentOpen]);
 
   if (!codeData) return null;
 
@@ -83,7 +109,8 @@ export default function FeedPage() {
   const filtered = applyFilters(allItems, filters);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
-    const partial = applyFilters(allItems, { ...filters, [key]: null });
+    const resetValue = key === 'assessment' ? [] : null;
+    const partial = applyFilters(allItems, { ...filters, [key]: resetValue });
     const s = new Set<T>();
     for (const item of partial) { const v = pick(item); if (v) s.add(v); }
     return s;
@@ -96,18 +123,25 @@ export default function FeedPage() {
   const availGenders     = availableValues('gender',     i => i.sample.gender);
   const availGrades      = availableValues('grade',      i => i.sample.grade);
 
-  const bundleNames   = [...new Set(allItems.map(i => i.bundleTitle).filter(Boolean))] as string[];
-  const assessments   = [...new Map(allItems.map(i => [i.assessment.id, i.assessment])).values()];
-  const genders       = [...new Set(allItems.map(i => i.sample.gender).filter(Boolean))] as string[];
-  const grades        = [...new Set(allItems.map(i => i.sample.grade).filter(Boolean))] as string[];
-  const hasSpanish    = allItems.some(i => i.sample.language === 'spanish');
+  const bundleNames = [...new Set(allItems.map(i => i.bundleTitle).filter(Boolean))] as string[];
+  const assessments = [...new Map(allItems.map(i => [i.assessment.id, i.assessment])).values()];
+  const genders     = [...new Set(allItems.map(i => i.sample.gender).filter(Boolean))] as string[];
+  const grades      = sortGrades([...new Set(allItems.map(i => i.sample.grade).filter(Boolean))] as string[]);
+  const hasSpanish  = allItems.some(i => i.sample.language === 'spanish');
 
-  function toggle<K extends keyof Filters>(key: K, value: Filters[K]) {
+  function toggle<K extends keyof Omit<Filters, 'assessment'>>(key: K, value: Filters[K]) {
     setFilters(f => {
       const next = { ...f, [key]: f[key] === value ? null : value };
-      if (key === 'bundle') next.assessment = null;
+      if (key === 'bundle') next.assessment = [];
       return next;
     });
+  }
+
+  function toggleAssessment(id: string) {
+    setFilters(f => ({
+      ...f,
+      assessment: f.assessment.includes(id) ? f.assessment.filter(x => x !== id) : [...f.assessment, id],
+    }));
   }
 
   // Shared chip component
@@ -210,12 +244,14 @@ export default function FeedPage() {
                   )}
                 </button>
                 {/* Active filter pills */}
-                {filters.bundle     && <ActivePill label={filters.bundle} onRemove={() => toggle('bundle', filters.bundle)} />}
-                {filters.assessment && <ActivePill label={assessmentLabel(filters.assessment)} onRemove={() => toggle('assessment', filters.assessment)} />}
-                {filters.language   && <ActivePill label={filters.language === 'english' ? 'English' : 'Spanish'} onRemove={() => toggle('language', filters.language)} />}
-                {filters.media      && <ActivePill label={filters.media === 'video' ? 'Video' : 'Audio'} onRemove={() => toggle('media', filters.media)} />}
-                {filters.gender     && <ActivePill label={filters.gender} onRemove={() => toggle('gender', filters.gender)} />}
-                {filters.grade      && <ActivePill label={filters.grade} onRemove={() => toggle('grade', filters.grade)} />}
+                {filters.bundle && <ActivePill label={filters.bundle} onRemove={() => toggle('bundle', filters.bundle)} />}
+                {filters.assessment.map(id => (
+                  <ActivePill key={id} label={assessmentLabel(id)} onRemove={() => toggleAssessment(id)} />
+                ))}
+                {filters.language && <ActivePill label={filters.language === 'english' ? 'English' : 'Spanish'} onRemove={() => toggle('language', filters.language)} />}
+                {filters.media && <ActivePill label={filters.media === 'video' ? 'Video' : 'Audio'} onRemove={() => toggle('media', filters.media)} />}
+                {filters.gender && <ActivePill label={filters.gender} onRemove={() => toggle('gender', filters.gender)} />}
+                {filters.grade && <ActivePill label={filters.grade} onRemove={() => toggle('grade', filters.grade)} />}
                 {count > 0 && (
                   <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-gray-400 hover:text-gray-600 underline transition-colors ml-1">
                     Clear all
@@ -246,7 +282,7 @@ export default function FeedPage() {
                         <div>
                           <p className="text-xs font-semibold text-gray-500 mb-2">Bundle</p>
                           <div className="flex flex-wrap gap-1.5">
-                            <Chip label="All" active={!filters.bundle} available onClick={() => setFilters(f => ({ ...f, bundle: null, assessment: null }))} />
+                            <Chip label="All" active={!filters.bundle} available onClick={() => setFilters(f => ({ ...f, bundle: null, assessment: [] }))} />
                             {bundleNames.map(b => <Chip key={b} label={b} active={filters.bundle === b} available={availBundles.has(b)} onClick={() => toggle('bundle', b)} />)}
                           </div>
                         </div>
@@ -254,9 +290,23 @@ export default function FeedPage() {
                       {assessments.length > 1 && (
                         <div>
                           <p className="text-xs font-semibold text-gray-500 mb-2">Assessment</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            <Chip label="All" active={!filters.assessment} available onClick={() => toggle('assessment', null)} />
-                            {assessments.map(a => <Chip key={a.id} label={a.title} active={filters.assessment === a.id} available={availAssessments.has(a.id)} onClick={() => toggle('assessment', a.id)} />)}
+                          <div className="space-y-1">
+                            {assessments.map(a => {
+                              const checked = filters.assessment.includes(a.id);
+                              const available = availAssessments.has(a.id);
+                              return (
+                                <label key={a.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${checked ? 'bg-[#1a2744]/5' : available ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    disabled={!available && !checked}
+                                    onChange={() => toggleAssessment(a.id)}
+                                    className="w-4 h-4 rounded accent-[#1a2744] flex-shrink-0"
+                                  />
+                                  <span className={`text-sm ${checked ? 'font-medium text-gray-900' : 'text-gray-600'}`}>{a.title}</span>
+                                </label>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -314,14 +364,59 @@ export default function FeedPage() {
                 <FilterGroup title="What">
                   {bundleNames.length > 0 && (
                     <FilterRow label="Bundle">
-                      <Chip label="All" active={!filters.bundle} available onClick={() => setFilters(f => ({ ...f, bundle: null, assessment: null }))} />
+                      <Chip label="All" active={!filters.bundle} available onClick={() => setFilters(f => ({ ...f, bundle: null, assessment: [] }))} />
                       {bundleNames.map(b => <Chip key={b} label={b} active={filters.bundle === b} available={availBundles.has(b)} onClick={() => toggle('bundle', b)} />)}
                     </FilterRow>
                   )}
                   {assessments.length > 1 && (
                     <FilterRow label={bundleNames.length > 0 ? '↳' : 'Assessment'}>
-                      <Chip label="All" active={!filters.assessment} available onClick={() => toggle('assessment', null)} />
-                      {assessments.map(a => <Chip key={a.id} label={a.title} active={filters.assessment === a.id} available={availAssessments.has(a.id)} onClick={() => toggle('assessment', a.id)} />)}
+                      <div className="relative" ref={assessmentDropdownRef}>
+                        <button
+                          onClick={() => setAssessmentOpen(o => !o)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                            filters.assessment.length
+                              ? 'bg-[#1a2744] text-white border-transparent'
+                              : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                          }`}
+                        >
+                          {filters.assessment.length === 0
+                            ? 'All'
+                            : filters.assessment.length === 1
+                              ? assessmentLabel(filters.assessment[0])
+                              : `${filters.assessment.length} selected`}
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" className={`transition-transform ${assessmentOpen ? 'rotate-180' : ''}`}>
+                            <path d="M2 3.5l3 3 3-3"/>
+                          </svg>
+                        </button>
+                        {assessmentOpen && (
+                          <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-[240px] py-1.5 max-h-64 overflow-y-auto">
+                            {filters.assessment.length > 0 && (
+                              <button
+                                onClick={() => setFilters(f => ({ ...f, assessment: [] }))}
+                                className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                              >
+                                Clear selection
+                              </button>
+                            )}
+                            {assessments.map(a => {
+                              const checked = filters.assessment.includes(a.id);
+                              const available = availAssessments.has(a.id);
+                              return (
+                                <label key={a.id} className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${checked ? 'bg-[#1a2744]/5' : available ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    disabled={!available && !checked}
+                                    onChange={() => toggleAssessment(a.id)}
+                                    className="w-3.5 h-3.5 rounded accent-[#1a2744] flex-shrink-0"
+                                  />
+                                  <span className={`text-xs ${checked ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>{a.title}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </FilterRow>
                   )}
                 </FilterGroup>
@@ -376,7 +471,7 @@ export default function FeedPage() {
           <p className="text-sm text-gray-400">No sample responses match your filters.</p>
         ) : (
           <div className="space-y-8">
-            {filtered.map(({ question, sample, assessment, bundleTitle }) => {
+            {filtered.map(({ question, sample, assessment }) => {
               const mt = mediaTypeBadge(sample.mediaType);
               return (
                 <div key={sample.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
