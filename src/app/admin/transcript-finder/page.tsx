@@ -69,15 +69,28 @@ export default function TranscriptFinderPage() {
 
   const [fetchError, setFetchError] = useState('');
 
-  const fetchData = useCallback(async (pg: number, replace: boolean) => {
+  // On mount: load only the questions-needing-samples list (our own DB, fast)
+  useEffect(() => {
+    fetch('/api/admin/transcript-finder?needsOnly=true')
+      .then(r => r.json())
+      .then(d => setNeedsSamples((d.needsSamples as NeedsSample[]) ?? []))
+      .catch(() => {});
+  }, []);
+
+  // When a question is selected (or filters/search change): load matching transcripts
+  const fetchTranscripts = useCallback(async (pg: number, replace: boolean) => {
+    if (!focusQuestion && !search) return; // nothing to search on
     if (pg === 1) setLoading(true); else setLoadingMore(true);
     setFetchError('');
     try {
+      const focused = needsSamples.find(n => n.questionId === focusQuestion);
+      const questionTitle = focused?.questionTitle ?? '';
       const params = new URLSearchParams({
         page: String(pg),
         minWords: String(minWords),
         ...(mediaType ? { mediaType } : {}),
-        ...(search ? { search } : {}),
+        // Use explicit search if set, otherwise search by question title keywords
+        search: search || questionTitle,
       });
       const res = await fetch(`/api/admin/transcript-finder?${params}`);
       const text = await res.text();
@@ -85,24 +98,24 @@ export default function TranscriptFinderPage() {
       try { data = JSON.parse(text); } catch { setFetchError(`Server returned (${res.status}): ${text.slice(0, 300)}`); setLoading(false); setLoadingMore(false); return; }
       if (!res.ok) { setFetchError(`Error ${res.status}: ${(data.error as string) ?? JSON.stringify(data)}`); setLoading(false); setLoadingMore(false); return; }
       setTranscripts(prev => replace ? ((data.transcripts as Transcript[]) ?? []) : [...prev, ...((data.transcripts as Transcript[]) ?? [])]);
-      if (pg === 1) setNeedsSamples((data.needsSamples as NeedsSample[]) ?? []);
       setHasMore((data.hasMore as boolean) ?? false);
     } catch (e) {
       setFetchError(`Network error: ${e}`);
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [mediaType, minWords, search]);
+  }, [focusQuestion, mediaType, minWords, search, needsSamples]);
 
   useEffect(() => {
     setPage(1);
-    fetchData(1, true);
-  }, [fetchData]);
+    setTranscripts([]);
+    fetchTranscripts(1, true);
+  }, [fetchTranscripts]);
 
   function loadMore() {
     const next = page + 1;
     setPage(next);
-    fetchData(next, false);
+    fetchTranscripts(next, false);
   }
 
   function openAssign(t: Transcript) {
@@ -139,7 +152,7 @@ export default function TranscriptFinderPage() {
     setAssign(null);
     setAssigning(false);
     // Refresh needs list
-    fetchData(1, false);
+    fetchTranscripts(1, false);
   }
 
   // Group needsSamples by assessment
@@ -251,10 +264,16 @@ export default function TranscriptFinderPage() {
 
           {fetchError ? (
             <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-sm text-red-700 font-mono whitespace-pre-wrap">{fetchError}</div>
+          ) : !focusQuestion && !search ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl">←</div>
+              <p className="text-gray-500 font-medium">Select a question to load matching transcripts</p>
+              <p className="text-gray-400 text-sm max-w-sm">Transcripts will be filtered by the question title so you only see relevant responses.</p>
+            </div>
           ) : loading ? (
-            <div className="text-sm text-gray-400 py-10 text-center">Loading transcripts…</div>
+            <div className="text-sm text-gray-400 py-10 text-center">Searching transcripts…</div>
           ) : transcripts.length === 0 ? (
-            <div className="text-sm text-gray-400 py-10 text-center">No transcripts match your filters.</div>
+            <div className="text-sm text-gray-400 py-10 text-center">No matching transcripts found. Try lowering the min word count or using the search bar.</div>
           ) : (
             <>
               <p className="text-xs text-gray-400 mb-4">{transcripts.length} transcripts loaded</p>

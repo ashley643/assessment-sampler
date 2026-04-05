@@ -7,16 +7,44 @@ export async function GET(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const mediaType = searchParams.get('mediaType');   // 'video' | 'audio' | null = all
+  const needsOnly = searchParams.get('needsOnly') === 'true';
+  const mediaType = searchParams.get('mediaType');
   const minWords  = parseInt(searchParams.get('minWords') ?? '40');
   const search    = searchParams.get('search') ?? '';
   const page      = parseInt(searchParams.get('page') ?? '1');
   const limit     = 24;
   const offset    = (page - 1) * limit;
 
+  // ── Questions that need samples (always returned) ───────────────────────
+  const { data: assessmentsData } = await supabaseAdmin
+    .from('assessments')
+    .select('id, title, type_label, questions ( id, title, question_samples ( id, language ) )')
+    .neq('type', 'bundle')
+    .order('sort_order');
+
+  type QSample = { id: string; language: string };
+  type QRow    = { id: string; title: string; question_samples: QSample[] };
+  type ARow    = { id: string; title: string; type_label: string; questions: QRow[] };
+
+  const needsSamples = ((assessmentsData ?? []) as ARow[]).flatMap(a =>
+    (a.questions ?? [])
+      .map(q => {
+        const langs     = (q.question_samples ?? []).map(s => s.language);
+        const missingEn = !langs.includes('english');
+        const missingEs = !langs.includes('spanish');
+        return { questionId: q.id, questionTitle: q.title, assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
+      })
+      .filter(q => q.missingEn || q.missingEs)
+  );
+
+  // If only the needs list was requested, return early
+  if (needsOnly || !search.trim()) {
+    return NextResponse.json({ transcripts: [], needsSamples, page: 1, hasMore: false });
+  }
+
   const impacter = getImpacterClient();
 
-  // ── 1. Fetch transcript steps from VideoAsk ──────────────────────────────
+  // ── Fetch transcript steps from VideoAsk ─────────────────────────────────
   // Columns known from VideoAsk API docs: node_title, transcript, media_type, media_url, created_at
   // We query the videoask schema using the schema() client
   let stepsQuery = impacter
@@ -72,28 +100,6 @@ export async function GET(req: Request) {
       };
     })
     .filter(t => t.wordCount >= minWords);
-
-  // ── 2. Questions that need samples from our own DB ───────────────────────
-  const { data: assessmentsData } = await supabaseAdmin
-    .from('assessments')
-    .select('id, title, type_label, questions ( id, title, question_samples ( id, language ) )')
-    .neq('type', 'bundle')
-    .order('sort_order');
-
-  type QSample = { id: string; language: string };
-  type QRow    = { id: string; title: string; question_samples: QSample[] };
-  type ARow    = { id: string; title: string; type_label: string; questions: QRow[] };
-
-  const needsSamples = ((assessmentsData ?? []) as ARow[]).flatMap(a =>
-    (a.questions ?? [])
-      .map(q => {
-        const langs     = (q.question_samples ?? []).map(s => s.language);
-        const missingEn = !langs.includes('english');
-        const missingEs = !langs.includes('spanish');
-        return { questionId: q.id, questionTitle: q.title, assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
-      })
-      .filter(q => q.missingEn || q.missingEs)
-  );
 
   return NextResponse.json({ transcripts, needsSamples, page, hasMore: (stepsData?.length ?? 0) === limit });
 }
