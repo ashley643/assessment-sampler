@@ -45,6 +45,8 @@ interface AssignState {
   language: 'english' | 'spanish';
   embedUrl: string;
   excerpt: string;
+  grade: string;
+  gender: string;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -175,6 +177,8 @@ export default function TranscriptFinderPage() {
       language: 'english',
       embedUrl: t.shareUrl ?? t.mediaUrl,
       excerpt: excerpt(t.transcript, 200),
+      grade: t.grade ?? '',
+      gender: t.gender ?? '',
     });
     setAssignError('');
   }
@@ -191,8 +195,8 @@ export default function TranscriptFinderPage() {
         language:   assign.language,
         embedUrl:   assign.embedUrl,
         mediaType:  assign.transcript.mediaType,
-        grade:      assign.transcript.grade,
-        gender:     assign.transcript.gender,
+        grade:      assign.grade,
+        gender:     assign.gender,
         excerpt:    assign.excerpt,
       }),
     });
@@ -428,6 +432,19 @@ export default function TranscriptFinderPage() {
                         </div>
                       )}
 
+                      {/* Video preview */}
+                      {t.mediaType === 'video' && t.mediaUrl && (
+                        <div className="px-5 pt-3 pb-1">
+                          <video
+                            src={t.mediaUrl}
+                            controls
+                            preload="none"
+                            className="w-full rounded-lg bg-black"
+                            style={{ maxHeight: '180px' }}
+                          />
+                        </div>
+                      )}
+
                       {/* Transcript */}
                       <div className="px-5 py-3">
                         <p className="text-sm text-gray-700 leading-relaxed">
@@ -557,11 +574,41 @@ export default function TranscriptFinderPage() {
                   </div>
                 </div>
 
+                {/* Grade + Gender */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">Grade</label>
+                    <select
+                      value={assign.grade}
+                      onChange={e => setAssign(a => a ? { ...a, grade: e.target.value } : a)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20"
+                    >
+                      <option value="">— Unknown —</option>
+                      {['TK','K','1','2','3','4','5','6','7','8','9','10','11','12','Parent','Staff'].map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">Gender</label>
+                    <select
+                      value={assign.gender}
+                      onChange={e => setAssign(a => a ? { ...a, gender: e.target.value } : a)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20"
+                    >
+                      <option value="">— Unknown —</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="nonbinary">Non-binary</option>
+                    </select>
+                  </div>
+                </div>
+
                 {/* Embed URL */}
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1.5">
                     Embed URL
-                    <span className="font-normal text-gray-400 ml-1">— paste a VideoAsk share link if media_url doesn't embed</span>
+                    <span className="font-normal text-gray-400 ml-1">— paste a VideoAsk share link if needed</span>
                   </label>
                   <input
                     value={assign.embedUrl}
