@@ -166,7 +166,7 @@ export default function FeedPage() {
       <div className="flex-1 max-w-4xl mx-auto w-full px-6 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Sample Responses</h1>
-          <p className="text-gray-500 text-sm">Browse example responses for the assessments in your plan.</p>
+          <p className="text-gray-500 text-sm leading-relaxed">Nothing brings our assessments to life more than the voices of participants themselves. Hear real responses and explore how students and other stakeholders reveal the skills and mindsets our assessments are designed to uncover.</p>
         </div>
 
         {hasFilters && (
