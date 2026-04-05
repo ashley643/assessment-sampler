@@ -76,8 +76,9 @@ export async function GET(req: Request) {
     qq = (qq as unknown as { neq: (col: string, val: string) => typeof qq }).neq('transcript', '') as typeof q;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     qq = (qq as unknown as { not: (col: string, op: string, val: any) => typeof qq }).not('media_url', 'is', null) as typeof q;
-    // Always exclude the intro "Hi! Thanks for applying" question — not a real response
+    // Always exclude non-response VideoAsk nodes
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%Hi! Thanks for applying%') as typeof q;
+    qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', "%Here's a real student response%") as typeof q;
     if (mediaType === 'audio') qq = (qq as unknown as { ilike: (col: string, val: string) => typeof qq }).ilike('media_url', '%audio.mp3%') as typeof q;
     if (mediaType === 'video') qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('media_url', 'ilike', '%audio.mp3%') as typeof q;
     if (keywords.length > 0) {
