@@ -18,10 +18,10 @@ type Filters = {
   language: 'english' | 'spanish' | null;
   media: 'video' | 'audio' | null;
   gender: string | null;
-  grade: string | null;
+  grade: string[];
 };
 
-const EMPTY_FILTERS: Filters = { bundle: null, assessment: [], language: null, media: null, gender: null, grade: null };
+const EMPTY_FILTERS: Filters = { bundle: null, assessment: [], language: null, media: null, gender: null, grade: [] };
 
 const GRADE_ORDER = ['TK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'Parent', 'Staff'];
 
@@ -43,13 +43,13 @@ function applyFilters(items: FeedItem[], f: Filters): FeedItem[] {
     if (f.language && item.sample.language !== f.language) return false;
     if (f.media && (item.sample.mediaType ?? 'video') !== f.media) return false;
     if (f.gender && item.sample.gender !== f.gender) return false;
-    if (f.grade && item.sample.grade !== f.grade) return false;
+    if (f.grade.length && !f.grade.includes(item.sample.grade ?? '')) return false;
     return true;
   });
 }
 
 function activeCount(f: Filters) {
-  return [f.bundle, f.language, f.media, f.gender, f.grade].filter(Boolean).length + f.assessment.length;
+  return [f.bundle, f.language, f.media, f.gender].filter(Boolean).length + f.assessment.length + f.grade.length;
 }
 
 export default function FeedPage() {
@@ -109,7 +109,7 @@ export default function FeedPage() {
   const filtered = applyFilters(allItems, filters);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
-    const resetValue = key === 'assessment' ? [] : null;
+    const resetValue = (key === 'assessment' || key === 'grade') ? [] : null;
     const partial = applyFilters(allItems, { ...filters, [key]: resetValue });
     const s = new Set<T>();
     for (const item of partial) { const v = pick(item); if (v) s.add(v); }
@@ -141,6 +141,13 @@ export default function FeedPage() {
     setFilters(f => ({
       ...f,
       assessment: f.assessment.includes(id) ? f.assessment.filter(x => x !== id) : [...f.assessment, id],
+    }));
+  }
+
+  function toggleGrade(g: string) {
+    setFilters(f => ({
+      ...f,
+      grade: f.grade.includes(g) ? f.grade.filter(x => x !== g) : [...f.grade, g],
     }));
   }
 
@@ -251,7 +258,9 @@ export default function FeedPage() {
                 {filters.language && <ActivePill label={filters.language === 'english' ? 'English' : 'Spanish'} onRemove={() => toggle('language', filters.language)} />}
                 {filters.media && <ActivePill label={filters.media === 'video' ? 'Video' : 'Audio'} onRemove={() => toggle('media', filters.media)} />}
                 {filters.gender && <ActivePill label={filters.gender} onRemove={() => toggle('gender', filters.gender)} />}
-                {filters.grade && <ActivePill label={filters.grade} onRemove={() => toggle('grade', filters.grade)} />}
+                {filters.grade.map(g => (
+                  <ActivePill key={g} label={g} onRemove={() => toggleGrade(g)} />
+                ))}
                 {count > 0 && (
                   <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-gray-400 hover:text-gray-600 underline transition-colors ml-1">
                     Clear all
@@ -341,8 +350,8 @@ export default function FeedPage() {
                         <div>
                           <p className="text-xs font-semibold text-gray-500 mb-2">Grade / Role</p>
                           <div className="flex flex-wrap gap-1.5">
-                            <Chip label="All" active={!filters.grade} available onClick={() => toggle('grade', null)} />
-                            {grades.map(g => <Chip key={g} label={g} active={filters.grade === g} available={availGrades.has(g)} onClick={() => toggle('grade', g)} activeClass="bg-teal-600 text-white" />)}
+                            <Chip label="All" active={filters.grade.length === 0} available onClick={() => setFilters(f => ({ ...f, grade: [] }))} />
+                            {grades.map(g => <Chip key={g} label={g} active={filters.grade.includes(g)} available={availGrades.has(g)} onClick={() => toggleGrade(g)} activeClass="bg-teal-600 text-white" />)}
                           </div>
                         </div>
                       )}
@@ -450,8 +459,8 @@ export default function FeedPage() {
                     )}
                     {grades.length > 0 && (
                       <FilterRow label="Grade">
-                        <Chip label="All" active={!filters.grade} available onClick={() => toggle('grade', null)} />
-                        {grades.map(g => <Chip key={g} label={g} active={filters.grade === g} available={availGrades.has(g)} onClick={() => toggle('grade', g)} activeClass="bg-teal-600 text-white" />)}
+                        <Chip label="All" active={filters.grade.length === 0} available onClick={() => setFilters(f => ({ ...f, grade: [] }))} />
+                        {grades.map(g => <Chip key={g} label={g} active={filters.grade.includes(g)} available={availGrades.has(g)} onClick={() => toggleGrade(g)} activeClass="bg-teal-600 text-white" />)}
                       </FilterRow>
                     )}
                   </div>
