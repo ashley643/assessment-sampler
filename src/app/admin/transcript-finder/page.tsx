@@ -412,7 +412,7 @@ export default function TranscriptFinderPage() {
         {/* ── Main: transcript cards ── */}
         <main className="flex-1 overflow-y-auto px-6 py-6">
           {focusQuestion && questionById[focusQuestion] && (
-            <div className="mb-5 p-3 bg-[#1a2744]/5 border border-[#1a2744]/20 rounded-xl space-y-2">
+            <div className="sticky top-0 z-10 mb-5 p-3 bg-[#eef0f5] border border-[#1a2744]/20 rounded-xl space-y-2 shadow-sm">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-[#1a2744] uppercase tracking-wide">Searching for: </span>
                 <span className="text-gray-800 font-medium text-sm">{questionById[focusQuestion].questionTitle}</span>
@@ -446,6 +446,26 @@ export default function TranscriptFinderPage() {
                       </button>
                     );
                   })}
+                  {/* Manual keyword adder */}
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      const input = (e.currentTarget.elements.namedItem('kw') as HTMLInputElement);
+                      const val = input.value.trim().toLowerCase();
+                      if (val && !allKeywords.includes(val)) {
+                        setAllKeywords(prev => [...prev, val]);
+                        setActiveKeywords(prev => new Set([...prev, val]));
+                      }
+                      input.value = '';
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <input
+                      name="kw"
+                      placeholder="+ keyword"
+                      className="text-[11px] font-mono px-2 py-0.5 rounded-full border border-dashed border-gray-300 bg-white text-gray-500 w-24 focus:outline-none focus:border-[#1a2744]/40 placeholder:text-gray-300"
+                    />
+                  </form>
                 </div>
               )}
             </div>
