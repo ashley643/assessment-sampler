@@ -490,7 +490,7 @@ export default function AssessmentPlayerPage() {
           {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
           <div className={`flex justify-center px-4 md:px-16 py-4 bg-gray-50 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}>
             <iframe
-              key={`${currentQ.id}-${spanishMode}`}
+              key={`${currentQ.id}-${spanishMode}-${hasSample}`}
               src={embedSrc}
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
               className={`w-full md:max-w-[720px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
