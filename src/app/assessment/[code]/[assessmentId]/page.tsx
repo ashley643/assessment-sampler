@@ -357,7 +357,8 @@ export default function AssessmentPlayerPage() {
         <div className="flex-1 flex flex-col overflow-y-auto">
 
           {/* Header + mode toggle strip */}
-          <div className="flex-shrink-0 flex items-start justify-between px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-3">
+          <div className="flex-shrink-0 flex flex-col px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-1">
+            <div className="flex items-start justify-between gap-3">
             {/* Mobile-only question info (left side) */}
             <div className="md:hidden flex-1 min-w-0">
               <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1" style={{ background: activeAssessment.badgeBg, color: activeAssessment.badgeText }}>
@@ -459,10 +460,11 @@ export default function AssessmentPlayerPage() {
                   I prefer to type
                 </button>
               </Tooltip>
+              {/* Desktop: sample button stays in right column */}
               {sampleAvailable && (
                 <button
                   onClick={() => setShowSample(s => !s)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                   style={showSample ? { background: '#1D9E75', color: 'white', outline: '2px solid #0f6e50' } : { background: '#1D9E75', color: 'white' }}
                 >
                   <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
@@ -473,6 +475,22 @@ export default function AssessmentPlayerPage() {
                 </button>
               )}
             </div>
+            </div>{/* end top row */}
+
+            {/* Mobile: sample button left-aligned below */}
+            {sampleAvailable && (
+              <button
+                onClick={() => setShowSample(s => !s)}
+                className="md:hidden self-start flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                style={showSample ? { background: '#1D9E75', color: 'white', outline: '2px solid #0f6e50' } : { background: '#1D9E75', color: 'white' }}
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                  <circle cx="7.5" cy="7.5" r="6" stroke="white" strokeWidth="1.4"/>
+                  <path d="M5.5 5.5l4 2-4 2V5.5z" fill="white"/>
+                </svg>
+                {showSample ? 'Back to question' : 'See a sample response'}
+              </button>
+            )}
           </div>
 
           {/* Spanish language note — shown above embed when Spanish mode is active */}
