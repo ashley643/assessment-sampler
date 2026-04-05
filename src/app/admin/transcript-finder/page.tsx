@@ -463,15 +463,18 @@ export default function TranscriptFinderPage() {
                       {t.mediaType === 'video' && t.mediaUrl && (
                         <div className="px-5 pt-3 pb-1">
                           <video
+                            autoPlay muted loop playsInline preload="auto"
                             src={t.mediaUrl}
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            preload="auto"
                             className="rounded-xl bg-black"
                             style={{ width: '160px', aspectRatio: '9/16', objectFit: 'cover' }}
                           />
+                        </div>
+                      )}
+
+                      {/* Audio preview */}
+                      {t.mediaType === 'audio' && t.mediaUrl && (
+                        <div className="px-5 pt-3 pb-1">
+                          <audio controls preload="none" src={t.mediaUrl} className="w-full" style={{ height: '36px' }} />
                         </div>
                       )}
 
