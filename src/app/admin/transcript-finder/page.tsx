@@ -450,10 +450,12 @@ export default function TranscriptFinderPage() {
           )}
         </aside>
 
-        {/* ── Main: transcript cards ── */}
-        <main className="flex-1 overflow-y-auto px-6 py-6">
+        {/* ── Main: focus bar (pinned) + scrollable transcript cards ── */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Focus bar — always visible, never scrolls */}
           {focusQuestion && questionById[focusQuestion] && (
-            <div className="sticky top-0 z-10 mb-5 p-3 bg-[#eef0f5] border border-[#1a2744]/20 rounded-xl space-y-2 shadow-sm">
+            <div className="flex-shrink-0 px-6 pt-4 pb-0 bg-gray-50 border-b border-[#1a2744]/10">
+              <div className="p-3 bg-[#eef0f5] border border-[#1a2744]/20 rounded-xl space-y-2 shadow-sm mb-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-[#1a2744] uppercase tracking-wide">Searching for: </span>
                 <span className="text-gray-800 font-medium text-sm">{questionById[focusQuestion].questionTitle}</span>
@@ -530,8 +532,12 @@ export default function TranscriptFinderPage() {
                   </form>
                 </div>
               )}
+              </div>
             </div>
           )}
+
+          {/* Scrollable transcript cards */}
+          <main className="flex-1 overflow-y-auto px-6 py-6">
 
           {fetchError ? (
             <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-sm text-red-700 font-mono whitespace-pre-wrap">{fetchError}</div>
@@ -707,6 +713,7 @@ export default function TranscriptFinderPage() {
             </>
           )}
         </main>
+        </div>
       </div>
 
       {/* ── Assign modal ── */}
