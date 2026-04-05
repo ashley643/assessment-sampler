@@ -39,45 +39,83 @@ interface AssignedUrl {
 
 const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','about','as','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','may','might','it','its','this','that','these','those','i','you','he','she','we','they','me','him','her','us','them','my','your','his','our','their','what','how','when','where','who','which','can','your','tell','me']);
 
-// Per-competency Spanish keyword sets — words likely to appear in authentic Spanish responses
+// Per-competency keyword sets — all single words only (multi-word phrases split into noise)
+// English fallback vocab for when questionText isn't populated in the DB
+const ENGLISH_BY_TOPIC: Record<string, string[]> = {
+  curiosity:        ['curious','wonder','notice','noticed','question','explore','discover','interesting','fascinating','investigate'],
+  curious:          ['curious','wonder','notice','noticed','question','explore','discover','interesting','fascinating','investigate'],
+  purpose:          ['love','passion','meaningful','doing','feels','right','natural','perfect','matters','important','enjoy','sense'],
+  grit:             ['challenging','difficult','hard','struggle','kept','trying','practice','persevere','refused','quit','failure','harder','push'],
+  gratitude:        ['grateful','thankful','appreciate','inspired','thankful','recognize','blessing','lucky','fortunate','thank'],
+  compassion:       ['kindness','helped','caring','felt','needed','support','empathy','understand','sadness','others','compassionate'],
+  'self-control':   ['calm','control','pause','waited','patience','impulse','breathe','reaction','tempted','stopped','cool'],
+  'self control':   ['calm','control','pause','waited','patience','impulse','breathe','reaction','tempted','stopped','cool'],
+  'perspective-taking': ['perspective','point','view','understand','imagine','changed','mind','annoyed','side','story','empathy','different'],
+  'perspective taking': ['perspective','point','view','understand','imagine','changed','mind','annoyed','side','story','empathy','different'],
+  'growth mindset': ['believe','improve','mistake','effort','possible','transform','mindset','brain','grow','feedback','challenge','better'],
+  growth:           ['grow','better','change','improve','mistake','effort','learn','transform','progress','developed'],
+  'reflective growth': ['learned','grew','changed','different','before','now','realized','understand','lesson','experience','improved'],
+  resilience:       ['bounce','recover','setback','overcome','strong','returned','manage','support','difficult','bounced'],
+  'relational awareness': ['noticed','emotion','feeling','expressed','communicate','understand','friend','supported','aware','picked'],
+  'emotional resilience': ['recover','overcome','strong','manage','emotion','difficult','bounced','returned','support','feeling'],
+  'effective help-seeking': ['asked','help','seek','resource','investigate','teacher','friend','family','learned','figured'],
+  'conflict resolution': ['conflict','resolve','talk','calm','situation','problem','solution','agreement','fix','forgive','reconcile'],
+  belonging:        ['belong','included','community','group','welcome','accepted','connected','part','friends','fit'],
+  'self-esteem':    ['confident','proud','value','believe','capable','strength','good','like','myself','worthy'],
+  empathy:          ['empathy','felt','understand','imagine','place','listen','shared','supported','cared','compassion'],
+  resilient:        ['resilient','recover','strength','overcome','refused','bounced','continued','pushed'],
+  kind:             ['kind','kindness','helped','supported','cared','compassion','gentle','considerate'],
+  confident:        ['confident','confidence','believe','capable','strength','proud','able','achieved'],
+  connected:        ['connected','connect','related','community','belonging','friends','together','part'],
+  capable:          ['capable','able','achieved','skill','strength','improved','learned','accomplished'],
+  knowledgeable:    ['knowledge','learned','know','understand','studied','investigated','discovered'],
+};
+
+// Spanish vocabulary per competency — single words only, include accent + no-accent variants
 const SPANISH_BY_TOPIC: Record<string, string[]> = {
-  curiosity:    ['curiosidad','curioso','curiosa','preguntas','pregunto','quería saber','descubrí','explorar','averiguar','asombro','interesante','fascinante','me pregunté','investigar','noté','aprender'],
-  curious:      ['curiosidad','curioso','curiosa','preguntas','pregunto','quería saber','descubrí','explorar','averiguar','asombro','interesante','fascinante','me pregunté','investigar','noté','aprender'],
-  purpose:      ['propósito','amo','amor','apasiona','pasión','significa','significado','siento','sentido','cuando hago','me gusta','gusta','disfruto','disfrutar','natural','correcto','importante para mí','vida','feliz','perfecto'],
-  grit:         ['perseverancia','persistir','seguí','continué','intenté','esfuerzo','difícil','dificultad','no me rendí','no paré','practicar','mejorar','superé','fracasé','intentar otra vez','aguanté','resiliente','seguir'],
-  gratitude:    ['gratitud','agradecido','agradecida','gracias','agradecer','aprecio','apreciar','valoro','valorar','afortunado','suerte','bendecido','reconocer','inspiró','inspirar','importante para mí'],
-  compassion:   ['compasión','ayudé','sentí','sentir','necesitaba','apoyo','apoyé','cuidar','empatía','entendí','pena','tristeza','me preocupé','solidaridad','ayudar','otro','otros'],
-  'self-control': ['autocontrol','calmarme','calma','control','detuve','pensar antes','respiré','respirar','paciencia','esperé','impulsivo','reaccioné','tranquilo','tranquilidad','calmado','me detuve','contuve'],
-  'self control': ['autocontrol','calmarme','calma','control','detuve','pensar antes','respiré','respirar','paciencia','esperé','impulsivo','reaccioné','tranquilo','tranquilidad','calmado','me detuve','contuve'],
-  'perspective-taking': ['perspectiva','punto de vista','entender','comprender','otro lado','empatía','imaginar','me puse en','sentía','pensaba','cambió mi mente','ver diferente','diferente manera'],
-  'perspective taking': ['perspectiva','punto de vista','entender','comprender','otro lado','empatía','imaginar','me puse en','sentía','pensaba','cambió mi mente','ver diferente','diferente manera'],
-  'growth mindset': ['mentalidad','crecer','mejoré','aprender de','error','errores','cambié','crecimiento','posible','puedo','logré','esfuerzo','practicando','transformar','creer en mí'],
-  growth:       ['crecimiento','crecer','mejoré','aprender de','error','errores','cambié','posible','puedo','logré','esfuerzo','practicando','transformar'],
-  'reflective growth': ['reflexioné','aprendí','crecí','cambié','diferente','mejor','antes y ahora','comprendo','lección','experiencia','mejoré','me di cuenta'],
-  resilience:   ['resiliencia','recuperé','superé','seguir adelante','fuerza','fuerte','volví','manejar','apoyo','no me rendí','seguí intentando'],
-  'relational awareness': ['noté','sentía','emoción','emociones','expresaba','comunicar','entender','comprender','ayudé','apoyar','amigo','compañero','cuenta','darse cuenta'],
-  'emotional resilience': ['resiliencia','recuperé','superé','seguir adelante','fuerza','fuerte','volví','manejar','apoyo','emoción','sentí','manejé'],
-  'effective help-seeking': ['pedir ayuda','pedí ayuda','busqué','pregunté','recurso','buscar información','investigué','maestro','amigo','familia','aprendí','apoyo'],
-  'conflict resolution': ['conflicto','resolver','resolví','hablar','hablé','calmar','situación','problema','solución','acuerdo','arreglar','arreglé','perdonar','reconciliar'],
-  belonging:    ['pertenecer','pertenencia','incluido','comunidad','grupo','parte de','amigos','bienvenido','aceptado','sentí parte','conexión','conectar'],
-  'self-esteem': ['seguro','confianza','orgulloso','valoro','creo en mí','capaz','puedo','fuerza','bueno en','gusto de mí'],
-  empathy:      ['empatía','sentí lo que','comprendí','imaginar cómo','me puse en su lugar','entendí','compartir','apoyé','escuché','sentía'],
-  resilient:    ['resiliente','recuperé','seguí adelante','fuerza','superar','no me rendí','volví','continué'],
-  kind:         ['amable','amabilidad','bondad','ayudé','apoyé','cuidé','compasión','gentil','considerado'],
-  confident:    ['seguro','confianza','creo en mí','capaz','fuerza','orgulloso','puedo','logré'],
-  connected:    ['conexión','conectar','relacioné','comunidad','pertenencia','amigos','parte de','junto','juntos'],
-  capable:      ['capaz','puedo','logré','habilidad','fuerza','mejoré','aprendí','conseguí'],
-  knowledgeable: ['conocimiento','aprendí','saber','entender','comprender','estudié','investigué','descubrí'],
+  curiosity:        ['curiosidad','curioso','curiosa','preguntas','pregunto','descubri','explorar','averiguar','asombro','interesante','fascinante','investigar','aprendi','note'],
+  curious:          ['curiosidad','curioso','curiosa','preguntas','pregunto','descubri','explorar','averiguar','asombro','interesante','fascinante','investigar','aprendi','note'],
+  purpose:          ['proposito','propósito','amo','amor','apasiona','pasion','significa','significado','siento','sentido','gusta','disfruto','disfrutar','natural','correcto','vida','feliz'],
+  grit:             ['dificil','difícil','desafio','desafío','reto','esfuerzo','perseverancia','intente','intenté','segui','seguí','continue','continué','mejore','mejoré','practique','fracase','aguante','rendirse'],
+  gratitude:        ['gratitud','agradecido','agradecida','gracias','agradecer','aprecio','apreciar','valoro','valorar','afortunado','suerte','bendecido','reconocer','inspiro'],
+  compassion:       ['compasion','compasión','ayude','ayudé','senti','sentí','necesitaba','apoyo','apoye','cuidar','empatia','entendi','tristeza','solidaridad','ayudar'],
+  'self-control':   ['autocontrol','calmarme','calma','control','detuve','respire','paciencia','espere','impulsivo','reaccione','tranquilo','tranquilidad','calmado','contuve'],
+  'self control':   ['autocontrol','calmarme','calma','control','detuve','respire','paciencia','espere','impulsivo','reaccione','tranquilo','tranquilidad','calmado','contuve'],
+  'perspective-taking': ['perspectiva','entender','comprender','empatia','imaginar','sentia','pensaba','diferente','comprension','opinion'],
+  'perspective taking': ['perspectiva','entender','comprender','empatia','imaginar','sentia','pensaba','diferente','comprension','opinion'],
+  'growth mindset': ['mentalidad','crecer','mejore','mejoré','error','errores','cambie','crecimiento','posible','puedo','logre','esfuerzo','practicando','transformar'],
+  growth:           ['crecimiento','crecer','mejore','error','errores','cambie','posible','puedo','logre','esfuerzo','practicando','transformar'],
+  'reflective growth': ['reflexione','aprendi','creci','cambie','diferente','mejor','comprendo','leccion','experiencia','mejore','cuenta'],
+  resilience:       ['resiliencia','recupere','supere','fuerza','fuerte','volvi','manejar','apoyo','rendirse'],
+  'relational awareness': ['note','sentia','emocion','emociones','expresaba','comunicar','entender','comprender','ayude','apoyo','amigo','cuenta'],
+  'emotional resilience': ['resiliencia','recupere','supere','fuerza','fuerte','volvi','manejar','apoyo','emocion','senti','maneje'],
+  'effective help-seeking': ['busque','pregunte','recurso','investigue','maestro','amigo','familia','aprendi','apoyo'],
+  'conflict resolution': ['conflicto','resolver','resolvi','hable','calmar','problema','solucion','acuerdo','arregle','perdonar','reconciliar'],
+  belonging:        ['pertenecer','pertenencia','incluido','comunidad','grupo','amigos','bienvenido','aceptado','conexion','conectar'],
+  'self-esteem':    ['seguro','confianza','orgulloso','valoro','capaz','puedo','fuerza'],
+  empathy:          ['empatia','empatía','comprendi','imaginar','entendi','compartir','apoye','escuche','sentia'],
+  resilient:        ['resiliente','recupere','fuerza','superar','volvi','continue'],
+  kind:             ['amable','amabilidad','bondad','ayude','apoye','cuide','compasion','gentil','considerado'],
+  confident:        ['seguro','confianza','capaz','fuerza','orgulloso','puedo','logre'],
+  connected:        ['conexion','conectar','relacione','comunidad','pertenencia','amigos','juntos'],
+  capable:          ['capaz','puedo','logre','habilidad','fuerza','mejore','aprendi','consegui'],
+  knowledgeable:    ['conocimiento','aprendi','saber','entender','comprender','estudie','investigue','descubri'],
 };
 
 function buildSearchTerms(title: string, questionText: string): string {
-  // English keywords: extract from BOTH the competency title and the full question wording
-  const combined = `${title} ${questionText}`;
-  const englishWords = combined.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
-  const uniqueEn = [...new Set(englishWords)].slice(0, 10);
-
-  // Spanish keywords: look up by competency title (authentic response vocabulary per topic)
   const titleKey = title.toLowerCase().trim();
+
+  // English: extract from question text, then fill gaps from competency fallback vocab
+  const fromQuestion = questionText
+    ? [...new Set(questionText.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w)))]
+    : [];
+  const fallbackEn = ENGLISH_BY_TOPIC[titleKey]
+    ?? Object.entries(ENGLISH_BY_TOPIC).find(([k]) => titleKey.includes(k) || k.includes(titleKey))?.[1]
+    ?? [];
+  // Merge: question words first, then any fallback words not already present, cap at 10
+  const uniqueEn = [...new Set([...fromQuestion, ...fallbackEn])].slice(0, 10);
+
+  // Spanish: look up by competency title
   const spanishSet = SPANISH_BY_TOPIC[titleKey]
     ?? Object.entries(SPANISH_BY_TOPIC).find(([k]) => titleKey.includes(k) || k.includes(titleKey))?.[1]
     ?? [];
