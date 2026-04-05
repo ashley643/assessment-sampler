@@ -464,10 +464,13 @@ export default function TranscriptFinderPage() {
                         <div className="px-5 pt-3 pb-1">
                           <video
                             src={t.mediaUrl}
-                            controls
-                            preload="none"
-                            className="w-full rounded-lg bg-black"
-                            style={{ maxHeight: '180px' }}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            preload="auto"
+                            className="rounded-xl bg-black"
+                            style={{ width: '160px', aspectRatio: '9/16', objectFit: 'cover' }}
                           />
                         </div>
                       )}
