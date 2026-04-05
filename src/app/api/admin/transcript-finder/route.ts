@@ -26,16 +26,17 @@ export async function GET(req: Request) {
   type QRow    = { id: string; title: string; question: string | null; question_samples: QSample[] };
   type ARow    = { id: string; title: string; type_label: string; questions: QRow[] };
 
-  const needsSamples = ((assessmentsData ?? []) as ARow[]).flatMap(a =>
-    (a.questions ?? [])
-      .map(q => {
-        const langs     = (q.question_samples ?? []).map(s => s.language);
-        const missingEn = !langs.includes('english');
-        const missingEs = !langs.includes('spanish');
-        return { questionId: q.id, questionTitle: q.title, questionText: q.question ?? '', assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
-      })
-      .filter(q => q.missingEn || q.missingEs)
+  const allRows = ((assessmentsData ?? []) as ARow[]).flatMap(a =>
+    (a.questions ?? []).map(q => {
+      const langs     = (q.question_samples ?? []).map(s => s.language);
+      const missingEn = !langs.includes('english');
+      const missingEs = !langs.includes('spanish');
+      return { questionId: q.id, questionTitle: q.title, questionText: q.question ?? '', assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
+    })
   );
+
+  const needsSamples = allRows.filter(q => q.missingEn || q.missingEs);
+  const allQuestions = allRows; // full list including fully-stocked questions
 
   // Load all existing embed_urls so the UI can flag already-assigned transcripts
   const { data: assignedData } = await supabaseAdmin
@@ -58,7 +59,7 @@ export async function GET(req: Request) {
 
   // If only the needs list was requested, return early
   if (needsOnly || !search.trim()) {
-    return NextResponse.json({ transcripts: [], needsSamples, assignedUrls, page: 1, hasMore: false });
+    return NextResponse.json({ transcripts: [], needsSamples, allQuestions, assignedUrls, page: 1, hasMore: false });
   }
 
   const impacter = getImpacterClient();
@@ -134,5 +135,5 @@ export async function GET(req: Request) {
     })
     .filter(t => t.wordCount >= minWords);
 
-  return NextResponse.json({ transcripts, needsSamples, assignedUrls, page, hasMore: (stepsData?.length ?? 0) === limit });
+  return NextResponse.json({ transcripts, needsSamples, allQuestions, assignedUrls, page, hasMore: (stepsData?.length ?? 0) === limit });
 }

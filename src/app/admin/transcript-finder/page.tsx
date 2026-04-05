@@ -86,6 +86,7 @@ function excerpt(s: string, n = 180) { return s.length > n ? s.slice(0, n).trim(
 export default function TranscriptFinderPage() {
   const [transcripts, setTranscripts]   = useState<Transcript[]>([]);
   const [needsSamples, setNeedsSamples] = useState<NeedsSample[]>([]);
+  const [allQuestions, setAllQuestions] = useState<NeedsSample[]>([]);
   const [needsLoading, setNeedsLoading]   = useState(true);
   const [assignedUrls, setAssignedUrls]   = useState<AssignedUrl[]>([]);
   const [loading, setLoading]             = useState(false);
@@ -135,6 +136,7 @@ export default function TranscriptFinderPage() {
           list.forEach(n => next.add(n.assessmentId));
           return next;
         });
+        setAllQuestions((d.allQuestions as NeedsSample[]) ?? []);
         setAssignedUrls((d.assignedUrls as AssignedUrl[]) ?? []);
         setNeedsLoading(false);
       })
@@ -611,17 +613,40 @@ export default function TranscriptFinderPage() {
                     value={assign.questionId}
                     onChange={e => setAssign(a => a ? { ...a, questionId: e.target.value } : a)}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20"
+                    size={8}
                   >
                     <option value="">— Pick a question —</option>
-                    {Object.entries(byAssessment).map(([, group]) => (
-                      <optgroup key={group.title} label={group.title}>
-                        {group.questions.map(q => (
-                          <option key={q.questionId} value={q.questionId}>
-                            {q.questionTitle} {q.missingEn && q.missingEs ? '(needs EN + ES)' : q.missingEn ? '(needs EN)' : '(needs ES)'}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
+                    {(() => {
+                      const needsGroup = allQuestions.filter(q => q.missingEn || q.missingEs);
+                      const stockedGroup = allQuestions.filter(q => !q.missingEn && !q.missingEs);
+                      const byA = (list: NeedsSample[]) =>
+                        list.reduce<Record<string, NeedsSample[]>>((acc, q) => {
+                          (acc[q.assessmentTitle] ??= []).push(q);
+                          return acc;
+                        }, {});
+                      const label = (q: NeedsSample) => {
+                        const needs = q.missingEn && q.missingEs ? ' (needs EN+ES)' : q.missingEn ? ' (needs EN)' : q.missingEs ? ' (needs ES)' : '';
+                        const wording = q.questionText ? ` — ${q.questionText}` : '';
+                        return `${q.questionTitle}${needs}${wording}`;
+                      };
+                      return (
+                        <>
+                          {Object.entries(byA(needsGroup)).map(([aTitle, qs]) => (
+                            <optgroup key={`needs-${aTitle}`} label={aTitle}>
+                              {qs.map(q => <option key={q.questionId} value={q.questionId}>{label(q)}</option>)}
+                            </optgroup>
+                          ))}
+                          {stockedGroup.length > 0 && <>
+                            <option disabled>────── Already have samples ──────</option>
+                            {Object.entries(byA(stockedGroup)).map(([aTitle, qs]) => (
+                              <optgroup key={`stocked-${aTitle}`} label={aTitle}>
+                                {qs.map(q => <option key={q.questionId} value={q.questionId}>{label(q)}</option>)}
+                              </optgroup>
+                            ))}
+                          </>}
+                        </>
+                      );
+                    })()}
                   </select>
                 </div>
 
