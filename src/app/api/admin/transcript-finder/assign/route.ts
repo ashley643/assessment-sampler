@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const { questionId, language, embedUrl, mediaType, grade, gender: rawGender, excerpt } = await req.json();
 
   // Normalise legacy "male"/"female" → "M"/"F"
-  const genderMap: Record<string, string> = { male: 'M', female: 'F', nonbinary: 'NA', 'm': 'M', 'f': 'F' };
+  const genderMap: Record<string, string> = { male: 'M', female: 'F', 'm': 'M', 'f': 'F' };
   const gender = rawGender ? (genderMap[rawGender.toLowerCase().trim()] ?? rawGender.trim()) : rawGender;
 
   if (!questionId || !language || !embedUrl) {

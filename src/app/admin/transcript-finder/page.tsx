@@ -841,7 +841,6 @@ export default function TranscriptFinderPage() {
                       <option value="">— Unknown —</option>
                       <option value="M">M</option>
                       <option value="F">F</option>
-                      <option value="NA">NA</option>
                     </select>
                   </div>
                 </div>
