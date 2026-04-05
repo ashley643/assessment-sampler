@@ -60,11 +60,12 @@ export async function GET(req: Request) {
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  // Media type filter — use loose ilike since VideoAsk values may be e.g. "video_answer"
-  if (mediaType) {
-    stepsQuery = stepsQuery.ilike('media_type', `%${mediaType}%`);
+  // Media type filter — media_type column is often null; detect from URL extension instead
+  if (mediaType === 'audio') {
+    stepsQuery = stepsQuery.ilike('media_url', '%audio.mp3%');
+  } else if (mediaType === 'video') {
+    stepsQuery = stepsQuery.not('media_url', 'ilike', '%audio.mp3%');
   }
-  // (no media filter = include everything that has a transcript + media_url)
 
   // Keyword search: each word matched independently across transcript OR node_title
   if (keywords.length > 0) {
