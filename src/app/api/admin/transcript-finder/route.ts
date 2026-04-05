@@ -86,41 +86,30 @@ export async function GET(req: Request) {
     .map((s: Record<string, unknown>) => {
       const text      = String(s.transcript ?? '');
       const wc        = text.trim().split(/\s+/).filter(Boolean).length;
-      const rawMedia  = String(s.media_type ?? '').toLowerCase();
-      const urlExt    = String(s.media_url ?? '').toLowerCase().split('?')[0].split('.').pop() ?? '';
+      // Detect audio vs video: check media_type column, then fall back to URL extension
+      const rawMedia = String(s.media_type ?? '').toLowerCase();
+      const mediaUrl = String(s.media_url ?? '');
+      const urlExt   = mediaUrl.toLowerCase().split('?')[0].split('.').pop() ?? '';
       const mediaT: 'video' | 'audio' =
         rawMedia.includes('audio') || urlExt === 'mp3' || urlExt === 'ogg' || urlExt === 'm4a'
           ? 'audio' : 'video';
 
-      // Try to extract a shareable/embeddable URL from the raw JSONB payload
-      const raw = (s.raw ?? {}) as Record<string, unknown>;
-      const shareUrl = (
-        raw.share_url ??
-        raw.shareUrl ??
-        raw.share_link ??
-        raw.url ??
-        (raw.links as Record<string, unknown> | undefined)?.share ??
-        null
-      ) as string | null;
+      // share_url is a direct column on the steps table
+      const shareUrl = s.share_url ? String(s.share_url) : null;
 
       return {
         id:        String(s.id ?? ''),
         nodeTitle: String(s.node_title ?? ''),
         transcript: text,
         mediaType: mediaT,
-        mediaUrl:  String(s.media_url ?? ''),
-        shareUrl:  shareUrl ? String(shareUrl) : null,
-        // grade/gender may come from columns if they exist, or from a joined contact
+        mediaUrl,
+        shareUrl,
         grade:     (s.grade ?? s.grade_level ?? s.variables_grade ?? null) as string | null,
         gender:    (s.gender ?? s.variables_gender ?? null) as string | null,
         school:    (s.school_name ?? s.school ?? null) as string | null,
         formTitle: (s.form_title ?? null) as string | null,
         wordCount: wc,
         createdAt: String(s.created_at ?? ''),
-        // debug: expose schema on first page
-        _rawMediaType: page === 1 ? String(s.media_type ?? '') : undefined,
-        _rawKeys:      page === 1 ? Object.keys(s) : undefined,
-        _rawSample:    page === 1 ? raw : undefined,
       };
     })
     .filter(t => t.wordCount >= minWords);
