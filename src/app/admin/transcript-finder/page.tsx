@@ -102,25 +102,23 @@ const SPANISH_BY_TOPIC: Record<string, string[]> = {
   knowledgeable:    ['conocimiento','aprendí','saber','entender','comprender','estudié','investigué','descubrí'],
 };
 
-function buildSearchTerms(title: string, questionText: string): string {
+function buildSearchTerms(title: string, questionText: string): { en: string[], es: string[] } {
   const titleKey = title.toLowerCase().trim();
 
-  // English: extract from question text, then fill gaps from competency fallback vocab
   const fromQuestion = questionText
     ? [...new Set(questionText.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w)))]
     : [];
   const fallbackEn = ENGLISH_BY_TOPIC[titleKey]
     ?? Object.entries(ENGLISH_BY_TOPIC).find(([k]) => titleKey.includes(k) || k.includes(titleKey))?.[1]
     ?? [];
-  // Merge: question words first, then any fallback words not already present, cap at 10
-  const uniqueEn = [...new Set([...fromQuestion, ...fallbackEn])].slice(0, 10);
+  const en = [...new Set([...fromQuestion, ...fallbackEn])].slice(0, 10);
 
-  // Spanish: look up by competency title
-  const spanishSet = SPANISH_BY_TOPIC[titleKey]
+  const esSet = SPANISH_BY_TOPIC[titleKey]
     ?? Object.entries(SPANISH_BY_TOPIC).find(([k]) => titleKey.includes(k) || k.includes(titleKey))?.[1]
     ?? [];
+  const es = esSet.slice(0, 8);
 
-  return [...uniqueEn, ...spanishSet.slice(0, 8)].join(' ');
+  return { en, es };
 }
 
 interface AssignState {
@@ -158,9 +156,16 @@ export default function TranscriptFinderPage() {
   const [focusQuestion, setFocusQuestion] = useState<string | null>(null);
   const [expandedAssessments, setExpandedAssessments] = useState<Set<string>>(new Set());
 
-  // Keyword chips (only when a question is focused and no manual search override)
+  // Keyword chips
+  const [enKeywords,     setEnKeywords]     = useState<string[]>([]);
+  const [esKeywords,     setEsKeywords]     = useState<string[]>([]);
+  const [customKeywords, setCustomKeywords] = useState<string[]>([]);
   const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set());
-  const [allKeywords, setAllKeywords] = useState<string[]>([]);
+  const [keywordLang,    setKeywordLang]    = useState<'all' | 'en' | 'es'>('all');
+
+  // Results metadata
+  const [totalCount,     setTotalCount]     = useState<number | null>(null);
+  const [allNodeTitles,  setAllNodeTitles]  = useState<{ title: string; count: number }[]>([]);
 
   // Assign modal
   const [assign, setAssign]         = useState<AssignState | null>(null);
@@ -206,14 +211,19 @@ export default function TranscriptFinderPage() {
     if (pg === 1) setLoading(true); else setLoadingMore(true);
     setFetchError('');
     try {
-      // If we have a focused question and no manual search, use active keyword chips
+      // If we have a focused question and no manual search, use active keyword chips filtered by lang
       let effectiveSearch = search;
       if (!search && focusQuestion) {
-        effectiveSearch = [...activeKeywords].join(' ');
+        const langFiltered = [...activeKeywords].filter(kw => {
+          if (keywordLang === 'en') return enKeywords.includes(kw) || customKeywords.includes(kw);
+          if (keywordLang === 'es') return esKeywords.includes(kw) || customKeywords.includes(kw);
+          return true;
+        });
+        effectiveSearch = langFiltered.join(' ');
         if (!effectiveSearch) {
-          // All keywords unchecked — nothing to search
           setLoading(false); setLoadingMore(false);
           setTranscripts([]); setHasMore(false);
+          setTotalCount(0);
           return;
         }
       }
@@ -230,27 +240,38 @@ export default function TranscriptFinderPage() {
       if (!res.ok) { setFetchError(`Error ${res.status}: ${(data.error as string) ?? JSON.stringify(data)}`); setLoading(false); setLoadingMore(false); return; }
       setTranscripts(prev => replace ? ((data.transcripts as Transcript[]) ?? []) : [...prev, ...((data.transcripts as Transcript[]) ?? [])]);
       setHasMore((data.hasMore as boolean) ?? false);
+      if (replace) {
+        setTotalCount((data.totalCount as number) ?? null);
+        setAllNodeTitles((data.allNodeTitles as { title: string; count: number }[]) ?? []);
+      }
     } catch (e) {
       setFetchError(`Network error: ${e}`);
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [focusQuestion, mediaType, minWords, search, needsSamples, activeKeywords]);
+  }, [focusQuestion, mediaType, minWords, search, needsSamples, activeKeywords, keywordLang, enKeywords, esKeywords, customKeywords]);
 
-  // Reset node-title filter when question changes
-  useEffect(() => { setHiddenNodeTitles(new Set()); }, [focusQuestion]);
+  // Reset filters when question changes
+  useEffect(() => {
+    setHiddenNodeTitles(new Set());
+    setKeywordLang('all');
+    setTotalCount(null);
+    setAllNodeTitles([]);
+  }, [focusQuestion]);
 
   // When focused question changes, regenerate keyword chips
   useEffect(() => {
     if (focusQuestion && !search) {
       const focused = needsSamples.find(n => n.questionId === focusQuestion);
       if (focused) {
-        const kws = buildSearchTerms(focused.questionTitle, focused.questionText).split(' ').filter(Boolean);
-        setAllKeywords(kws);
-        setActiveKeywords(new Set(kws));
+        const { en, es } = buildSearchTerms(focused.questionTitle, focused.questionText);
+        setEnKeywords(en);
+        setEsKeywords(es);
+        setCustomKeywords([]);
+        setActiveKeywords(new Set([...en, ...es]));
       }
     } else {
-      setAllKeywords([]);
+      setEnKeywords([]); setEsKeywords([]); setCustomKeywords([]);
       setActiveKeywords(new Set());
     }
   }, [focusQuestion, needsSamples, search]);
@@ -423,47 +444,55 @@ export default function TranscriptFinderPage() {
               {questionById[focusQuestion].questionText && (
                 <p className="text-xs text-gray-500 italic">{questionById[focusQuestion].questionText}</p>
               )}
-              {!search && allKeywords.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  <span className="text-[11px] text-gray-400 mr-0.5">Keywords:</span>
-                  {allKeywords.map(kw => {
-                    const on = activeKeywords.has(kw);
-                    return (
-                      <button
-                        key={kw}
-                        onClick={() => setActiveKeywords(prev => {
-                          const next = new Set(prev);
-                          on ? next.delete(kw) : next.add(kw);
-                          return next;
-                        })}
-                        className={`text-[11px] px-2 py-0.5 rounded-full border font-mono transition-colors ${
-                          on
-                            ? 'bg-[#1a2744] text-white border-transparent'
-                            : 'bg-white text-gray-400 border-gray-200 line-through'
-                        }`}
-                      >
-                        {kw}
+              {!search && (enKeywords.length > 0 || esKeywords.length > 0) && (
+                <div className="space-y-1.5 pt-0.5">
+                  {/* Language toggle */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-gray-400">Search:</span>
+                    {(['all', 'en', 'es'] as const).map(lang => (
+                      <button key={lang} onClick={() => setKeywordLang(lang)}
+                        className={`text-[11px] px-2 py-0.5 rounded-full border font-medium transition-colors ${keywordLang === lang ? 'bg-[#1a2744] text-white border-transparent' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                        {lang === 'all' ? 'EN + ES' : lang === 'en' ? 'EN only' : 'ES only'}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+                  {/* Chip rows */}
+                  {[{ label: 'EN', words: enKeywords, dimmed: keywordLang === 'es' },
+                    { label: 'ES', words: esKeywords, dimmed: keywordLang === 'en' },
+                    { label: '+', words: customKeywords, dimmed: false }]
+                    .filter(g => g.words.length > 0)
+                    .map(({ label, words, dimmed }) => (
+                      <div key={label} className={`flex items-center gap-1.5 flex-wrap transition-opacity ${dimmed ? 'opacity-30' : ''}`}>
+                        <span className="text-[10px] font-bold text-gray-400 w-4">{label}</span>
+                        {words.map(kw => {
+                          const on = activeKeywords.has(kw);
+                          return (
+                            <button key={kw}
+                              onClick={() => setActiveKeywords(prev => { const n = new Set(prev); on ? n.delete(kw) : n.add(kw); return n; })}
+                              className={`text-[11px] px-2 py-0.5 rounded-full border font-mono transition-colors ${on ? 'bg-[#1a2744] text-white border-transparent' : 'bg-white text-gray-400 border-gray-200 line-through'}`}>
+                              {kw}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
                   {/* Manual keyword adder */}
                   <form
                     onSubmit={e => {
                       e.preventDefault();
-                      const input = (e.currentTarget.elements.namedItem('kw') as HTMLInputElement);
+                      const input = e.currentTarget.elements.namedItem('kw') as HTMLInputElement;
                       const val = input.value.trim().toLowerCase();
-                      if (val && !allKeywords.includes(val)) {
-                        setAllKeywords(prev => [...prev, val]);
+                      if (val && !customKeywords.includes(val) && !enKeywords.includes(val) && !esKeywords.includes(val)) {
+                        setCustomKeywords(prev => [...prev, val]);
                         setActiveKeywords(prev => new Set([...prev, val]));
                       }
                       input.value = '';
                     }}
                     className="flex items-center gap-1"
                   >
-                    <input
-                      name="kw"
-                      placeholder="+ keyword"
-                      className="text-[11px] font-mono px-2 py-0.5 rounded-full border border-dashed border-gray-300 bg-white text-gray-500 w-24 focus:outline-none focus:border-[#1a2744]/40 placeholder:text-gray-300"
+                    <span className="text-[10px] font-bold text-gray-400 w-4">+</span>
+                    <input name="kw" placeholder="add keyword…"
+                      className="text-[11px] font-mono px-2 py-0.5 rounded-full border border-dashed border-gray-300 bg-white text-gray-500 w-28 focus:outline-none focus:border-[#1a2744]/40 placeholder:text-gray-300"
                     />
                   </form>
                 </div>
@@ -485,40 +514,32 @@ export default function TranscriptFinderPage() {
             <div className="text-sm text-gray-400 py-10 text-center">No matching transcripts found. Try lowering the min word count or using the search bar.</div>
           ) : (
             <>
-              {/* ── Questions asked filter ── */}
-              {(() => {
-                const uniqueTitles = [...new Set(transcripts.map(t => t.nodeTitle).filter(Boolean))];
-                if (uniqueTitles.length < 2) return null;
-                return (
-                  <div className="mb-5 p-3 bg-white border border-gray-200 rounded-xl space-y-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Questions asked — uncheck to hide</p>
-                    <div className="space-y-1">
-                      {uniqueTitles.map(title => {
-                        const hidden = hiddenNodeTitles.has(title);
-                        const count = transcripts.filter(t => t.nodeTitle === title).length;
-                        return (
-                          <label key={title} className="flex items-start gap-2 cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={!hidden}
-                              onChange={() => setHiddenNodeTitles(prev => {
-                                const next = new Set(prev);
-                                hidden ? next.delete(title) : next.add(title);
-                                return next;
-                              })}
-                              className="mt-0.5 accent-[#1a2744] flex-shrink-0"
-                            />
-                            <span className={`text-xs leading-snug ${hidden ? 'text-gray-300 line-through' : 'text-gray-700 group-hover:text-gray-900'}`}>
-                              {title}
-                              <span className="ml-1 text-gray-400 no-underline">({count})</span>
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
+              {/* ── Questions asked filter (from full search, not just current page) ── */}
+              {allNodeTitles.length >= 2 && (
+                <div className="mb-5 p-3 bg-white border border-gray-200 rounded-xl space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Questions asked — uncheck to hide
+                    {totalCount !== null && <span className="ml-2 font-normal normal-case text-gray-400">({totalCount} total matches)</span>}
+                  </p>
+                  <div className="space-y-1">
+                    {allNodeTitles.map(({ title, count }) => {
+                      const hidden = hiddenNodeTitles.has(title);
+                      return (
+                        <label key={title} className="flex items-start gap-2 cursor-pointer group">
+                          <input type="checkbox" checked={!hidden}
+                            onChange={() => setHiddenNodeTitles(prev => { const n = new Set(prev); hidden ? n.delete(title) : n.add(title); return n; })}
+                            className="mt-0.5 accent-[#1a2744] flex-shrink-0"
+                          />
+                          <span className={`text-xs leading-snug ${hidden ? 'text-gray-300 line-through' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                            {title}
+                            <span className="ml-1 text-gray-400">({count})</span>
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
-                );
-              })()}
+                </div>
+              )}
 
               {(() => {
                 const visible = transcripts.filter(t => !hiddenNodeTitles.has(t.nodeTitle));
@@ -526,7 +547,7 @@ export default function TranscriptFinderPage() {
                 return (
                   <>
                     <p className="text-xs text-gray-400 mb-4">
-                      {visible.length} transcripts shown{hiddenCount > 0 ? ` · ${hiddenCount} hidden by filter` : ''}
+                      {totalCount !== null ? `${totalCount} total · ` : ''}{visible.length} shown on this page{hiddenCount > 0 ? ` · ${hiddenCount} hidden by filter` : ''}
                     </p>
               <div className="space-y-4">
                 {visible.map(t => {

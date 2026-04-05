@@ -64,76 +64,98 @@ export async function GET(req: Request) {
 
   const impacter = getImpacterClient();
 
-  // ── Fetch transcript steps from VideoAsk ─────────────────────────────────
-  // Columns known from VideoAsk API docs: node_title, transcript, media_type, media_url, created_at
-  // We query the videoask schema using the schema() client
-  // Split search into individual keywords and match ANY of them (OR logic)
   const keywords = search.trim().split(/\s+/).filter(Boolean);
 
-  let stepsQuery = impacter
-    .schema('videoask')
-    .from('steps')
-    .select('*')
-    .not('transcript', 'is', null)
-    .neq('transcript', '')
-    .not('media_url', 'is', null)   // must have a watchable URL
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  // Media type filter — media_type column is often null; detect from URL extension instead
-  if (mediaType === 'audio') {
-    stepsQuery = stepsQuery.ilike('media_url', '%audio.mp3%');
-  } else if (mediaType === 'video') {
-    stepsQuery = stepsQuery.not('media_url', 'ilike', '%audio.mp3%');
+  // Helper: apply shared filters to any query on this table
+  function applyFilters<T>(q: T): T {
+    let qq = (q as unknown as ReturnType<typeof impacter.schema>['from']) as typeof q;
+    qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('transcript', 'is', null) as typeof q;
+    qq = (qq as unknown as { neq: (col: string, val: string) => typeof qq }).neq('transcript', '') as typeof q;
+    qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('media_url', 'is', null) as typeof q;
+    if (mediaType === 'audio') qq = (qq as unknown as { ilike: (col: string, val: string) => typeof qq }).ilike('media_url', '%audio.mp3%') as typeof q;
+    if (mediaType === 'video') qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('media_url', 'ilike', '%audio.mp3%') as typeof q;
+    if (keywords.length > 0) {
+      const conditions = keywords.flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`]).join(',');
+      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(conditions) as typeof q;
+    }
+    return qq;
   }
 
-  // Keyword search: each word matched independently across transcript OR node_title
-  if (keywords.length > 0) {
-    const conditions = keywords
-      .flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`])
-      .join(',');
-    stepsQuery = stepsQuery.or(conditions);
-  }
+  const baseQuery = () => impacter.schema('videoask').from('steps');
 
-  const { data: stepsData, error: stepsErr } = await stepsQuery;
+  // ── 1. Total count ──────────────────────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const countQ = applyFilters(baseQuery().select('*', { count: 'exact', head: true } as any));
+  const { count: totalCount } = await countQ;
+
+  // ── 2. All matching node_titles (for Questions Asked filter, full search) ─
+  const nodeTitleQ = applyFilters(baseQuery().select('node_title'));
+  const { data: nodeTitleData } = await nodeTitleQ;
+  const allNodeTitles: { title: string; count: number }[] = Object.entries(
+    (nodeTitleData ?? []).reduce<Record<string, number>>((acc, r) => {
+      const t = String((r as Record<string,unknown>).node_title ?? '');
+      if (t) acc[t] = (acc[t] ?? 0) + 1;
+      return acc;
+    }, {})
+  ).map(([title, count]) => ({ title, count })).sort((a, b) => b.count - a.count);
+
+  // ── 3. Paginated data — fetch 3× page for relevance sorting ────────────
+  const fetchLimit = limit * 3;
+  const dataQ = applyFilters(
+    baseQuery().select('*').order('created_at', { ascending: false }).range(offset, offset + fetchLimit - 1)
+  );
+  const { data: stepsData, error: stepsErr } = await dataQ;
 
   if (stepsErr) {
     console.error('VideoAsk steps error:', stepsErr);
     return NextResponse.json({ error: stepsErr.message, transcripts: [], needsSamples: [], page, hasMore: false });
   }
 
-  // Filter by word count and normalize
+  function normalize(s: Record<string, unknown>) {
+    const text    = String(s.transcript ?? '');
+    const wc      = text.trim().split(/\s+/).filter(Boolean).length;
+    const rawMedia = String(s.media_type ?? '').toLowerCase();
+    const mediaUrl = String(s.media_url ?? '');
+    const urlExt   = mediaUrl.toLowerCase().split('?')[0].split('.').pop() ?? '';
+    const mediaT: 'video' | 'audio' =
+      rawMedia.includes('audio') || urlExt === 'mp3' || urlExt === 'ogg' || urlExt === 'm4a'
+        ? 'audio' : 'video';
+    return {
+      id:        String(s.id ?? ''),
+      nodeTitle: String(s.node_title ?? ''),
+      transcript: text,
+      mediaType: mediaT,
+      mediaUrl,
+      shareUrl:  s.share_url ? String(s.share_url) : null,
+      grade:     (s.grade ?? s.grade_level ?? s.variables_grade ?? null) as string | null,
+      gender:    (s.gender ?? s.variables_gender ?? null) as string | null,
+      school:    (s.school_name ?? s.school ?? null) as string | null,
+      formTitle: (s.form_title ?? null) as string | null,
+      wordCount: wc,
+      createdAt: String(s.created_at ?? ''),
+    };
+  }
+
+  // ── 4. Score by keyword hit count, sort best first ──────────────────────
+  function scoreRow(t: ReturnType<typeof normalize>): number {
+    const haystack = (t.transcript + ' ' + t.nodeTitle).toLowerCase();
+    return keywords.reduce((s, kw) => {
+      const needle = kw.toLowerCase();
+      let count = 0, pos = 0;
+      while ((pos = haystack.indexOf(needle, pos)) !== -1) { count++; pos++; }
+      return s + count;
+    }, 0);
+  }
+
   const transcripts = (stepsData ?? [])
-    .map((s: Record<string, unknown>) => {
-      const text      = String(s.transcript ?? '');
-      const wc        = text.trim().split(/\s+/).filter(Boolean).length;
-      // Detect audio vs video: check media_type column, then fall back to URL extension
-      const rawMedia = String(s.media_type ?? '').toLowerCase();
-      const mediaUrl = String(s.media_url ?? '');
-      const urlExt   = mediaUrl.toLowerCase().split('?')[0].split('.').pop() ?? '';
-      const mediaT: 'video' | 'audio' =
-        rawMedia.includes('audio') || urlExt === 'mp3' || urlExt === 'ogg' || urlExt === 'm4a'
-          ? 'audio' : 'video';
+    .map(normalize)
+    .filter(t => t.wordCount >= minWords)
+    .map(t => ({ ...t, _score: scoreRow(t) }))
+    .sort((a, b) => b._score - a._score)
+    .slice(0, limit)
+    .map(({ _score: _, ...rest }) => rest);
 
-      // share_url is a direct column on the steps table
-      const shareUrl = s.share_url ? String(s.share_url) : null;
+  const hasMore = (totalCount ?? 0) > offset + limit;
 
-      return {
-        id:        String(s.id ?? ''),
-        nodeTitle: String(s.node_title ?? ''),
-        transcript: text,
-        mediaType: mediaT,
-        mediaUrl,
-        shareUrl,
-        grade:     (s.grade ?? s.grade_level ?? s.variables_grade ?? null) as string | null,
-        gender:    (s.gender ?? s.variables_gender ?? null) as string | null,
-        school:    (s.school_name ?? s.school ?? null) as string | null,
-        formTitle: (s.form_title ?? null) as string | null,
-        wordCount: wc,
-        createdAt: String(s.created_at ?? ''),
-      };
-    })
-    .filter(t => t.wordCount >= minWords);
-
-  return NextResponse.json({ transcripts, needsSamples, allQuestions, assignedUrls, page, hasMore: (stepsData?.length ?? 0) === limit });
+  return NextResponse.json({ transcripts, totalCount: totalCount ?? 0, allNodeTitles, needsSamples, allQuestions, assignedUrls, page, hasMore });
 }
