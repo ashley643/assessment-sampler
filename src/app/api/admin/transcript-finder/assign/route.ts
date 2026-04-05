@@ -11,6 +11,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'questionId, language, and embedUrl are required' }, { status: 400 });
   }
 
+  // Remove any existing assignment that uses the same embed URL (prevent double-assign)
+  const normalisedUrl = embedUrl.split('?')[0];
+  await supabaseAdmin
+    .from('question_samples')
+    .delete()
+    .like('embed_url', `${normalisedUrl}%`);
+
   // Get current max sort_order for this question
   const { data: existing } = await supabaseAdmin
     .from('question_samples')

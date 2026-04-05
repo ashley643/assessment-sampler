@@ -37,9 +37,28 @@ export async function GET(req: Request) {
       .filter(q => q.missingEn || q.missingEs)
   );
 
+  // Load all existing embed_urls so the UI can flag already-assigned transcripts
+  const { data: assignedData } = await supabaseAdmin
+    .from('question_samples')
+    .select('embed_url, question_id');
+
+  // Build a map: normalised embed_url (no query string) → { questionId, questionTitle }
+  const questionTitleById = Object.fromEntries(
+    ((assessmentsData ?? []) as ARow[]).flatMap(a =>
+      (a.questions ?? []).map(q => [q.id, q.title])
+    )
+  );
+  const assignedUrls: { embedUrl: string; normalised: string; questionId: string; questionTitle: string }[] =
+    (assignedData ?? []).map(r => ({
+      embedUrl:    r.embed_url as string,
+      normalised:  (r.embed_url as string ?? '').split('?')[0],
+      questionId:  r.question_id as string,
+      questionTitle: questionTitleById[r.question_id as string] ?? 'Unknown',
+    }));
+
   // If only the needs list was requested, return early
   if (needsOnly || !search.trim()) {
-    return NextResponse.json({ transcripts: [], needsSamples, page: 1, hasMore: false });
+    return NextResponse.json({ transcripts: [], needsSamples, assignedUrls, page: 1, hasMore: false });
   }
 
   const impacter = getImpacterClient();
@@ -115,5 +134,5 @@ export async function GET(req: Request) {
     })
     .filter(t => t.wordCount >= minWords);
 
-  return NextResponse.json({ transcripts, needsSamples, page, hasMore: (stepsData?.length ?? 0) === limit });
+  return NextResponse.json({ transcripts, needsSamples, assignedUrls, page, hasMore: (stepsData?.length ?? 0) === limit });
 }

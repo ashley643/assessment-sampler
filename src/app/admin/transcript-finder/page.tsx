@@ -30,6 +30,13 @@ interface NeedsSample {
   missingEs: boolean;
 }
 
+interface AssignedUrl {
+  embedUrl: string;
+  normalised: string;
+  questionId: string;
+  questionTitle: string;
+}
+
 const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','about','as','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','may','might','it','its','this','that','these','those','i','you','he','she','we','they','me','him','her','us','them','my','your','his','our','their','what','how','when','where','who','which','can','your','tell','me']);
 
 function buildSearchTerms(title: string, questionText: string): string {
@@ -56,8 +63,9 @@ function excerpt(s: string, n = 180) { return s.length > n ? s.slice(0, n).trim(
 export default function TranscriptFinderPage() {
   const [transcripts, setTranscripts]   = useState<Transcript[]>([]);
   const [needsSamples, setNeedsSamples] = useState<NeedsSample[]>([]);
-  const [needsLoading, setNeedsLoading] = useState(true);
-  const [loading, setLoading]           = useState(false);
+  const [needsLoading, setNeedsLoading]   = useState(true);
+  const [assignedUrls, setAssignedUrls]   = useState<AssignedUrl[]>([]);
+  const [loading, setLoading]             = useState(false);
   const [loadingMore, setLoadingMore]   = useState(false);
   const [page, setPage]                 = useState(1);
   const [hasMore, setHasMore]           = useState(false);
@@ -98,6 +106,7 @@ export default function TranscriptFinderPage() {
         const list = (d.needsSamples as NeedsSample[]) ?? [];
         setNeedsSamples(list);
         setExpandedAssessments(new Set(list.map(n => n.assessmentId)));
+        setAssignedUrls((d.assignedUrls as AssignedUrl[]) ?? []);
         setNeedsLoading(false);
       })
       .catch(() => setNeedsLoading(false));
@@ -202,11 +211,17 @@ export default function TranscriptFinderPage() {
     });
     const json = await res.json();
     if (!res.ok) { setAssignError(json.error ?? 'Failed'); setAssigning(false); return; }
+    // Track this assignment so the card updates immediately
+    const newUrl = assign.embedUrl;
+    const newNorm = newUrl.split('?')[0];
+    setAssignedUrls(prev => [
+      // Remove any old entry for this url, then add the new one
+      ...prev.filter(a => a.normalised !== newNorm),
+      { embedUrl: newUrl, normalised: newNorm, questionId: assign.questionId, questionTitle: questionById[assign.questionId]?.questionTitle ?? '' },
+    ]);
     setAssigned(prev => new Set([...prev, assign.transcript.id]));
     setAssign(null);
     setAssigning(false);
-    // Refresh needs list
-    fetchTranscripts(1, false);
   }
 
   // Group needsSamples by assessment
@@ -408,9 +423,16 @@ export default function TranscriptFinderPage() {
                   const isExpanded  = expanded.has(t.id);
                   const isAssigned  = assigned.has(t.id);
                   const wc = t.wordCount || wordCount(t.transcript);
+                  // Check if this transcript's URL already exists in question_samples
+                  const tNorm = (t.shareUrl ?? t.mediaUrl).split('?')[0];
+                  const existingAssignment = assignedUrls.find(a => a.normalised === tNorm);
 
                   return (
-                    <div key={t.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${isAssigned ? 'border-green-200 bg-green-50/30' : 'border-gray-200'}`}>
+                    <div key={t.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${
+                      isAssigned ? 'border-green-200 bg-green-50/30' :
+                      existingAssignment ? 'border-amber-200 bg-amber-50/20' :
+                      'border-gray-200'
+                    }`}>
                       {/* Card header */}
                       <div className="px-5 py-3 flex items-center gap-2 flex-wrap border-b border-gray-100">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${t.mediaType === 'audio' ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'}`}>
@@ -422,6 +444,11 @@ export default function TranscriptFinderPage() {
                         {t.school     && <span className="text-xs text-gray-400 ml-auto truncate max-w-[200px]">{t.school}</span>}
                         {t.formTitle  && !t.school && <span className="text-xs text-gray-400 ml-auto truncate max-w-[200px]">{t.formTitle}</span>}
                         {isAssigned && <span className="text-xs font-semibold text-green-600 ml-auto">✓ Added this session</span>}
+                        {!isAssigned && existingAssignment && (
+                          <span className="text-xs font-semibold text-amber-600 ml-auto">
+                            Already in: {existingAssignment.questionTitle}
+                          </span>
+                        )}
                       </div>
 
                       {/* Question asked */}
@@ -468,13 +495,17 @@ export default function TranscriptFinderPage() {
                             Watch / Listen ↗
                           </a>
                         )}
-                        <button
-                          onClick={() => openAssign(t)}
-                          disabled={isAssigned}
-                          className={`${BTN_SM} ${isAssigned ? 'bg-green-100 text-green-700 cursor-default' : 'bg-[#1a2744] text-white hover:bg-[#243660]'}`}
-                        >
-                          {isAssigned ? '✓ Assigned' : 'Assign to question →'}
-                        </button>
+                        {isAssigned ? (
+                          <span className={`${BTN_SM} bg-green-100 text-green-700 cursor-default`}>✓ Assigned</span>
+                        ) : existingAssignment ? (
+                          <button onClick={() => openAssign(t)} className={`${BTN_SM} bg-amber-500 text-white hover:bg-amber-600`}>
+                            Reassign →
+                          </button>
+                        ) : (
+                          <button onClick={() => openAssign(t)} className={`${BTN_SM} bg-[#1a2744] text-white hover:bg-[#243660]`}>
+                            Assign to question →
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
