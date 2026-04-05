@@ -369,7 +369,7 @@ export default function TranscriptFinderPage() {
   const BTN_SM = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4 flex-wrap">
         <Link href="/admin" className="text-gray-400 hover:text-gray-600 text-sm">← Admin</Link>
