@@ -39,11 +39,34 @@ interface AssignedUrl {
 
 const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','about','as','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','may','might','it','its','this','that','these','those','i','you','he','she','we','they','me','him','her','us','them','my','your','his','our','their','what','how','when','where','who','which','can','your','tell','me']);
 
+// Common SEL/education term translations EN → ES
+const EN_TO_ES: Record<string, string> = {
+  curiosity: 'curiosidad', curious: 'curioso', wonder: 'asombro',
+  notice: 'notar', noticed: 'notaste', question: 'pregunta',
+  learn: 'aprender', learning: 'aprendizaje', knowledge: 'conocimiento',
+  growth: 'crecimiento', grow: 'crecer', improve: 'mejorar',
+  mindset: 'mentalidad', grit: 'perseverancia', persist: 'persistir',
+  purpose: 'propósito', meaning: 'significado', passion: 'pasión',
+  gratitude: 'gratitud', grateful: 'agradecido', thank: 'gracias',
+  compassion: 'compasión', empathy: 'empatía', kindness: 'amabilidad',
+  perspective: 'perspectiva', feedback: 'retroalimentación',
+  resilience: 'resiliencia', resilient: 'resiliente', bounce: 'recuperar',
+  belonging: 'pertenencia', relationships: 'relaciones', community: 'comunidad',
+  support: 'apoyo', help: 'ayuda', challenge: 'desafío',
+  failure: 'fracaso', mistake: 'error', success: 'éxito',
+  confidence: 'confianza', proud: 'orgulloso', effort: 'esfuerzo',
+  goal: 'meta', reflect: 'reflexionar', change: 'cambiar',
+  feeling: 'sentimiento', emotion: 'emoción', happy: 'feliz', sad: 'triste',
+  self: 'mismo', control: 'control', calm: 'calma',
+};
+
 function buildSearchTerms(title: string, questionText: string): string {
   const combined = `${title} ${questionText}`;
   const words = combined.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
-  // Deduplicate, take up to 6 most meaningful words
-  return [...new Set(words)].slice(0, 6).join(' ');
+  const unique = [...new Set(words)].slice(0, 6);
+  // Add Spanish equivalents for any word we have a translation for
+  const spanish = unique.flatMap(w => EN_TO_ES[w] ? [EN_TO_ES[w]] : []);
+  return [...unique, ...spanish].join(' ');
 }
 
 interface AssignState {
@@ -98,19 +121,28 @@ export default function TranscriptFinderPage() {
 
   const [fetchError, setFetchError] = useState('');
 
-  // On mount: load only the questions-needing-samples list (our own DB, fast)
-  useEffect(() => {
+  // Load/refresh the questions-needing-samples list
+  const refreshNeeds = useCallback((showSpinner = false) => {
+    if (showSpinner) setNeedsLoading(true);
     fetch('/api/admin/transcript-finder?needsOnly=true')
       .then(r => r.json())
       .then(d => {
         const list = (d.needsSamples as NeedsSample[]) ?? [];
         setNeedsSamples(list);
-        setExpandedAssessments(new Set(list.map(n => n.assessmentId)));
+        setExpandedAssessments(prev => {
+          // Keep existing expanded state, just add any new assessments
+          const next = new Set(prev);
+          list.forEach(n => next.add(n.assessmentId));
+          return next;
+        });
         setAssignedUrls((d.assignedUrls as AssignedUrl[]) ?? []);
         setNeedsLoading(false);
       })
       .catch(() => setNeedsLoading(false));
   }, []);
+
+  // On mount
+  useEffect(() => { refreshNeeds(true); }, [refreshNeeds]);
 
   // When a question is selected (or filters/search change): load matching transcripts
   const fetchTranscripts = useCallback(async (pg: number, replace: boolean) => {
@@ -222,6 +254,8 @@ export default function TranscriptFinderPage() {
     setAssigned(prev => new Set([...prev, assign.transcript.id]));
     setAssign(null);
     setAssigning(false);
+    // Refresh sidebar so needs EN/ES badges update
+    refreshNeeds();
   }
 
   // Group needsSamples by assessment
