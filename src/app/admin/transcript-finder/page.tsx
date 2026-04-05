@@ -67,19 +67,29 @@ export default function TranscriptFinderPage() {
   // Expanded transcript
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  const [fetchError, setFetchError] = useState('');
+
   const fetchData = useCallback(async (pg: number, replace: boolean) => {
     if (pg === 1) setLoading(true); else setLoadingMore(true);
-    const params = new URLSearchParams({
-      page: String(pg),
-      minWords: String(minWords),
-      ...(mediaType ? { mediaType } : {}),
-      ...(search ? { search } : {}),
-    });
-    const res = await fetch(`/api/admin/transcript-finder?${params}`);
-    const data = await res.json();
-    setTranscripts(prev => replace ? (data.transcripts ?? []) : [...prev, ...(data.transcripts ?? [])]);
-    if (pg === 1) setNeedsSamples(data.needsSamples ?? []);
-    setHasMore(data.hasMore ?? false);
+    setFetchError('');
+    try {
+      const params = new URLSearchParams({
+        page: String(pg),
+        minWords: String(minWords),
+        ...(mediaType ? { mediaType } : {}),
+        ...(search ? { search } : {}),
+      });
+      const res = await fetch(`/api/admin/transcript-finder?${params}`);
+      const text = await res.text();
+      let data: Record<string, unknown>;
+      try { data = JSON.parse(text); } catch { setFetchError(`Server returned (${res.status}): ${text.slice(0, 300)}`); setLoading(false); setLoadingMore(false); return; }
+      if (!res.ok) { setFetchError(`Error ${res.status}: ${(data.error as string) ?? JSON.stringify(data)}`); setLoading(false); setLoadingMore(false); return; }
+      setTranscripts(prev => replace ? ((data.transcripts as Transcript[]) ?? []) : [...prev, ...((data.transcripts as Transcript[]) ?? [])]);
+      if (pg === 1) setNeedsSamples((data.needsSamples as NeedsSample[]) ?? []);
+      setHasMore((data.hasMore as boolean) ?? false);
+    } catch (e) {
+      setFetchError(`Network error: ${e}`);
+    }
     setLoading(false);
     setLoadingMore(false);
   }, [mediaType, minWords, search]);
@@ -239,7 +249,9 @@ export default function TranscriptFinderPage() {
             </div>
           )}
 
-          {loading ? (
+          {fetchError ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-sm text-red-700 font-mono whitespace-pre-wrap">{fetchError}</div>
+          ) : loading ? (
             <div className="text-sm text-gray-400 py-10 text-center">Loading transcripts…</div>
           ) : transcripts.length === 0 ? (
             <div className="text-sm text-gray-400 py-10 text-center">No transcripts match your filters.</div>
