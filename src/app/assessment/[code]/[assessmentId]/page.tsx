@@ -478,19 +478,6 @@ export default function AssessmentPlayerPage() {
             </div>{/* end top row */}
 
             {/* Mobile: sample button left-aligned below */}
-            {sampleAvailable && (
-              <button
-                onClick={() => setShowSample(s => !s)}
-                className="md:hidden self-start flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                style={showSample ? { background: '#1D9E75', color: 'white', outline: '2px solid #0f6e50' } : { background: '#1D9E75', color: 'white' }}
-              >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                  <circle cx="7.5" cy="7.5" r="6" stroke="white" strokeWidth="1.4"/>
-                  <path d="M5.5 5.5l4 2-4 2V5.5z" fill="white"/>
-                </svg>
-                {showSample ? 'Back to question' : 'See a sample response'}
-              </button>
-            )}
           </div>
 
           {/* Spanish language note — shown above embed when Spanish mode is active */}
@@ -561,7 +548,22 @@ export default function AssessmentPlayerPage() {
           )}
 
           {/* Bottom nav */}
-          <div className="flex-shrink-0 border-t border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between bg-white gap-4">
+          <div className="flex-shrink-0 border-t border-gray-200 px-4 md:px-6 py-3 flex flex-col items-stretch bg-white gap-2">
+            {/* Mobile-only sample button row */}
+            {sampleAvailable && (
+              <button
+                onClick={() => setShowSample(s => !s)}
+                className="md:hidden flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99]"
+                style={showSample ? { background: '#1D9E75', color: 'white', outline: '2px solid #0f6e50' } : { background: '#1D9E75', color: 'white' }}
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                  <circle cx="7.5" cy="7.5" r="6" stroke="white" strokeWidth="1.4"/>
+                  <path d="M5.5 5.5l4 2-4 2V5.5z" fill="white"/>
+                </svg>
+                {showSample ? 'Back to question' : 'See a sample response'}
+              </button>
+            )}
+          <div className="flex items-center justify-between gap-4">
             <button onClick={goPrev} disabled={currentIdx === 0} className="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-0 transition-all">← Previous</button>
 
             <div className="flex flex-col items-center gap-2">
@@ -585,6 +587,7 @@ export default function AssessmentPlayerPage() {
             </div>
 
             <button onClick={goNext} disabled={currentIdx === questions.length - 1} className="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-0 transition-all">Next →</button>
+          </div>
           </div>
         </div>
       </div>
