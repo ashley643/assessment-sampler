@@ -117,9 +117,10 @@ export async function GET(req: Request) {
         formTitle: (s.form_title ?? null) as string | null,
         wordCount: wc,
         createdAt: String(s.created_at ?? ''),
-        // expose all raw keys on first page so we can see the schema
-        _rawKeys:  page === 1 ? Object.keys(s) : undefined,
-        _rawUrlKeys: page === 1 ? Object.keys(raw) : undefined,
+        // debug: expose schema on first page
+        _rawMediaType: page === 1 ? String(s.media_type ?? '') : undefined,
+        _rawKeys:      page === 1 ? Object.keys(s) : undefined,
+        _rawSample:    page === 1 ? raw : undefined,
       };
     })
     .filter(t => t.wordCount >= minWords);

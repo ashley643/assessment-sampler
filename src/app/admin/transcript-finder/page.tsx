@@ -83,6 +83,9 @@ export default function TranscriptFinderPage() {
   // Expanded transcript
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  // Node-title filter (filter out irrelevant VideoAsk questions from results)
+  const [hiddenNodeTitles, setHiddenNodeTitles] = useState<Set<string>>(new Set());
+
   const [fetchError, setFetchError] = useState('');
 
   // On mount: load only the questions-needing-samples list (our own DB, fast)
@@ -134,6 +137,9 @@ export default function TranscriptFinderPage() {
     setLoading(false);
     setLoadingMore(false);
   }, [focusQuestion, mediaType, minWords, search, needsSamples, activeKeywords]);
+
+  // Reset node-title filter when question changes
+  useEffect(() => { setHiddenNodeTitles(new Set()); }, [focusQuestion]);
 
   // When focused question changes, regenerate keyword chips
   useEffect(() => {
@@ -350,9 +356,51 @@ export default function TranscriptFinderPage() {
             <div className="text-sm text-gray-400 py-10 text-center">No matching transcripts found. Try lowering the min word count or using the search bar.</div>
           ) : (
             <>
-              <p className="text-xs text-gray-400 mb-4">{transcripts.length} transcripts loaded</p>
+              {/* ── Questions asked filter ── */}
+              {(() => {
+                const uniqueTitles = [...new Set(transcripts.map(t => t.nodeTitle).filter(Boolean))];
+                if (uniqueTitles.length < 2) return null;
+                return (
+                  <div className="mb-5 p-3 bg-white border border-gray-200 rounded-xl space-y-2">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Questions asked — uncheck to hide</p>
+                    <div className="space-y-1">
+                      {uniqueTitles.map(title => {
+                        const hidden = hiddenNodeTitles.has(title);
+                        const count = transcripts.filter(t => t.nodeTitle === title).length;
+                        return (
+                          <label key={title} className="flex items-start gap-2 cursor-pointer group">
+                            <input
+                              type="checkbox"
+                              checked={!hidden}
+                              onChange={() => setHiddenNodeTitles(prev => {
+                                const next = new Set(prev);
+                                hidden ? next.delete(title) : next.add(title);
+                                return next;
+                              })}
+                              className="mt-0.5 accent-[#1a2744] flex-shrink-0"
+                            />
+                            <span className={`text-xs leading-snug ${hidden ? 'text-gray-300 line-through' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                              {title}
+                              <span className="ml-1 text-gray-400 no-underline">({count})</span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {(() => {
+                const visible = transcripts.filter(t => !hiddenNodeTitles.has(t.nodeTitle));
+                const hiddenCount = transcripts.length - visible.length;
+                return (
+                  <>
+                    <p className="text-xs text-gray-400 mb-4">
+                      {visible.length} transcripts shown{hiddenCount > 0 ? ` · ${hiddenCount} hidden by filter` : ''}
+                    </p>
               <div className="space-y-4">
-                {transcripts.map(t => {
+                {visible.map(t => {
                   const isExpanded  = expanded.has(t.id);
                   const isAssigned  = assigned.has(t.id);
                   const wc = t.wordCount || wordCount(t.transcript);
@@ -424,6 +472,9 @@ export default function TranscriptFinderPage() {
                   </button>
                 </div>
               )}
+                  </>
+                );
+              })()}
             </>
           )}
         </main>
