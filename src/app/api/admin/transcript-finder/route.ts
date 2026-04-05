@@ -18,12 +18,12 @@ export async function GET(req: Request) {
   // ── Questions that need samples (always returned) ───────────────────────
   const { data: assessmentsData } = await supabaseAdmin
     .from('assessments')
-    .select('id, title, type_label, questions ( id, title, question_samples ( id, language ) )')
+    .select('id, title, type_label, questions ( id, title, question, question_samples ( id, language ) )')
     .neq('type', 'bundle')
     .order('sort_order');
 
   type QSample = { id: string; language: string };
-  type QRow    = { id: string; title: string; question_samples: QSample[] };
+  type QRow    = { id: string; title: string; question: string | null; question_samples: QSample[] };
   type ARow    = { id: string; title: string; type_label: string; questions: QRow[] };
 
   const needsSamples = ((assessmentsData ?? []) as ARow[]).flatMap(a =>
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
         const langs     = (q.question_samples ?? []).map(s => s.language);
         const missingEn = !langs.includes('english');
         const missingEs = !langs.includes('spanish');
-        return { questionId: q.id, questionTitle: q.title, assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
+        return { questionId: q.id, questionTitle: q.title, questionText: q.question ?? '', assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
       })
       .filter(q => q.missingEn || q.missingEs)
   );

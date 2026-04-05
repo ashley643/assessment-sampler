@@ -21,11 +21,21 @@ interface Transcript {
 interface NeedsSample {
   questionId: string;
   questionTitle: string;
+  questionText: string;
   assessmentId: string;
   assessmentTitle: string;
   typeLabel: string;
   missingEn: boolean;
   missingEs: boolean;
+}
+
+const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','about','as','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','may','might','it','its','this','that','these','those','i','you','he','she','we','they','me','him','her','us','them','my','your','his','our','their','what','how','when','where','who','which','can','your','tell','me']);
+
+function buildSearchTerms(title: string, questionText: string): string {
+  const combined = `${title} ${questionText}`;
+  const words = combined.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
+  // Deduplicate, take up to 6 most meaningful words
+  return [...new Set(words)].slice(0, 6).join(' ');
 }
 
 interface AssignState {
@@ -84,13 +94,12 @@ export default function TranscriptFinderPage() {
     setFetchError('');
     try {
       const focused = needsSamples.find(n => n.questionId === focusQuestion);
-      const questionTitle = focused?.questionTitle ?? '';
+      const autoSearch = focused ? buildSearchTerms(focused.questionTitle, focused.questionText) : '';
       const params = new URLSearchParams({
         page: String(pg),
         minWords: String(minWords),
         ...(mediaType ? { mediaType } : {}),
-        // Use explicit search if set, otherwise search by question title keywords
-        search: search || questionTitle,
+        search: search || autoSearch,
       });
       const res = await fetch(`/api/admin/transcript-finder?${params}`);
       const text = await res.text();
@@ -253,12 +262,22 @@ export default function TranscriptFinderPage() {
         {/* ── Main: transcript cards ── */}
         <main className="flex-1 overflow-y-auto px-6 py-6">
           {focusQuestion && questionById[focusQuestion] && (
-            <div className="mb-5 p-3 bg-[#1a2744]/5 border border-[#1a2744]/20 rounded-xl text-sm">
-              <span className="text-xs font-semibold text-[#1a2744] uppercase tracking-wide">Assigning to: </span>
-              <span className="text-gray-800 font-medium">{questionById[focusQuestion].questionTitle}</span>
-              <span className="text-gray-400 mx-1">·</span>
-              <span className="text-gray-500 text-xs">{questionById[focusQuestion].assessmentTitle}</span>
-              <button onClick={() => setFocusQuestion(null)} className="ml-3 text-xs text-gray-400 hover:text-gray-600 underline">clear</button>
+            <div className="mb-5 p-3 bg-[#1a2744]/5 border border-[#1a2744]/20 rounded-xl space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-[#1a2744] uppercase tracking-wide">Searching for: </span>
+                <span className="text-gray-800 font-medium text-sm">{questionById[focusQuestion].questionTitle}</span>
+                <span className="text-gray-400 mx-1">·</span>
+                <span className="text-gray-500 text-xs">{questionById[focusQuestion].assessmentTitle}</span>
+                <button onClick={() => setFocusQuestion(null)} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">clear</button>
+              </div>
+              {questionById[focusQuestion].questionText && (
+                <p className="text-xs text-gray-500 italic">{questionById[focusQuestion].questionText}</p>
+              )}
+              {!search && (
+                <p className="text-[11px] text-gray-400">
+                  Keywords: <span className="font-mono">{buildSearchTerms(questionById[focusQuestion].questionTitle, questionById[focusQuestion].questionText)}</span>
+                </p>
+              )}
             </div>
           )}
 
