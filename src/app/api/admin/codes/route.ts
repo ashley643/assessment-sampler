@@ -7,6 +7,13 @@ import { logAudit } from '@/lib/audit';
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Auto-deactivate any codes whose expiry has passed
+  await supabaseAdmin
+    .from('access_codes')
+    .update({ is_active: false })
+    .eq('is_active', true)
+    .lt('expires_at', new Date().toISOString());
+
   const { data, error } = await supabaseAdmin
     .from('access_codes')
     .select(`
