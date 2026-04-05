@@ -370,20 +370,9 @@ export default function AssessmentPlayerPage() {
 
             {/* Buttons (right side on mobile, full width column on desktop) */}
             <div className="flex flex-col items-end gap-1 flex-shrink-0 md:flex-1">
-              {currentQ.spanishEmbedUrl && (
-                <Tooltip text="Other prompt languages can be configured for your population.">
-                  <button
-                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('language_switch', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { language: spanishMode ? 'english' : 'spanish' } }); }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                    style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
-                  >
-                    <span>🌐</span> {spanishMode ? 'Try in English' : 'Try in Spanish'}
-                  </button>
-                </Tooltip>
-              )}
               {/* Mobile version picker button */}
               {(assessment.type === 'bundle') && assessment.childAssessments && selectedBenchmark && (
-                <div className="md:hidden mt-1">
+                <div className="md:hidden">
                   <button
                     onClick={() => setVersionDropdownOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 active:bg-blue-100 transition-colors max-w-[220px]" style={{ color: '#4a6fa5' }}
@@ -396,6 +385,17 @@ export default function AssessmentPlayerPage() {
                     </svg>
                   </button>
                 </div>
+              )}
+              {currentQ.spanishEmbedUrl && (
+                <Tooltip text="Other prompt languages can be configured for your population.">
+                  <button
+                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('language_switch', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { language: spanishMode ? 'english' : 'spanish' } }); }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                    style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
+                  >
+                    <span>🌐</span> {spanishMode ? 'Try in English' : 'Try in Spanish'}
+                  </button>
+                </Tooltip>
               )}
 
               {/* Mobile version bottom sheet */}
