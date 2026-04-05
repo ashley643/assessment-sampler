@@ -367,10 +367,12 @@ export default function FeedPage() {
             </div>
 
             {/* ── Desktop filters ─────────────────────────────────── */}
-            <div className="hidden md:block bg-white rounded-2xl border border-gray-200 p-5 mb-8">
-              <div className="grid grid-cols-3 gap-6 divide-x divide-gray-100">
-                {/* What */}
-                <FilterGroup title="What">
+            <div className="hidden md:block bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 mb-8">
+
+              {/* ── WHAT row ── */}
+              <div className="px-5 py-4">
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-3">What</p>
+                <div className="space-y-2.5">
                   {bundleNames.length > 0 && (
                     <FilterRow label="Bundle">
                       <Chip label="All" active={!filters.bundle} available onClick={() => setFilters(f => ({ ...f, bundle: null, assessment: [] }))} />
@@ -378,7 +380,7 @@ export default function FeedPage() {
                     </FilterRow>
                   )}
                   {assessments.length > 1 && (
-                    <FilterRow label={bundleNames.length > 0 ? '↳' : 'Assessment'}>
+                    <FilterRow label={bundleNames.length > 0 ? '↳ Assmt' : 'Assessment'}>
                       <div className="relative" ref={assessmentDropdownRef}>
                         <button
                           onClick={() => setAssessmentOpen(o => !o)}
@@ -389,20 +391,20 @@ export default function FeedPage() {
                           }`}
                         >
                           {filters.assessment.length === 0
-                            ? 'All'
+                            ? 'All assessments'
                             : filters.assessment.length === 1
                               ? assessmentLabel(filters.assessment[0])
-                              : `${filters.assessment.length} selected`}
+                              : `${filters.assessment.length} assessments`}
                           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" className={`transition-transform ${assessmentOpen ? 'rotate-180' : ''}`}>
                             <path d="M2 3.5l3 3 3-3"/>
                           </svg>
                         </button>
                         {assessmentOpen && (
-                          <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-[240px] py-1.5 max-h-64 overflow-y-auto">
+                          <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-[260px] py-1.5 max-h-72 overflow-y-auto">
                             {filters.assessment.length > 0 && (
                               <button
                                 onClick={() => setFilters(f => ({ ...f, assessment: [] }))}
-                                className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                                className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors border-b border-gray-100"
                               >
                                 Clear selection
                               </button>
@@ -428,29 +430,33 @@ export default function FeedPage() {
                       </div>
                     </FilterRow>
                   )}
-                </FilterGroup>
+                </div>
+              </div>
 
-                {/* Format */}
-                <FilterGroup title="Format">
-                  <div className="pl-4 space-y-2">
-                    {hasSpanish && (
-                      <FilterRow label="Language">
-                        <Chip label="All" active={!filters.language} available onClick={() => toggle('language', null)} />
-                        <Chip label="EN" active={filters.language === 'english'} available={availLanguages.has('english')} onClick={() => toggle('language', 'english')} activeClass="bg-blue-600 text-white" />
-                        <Chip label="ES" active={filters.language === 'spanish'} available={availLanguages.has('spanish')} onClick={() => toggle('language', 'spanish')} activeClass="bg-orange-500 text-white" />
-                      </FilterRow>
-                    )}
-                    <FilterRow label="Media">
-                      <Chip label="All" active={!filters.media} available onClick={() => toggle('media', null)} />
-                      <Chip label="Video" active={filters.media === 'video'} available={availMedia.has('video')} onClick={() => toggle('media', 'video')} activeClass="bg-[#1a56db] text-white" />
-                      <Chip label="Audio" active={filters.media === 'audio'} available={availMedia.has('audio')} onClick={() => toggle('media', 'audio')} activeClass="bg-violet-700 text-white" />
+              {/* ── FORMAT row ── */}
+              <div className="px-5 py-4">
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-3">Format</p>
+                <div className="grid grid-cols-2 gap-x-6">
+                  {hasSpanish ? (
+                    <FilterRow label="Language">
+                      <Chip label="All" active={!filters.language} available onClick={() => toggle('language', null)} />
+                      <Chip label="EN" active={filters.language === 'english'} available={availLanguages.has('english')} onClick={() => toggle('language', 'english')} activeClass="bg-blue-600 text-white" />
+                      <Chip label="ES" active={filters.language === 'spanish'} available={availLanguages.has('spanish')} onClick={() => toggle('language', 'spanish')} activeClass="bg-orange-500 text-white" />
                     </FilterRow>
-                  </div>
-                </FilterGroup>
+                  ) : <div />}
+                  <FilterRow label="Media">
+                    <Chip label="All" active={!filters.media} available onClick={() => toggle('media', null)} />
+                    <Chip label="Video" active={filters.media === 'video'} available={availMedia.has('video')} onClick={() => toggle('media', 'video')} activeClass="bg-[#1a56db] text-white" />
+                    <Chip label="Audio" active={filters.media === 'audio'} available={availMedia.has('audio')} onClick={() => toggle('media', 'audio')} activeClass="bg-violet-700 text-white" />
+                  </FilterRow>
+                </div>
+              </div>
 
-                {/* Who */}
-                <FilterGroup title="Who">
-                  <div className="pl-4 space-y-2">
+              {/* ── WHO row ── */}
+              {(genders.length > 0 || grades.length > 0) && (
+                <div className="px-5 py-4">
+                  <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-3">Who</p>
+                  <div className="space-y-2.5">
                     {genders.length > 0 && (
                       <FilterRow label="Gender">
                         <Chip label="All" active={!filters.gender} available onClick={() => toggle('gender', null)} />
@@ -464,10 +470,12 @@ export default function FeedPage() {
                       </FilterRow>
                     )}
                   </div>
-                </FilterGroup>
-              </div>
+                </div>
+              )}
+
+              {/* ── Footer ── */}
               {count > 0 && (
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="px-5 py-3 flex items-center justify-between">
                   <p className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
                   <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-gray-400 hover:text-gray-600 underline">Clear all filters</button>
                 </div>
