@@ -839,9 +839,9 @@ export default function TranscriptFinderPage() {
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20"
                     >
                       <option value="">— Unknown —</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="nonbinary">Non-binary</option>
+                      <option value="M">M</option>
+                      <option value="F">F</option>
+                      <option value="NB">NB</option>
                     </select>
                   </div>
                 </div>

@@ -139,7 +139,7 @@ export async function GET(req: Request) {
       mediaUrl,
       shareUrl:  s.share_url ? String(s.share_url) : null,
       grade:     (s.grade ?? s.grade_level ?? s.variables_grade ?? null) as string | null,
-      gender:    (s.gender ?? s.variables_gender ?? null) as string | null,
+      gender:    (() => { const g = String(s.gender ?? s.variables_gender ?? '').trim(); const m: Record<string,string> = { male:'M', female:'F', nonbinary:'NB' }; return g ? (m[g.toLowerCase()] ?? g) : null; })(),
       school:    (s.school_name ?? s.school ?? null) as string | null,
       formTitle: (s.form_title ?? null) as string | null,
       wordCount: wc,

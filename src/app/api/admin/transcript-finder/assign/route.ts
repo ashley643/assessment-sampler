@@ -5,7 +5,11 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { questionId, language, embedUrl, mediaType, grade, gender, excerpt } = await req.json();
+  const { questionId, language, embedUrl, mediaType, grade, gender: rawGender, excerpt } = await req.json();
+
+  // Normalise legacy "male"/"female" → "M"/"F"
+  const genderMap: Record<string, string> = { male: 'M', female: 'F', nonbinary: 'NB', 'm': 'M', 'f': 'F' };
+  const gender = rawGender ? (genderMap[rawGender.toLowerCase().trim()] ?? rawGender.trim()) : rawGender;
 
   if (!questionId || !language || !embedUrl) {
     return NextResponse.json({ error: 'questionId, language, and embedUrl are required' }, { status: 400 });
