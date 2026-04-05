@@ -104,7 +104,6 @@ export default function FeedPage() {
   const genders       = [...new Set(allItems.map(i => i.sample.gender).filter(Boolean))] as string[];
   const grades        = [...new Set(allItems.map(i => i.sample.grade).filter(Boolean))] as string[];
   const hasSpanish    = allItems.some(i => i.sample.language === 'spanish');
-  const hasAudio      = allItems.some(i => i.sample.mediaType === 'audio');
 
   function toggle<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters(f => {
@@ -149,7 +148,7 @@ export default function FeedPage() {
       ? { bg: '#f3f0ff', color: '#6d28d9', label: 'Audio' }
       : { bg: '#e8f0fe', color: '#1a56db', label: 'Video' };
 
-  const hasFilters = bundleNames.length > 0 || assessments.length > 1 || hasSpanish || hasAudio || genders.length > 0 || grades.length > 0;
+  const hasFilters = allItems.length > 0;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc' }}>
@@ -199,15 +198,13 @@ export default function FeedPage() {
                   onClick={() => toggle('language', 'spanish')} activeClass="bg-orange-500 text-white" />
               </FilterRow>
             )}
-            {hasAudio && (
-              <FilterRow label="Media">
-                <Chip label="All" active={!filters.media} available onClick={() => toggle('media', null)} />
-                <Chip label="Video" active={filters.media === 'video'} available={availMedia.has('video')}
-                  onClick={() => toggle('media', 'video')} activeClass="bg-[#1a56db] text-white" />
-                <Chip label="Audio" active={filters.media === 'audio'} available={availMedia.has('audio')}
-                  onClick={() => toggle('media', 'audio')} activeClass="bg-violet-700 text-white" />
-              </FilterRow>
-            )}
+            <FilterRow label="Media">
+              <Chip label="All" active={!filters.media} available onClick={() => toggle('media', null)} />
+              <Chip label="Video" active={filters.media === 'video'} available={availMedia.has('video')}
+                onClick={() => toggle('media', 'video')} activeClass="bg-[#1a56db] text-white" />
+              <Chip label="Audio" active={filters.media === 'audio'} available={availMedia.has('audio')}
+                onClick={() => toggle('media', 'audio')} activeClass="bg-violet-700 text-white" />
+            </FilterRow>
             {genders.length > 0 && (
               <FilterRow label="Gender">
                 <Chip label="All" active={!filters.gender} available onClick={() => toggle('gender', null)} />
