@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/AdminShell';
 import ColorPalettePicker from '@/components/admin/ColorPalettePicker';
@@ -83,6 +83,12 @@ export default function EditAssessmentPage() {
   const [editingPreset, setEditingPreset] = useState<string | null>(null);
   const [editingPresetForm, setEditingPresetForm] = useState<TypePreset | null>(null);
   const [presetSaving, setPresetSaving] = useState(false);
+
+  // Excerpt edit state: sampleId → draft text (undefined = not editing)
+  const [excerptEditing, setExcerptEditing] = useState<Record<string, string | undefined>>({});
+  // Drag state
+  const dragSample = useRef<{ qIdx: number; sIdx: number } | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/assessments')
@@ -193,7 +199,10 @@ export default function EditAssessmentPage() {
   function addSample(qIdx: number, language: 'english' | 'spanish') {
     setQuestions(prev => prev.map((q, i) => {
       if (i !== qIdx) return q;
-      return { ...q, question_samples: [...q.question_samples, newSample(language, q.question_samples.length)] };
+      const s = newSample(language, q.question_samples.length);
+      // Auto-open excerpt editing for the new sample
+      setExcerptEditing(ed => ({ ...ed, [s.id]: '' }));
+      return { ...q, question_samples: [...q.question_samples, s] };
     }));
   }
 
@@ -202,6 +211,35 @@ export default function EditAssessmentPage() {
       if (i !== qIdx) return q;
       return { ...q, question_samples: q.question_samples.filter((_, j) => j !== sIdx) };
     }));
+  }
+
+  // Drag handlers
+  function onDragStart(qIdx: number, sIdx: number) {
+    dragSample.current = { qIdx, sIdx };
+  }
+
+  function onDragOver(e: React.DragEvent, key: string) {
+    e.preventDefault();
+    setDragOverKey(key);
+  }
+
+  function onDrop(qIdx: number, sIdx: number) {
+    const from = dragSample.current;
+    if (!from || from.qIdx !== qIdx || from.sIdx === sIdx) { dragSample.current = null; setDragOverKey(null); return; }
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIdx) return q;
+      const samples = [...q.question_samples];
+      const [moved] = samples.splice(from.sIdx, 1);
+      samples.splice(sIdx, 0, moved);
+      return { ...q, question_samples: samples };
+    }));
+    dragSample.current = null;
+    setDragOverKey(null);
+  }
+
+  function onDragEnd() {
+    dragSample.current = null;
+    setDragOverKey(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -244,7 +282,6 @@ export default function EditAssessmentPage() {
         </div>
 
         <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
-          {/* Details */}
           <Section title="Details">
             <div className="grid grid-cols-2 gap-4">
               {isNew && (
@@ -275,7 +312,6 @@ export default function EditAssessmentPage() {
             </F>
           </Section>
 
-          {/* Type & Colors */}
           <Section title="Type & Colors">
             <p className="text-xs text-gray-500 mb-3">Select an existing type to inherit its label and colors, or add a new one.</p>
             <div className="flex flex-wrap gap-2 mb-4">
@@ -290,9 +326,7 @@ export default function EditAssessmentPage() {
                 >
                   <button type="button" onClick={() => applyPreset(preset)} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.accent_color }} />
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: preset.badge_bg, color: preset.badge_text }}>
-                      {preset.type_label}
-                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: preset.badge_bg, color: preset.badge_text }}>{preset.type_label}</span>
                   </button>
                   <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button type="button" onClick={() => startEditPreset(preset)} title="Edit type" className="p-0.5 text-gray-400 hover:text-gray-700 rounded">
@@ -304,20 +338,12 @@ export default function EditAssessmentPage() {
                   </div>
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={selectCustom}
-                className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${
-                  isCustom
-                    ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5] text-[#4a6fa5] font-medium'
-                    : 'border-dashed border-gray-300 text-gray-500 hover:border-gray-400'
-                }`}
-              >
+              <button type="button" onClick={selectCustom}
+                className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${isCustom ? 'border-[#4a6fa5] bg-blue-50 ring-1 ring-[#4a6fa5] text-[#4a6fa5] font-medium' : 'border-dashed border-gray-300 text-gray-500 hover:border-gray-400'}`}>
                 + New type…
               </button>
             </div>
 
-            {/* Inline edit form for existing preset */}
             {editingPreset && editingPresetForm && (
               <div className="pt-3 border-t border-gray-100 space-y-4">
                 <p className="text-xs font-medium text-gray-500">Editing type — changes apply to all assessments of this type</p>
@@ -342,7 +368,6 @@ export default function EditAssessmentPage() {
               </div>
             )}
 
-            {/* New type fields */}
             {isCustom && !editingPreset && (
               <div className="pt-3 border-t border-gray-100 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -360,7 +385,6 @@ export default function EditAssessmentPage() {
               </div>
             )}
 
-            {/* Preview for selected preset */}
             {selectedPreset && selectedPreset !== 'custom' && form.type_label && !editingPreset && (
               <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                 <span className="text-xs text-gray-500">Preview:</span>
@@ -370,7 +394,6 @@ export default function EditAssessmentPage() {
             )}
           </Section>
 
-          {/* Questions */}
           <Section title="Questions">
             <div className="space-y-6">
               {questions.map((q, qi) => (
@@ -391,30 +414,115 @@ export default function EditAssessmentPage() {
 
                   {/* Sample responses */}
                   <div className="pt-3 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 mb-3">
-                      Sample Responses <span className="font-normal text-gray-400">(optional — leave URL blank to skip)</span>
+                    <div className="flex items-start justify-between mb-1">
+                      <p className="text-xs font-semibold text-gray-500">Sample Responses</p>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-3">
+                      Drag to reorder. The <span className="font-medium text-green-700">first sample</span> shows in the assessment player; the rest go to the feed only.
                     </p>
-                    <div className="space-y-2">
-                      {q.question_samples.map((s, si) => (
-                        <div key={s.id} className="flex items-start gap-2">
-                          <span className={`mt-1.5 flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                            s.language === 'english' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                          }`}>
-                            {s.language === 'english' ? 'EN' : 'ES'}
-                          </span>
-                          <div className="flex-1 space-y-1.5">
-                            <input value={s.embed_url} onChange={e => updateSample(qi, si, 'embed_url', e.target.value)} placeholder="VideoAsk share URL…" className={INPUT_SM} />
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <input value={s.gender} onChange={e => updateSample(qi, si, 'gender', e.target.value)} placeholder="Gender (optional)" className={INPUT_SM} />
-                              <input value={s.grade} onChange={e => updateSample(qi, si, 'grade', e.target.value)} placeholder="Grade (optional)" className={INPUT_SM} />
+                    <div className="space-y-1.5">
+                      {q.question_samples.map((s, si) => {
+                        const sampleKey = `${qi}-${si}`;
+                        const isDragOver = dragOverKey === sampleKey;
+                        const isFirst = si === 0;
+                        const isEditingExcerpt = s.id in excerptEditing;
+                        const excerptDraft = excerptEditing[s.id] ?? s.excerpt;
+
+                        return (
+                          <div
+                            key={s.id}
+                            draggable
+                            onDragStart={() => onDragStart(qi, si)}
+                            onDragOver={e => onDragOver(e, sampleKey)}
+                            onDrop={() => onDrop(qi, si)}
+                            onDragEnd={onDragEnd}
+                            className={`rounded-lg border transition-all ${isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'}`}
+                          >
+                            {/* Row header */}
+                            <div className="flex items-center gap-2 px-2.5 py-2">
+                              {/* Drag handle */}
+                              <span className="flex-shrink-0 cursor-grab text-gray-300 hover:text-gray-500 active:cursor-grabbing select-none">
+                                <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                                  <circle cx="3.5" cy="3.5" r="1.5"/><circle cx="8.5" cy="3.5" r="1.5"/>
+                                  <circle cx="3.5" cy="8" r="1.5"/><circle cx="8.5" cy="8" r="1.5"/>
+                                  <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
+                                </svg>
+                              </span>
+
+                              {/* Language badge */}
+                              <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${s.language === 'english' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                                {s.language === 'english' ? 'EN' : 'ES'}
+                              </span>
+
+                              {/* Placement badge */}
+                              {isFirst
+                                ? <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Player + Feed</span>
+                                : <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Feed only</span>
+                              }
+
+                              <div className="flex-1" />
+
+                              {/* Remove */}
+                              <button type="button" onClick={() => removeSample(qi, si)} className="flex-shrink-0 text-gray-300 hover:text-red-400 transition-colors p-0.5" title="Remove">
+                                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 2l10 10M12 2L2 12"/></svg>
+                              </button>
                             </div>
-                            <textarea value={s.excerpt} onChange={e => updateSample(qi, si, 'excerpt', e.target.value)} placeholder="Excerpt — a short quote from the response (optional)" rows={2} className={INPUT_SM + ' resize-none'} />
+
+                            {/* Fields */}
+                            <div className="px-2.5 pb-2.5 space-y-1.5">
+                              <input value={s.embed_url} onChange={e => updateSample(qi, si, 'embed_url', e.target.value)} placeholder="VideoAsk share URL…" className={INPUT_SM} />
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <input value={s.gender} onChange={e => updateSample(qi, si, 'gender', e.target.value)} placeholder="Gender (optional)" className={INPUT_SM} />
+                                <input value={s.grade} onChange={e => updateSample(qi, si, 'grade', e.target.value)} placeholder="Grade (optional)" className={INPUT_SM} />
+                              </div>
+
+                              {/* Excerpt — collapsed or editing */}
+                              {isEditingExcerpt ? (
+                                <div className="space-y-1.5">
+                                  <textarea
+                                    value={excerptDraft}
+                                    onChange={e => setExcerptEditing(ed => ({ ...ed, [s.id]: e.target.value }))}
+                                    placeholder="A short quote from the response…"
+                                    rows={4}
+                                    className={INPUT_SM + ' resize-none'}
+                                    autoFocus
+                                  />
+                                  <div className="flex gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateSample(qi, si, 'excerpt', excerptDraft ?? '');
+                                        setExcerptEditing(ed => { const next = { ...ed }; delete next[s.id]; return next; });
+                                      }}
+                                      className="px-2.5 py-1 bg-[#4a6fa5] text-white text-xs font-medium rounded-lg hover:bg-[#3d5d8f] transition-colors"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setExcerptEditing(ed => { const next = { ...ed }; delete next[s.id]; return next; })}
+                                      className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setExcerptEditing(ed => ({ ...ed, [s.id]: s.excerpt }))}
+                                  className="w-full text-left"
+                                >
+                                  {s.excerpt
+                                    ? <p className="text-xs italic text-gray-500 px-2.5 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors leading-relaxed">&ldquo;{s.excerpt}&rdquo;</p>
+                                    : <p className="text-xs text-gray-300 hover:text-gray-400 px-2.5 py-1 transition-colors">+ Add excerpt…</p>
+                                  }
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <button type="button" onClick={() => removeSample(qi, si)} className="mt-1.5 flex-shrink-0 text-gray-300 hover:text-red-400 transition-colors" title="Remove sample">
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 2l10 10M12 2L2 12"/></svg>
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     <div className="flex gap-2 mt-2.5">
                       <button type="button" onClick={() => addSample(qi, 'english')} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
