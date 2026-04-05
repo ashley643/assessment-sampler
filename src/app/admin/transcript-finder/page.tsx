@@ -217,7 +217,7 @@ export default function TranscriptFinderPage() {
       questionId: focusQuestion ?? needsSamples[0]?.questionId ?? '',
       language: 'english',
       embedUrl: t.shareUrl ?? t.mediaUrl,
-      excerpt: excerpt(t.transcript, 200),
+      excerpt: t.transcript,
       grade: t.grade ?? '',
       gender: t.gender ?? '',
     });
@@ -698,8 +698,8 @@ export default function TranscriptFinderPage() {
                   <textarea
                     value={assign.excerpt}
                     onChange={e => setAssign(a => a ? { ...a, excerpt: e.target.value } : a)}
-                    rows={3}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20 resize-none"
+                    rows={8}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20 resize-y"
                   />
                 </div>
 
