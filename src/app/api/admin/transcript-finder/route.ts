@@ -89,12 +89,24 @@ export async function GET(req: Request) {
       const rawMedia  = String(s.media_type ?? '').toLowerCase();
       const mediaT: 'video' | 'audio' = rawMedia.includes('audio') ? 'audio' : 'video';
 
+      // Try to extract a shareable/embeddable URL from the raw JSONB payload
+      const raw = (s.raw ?? {}) as Record<string, unknown>;
+      const shareUrl = (
+        raw.share_url ??
+        raw.shareUrl ??
+        raw.share_link ??
+        raw.url ??
+        (raw.links as Record<string, unknown> | undefined)?.share ??
+        null
+      ) as string | null;
+
       return {
         id:        String(s.id ?? ''),
         nodeTitle: String(s.node_title ?? ''),
         transcript: text,
         mediaType: mediaT,
         mediaUrl:  String(s.media_url ?? ''),
+        shareUrl:  shareUrl ? String(shareUrl) : null,
         // grade/gender may come from columns if they exist, or from a joined contact
         grade:     (s.grade ?? s.grade_level ?? s.variables_grade ?? null) as string | null,
         gender:    (s.gender ?? s.variables_gender ?? null) as string | null,
@@ -103,7 +115,8 @@ export async function GET(req: Request) {
         wordCount: wc,
         createdAt: String(s.created_at ?? ''),
         // expose all raw keys on first page so we can see the schema
-        _rawKeys: page === 1 ? Object.keys(s) : undefined,
+        _rawKeys:  page === 1 ? Object.keys(s) : undefined,
+        _rawUrlKeys: page === 1 ? Object.keys(raw) : undefined,
       };
     })
     .filter(t => t.wordCount >= minWords);

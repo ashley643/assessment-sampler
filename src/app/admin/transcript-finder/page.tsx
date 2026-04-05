@@ -10,6 +10,7 @@ interface Transcript {
   transcript: string;
   mediaType: 'video' | 'audio';
   mediaUrl: string;
+  shareUrl: string | null;
   grade: string | null;
   gender: string | null;
   school: string | null;
@@ -138,7 +139,7 @@ export default function TranscriptFinderPage() {
       transcript: t,
       questionId: focusQuestion ?? needsSamples[0]?.questionId ?? '',
       language: 'english',
-      embedUrl: t.mediaUrl,
+      embedUrl: t.shareUrl ?? t.mediaUrl,
       excerpt: excerpt(t.transcript, 200),
     });
     setAssignError('');
@@ -348,8 +349,8 @@ export default function TranscriptFinderPage() {
 
                       {/* Actions */}
                       <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-3">
-                        {t.mediaUrl && (
-                          <a href={t.mediaUrl} target="_blank" rel="noopener noreferrer"
+                        {(t.shareUrl || t.mediaUrl) && (
+                          <a href={t.shareUrl ?? t.mediaUrl} target="_blank" rel="noopener noreferrer"
                             className={`${BTN_SM} bg-white border border-gray-200 text-gray-600 hover:border-gray-300`}>
                             Watch / Listen ↗
                           </a>
@@ -408,8 +409,8 @@ export default function TranscriptFinderPage() {
                     <span className="text-xs text-gray-400">{assign.transcript.wordCount} words</span>
                   </div>
                   <p className="text-sm text-gray-700 leading-relaxed">{excerpt(assign.transcript.transcript, 300)}</p>
-                  {assign.transcript.mediaUrl && (
-                    <a href={assign.transcript.mediaUrl} target="_blank" rel="noopener noreferrer"
+                  {(assign.transcript.shareUrl || assign.transcript.mediaUrl) && (
+                    <a href={assign.transcript.shareUrl ?? assign.transcript.mediaUrl} target="_blank" rel="noopener noreferrer"
                       className="text-xs text-[#1a2744] underline mt-2 inline-block">
                       Watch / Listen ↗
                     </a>
