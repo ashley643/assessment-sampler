@@ -22,14 +22,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
-  const { label, starts_at, expires_at, is_active, assessment_ids, bundle_ids } = body;
+  const { label, starts_at, expires_at, is_active, can_view_samples, assessment_ids, bundle_ids } = body;
 
   // Snapshot before
   const { data: before } = await supabaseAdmin.from('access_codes').select('*').eq('id', id).single();
 
   const { error } = await supabaseAdmin
     .from('access_codes')
-    .update({ label, starts_at, expires_at, is_active })
+    .update({ label, starts_at, expires_at, is_active, can_view_samples })
     .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

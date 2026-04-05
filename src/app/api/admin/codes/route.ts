@@ -29,11 +29,11 @@ export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { code, label, starts_at, expires_at, assessment_ids, bundle_ids, is_active } = body;
+  const { code, label, starts_at, expires_at, assessment_ids, bundle_ids, is_active, can_view_samples } = body;
 
   const { data: newCode, error } = await supabaseAdmin
     .from('access_codes')
-    .insert({ code: code.trim().toUpperCase(), label, starts_at, expires_at, is_active: is_active ?? true })
+    .insert({ code: code.trim().toUpperCase(), label, starts_at, expires_at, is_active: is_active ?? true, can_view_samples: can_view_samples ?? true })
     .select()
     .single();
 

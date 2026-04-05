@@ -110,6 +110,10 @@ export default function FeedPage() {
     if (notFound) router.replace('/assessment');
   }, [notFound, router]);
 
+  useEffect(() => {
+    if (codeData && !codeData.canViewSamples) router.replace(`/assessment/${code}`);
+  }, [codeData, code, router]);
+
   useEffect(() => { setPage(1); }, [filters]);
 
   // Load bookmarks from localStorage on mount

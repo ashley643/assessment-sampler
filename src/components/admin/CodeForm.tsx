@@ -32,6 +32,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
   const [startsAt, setStartsAt] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [canViewSamples, setCanViewSamples] = useState<boolean | null>(null); // null = not yet chosen
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedBundleIds, setSelectedBundleIds] = useState<string[]>([]);
   const [allAssessments, setAllAssessments] = useState<Assessment[]>([]);
@@ -59,6 +60,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
         setStartsAt(data.starts_at ? data.starts_at.slice(0, 10) : '');
         setExpiresAt(data.expires_at ? data.expires_at.slice(0, 10) : '');
         setIsActive(data.is_active ?? true);
+        setCanViewSamples(data.can_view_samples ?? true);
         const sorted = (data.code_assignments ?? []).sort(
           (a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order
         );
@@ -101,6 +103,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (canViewSamples === null) { setError('Please choose whether this code can view sample responses.'); return; }
     setSaving(true);
     setError('');
 
@@ -110,6 +113,7 @@ export default function CodeForm({ codeId }: CodeFormProps) {
       starts_at: startsAt || null,
       expires_at: expiresAt || null,
       is_active: isActive,
+      can_view_samples: canViewSamples,
       bundle_ids: selectedBundleIds,
       assessment_ids: selectedIds.filter(id => !bundleCoverage.has(id)),
     };
@@ -182,6 +186,31 @@ export default function CodeForm({ codeId }: CodeFormProps) {
           />
           <span className="text-sm text-gray-700">Active</span>
         </label>
+      </Field>
+
+      <Field label="Can view sample responses?">
+        <div className="flex gap-2">
+          {([true, false] as const).map(val => (
+            <button
+              key={String(val)}
+              type="button"
+              onClick={() => setCanViewSamples(val)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                canViewSamples === val
+                  ? val ? 'bg-green-600 text-white border-green-600' : 'bg-gray-700 text-white border-gray-700'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              {val ? 'Yes' : 'No'}
+            </button>
+          ))}
+        </div>
+        {canViewSamples === null && (
+          <p className="text-xs text-amber-600 mt-1">Required — must be selected before saving.</p>
+        )}
+        {canViewSamples === false && (
+          <p className="text-xs text-gray-400 mt-1">Hides sample responses button, feed access, and in-player samples.</p>
+        )}
       </Field>
 
       {allBundles.length > 0 && (

@@ -36,6 +36,7 @@ export interface AccessCode {
   code: string;
   expires: string;
   label: string;
+  canViewSamples: boolean;
   assessments: Assessment[];
 }
 

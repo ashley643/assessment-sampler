@@ -8,7 +8,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   const { data, error } = await supabaseAdmin
     .from('access_codes')
     .select(`
-      id, code, label, starts_at, expires_at, is_active,
+      id, code, label, starts_at, expires_at, is_active, can_view_samples,
       code_assignments (
         sort_order,
         assessment_id,
@@ -138,6 +138,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
 
   const filteredList = assessmentList.filter(Boolean) as NonNullable<typeof assessmentList[number]>[];
 
+  // Only load samples if this code has permission to view them
+  const canViewSamples = data.can_view_samples !== false; // default true for legacy rows
+
   // Collect all question IDs across all assessments (including bundle children)
   const allQuestionIds: string[] = [];
   function collectQuestionIds(assessments: typeof filteredList) {
@@ -150,9 +153,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   }
   collectQuestionIds(filteredList);
 
-  // Fetch question_samples in bulk and build a map
+  // Fetch question_samples in bulk and build a map (only if permitted)
   const sampleMap = new Map<string, QuestionSample[]>();
-  if (allQuestionIds.length > 0) {
+  if (canViewSamples && allQuestionIds.length > 0) {
     const { data: samplesData } = await supabaseAdmin
       .from('question_samples')
       .select('id, question_id, embed_url, language, sort_order, media_type, gender, grade, excerpt')
@@ -200,6 +203,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
     code: data.code,
     expires: data.expires_at ?? '',
     label: data.label,
+    canViewSamples,
     assessments: withSamples as AccessCode['assessments'],
   };
 
