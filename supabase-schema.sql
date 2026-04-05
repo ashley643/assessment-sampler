@@ -13,6 +13,7 @@ create table assessments (
   badge_bg    text not null default '#E6F1FB',
   badge_text  text not null default '#0C447C',
   description text,
+  question    text,
   sort_order  int  default 0,
   created_at  timestamptz default now()
 );

@@ -27,6 +27,7 @@ export interface Assessment {
   badgeBg: string;
   badgeText: string;
   description: string;
+  question?: string;
   playerLabel?: string;
   questions: Question[];
   childAssessments?: Assessment[];

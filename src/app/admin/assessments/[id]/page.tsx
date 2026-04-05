@@ -57,6 +57,7 @@ interface Assessment {
   badge_bg: string;
   badge_text: string;
   description: string;
+  question: string;
   player_label: string;
   sort_order: number;
   questions: Question[];
@@ -97,7 +98,7 @@ export default function EditAssessmentPage() {
   const [form, setForm] = useState<Omit<Assessment, 'questions'>>({
     id: '', title: '', type: '', type_label: '',
     accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C',
-    description: '', player_label: '', sort_order: 0,
+    description: '', question: '', player_label: '', sort_order: 0,
   });
   const [questions, setQuestions] = useState<Question[]>([newQuestion(1)]);
   const [saving, setSaving] = useState(false);
@@ -317,6 +318,9 @@ export default function EditAssessmentPage() {
                 <input value={form.title} onChange={e => updateForm('title', e.target.value)} className={INPUT} required />
               </F>
             </div>
+            <F label="Question" hint="The central question this assessment is exploring">
+              <input value={form.question ?? ''} onChange={e => updateForm('question', e.target.value)} className={INPUT} placeholder="e.g. How do students see themselves as learners?" />
+            </F>
             <F label="Description" hint="Shown on the assessment card">
               <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} rows={3} className={INPUT} />
             </F>
