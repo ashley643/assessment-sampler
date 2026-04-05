@@ -71,20 +71,18 @@ const SPANISH_BY_TOPIC: Record<string, string[]> = {
 };
 
 function buildSearchTerms(title: string, questionText: string): string {
+  // English keywords: extract from BOTH the competency title and the full question wording
   const combined = `${title} ${questionText}`;
   const englishWords = combined.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
-  const unique = [...new Set(englishWords)].slice(0, 6);
+  const uniqueEn = [...new Set(englishWords)].slice(0, 10);
 
-  // Look up Spanish keywords by competency name (the title)
+  // Spanish keywords: look up by competency title (authentic response vocabulary per topic)
   const titleKey = title.toLowerCase().trim();
-  const spanishSet = SPANISH_BY_TOPIC[titleKey] ?? [];
-  // Also try partial match for compound names
-  const fallbackSpanish = spanishSet.length === 0
-    ? Object.entries(SPANISH_BY_TOPIC).find(([k]) => titleKey.includes(k) || k.includes(titleKey))?.[1] ?? []
-    : spanishSet;
+  const spanishSet = SPANISH_BY_TOPIC[titleKey]
+    ?? Object.entries(SPANISH_BY_TOPIC).find(([k]) => titleKey.includes(k) || k.includes(titleKey))?.[1]
+    ?? [];
 
-  // Take top 6 Spanish keywords
-  return [...unique, ...fallbackSpanish.slice(0, 6)].join(' ');
+  return [...uniqueEn, ...spanishSet.slice(0, 8)].join(' ');
 }
 
 interface AssignState {
