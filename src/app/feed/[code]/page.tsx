@@ -282,9 +282,21 @@ export default function FeedPage() {
           <span className="text-white/60 text-sm">{codeData.label}</span>
           <span className="bg-white/10 text-white/70 text-xs px-3 py-1 rounded-full font-mono">{code}</span>
         </div>
-        <a href={`/assessment/${code}`} className="text-white/50 hover:text-white text-sm transition-colors">
-          ← Back to assessments
-        </a>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setBookmarksOnly(b => !b)}
+            title={bookmarksOnly ? 'Show all responses' : 'Show bookmarked only'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${bookmarksOnly ? 'bg-amber-400 text-white' : 'bg-white/10 text-white/60 hover:text-white hover:bg-white/20'}`}
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill={bookmarksOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
+              <path d="M2 2h10v11l-5-3-5 3V2z"/>
+            </svg>
+            {bookmarks.size > 0 ? `Saved (${bookmarks.size})` : 'Saved'}
+          </button>
+          <a href={`/assessment/${code}`} className="text-white/50 hover:text-white text-sm transition-colors">
+            ← Back to assessments
+          </a>
+        </div>
       </nav>
 
       <div className="flex-1 max-w-4xl mx-auto w-full px-6 py-10">
@@ -309,15 +321,6 @@ export default function FeedPage() {
                   {count > 0 && (
                     <span className="w-5 h-5 rounded-full bg-[#1a2744] text-white text-[10px] font-bold flex items-center justify-center">{count}</span>
                   )}
-                </button>
-                <button
-                  onClick={() => setBookmarksOnly(b => !b)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border shadow-sm transition-all ${bookmarksOnly ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'}`}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill={bookmarksOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
-                    <path d="M2 2h10v11l-5-3-5 3V2z"/>
-                  </svg>
-                  {bookmarks.size > 0 ? `Saved (${bookmarks.size})` : 'Saved'}
                 </button>
                 {/* Active filter pills */}
                 {filters.bundle && <ActivePill label={filters.bundle} onRemove={() => toggle('bundle', filters.bundle)} />}
@@ -542,30 +545,11 @@ export default function FeedPage() {
                 </div>
               )}
 
-              {/* ── SAVED row ── */}
-              <div className="px-5 py-4">
-                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-3">Saved</p>
-                <FilterRow label="Bookmarks">
-                  <button
-                    onClick={() => setBookmarksOnly(b => !b)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${bookmarksOnly ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                  >
-                    <svg width="11" height="11" viewBox="0 0 14 14" fill={bookmarksOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
-                      <path d="M2 2h10v11l-5-3-5 3V2z"/>
-                    </svg>
-                    {bookmarksOnly ? `Showing ${bookmarks.size} saved` : bookmarks.size > 0 ? `Show saved (${bookmarks.size})` : 'None saved yet'}
-                  </button>
-                </FilterRow>
-              </div>
-
               {/* ── Footer ── */}
-              {(count > 0 || bookmarksOnly) && (
+              {count > 0 && (
                 <div className="px-5 py-3 flex items-center justify-between">
                   <p className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
-                  <div className="flex items-center gap-3">
-                    {bookmarksOnly && <button onClick={() => setBookmarksOnly(false)} className="text-xs text-amber-500 hover:text-amber-700 underline">Show all</button>}
-                    {count > 0 && <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-gray-400 hover:text-gray-600 underline">Clear filters</button>}
-                  </div>
+                  <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-gray-400 hover:text-gray-600 underline">Clear all filters</button>
                 </div>
               )}
             </div>
