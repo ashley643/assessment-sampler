@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Impacter Pathway",
   description: "Student Voice. Powered by AI.",
+  icons: { icon: '/favicon.ico' },
 };
 
 export default function RootLayout({

@@ -114,6 +114,11 @@ export default function FeedPage() {
     if (codeData && !codeData.canViewSamples) router.replace(`/assessment/${code}`);
   }, [codeData, code, router]);
 
+  useEffect(() => {
+    if (codeData) document.title = `Sample Responses — Impacter Pathway`;
+    return () => { document.title = 'Impacter Pathway'; };
+  }, [codeData]);
+
   useEffect(() => { setPage(1); }, [filters]);
 
   // Load bookmarks from localStorage on mount

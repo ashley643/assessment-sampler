@@ -3,7 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const PAGE_TITLES: Record<string, string> = {
+  '/admin/dashboard':        'Activity Log — Admin',
+  '/admin/codes':            'Access Codes — Admin',
+  '/admin/assessments':      'Assessments — Admin',
+  '/admin/bundles':          'Bundles — Admin',
+  '/admin/audit':            'Audit Log — Admin',
+  '/admin/response-finder':  'Response Finder — Admin',
+};
 
 const NAV = [
   { href: '/admin/codes', label: 'Access Codes' },
@@ -21,6 +30,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const match = Object.entries(PAGE_TITLES).find(([k]) => pathname.startsWith(k));
+    document.title = match ? match[1] : 'Admin — Impacter Pathway';
+  }, [pathname]);
 
   return (
     <div className="min-h-screen flex bg-gray-50">

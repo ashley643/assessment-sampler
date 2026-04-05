@@ -124,6 +124,12 @@ export default function AssessmentPlayerPage() {
 
   useEffect(() => { if (notFound) router.replace('/assessment'); }, [notFound, router]);
 
+  useEffect(() => {
+    const a = codeData?.assessments?.find(a => a.id === assessmentId);
+    if (a) document.title = `${a.title} — Impacter Pathway`;
+    return () => { document.title = 'Impacter Pathway'; };
+  }, [codeData, assessmentId]);
+
   // Scroll typing panel into view on mobile when it opens
   useEffect(() => {
     if (showTyping && typingPanelRef.current) {

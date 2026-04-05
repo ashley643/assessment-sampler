@@ -38,6 +38,11 @@ export default function AssessmentSelectorPage() {
     if (notFound) router.replace('/assessment');
   }, [notFound, router]);
 
+  useEffect(() => {
+    if (codeData) document.title = `${codeData.label} — Impacter Pathway`;
+    return () => { document.title = 'Impacter Pathway'; };
+  }, [codeData]);
+
   if (!codeData) return null;
 
   const isComplete = (a: Assessment) =>
