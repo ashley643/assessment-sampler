@@ -39,34 +39,52 @@ interface AssignedUrl {
 
 const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','about','as','is','are','was','were','be','been','have','has','had','do','does','did','will','would','could','should','may','might','it','its','this','that','these','those','i','you','he','she','we','they','me','him','her','us','them','my','your','his','our','their','what','how','when','where','who','which','can','your','tell','me']);
 
-// Common SEL/education term translations EN → ES
-const EN_TO_ES: Record<string, string> = {
-  curiosity: 'curiosidad', curious: 'curioso', wonder: 'asombro',
-  notice: 'notar', noticed: 'notaste', question: 'pregunta',
-  learn: 'aprender', learning: 'aprendizaje', knowledge: 'conocimiento',
-  growth: 'crecimiento', grow: 'crecer', improve: 'mejorar',
-  mindset: 'mentalidad', grit: 'perseverancia', persist: 'persistir',
-  purpose: 'propósito', meaning: 'significado', passion: 'pasión',
-  gratitude: 'gratitud', grateful: 'agradecido', thank: 'gracias',
-  compassion: 'compasión', empathy: 'empatía', kindness: 'amabilidad',
-  perspective: 'perspectiva', feedback: 'retroalimentación',
-  resilience: 'resiliencia', resilient: 'resiliente', bounce: 'recuperar',
-  belonging: 'pertenencia', relationships: 'relaciones', community: 'comunidad',
-  support: 'apoyo', help: 'ayuda', challenge: 'desafío',
-  failure: 'fracaso', mistake: 'error', success: 'éxito',
-  confidence: 'confianza', proud: 'orgulloso', effort: 'esfuerzo',
-  goal: 'meta', reflect: 'reflexionar', change: 'cambiar',
-  feeling: 'sentimiento', emotion: 'emoción', happy: 'feliz', sad: 'triste',
-  self: 'mismo', control: 'control', calm: 'calma',
+// Per-competency Spanish keyword sets — words likely to appear in authentic Spanish responses
+const SPANISH_BY_TOPIC: Record<string, string[]> = {
+  curiosity:    ['curiosidad','curioso','curiosa','preguntas','pregunto','quería saber','descubrí','explorar','averiguar','asombro','interesante','fascinante','me pregunté','investigar','noté','aprender'],
+  curious:      ['curiosidad','curioso','curiosa','preguntas','pregunto','quería saber','descubrí','explorar','averiguar','asombro','interesante','fascinante','me pregunté','investigar','noté','aprender'],
+  purpose:      ['propósito','amo','amor','apasiona','pasión','significa','significado','siento','sentido','cuando hago','me gusta','gusta','disfruto','disfrutar','natural','correcto','importante para mí','vida','feliz','perfecto'],
+  grit:         ['perseverancia','persistir','seguí','continué','intenté','esfuerzo','difícil','dificultad','no me rendí','no paré','practicar','mejorar','superé','fracasé','intentar otra vez','aguanté','resiliente','seguir'],
+  gratitude:    ['gratitud','agradecido','agradecida','gracias','agradecer','aprecio','apreciar','valoro','valorar','afortunado','suerte','bendecido','reconocer','inspiró','inspirar','importante para mí'],
+  compassion:   ['compasión','ayudé','sentí','sentir','necesitaba','apoyo','apoyé','cuidar','empatía','entendí','pena','tristeza','me preocupé','solidaridad','ayudar','otro','otros'],
+  'self-control': ['autocontrol','calmarme','calma','control','detuve','pensar antes','respiré','respirar','paciencia','esperé','impulsivo','reaccioné','tranquilo','tranquilidad','calmado','me detuve','contuve'],
+  'self control': ['autocontrol','calmarme','calma','control','detuve','pensar antes','respiré','respirar','paciencia','esperé','impulsivo','reaccioné','tranquilo','tranquilidad','calmado','me detuve','contuve'],
+  'perspective-taking': ['perspectiva','punto de vista','entender','comprender','otro lado','empatía','imaginar','me puse en','sentía','pensaba','cambió mi mente','ver diferente','diferente manera'],
+  'perspective taking': ['perspectiva','punto de vista','entender','comprender','otro lado','empatía','imaginar','me puse en','sentía','pensaba','cambió mi mente','ver diferente','diferente manera'],
+  'growth mindset': ['mentalidad','crecer','mejoré','aprender de','error','errores','cambié','crecimiento','posible','puedo','logré','esfuerzo','practicando','transformar','creer en mí'],
+  growth:       ['crecimiento','crecer','mejoré','aprender de','error','errores','cambié','posible','puedo','logré','esfuerzo','practicando','transformar'],
+  'reflective growth': ['reflexioné','aprendí','crecí','cambié','diferente','mejor','antes y ahora','comprendo','lección','experiencia','mejoré','me di cuenta'],
+  resilience:   ['resiliencia','recuperé','superé','seguir adelante','fuerza','fuerte','volví','manejar','apoyo','no me rendí','seguí intentando'],
+  'relational awareness': ['noté','sentía','emoción','emociones','expresaba','comunicar','entender','comprender','ayudé','apoyar','amigo','compañero','cuenta','darse cuenta'],
+  'emotional resilience': ['resiliencia','recuperé','superé','seguir adelante','fuerza','fuerte','volví','manejar','apoyo','emoción','sentí','manejé'],
+  'effective help-seeking': ['pedir ayuda','pedí ayuda','busqué','pregunté','recurso','buscar información','investigué','maestro','amigo','familia','aprendí','apoyo'],
+  'conflict resolution': ['conflicto','resolver','resolví','hablar','hablé','calmar','situación','problema','solución','acuerdo','arreglar','arreglé','perdonar','reconciliar'],
+  belonging:    ['pertenecer','pertenencia','incluido','comunidad','grupo','parte de','amigos','bienvenido','aceptado','sentí parte','conexión','conectar'],
+  'self-esteem': ['seguro','confianza','orgulloso','valoro','creo en mí','capaz','puedo','fuerza','bueno en','gusto de mí'],
+  empathy:      ['empatía','sentí lo que','comprendí','imaginar cómo','me puse en su lugar','entendí','compartir','apoyé','escuché','sentía'],
+  resilient:    ['resiliente','recuperé','seguí adelante','fuerza','superar','no me rendí','volví','continué'],
+  kind:         ['amable','amabilidad','bondad','ayudé','apoyé','cuidé','compasión','gentil','considerado'],
+  confident:    ['seguro','confianza','creo en mí','capaz','fuerza','orgulloso','puedo','logré'],
+  connected:    ['conexión','conectar','relacioné','comunidad','pertenencia','amigos','parte de','junto','juntos'],
+  capable:      ['capaz','puedo','logré','habilidad','fuerza','mejoré','aprendí','conseguí'],
+  knowledgeable: ['conocimiento','aprendí','saber','entender','comprender','estudié','investigué','descubrí'],
 };
 
 function buildSearchTerms(title: string, questionText: string): string {
   const combined = `${title} ${questionText}`;
-  const words = combined.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
-  const unique = [...new Set(words)].slice(0, 6);
-  // Add Spanish equivalents for any word we have a translation for
-  const spanish = unique.flatMap(w => EN_TO_ES[w] ? [EN_TO_ES[w]] : []);
-  return [...unique, ...spanish].join(' ');
+  const englishWords = combined.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !STOP_WORDS.has(w));
+  const unique = [...new Set(englishWords)].slice(0, 6);
+
+  // Look up Spanish keywords by competency name (the title)
+  const titleKey = title.toLowerCase().trim();
+  const spanishSet = SPANISH_BY_TOPIC[titleKey] ?? [];
+  // Also try partial match for compound names
+  const fallbackSpanish = spanishSet.length === 0
+    ? Object.entries(SPANISH_BY_TOPIC).find(([k]) => titleKey.includes(k) || k.includes(titleKey))?.[1] ?? []
+    : spanishSet;
+
+  // Take top 6 Spanish keywords
+  return [...unique, ...fallbackSpanish.slice(0, 6)].join(' ');
 }
 
 interface AssignState {
