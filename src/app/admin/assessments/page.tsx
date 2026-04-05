@@ -73,6 +73,8 @@ export default function AssessmentsPage() {
         questions: full.questions.map((q: { id: string; title: string; sort_order: number; embed_url: string; spanish_embed_url: string | null; question_samples?: { embed_url: string; language: string; sort_order: number; gender?: string; grade?: string; excerpt?: string }[] }) => ({
           ...q,
           id: `${q.id}-copy-${Date.now()}`,
+          embed_url: '',
+          spanish_embed_url: '',
           question_samples: [],
         })),
       }),
