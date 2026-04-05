@@ -282,21 +282,9 @@ export default function FeedPage() {
           <span className="text-white/60 text-sm">{codeData.label}</span>
           <span className="bg-white/10 text-white/70 text-xs px-3 py-1 rounded-full font-mono">{code}</span>
         </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setBookmarksOnly(b => !b)}
-            title={bookmarksOnly ? 'Show all responses' : 'Show bookmarked only'}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${bookmarksOnly ? 'bg-amber-400 text-white' : 'bg-white/10 text-white/60 hover:text-white hover:bg-white/20'}`}
-          >
-            <svg width="12" height="12" viewBox="0 0 14 14" fill={bookmarksOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
-              <path d="M2 2h10v11l-5-3-5 3V2z"/>
-            </svg>
-            {bookmarks.size > 0 ? `Saved (${bookmarks.size})` : 'Saved'}
-          </button>
-          <a href={`/assessment/${code}`} className="text-white/50 hover:text-white text-sm transition-colors">
-            ← Back to assessments
-          </a>
-        </div>
+        <a href={`/assessment/${code}`} className="text-white/50 hover:text-white text-sm transition-colors">
+          ← Back to assessments
+        </a>
       </nav>
 
       <div className="flex-1 max-w-4xl mx-auto w-full px-6 py-10">
@@ -439,7 +427,17 @@ export default function FeedPage() {
             </div>
 
             {/* ── Desktop filters ─────────────────────────────────── */}
-            <div className="hidden md:block bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 mb-8">
+            <div className="hidden md:block bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 mb-8 relative">
+              <button
+                onClick={() => setBookmarksOnly(b => !b)}
+                title={bookmarksOnly ? 'Show all' : 'Show saved only'}
+                className={`absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${bookmarksOnly ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-600'}`}
+              >
+                <svg width="11" height="11" viewBox="0 0 14 14" fill={bookmarksOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
+                  <path d="M2 2h10v11l-5-3-5 3V2z"/>
+                </svg>
+                {bookmarks.size > 0 ? `Saved (${bookmarks.size})` : 'Saved'}
+              </button>
 
               {/* ── WHAT row ── */}
               <div className="px-5 py-4">
