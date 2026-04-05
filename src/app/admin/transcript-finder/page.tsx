@@ -70,6 +70,10 @@ export default function TranscriptFinderPage() {
   const [focusQuestion, setFocusQuestion] = useState<string | null>(null);
   const [expandedAssessments, setExpandedAssessments] = useState<Set<string>>(new Set());
 
+  // Keyword chips (only when a question is focused and no manual search override)
+  const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set());
+  const [allKeywords, setAllKeywords] = useState<string[]>([]);
+
   // Assign modal
   const [assign, setAssign]         = useState<AssignState | null>(null);
   const [assigning, setAssigning]   = useState(false);
@@ -100,13 +104,22 @@ export default function TranscriptFinderPage() {
     if (pg === 1) setLoading(true); else setLoadingMore(true);
     setFetchError('');
     try {
-      const focused = needsSamples.find(n => n.questionId === focusQuestion);
-      const autoSearch = focused ? buildSearchTerms(focused.questionTitle, focused.questionText) : '';
+      // If we have a focused question and no manual search, use active keyword chips
+      let effectiveSearch = search;
+      if (!search && focusQuestion) {
+        effectiveSearch = [...activeKeywords].join(' ');
+        if (!effectiveSearch) {
+          // All keywords unchecked — nothing to search
+          setLoading(false); setLoadingMore(false);
+          setTranscripts([]); setHasMore(false);
+          return;
+        }
+      }
       const params = new URLSearchParams({
         page: String(pg),
         minWords: String(minWords),
         ...(mediaType ? { mediaType } : {}),
-        search: search || autoSearch,
+        search: effectiveSearch,
       });
       const res = await fetch(`/api/admin/transcript-finder?${params}`);
       const text = await res.text();
@@ -120,7 +133,22 @@ export default function TranscriptFinderPage() {
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [focusQuestion, mediaType, minWords, search, needsSamples]);
+  }, [focusQuestion, mediaType, minWords, search, needsSamples, activeKeywords]);
+
+  // When focused question changes, regenerate keyword chips
+  useEffect(() => {
+    if (focusQuestion && !search) {
+      const focused = needsSamples.find(n => n.questionId === focusQuestion);
+      if (focused) {
+        const kws = buildSearchTerms(focused.questionTitle, focused.questionText).split(' ').filter(Boolean);
+        setAllKeywords(kws);
+        setActiveKeywords(new Set(kws));
+      }
+    } else {
+      setAllKeywords([]);
+      setActiveKeywords(new Set());
+    }
+  }, [focusQuestion, needsSamples, search]);
 
   useEffect(() => {
     setPage(1);
@@ -269,7 +297,7 @@ export default function TranscriptFinderPage() {
         {/* ── Main: transcript cards ── */}
         <main className="flex-1 overflow-y-auto px-6 py-6">
           {focusQuestion && questionById[focusQuestion] && (
-            <div className="mb-5 p-3 bg-[#1a2744]/5 border border-[#1a2744]/20 rounded-xl space-y-1">
+            <div className="mb-5 p-3 bg-[#1a2744]/5 border border-[#1a2744]/20 rounded-xl space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-[#1a2744] uppercase tracking-wide">Searching for: </span>
                 <span className="text-gray-800 font-medium text-sm">{questionById[focusQuestion].questionTitle}</span>
@@ -280,10 +308,30 @@ export default function TranscriptFinderPage() {
               {questionById[focusQuestion].questionText && (
                 <p className="text-xs text-gray-500 italic">{questionById[focusQuestion].questionText}</p>
               )}
-              {!search && (
-                <p className="text-[11px] text-gray-400">
-                  Keywords: <span className="font-mono">{buildSearchTerms(questionById[focusQuestion].questionTitle, questionById[focusQuestion].questionText)}</span>
-                </p>
+              {!search && allKeywords.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[11px] text-gray-400 mr-0.5">Keywords:</span>
+                  {allKeywords.map(kw => {
+                    const on = activeKeywords.has(kw);
+                    return (
+                      <button
+                        key={kw}
+                        onClick={() => setActiveKeywords(prev => {
+                          const next = new Set(prev);
+                          on ? next.delete(kw) : next.add(kw);
+                          return next;
+                        })}
+                        className={`text-[11px] px-2 py-0.5 rounded-full border font-mono transition-colors ${
+                          on
+                            ? 'bg-[#1a2744] text-white border-transparent'
+                            : 'bg-white text-gray-400 border-gray-200 line-through'
+                        }`}
+                      >
+                        {kw}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
           )}

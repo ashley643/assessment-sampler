@@ -87,7 +87,10 @@ export async function GET(req: Request) {
       const text      = String(s.transcript ?? '');
       const wc        = text.trim().split(/\s+/).filter(Boolean).length;
       const rawMedia  = String(s.media_type ?? '').toLowerCase();
-      const mediaT: 'video' | 'audio' = rawMedia.includes('audio') ? 'audio' : 'video';
+      const urlExt    = String(s.media_url ?? '').toLowerCase().split('?')[0].split('.').pop() ?? '';
+      const mediaT: 'video' | 'audio' =
+        rawMedia.includes('audio') || urlExt === 'mp3' || urlExt === 'ogg' || urlExt === 'm4a'
+          ? 'audio' : 'video';
 
       // Try to extract a shareable/embeddable URL from the raw JSONB payload
       const raw = (s.raw ?? {}) as Record<string, unknown>;
