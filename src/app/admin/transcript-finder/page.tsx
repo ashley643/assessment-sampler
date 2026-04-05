@@ -156,11 +156,11 @@ export default function TranscriptFinderPage() {
   const [focusQuestion, setFocusQuestion] = useState<string | null>(null);
   const [expandedAssessments, setExpandedAssessments] = useState<Set<string>>(new Set());
 
-  // Keyword chips
+  // Keyword chips — state: absent=off, 'or'=any hit counts, 'must'=required AND
   const [enKeywords,     setEnKeywords]     = useState<string[]>([]);
   const [esKeywords,     setEsKeywords]     = useState<string[]>([]);
   const [customKeywords, setCustomKeywords] = useState<string[]>([]);
-  const [activeKeywords, setActiveKeywords] = useState<Set<string>>(new Set());
+  const [keywordStates,  setKeywordStates]  = useState<Map<string, 'or' | 'must'>>(new Map());
   const [keywordLang,    setKeywordLang]    = useState<'all' | 'en' | 'es'>('all');
 
   // Results metadata
@@ -211,16 +211,20 @@ export default function TranscriptFinderPage() {
     if (pg === 1) setLoading(true); else setLoadingMore(true);
     setFetchError('');
     try {
-      // If we have a focused question and no manual search, use active keyword chips filtered by lang
+      // If we have a focused question and no manual search, use keyword chips filtered by lang
       let effectiveSearch = search;
+      let mustSearch = '';
       if (!search && focusQuestion) {
-        const langFiltered = [...activeKeywords].filter(kw => {
+        const inLang = (kw: string) => {
           if (keywordLang === 'en') return enKeywords.includes(kw) || customKeywords.includes(kw);
           if (keywordLang === 'es') return esKeywords.includes(kw) || customKeywords.includes(kw);
           return true;
-        });
-        effectiveSearch = langFiltered.join(' ');
-        if (!effectiveSearch) {
+        };
+        const orKws   = [...keywordStates.entries()].filter(([kw, s]) => s === 'or'   && inLang(kw)).map(([kw]) => kw);
+        const mustKws = [...keywordStates.entries()].filter(([kw, s]) => s === 'must' && inLang(kw)).map(([kw]) => kw);
+        effectiveSearch = orKws.join(' ');
+        mustSearch      = mustKws.join(' ');
+        if (!effectiveSearch && !mustSearch) {
           setLoading(false); setLoadingMore(false);
           setTranscripts([]); setHasMore(false);
           setTotalCount(0);
@@ -232,6 +236,7 @@ export default function TranscriptFinderPage() {
         minWords: String(minWords),
         ...(mediaType ? { mediaType } : {}),
         search: effectiveSearch,
+        ...(mustSearch ? { must: mustSearch } : {}),
       });
       const res = await fetch(`/api/admin/transcript-finder?${params}`);
       const text = await res.text();
@@ -249,7 +254,7 @@ export default function TranscriptFinderPage() {
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [focusQuestion, mediaType, minWords, search, needsSamples, activeKeywords, keywordLang, enKeywords, esKeywords, customKeywords]);
+  }, [focusQuestion, mediaType, minWords, search, needsSamples, keywordStates, keywordLang, enKeywords, esKeywords, customKeywords]);
 
   // Reset filters when question changes
   useEffect(() => {
@@ -268,11 +273,13 @@ export default function TranscriptFinderPage() {
         setEnKeywords(en);
         setEsKeywords(es);
         setCustomKeywords([]);
-        setActiveKeywords(new Set([...en, ...es]));
+        const initMap = new Map<string, 'or' | 'must'>();
+        [...en, ...es].forEach(kw => initMap.set(kw, 'or'));
+        setKeywordStates(initMap);
       }
     } else {
       setEnKeywords([]); setEsKeywords([]); setCustomKeywords([]);
-      setActiveKeywords(new Set());
+      setKeywordStates(new Map());
     }
   }, [focusQuestion, needsSamples, search]);
 
@@ -446,8 +453,8 @@ export default function TranscriptFinderPage() {
               )}
               {!search && (enKeywords.length > 0 || esKeywords.length > 0) && (
                 <div className="space-y-1.5 pt-0.5">
-                  {/* Language toggle */}
-                  <div className="flex items-center gap-1.5">
+                  {/* Language toggle + chip legend */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] text-gray-400">Search:</span>
                     {(['all', 'en', 'es'] as const).map(lang => (
                       <button key={lang} onClick={() => setKeywordLang(lang)}
@@ -455,6 +462,8 @@ export default function TranscriptFinderPage() {
                         {lang === 'all' ? 'EN + ES' : lang === 'en' ? 'EN only' : 'ES only'}
                       </button>
                     ))}
+                    <span className="text-[10px] text-gray-400 ml-2">· click chip: off → OR →</span>
+                    <span className="text-[10px] font-bold text-emerald-600">★ MUST</span>
                   </div>
                   {/* Chip rows */}
                   {[{ label: 'EN', words: enKeywords, dimmed: keywordLang === 'es' },
@@ -465,12 +474,23 @@ export default function TranscriptFinderPage() {
                       <div key={label} className={`flex items-center gap-1.5 flex-wrap transition-opacity ${dimmed ? 'opacity-30' : ''}`}>
                         <span className="text-[10px] font-bold text-gray-400 w-4">{label}</span>
                         {words.map(kw => {
-                          const on = activeKeywords.has(kw);
+                          const st = keywordStates.get(kw); // 'or' | 'must' | undefined=off
                           return (
                             <button key={kw}
-                              onClick={() => setActiveKeywords(prev => { const n = new Set(prev); on ? n.delete(kw) : n.add(kw); return n; })}
-                              className={`text-[11px] px-2 py-0.5 rounded-full border font-mono transition-colors ${on ? 'bg-[#1a2744] text-white border-transparent' : 'bg-white text-gray-400 border-gray-200 line-through'}`}>
-                              {kw}
+                              title={st === 'or' ? 'Click to make MUST-HAVE' : st === 'must' ? 'Click to turn off' : 'Click to add as OR'}
+                              onClick={() => setKeywordStates(prev => {
+                                const n = new Map(prev);
+                                if (!st) n.set(kw, 'or');
+                                else if (st === 'or') n.set(kw, 'must');
+                                else n.delete(kw);
+                                return n;
+                              })}
+                              className={`text-[11px] px-2 py-0.5 rounded-full border font-mono transition-colors ${
+                                st === 'must' ? 'bg-emerald-500 text-white border-transparent font-bold ring-1 ring-emerald-400 ring-offset-1' :
+                                st === 'or'   ? 'bg-[#1a2744] text-white border-transparent' :
+                                               'bg-white text-gray-400 border-gray-200 line-through'
+                              }`}>
+                              {st === 'must' ? `★ ${kw}` : kw}
                             </button>
                           );
                         })}
@@ -484,7 +504,7 @@ export default function TranscriptFinderPage() {
                       const val = input.value.trim().toLowerCase();
                       if (val && !customKeywords.includes(val) && !enKeywords.includes(val) && !esKeywords.includes(val)) {
                         setCustomKeywords(prev => [...prev, val]);
-                        setActiveKeywords(prev => new Set([...prev, val]));
+                        setKeywordStates(prev => { const n = new Map(prev); n.set(val, 'or'); return n; });
                       }
                       input.value = '';
                     }}

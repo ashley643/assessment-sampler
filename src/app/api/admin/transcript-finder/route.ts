@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   const mediaType = searchParams.get('mediaType');
   const minWords  = parseInt(searchParams.get('minWords') ?? '40');
   const search    = searchParams.get('search') ?? '';
+  const mustParam = searchParams.get('must') ?? '';
   const page      = parseInt(searchParams.get('page') ?? '1');
   const limit     = 24;
   const offset    = (page - 1) * limit;
@@ -58,13 +59,14 @@ export async function GET(req: Request) {
     }));
 
   // If only the needs list was requested, return early
-  if (needsOnly || !search.trim()) {
+  if (needsOnly || (!search.trim() && !mustParam.trim())) {
     return NextResponse.json({ transcripts: [], needsSamples, allQuestions, assignedUrls, page: 1, hasMore: false });
   }
 
   const impacter = getImpacterClient();
 
-  const keywords = search.trim().split(/\s+/).filter(Boolean);
+  const keywords     = search.trim().split(/\s+/).filter(Boolean);
+  const mustKeywords = mustParam.trim() ? mustParam.trim().split(/\s+/).filter(Boolean) : [];
 
   // Helper: apply shared filters to any query on this table
   function applyFilters<T>(q: T): T {
@@ -79,6 +81,10 @@ export async function GET(req: Request) {
     if (keywords.length > 0) {
       const conditions = keywords.flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`]).join(',');
       qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(conditions) as typeof q;
+    }
+    // Must-have keywords: each chained separately so they AND together
+    for (const kw of mustKeywords) {
+      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(`transcript.ilike.%${kw}%,node_title.ilike.%${kw}%`) as typeof q;
     }
     return qq;
   }
@@ -141,7 +147,8 @@ export async function GET(req: Request) {
   // ── 4. Score by keyword hit count, sort best first ──────────────────────
   function scoreRow(t: ReturnType<typeof normalize>): number {
     const haystack = (t.transcript + ' ' + t.nodeTitle).toLowerCase();
-    return keywords.reduce((s, kw) => {
+    const allKws = [...keywords, ...mustKeywords];
+    return allKws.reduce((s, kw) => {
       const needle = kw.toLowerCase();
       let count = 0, pos = 0;
       while ((pos = haystack.indexOf(needle, pos)) !== -1) { count++; pos++; }
