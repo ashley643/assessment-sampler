@@ -10,9 +10,33 @@ interface QuestionSample {
   sort_order: number;
   language: 'english' | 'spanish';
   embed_url: string;
+  media_type: 'video' | 'audio';
   gender: string;
   grade: string;
   excerpt: string;
+}
+
+const GRADES = ['TK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'Parent', 'Staff'];
+
+function GradePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {GRADES.map(g => (
+        <button
+          key={g}
+          type="button"
+          onClick={() => onChange(value === g ? '' : g)}
+          className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+            value === g
+              ? 'bg-[#4a6fa5] text-white'
+              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          }`}
+        >
+          {g}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 interface Question {
@@ -50,7 +74,7 @@ const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:
 const INPUT_SM = 'w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-400';
 
 function newSample(language: 'english' | 'spanish', order: number): QuestionSample {
-  return { id: `s-${Date.now()}-${order}`, sort_order: order, language, embed_url: '', gender: '', grade: '', excerpt: '' };
+  return { id: `s-${Date.now()}-${order}`, sort_order: order, language, embed_url: '', media_type: 'video', gender: '', grade: '', excerpt: '' };
 }
 
 function newQuestion(order: number): Question {
@@ -472,8 +496,19 @@ export default function EditAssessmentPage() {
                             <div className="px-2.5 pb-2.5 space-y-1.5">
                               <input value={s.embed_url} onChange={e => updateSample(qi, si, 'embed_url', e.target.value)} placeholder="VideoAsk share URL…" className={INPUT_SM} />
                               <div className="grid grid-cols-2 gap-1.5">
-                                <input value={s.gender} onChange={e => updateSample(qi, si, 'gender', e.target.value)} placeholder="Gender (optional)" className={INPUT_SM} />
-                                <input value={s.grade} onChange={e => updateSample(qi, si, 'grade', e.target.value)} placeholder="Grade (optional)" className={INPUT_SM} />
+                                <select value={s.media_type} onChange={e => updateSample(qi, si, 'media_type', e.target.value)} className={INPUT_SM}>
+                                  <option value="video">Video</option>
+                                  <option value="audio">Audio</option>
+                                </select>
+                                <select value={s.gender} onChange={e => updateSample(qi, si, 'gender', e.target.value)} className={INPUT_SM}>
+                                  <option value="">Gender (optional)</option>
+                                  <option value="M">M</option>
+                                  <option value="F">F</option>
+                                </select>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-gray-400 mb-1">Grade / Role (optional)</p>
+                                <GradePicker value={s.grade} onChange={v => updateSample(qi, si, 'grade', v)} />
                               </div>
 
                               {/* Excerpt — collapsed or editing */}

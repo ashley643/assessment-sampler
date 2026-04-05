@@ -3,6 +3,7 @@ export interface QuestionSample {
   embedUrl: string;
   language: 'english' | 'spanish';
   sortOrder: number;
+  mediaType?: 'video' | 'audio';
   gender?: string;
   grade?: string;
   excerpt?: string;

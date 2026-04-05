@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   type IncomingSample = {
-    id?: string; embed_url: string; language: string;
+    id?: string; embed_url: string; language: string; media_type?: string;
     sort_order: number; gender?: string; grade?: string; excerpt?: string;
   };
   type IncomingQuestion = {
@@ -60,6 +60,7 @@ export async function POST(req: Request) {
         question_id: q.id,
         embed_url: s.embed_url.trim(),
         language: s.language,
+        media_type: s.media_type || 'video',
         sort_order: s.sort_order ?? (qi * 100 + si),
         gender: s.gender?.trim() || null,
         grade: s.grade?.trim() || null,

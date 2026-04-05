@@ -155,7 +155,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
   if (allQuestionIds.length > 0) {
     const { data: samplesData } = await supabaseAdmin
       .from('question_samples')
-      .select('id, question_id, embed_url, language, sort_order, gender, grade, excerpt')
+      .select('id, question_id, embed_url, language, sort_order, media_type, gender, grade, excerpt')
       .in('question_id', allQuestionIds)
       .order('sort_order');
 
@@ -166,6 +166,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ code: stri
         embedUrl: s.embed_url,
         language: s.language as 'english' | 'spanish',
         sortOrder: s.sort_order,
+        mediaType: (s.media_type ?? 'video') as 'video' | 'audio',
         gender: s.gender ?? undefined,
         grade: s.grade ?? undefined,
         excerpt: s.excerpt ?? undefined,
