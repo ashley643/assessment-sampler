@@ -94,6 +94,8 @@ export default function FeedPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [assessmentOpen, setAssessmentOpen] = useState(false);
   const assessmentDropdownRef = useRef<HTMLDivElement>(null);
+  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
+  const [bookmarksOnly, setBookmarksOnly] = useState(false);
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -109,6 +111,21 @@ export default function FeedPage() {
   }, [notFound, router]);
 
   useEffect(() => { setPage(1); }, [filters]);
+
+  // Load bookmarks from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`bookmarks_${code}`);
+      if (stored) setBookmarks(new Set(JSON.parse(stored)));
+    } catch { /* ignore */ }
+  }, [code]);
+
+  // Persist bookmarks to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(`bookmarks_${code}`, JSON.stringify([...bookmarks]));
+    } catch { /* ignore */ }
+  }, [bookmarks, code]);
 
   // Close assessment dropdown on outside click
   useEffect(() => {
@@ -139,7 +156,8 @@ export default function FeedPage() {
     }
   }
 
-  const filtered = sortForFeed(applyFilters(allItems, filters));
+  const filtered = sortForFeed(applyFilters(allItems, filters))
+    .filter(i => !bookmarksOnly || bookmarks.has(i.sample.id));
   const visible  = filtered.slice(0, page * PAGE_SIZE);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
@@ -183,6 +201,14 @@ export default function FeedPage() {
       ...f,
       grade: f.grade.includes(g) ? f.grade.filter(x => x !== g) : [...f.grade, g],
     }));
+  }
+
+  function toggleBookmark(sampleId: string) {
+    setBookmarks(prev => {
+      const n = new Set(prev);
+      n.has(sampleId) ? n.delete(sampleId) : n.add(sampleId);
+      return n;
+    });
   }
 
   // Shared chip component
@@ -283,6 +309,15 @@ export default function FeedPage() {
                   {count > 0 && (
                     <span className="w-5 h-5 rounded-full bg-[#1a2744] text-white text-[10px] font-bold flex items-center justify-center">{count}</span>
                   )}
+                </button>
+                <button
+                  onClick={() => setBookmarksOnly(b => !b)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border shadow-sm transition-all ${bookmarksOnly ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill={bookmarksOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
+                    <path d="M2 2h10v11l-5-3-5 3V2z"/>
+                  </svg>
+                  {bookmarks.size > 0 ? `Saved (${bookmarks.size})` : 'Saved'}
                 </button>
                 {/* Active filter pills */}
                 {filters.bundle && <ActivePill label={filters.bundle} onRemove={() => toggle('bundle', filters.bundle)} />}
@@ -507,11 +542,30 @@ export default function FeedPage() {
                 </div>
               )}
 
+              {/* ── SAVED row ── */}
+              <div className="px-5 py-4">
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-3">Saved</p>
+                <FilterRow label="Bookmarks">
+                  <button
+                    onClick={() => setBookmarksOnly(b => !b)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${bookmarksOnly ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 14 14" fill={bookmarksOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
+                      <path d="M2 2h10v11l-5-3-5 3V2z"/>
+                    </svg>
+                    {bookmarksOnly ? `Showing ${bookmarks.size} saved` : bookmarks.size > 0 ? `Show saved (${bookmarks.size})` : 'None saved yet'}
+                  </button>
+                </FilterRow>
+              </div>
+
               {/* ── Footer ── */}
-              {count > 0 && (
+              {(count > 0 || bookmarksOnly) && (
                 <div className="px-5 py-3 flex items-center justify-between">
                   <p className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
-                  <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-gray-400 hover:text-gray-600 underline">Clear all filters</button>
+                  <div className="flex items-center gap-3">
+                    {bookmarksOnly && <button onClick={() => setBookmarksOnly(false)} className="text-xs text-amber-500 hover:text-amber-700 underline">Show all</button>}
+                    {count > 0 && <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-gray-400 hover:text-gray-600 underline">Clear filters</button>}
+                  </div>
                 </div>
               )}
             </div>
@@ -526,7 +580,7 @@ export default function FeedPage() {
               {visible.map(({ question, sample, assessment }) => {
                 const mt = mediaTypeBadge(sample.mediaType);
                 return (
-                  <div key={sample.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                  <div key={sample.id} className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-colors ${bookmarks.has(sample.id) ? 'border-amber-300' : 'border-gray-200'}`}>
                     <div className="px-5 pt-4 pb-3 border-b border-gray-100">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>{assessment.typeLabel}</span>
@@ -535,6 +589,15 @@ export default function FeedPage() {
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: mt.bg, color: mt.color }}>{mt.label}</span>
                         {sample.gender && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{sample.gender}</span>}
                         {sample.grade  && <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-medium">{sample.grade}</span>}
+                        <button
+                          onClick={() => toggleBookmark(sample.id)}
+                          title={bookmarks.has(sample.id) ? 'Remove bookmark' : 'Bookmark this response'}
+                          className="ml-auto p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 14 14" fill={bookmarks.has(sample.id) ? '#f59e0b' : 'none'} stroke={bookmarks.has(sample.id) ? '#f59e0b' : '#9ca3af'} strokeWidth="1.6">
+                            <path d="M2 2h10v11l-5-3-5 3V2z"/>
+                          </svg>
+                        </button>
                       </div>
                       <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
                     </div>
