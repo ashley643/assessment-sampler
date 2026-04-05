@@ -47,24 +47,31 @@ export async function GET(req: Request) {
   // ── Fetch transcript steps from VideoAsk ─────────────────────────────────
   // Columns known from VideoAsk API docs: node_title, transcript, media_type, media_url, created_at
   // We query the videoask schema using the schema() client
+  // Split search into individual keywords and match ANY of them (OR logic)
+  const keywords = search.trim().split(/\s+/).filter(Boolean);
+
   let stepsQuery = impacter
     .schema('videoask')
     .from('steps')
     .select('*')
     .not('transcript', 'is', null)
     .neq('transcript', '')
+    .not('media_url', 'is', null)   // must have a watchable URL
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
+  // Media type filter — use loose ilike since VideoAsk values may be e.g. "video_answer"
   if (mediaType) {
-    stepsQuery = stepsQuery.ilike('media_type', mediaType);
-  } else {
-    // only video and audio, not text/other
-    stepsQuery = stepsQuery.or('media_type.ilike.video,media_type.ilike.audio,media_type.ilike.*video*,media_type.ilike.*audio*');
+    stepsQuery = stepsQuery.ilike('media_type', `%${mediaType}%`);
   }
+  // (no media filter = include everything that has a transcript + media_url)
 
-  if (search) {
-    stepsQuery = stepsQuery.or(`transcript.ilike.%${search}%,node_title.ilike.%${search}%`);
+  // Keyword search: each word matched independently across transcript OR node_title
+  if (keywords.length > 0) {
+    const conditions = keywords
+      .flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`])
+      .join(',');
+    stepsQuery = stepsQuery.or(conditions);
   }
 
   const { data: stepsData, error: stepsErr } = await stepsQuery;
