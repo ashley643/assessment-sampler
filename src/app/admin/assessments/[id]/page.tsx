@@ -43,6 +43,7 @@ interface Question {
   id: string;
   sort_order: number;
   title: string;
+  question: string;
   embed_url: string;
   spanish_embed_url: string;
   question_samples: QuestionSample[];
@@ -57,7 +58,6 @@ interface Assessment {
   badge_bg: string;
   badge_text: string;
   description: string;
-  question: string;
   player_label: string;
   sort_order: number;
   questions: Question[];
@@ -83,6 +83,7 @@ function newQuestion(order: number): Question {
     id: `q-${Date.now()}-${order}`,
     sort_order: order,
     title: '',
+    question: '',
     embed_url: '',
     spanish_embed_url: '',
     question_samples: [newSample('english', 0), newSample('spanish', 1)],
@@ -98,7 +99,7 @@ export default function EditAssessmentPage() {
   const [form, setForm] = useState<Omit<Assessment, 'questions'>>({
     id: '', title: '', type: '', type_label: '',
     accent_color: '#4a6fa5', badge_bg: '#E6F1FB', badge_text: '#0C447C',
-    description: '', question: '', player_label: '', sort_order: 0,
+    description: '', player_label: '', sort_order: 0,
   });
   const [questions, setQuestions] = useState<Question[]>([newQuestion(1)]);
   const [saving, setSaving] = useState(false);
@@ -318,9 +319,6 @@ export default function EditAssessmentPage() {
                 <input value={form.title} onChange={e => updateForm('title', e.target.value)} className={INPUT} required />
               </F>
             </div>
-            <F label="Question" hint="The central question this assessment is exploring">
-              <input value={form.question ?? ''} onChange={e => updateForm('question', e.target.value)} className={INPUT} placeholder="e.g. How do students see themselves as learners?" />
-            </F>
             <F label="Description" hint="Shown on the assessment card">
               <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} rows={3} className={INPUT} />
             </F>
@@ -432,6 +430,9 @@ export default function EditAssessmentPage() {
                   </div>
                   <F label="Title">
                     <input value={q.title} onChange={e => updateQuestion(qi, 'title', e.target.value)} className={INPUT} required />
+                  </F>
+                  <F label="Question">
+                    <textarea value={q.question ?? ''} onChange={e => updateQuestion(qi, 'question', e.target.value)} rows={2} className={INPUT} placeholder="e.g. How do you see yourself as a learner?" />
                   </F>
                   <F label="Embed URL">
                     <input value={q.embed_url} onChange={e => updateQuestion(qi, 'embed_url', e.target.value)} placeholder="https://..." className={INPUT} required />

@@ -13,7 +13,6 @@ create table assessments (
   badge_bg    text not null default '#E6F1FB',
   badge_text  text not null default '#0C447C',
   description text,
-  question    text,
   sort_order  int  default 0,
   created_at  timestamptz default now()
 );
@@ -24,6 +23,7 @@ create table questions (
   assessment_id   text references assessments(id) on delete cascade,
   sort_order      int  not null default 0,
   title           text not null,
+  question        text,
   embed_url       text not null,
   spanish_embed_url text,
   text_embed_url  text,
