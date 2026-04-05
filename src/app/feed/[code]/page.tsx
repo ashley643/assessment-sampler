@@ -382,7 +382,6 @@ export default function FeedPage() {
                 <div key={sample.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
                   <div className="px-5 pt-4 pb-3 border-b border-gray-100">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      {bundleTitle && <span className="text-xs text-gray-400">{bundleTitle} ›</span>}
                       <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>{assessment.typeLabel}</span>
                       <span className="text-xs font-medium text-gray-700">{assessment.title}</span>
                       {sample.language === 'spanish' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">En Español</span>}
