@@ -65,7 +65,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           question_id: q.id,
           embed_url: s.embed_url.trim(),
           language: s.language,
-          media_type: s.media_type || 'video',
+          media_type: (s.media_type && s.media_type !== '') ? s.media_type : 'video',
           sort_order: s.sort_order ?? (qi * 100 + si),
           gender: s.gender?.trim() || null,
           grade: s.grade?.trim() || null,
