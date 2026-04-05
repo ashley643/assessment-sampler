@@ -13,6 +13,10 @@ const NAV = [
   { href: '/admin/audit', label: 'Audit Log' },
 ];
 
+const NAV_EXTERNAL = [
+  { href: '/admin/response-finder', label: 'Response Finder' },
+];
+
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -65,6 +69,22 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               {n.label}
             </Link>
           ))}
+          <div className="pt-2 mt-2 border-t border-gray-100">
+            {NAV_EXTERNAL.map(n => (
+              <a
+                key={n.href}
+                href={n.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              >
+                {n.label}
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5" className="opacity-40">
+                  <path d="M2 9L9 2M9 2H5M9 2v4"/>
+                </svg>
+              </a>
+            ))}
+          </div>
         </nav>
         <div className="px-4 py-4 border-t border-gray-100">
           {session?.user?.email && (

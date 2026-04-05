@@ -184,7 +184,7 @@ export default function TranscriptFinderPage() {
   // Load/refresh the questions-needing-samples list
   const refreshNeeds = useCallback((showSpinner = false) => {
     if (showSpinner) setNeedsLoading(true);
-    fetch('/api/admin/transcript-finder?needsOnly=true')
+    fetch('/api/admin/response-finder?needsOnly=true')
       .then(r => r.json())
       .then(d => {
         const list = (d.needsSamples as NeedsSample[]) ?? [];
@@ -238,7 +238,7 @@ export default function TranscriptFinderPage() {
         search: effectiveSearch,
         ...(mustSearch ? { must: mustSearch } : {}),
       });
-      const res = await fetch(`/api/admin/transcript-finder?${params}`);
+      const res = await fetch(`/api/admin/response-finder?${params}`);
       const text = await res.text();
       let data: Record<string, unknown>;
       try { data = JSON.parse(text); } catch { setFetchError(`Server returned (${res.status}): ${text.slice(0, 300)}`); setLoading(false); setLoadingMore(false); return; }
@@ -312,7 +312,7 @@ export default function TranscriptFinderPage() {
     if (!assign) return;
     setAssigning(true);
     setAssignError('');
-    const res = await fetch('/api/admin/transcript-finder/assign', {
+    const res = await fetch('/api/admin/response-finder/assign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -343,7 +343,7 @@ export default function TranscriptFinderPage() {
   }
 
   async function removeAssignment(embedUrl: string, transcriptId: string) {
-    const res = await fetch('/api/admin/transcript-finder/assign', {
+    const res = await fetch('/api/admin/response-finder/assign', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ embedUrl }),
@@ -373,7 +373,7 @@ export default function TranscriptFinderPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4 flex-wrap">
         <Link href="/admin" className="text-gray-400 hover:text-gray-600 text-sm">← Admin</Link>
-        <h1 className="text-base font-semibold text-gray-900">Transcript Finder</h1>
+        <h1 className="text-base font-semibold text-gray-900">Response Finder</h1>
         <div className="flex-1" />
         {/* Filters */}
         <div className="flex items-center gap-3 flex-wrap">
