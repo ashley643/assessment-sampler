@@ -52,6 +52,36 @@ function activeCount(f: Filters) {
   return [f.bundle, f.language, f.media, f.gender].filter(Boolean).length + f.assessment.length + f.grade.length;
 }
 
+const PAGE_SIZE = 12;
+
+// Videos first, then round-robin across bundles/assessments for diversity
+function sortForFeed(items: FeedItem[]): FeedItem[] {
+  const videos = items.filter(i => (i.sample.mediaType ?? 'video') === 'video');
+  const audios  = items.filter(i => (i.sample.mediaType ?? 'video') === 'audio');
+  return [...interleave(videos), ...interleave(audios)];
+}
+
+function interleave(items: FeedItem[]): FeedItem[] {
+  // Group by gender+grade combo so the feed cycles through a diverse range of respondents
+  const groups = new Map<string, FeedItem[]>();
+  for (const item of items) {
+    const key = `${item.sample.gender ?? 'unknown'}-${item.sample.grade ?? 'unknown'}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(item);
+  }
+  // Round-robin across groups
+  const queues = [...groups.values()];
+  const result: FeedItem[] = [];
+  let i = 0;
+  while (result.length < items.length) {
+    const q = queues[i % queues.length];
+    if (q.length > 0) result.push(q.shift()!);
+    i++;
+    if (queues.every(q => q.length === 0)) break;
+  }
+  return result;
+}
+
 export default function FeedPage() {
   const params = useParams();
   const router = useRouter();
@@ -60,6 +90,7 @@ export default function FeedPage() {
   const [codeData, setCodeData] = useState<AccessCode | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [page, setPage] = useState(1);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [assessmentOpen, setAssessmentOpen] = useState(false);
   const assessmentDropdownRef = useRef<HTMLDivElement>(null);
@@ -76,6 +107,8 @@ export default function FeedPage() {
   useEffect(() => {
     if (notFound) router.replace('/assessment');
   }, [notFound, router]);
+
+  useEffect(() => { setPage(1); }, [filters]);
 
   // Close assessment dropdown on outside click
   useEffect(() => {
@@ -106,7 +139,8 @@ export default function FeedPage() {
     }
   }
 
-  const filtered = applyFilters(allItems, filters);
+  const filtered = sortForFeed(applyFilters(allItems, filters));
+  const visible  = filtered.slice(0, page * PAGE_SIZE);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
     const resetValue = (key === 'assessment' || key === 'grade') ? [] : null;
@@ -222,9 +256,9 @@ export default function FeedPage() {
           <span className="text-white/60 text-sm">{codeData.label}</span>
           <span className="bg-white/10 text-white/70 text-xs px-3 py-1 rounded-full font-mono">{code}</span>
         </div>
-        <button onClick={() => router.push(`/assessment/${code}`)} className="text-white/50 hover:text-white text-sm transition-colors">
+        <a href={`/assessment/${code}`} className="text-white/50 hover:text-white text-sm transition-colors">
           ← Back to assessments
-        </button>
+        </a>
       </nav>
 
       <div className="flex-1 max-w-4xl mx-auto w-full px-6 py-10">
@@ -487,40 +521,53 @@ export default function FeedPage() {
         {filtered.length === 0 ? (
           <p className="text-sm text-gray-400">No sample responses match your filters.</p>
         ) : (
-          <div className="space-y-8">
-            {filtered.map(({ question, sample, assessment }) => {
-              const mt = mediaTypeBadge(sample.mediaType);
-              return (
-                <div key={sample.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-                  <div className="px-5 pt-4 pb-3 border-b border-gray-100">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>{assessment.typeLabel}</span>
-                      <span className="text-xs font-medium text-gray-700">{assessment.title}</span>
-                      {sample.language === 'spanish' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">En Español</span>}
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: mt.bg, color: mt.color }}>{mt.label}</span>
-                      {sample.gender && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{sample.gender}</span>}
-                      {sample.grade  && <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-medium">{sample.grade}</span>}
+          <>
+            <div className="space-y-8">
+              {visible.map(({ question, sample, assessment }) => {
+                const mt = mediaTypeBadge(sample.mediaType);
+                return (
+                  <div key={sample.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>{assessment.typeLabel}</span>
+                        <span className="text-xs font-medium text-gray-700">{assessment.title}</span>
+                        {sample.language === 'spanish' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">En Español</span>}
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: mt.bg, color: mt.color }}>{mt.label}</span>
+                        {sample.gender && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{sample.gender}</span>}
+                        {sample.grade  && <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-medium">{sample.grade}</span>}
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
-                  </div>
-                  {sample.excerpt && (
-                    <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
-                      <p className="text-sm text-gray-600 italic leading-relaxed">&ldquo;{sample.excerpt}&rdquo;</p>
+                    {sample.excerpt && (
+                      <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
+                        <p className="text-sm text-gray-600 italic leading-relaxed">&ldquo;{sample.excerpt}&rdquo;</p>
+                      </div>
+                    )}
+                    <div className="aspect-video bg-gray-50">
+                      <iframe
+                        src={sample.embedUrl}
+                        allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
+                        loading="lazy"
+                        className="w-full h-full"
+                        style={{ border: 'none' }}
+                        title={`Sample response — ${question.title}`}
+                      />
                     </div>
-                  )}
-                  <div className="aspect-video bg-gray-50">
-                    <iframe
-                      src={sample.embedUrl}
-                      allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-                      className="w-full h-full"
-                      style={{ border: 'none' }}
-                      title={`Sample response — ${question.title}`}
-                    />
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            {visible.length < filtered.length && (
+              <div className="mt-10 text-center">
+                <button
+                  onClick={() => setPage(p => p + 1)}
+                  className="px-6 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 shadow-sm transition-all"
+                >
+                  Load more <span className="text-gray-400">({filtered.length - visible.length} remaining)</span>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -76,7 +76,7 @@ export default function AssessmentSelectorPage() {
 
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push(`/feed/${code}`)}
+            onClick={() => window.open(`/feed/${code}`, '_blank')}
             className="text-white/70 hover:text-white text-sm transition-colors flex items-center gap-1.5"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
