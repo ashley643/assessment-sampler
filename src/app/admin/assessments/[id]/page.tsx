@@ -418,13 +418,13 @@ export default function EditAssessmentPage() {
                       <p className="text-xs font-semibold text-gray-500">Sample Responses</p>
                     </div>
                     <p className="text-xs text-gray-400 mb-3">
-                      Drag to reorder. The <span className="font-medium text-green-700">first sample</span> shows in the assessment player; the rest go to the feed only.
+                      Drag to reorder. The <span className="font-medium text-green-700">first English and first Spanish</span> show in the assessment player; additional samples go to the feed only.
                     </p>
                     <div className="space-y-1.5">
                       {q.question_samples.map((s, si) => {
                         const sampleKey = `${qi}-${si}`;
                         const isDragOver = dragOverKey === sampleKey;
-                        const isFirst = si === 0;
+                        const isFirst = q.question_samples.findIndex(x => x.language === s.language) === si;
                         const isEditingExcerpt = s.id in excerptEditing;
                         const excerptDraft = excerptEditing[s.id] ?? s.excerpt;
 

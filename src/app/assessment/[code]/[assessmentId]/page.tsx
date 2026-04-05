@@ -289,8 +289,8 @@ export default function AssessmentPlayerPage() {
     }
   };
 
-  const englishSample = currentQ.samples?.find(s => s.language === 'english');
-  const spanishSample = currentQ.samples?.find(s => s.language === 'spanish');
+  const englishSample = currentQ.samples?.find(s => s.language === 'english'); // first EN
+  const spanishSample = currentQ.samples?.find(s => s.language === 'spanish'); // first ES
   const sampleAvailable = !!englishSample;
   const hasSample = !!(showSample && sampleAvailable);
   const embedSrc = hasSample
