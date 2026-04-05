@@ -295,10 +295,10 @@ export default function TranscriptFinderPage() {
     fetchTranscripts(next, false);
   }
 
-  function openAssign(t: Transcript) {
+  function openAssign(t: Transcript, prefilledQuestionId?: string) {
     setAssign({
       transcript: t,
-      questionId: focusQuestion ?? needsSamples[0]?.questionId ?? '',
+      questionId: prefilledQuestionId ?? focusQuestion ?? needsSamples[0]?.questionId ?? '',
       language: 'english',
       embedUrl: t.shareUrl ?? t.mediaUrl,
       excerpt: t.transcript,
@@ -339,6 +339,19 @@ export default function TranscriptFinderPage() {
     setAssign(null);
     setAssigning(false);
     // Refresh sidebar so needs EN/ES badges update
+    refreshNeeds();
+  }
+
+  async function removeAssignment(embedUrl: string, transcriptId: string) {
+    const res = await fetch('/api/admin/transcript-finder/assign', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embedUrl }),
+    });
+    if (!res.ok) return;
+    const norm = embedUrl.split('?')[0];
+    setAssignedUrls(prev => prev.filter(a => a.normalised !== norm));
+    setAssigned(prev => { const n = new Set(prev); n.delete(transcriptId); return n; });
     refreshNeeds();
   }
 
@@ -645,19 +658,30 @@ export default function TranscriptFinderPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-3">
+                      <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-3 flex-wrap">
                         {(t.shareUrl || t.mediaUrl) && (
                           <a href={t.shareUrl ?? t.mediaUrl} target="_blank" rel="noopener noreferrer"
                             className={`${BTN_SM} bg-white border border-gray-200 text-gray-600 hover:border-gray-300`}>
                             Watch / Listen ↗
                           </a>
                         )}
-                        {isAssigned ? (
-                          <span className={`${BTN_SM} bg-green-100 text-green-700 cursor-default`}>✓ Assigned</span>
-                        ) : existingAssignment ? (
-                          <button onClick={() => openAssign(t)} className={`${BTN_SM} bg-amber-500 text-white hover:bg-amber-600`}>
-                            Reassign →
-                          </button>
+                        {isAssigned || existingAssignment ? (
+                          <>
+                            <button
+                              onClick={() => openAssign(t, existingAssignment?.questionId)}
+                              className={`${BTN_SM} ${isAssigned ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white`}>
+                              Edit assignment →
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm('Remove this assignment?')) {
+                                  removeAssignment(t.shareUrl ?? t.mediaUrl, t.id);
+                                }
+                              }}
+                              className={`${BTN_SM} bg-white border border-red-200 text-red-500 hover:bg-red-50`}>
+                              Remove
+                            </button>
+                          </>
                         ) : (
                           <button onClick={() => openAssign(t)} className={`${BTN_SM} bg-[#1a2744] text-white hover:bg-[#243660]`}>
                             Assign to question →

@@ -42,3 +42,19 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(req: Request) {
+  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { embedUrl } = await req.json();
+  if (!embedUrl) return NextResponse.json({ error: 'embedUrl is required' }, { status: 400 });
+
+  const normalisedUrl = embedUrl.split('?')[0];
+  const { error } = await supabaseAdmin
+    .from('question_samples')
+    .delete()
+    .like('embed_url', `${normalisedUrl}%`);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
