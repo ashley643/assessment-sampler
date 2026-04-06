@@ -154,6 +154,7 @@ export default function TranscriptFinderPage() {
 
   // Sidebar
   const [focusQuestion, setFocusQuestion] = useState<string | null>(null);
+  const [openSearchMode, setOpenSearchMode] = useState(false);
   const [expandedAssessments, setExpandedAssessments] = useState<Set<string>>(new Set());
 
   // Keyword chips — state: absent=off, 'or'=any hit counts, 'must'=required AND
@@ -207,14 +208,14 @@ export default function TranscriptFinderPage() {
 
   // When a question is selected (or filters/search change): load matching transcripts
   const fetchTranscripts = useCallback(async (pg: number, replace: boolean) => {
-    if (!focusQuestion && !search) return; // nothing to search on
+    if (!focusQuestion && !search && !openSearchMode) return; // nothing to search on
     if (pg === 1) setLoading(true); else setLoadingMore(true);
     setFetchError('');
     try {
-      // If we have a focused question and no manual search, use keyword chips filtered by lang
+      // If we have a focused question or open search mode and no manual search, use keyword chips filtered by lang
       let effectiveSearch = search;
       let mustSearch = '';
-      if (!search && focusQuestion) {
+      if (!search && (focusQuestion || openSearchMode)) {
         const inLang = (kw: string) => {
           if (keywordLang === 'en') return enKeywords.includes(kw) || customKeywords.includes(kw);
           if (keywordLang === 'es') return esKeywords.includes(kw) || customKeywords.includes(kw);
@@ -254,17 +255,17 @@ export default function TranscriptFinderPage() {
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [focusQuestion, mediaType, minWords, search, needsSamples, keywordStates, keywordLang, enKeywords, esKeywords, customKeywords]);
+  }, [focusQuestion, openSearchMode, mediaType, minWords, search, needsSamples, keywordStates, keywordLang, enKeywords, esKeywords, customKeywords]);
 
-  // Reset filters when question changes
+  // Reset filters when question or mode changes
   useEffect(() => {
     setHiddenNodeTitles(new Set());
     setKeywordLang('all');
     setTotalCount(null);
     setAllNodeTitles([]);
-  }, [focusQuestion]);
+  }, [focusQuestion, openSearchMode]);
 
-  // When focused question changes, regenerate keyword chips
+  // When focused question changes, regenerate keyword chips; open search starts with blank chips
   useEffect(() => {
     if (focusQuestion && !search) {
       const focused = needsSamples.find(n => n.questionId === focusQuestion);
@@ -277,11 +278,14 @@ export default function TranscriptFinderPage() {
         [...en, ...es].forEach(kw => initMap.set(kw, 'or'));
         setKeywordStates(initMap);
       }
+    } else if (openSearchMode) {
+      // Open search: no pre-populated chips, user adds their own
+      setEnKeywords([]); setEsKeywords([]);
     } else {
       setEnKeywords([]); setEsKeywords([]); setCustomKeywords([]);
       setKeywordStates(new Map());
     }
-  }, [focusQuestion, needsSamples, search]);
+  }, [focusQuestion, openSearchMode, needsSamples, search]);
 
   useEffect(() => {
     setPage(1);
@@ -410,6 +414,27 @@ export default function TranscriptFinderPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar: questions needing samples ── */}
         <aside className="w-72 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
+          {/* Open Search button */}
+          <button
+            onClick={() => {
+              setOpenSearchMode(m => !m);
+              setFocusQuestion(null);
+              setCustomKeywords([]);
+              setKeywordStates(new Map());
+            }}
+            className={`w-full text-left px-4 py-3 flex items-center gap-2.5 border-b transition-colors ${
+              openSearchMode
+                ? 'bg-[#1a2744] text-white border-[#1a2744]'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-100'
+            }`}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="6" cy="6" r="4.5"/>
+              <path d="M9.5 9.5l3 3"/>
+            </svg>
+            <span className="text-xs font-semibold">Open Search</span>
+            {openSearchMode && <span className="ml-auto text-[10px] opacity-70">active</span>}
+          </button>
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Questions needing samples</p>
             <p className="text-xs text-gray-400 mt-0.5">{needsSamples.length} questions</p>
@@ -431,7 +456,7 @@ export default function TranscriptFinderPage() {
                 {expandedAssessments.has(aId) && group.questions.map(q => (
                   <button
                     key={q.questionId}
-                    onClick={() => setFocusQuestion(focusQuestion === q.questionId ? null : q.questionId)}
+                    onClick={() => { setOpenSearchMode(false); setFocusQuestion(focusQuestion === q.questionId ? null : q.questionId); }}
                     className={`w-full text-left px-5 py-2 border-l-2 transition-colors ${
                       focusQuestion === q.questionId
                         ? 'border-[#1a2744] bg-[#1a2744]/5'
@@ -452,6 +477,71 @@ export default function TranscriptFinderPage() {
 
         {/* ── Main: focus bar (pinned) + scrollable transcript cards ── */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Open Search focus bar */}
+          {openSearchMode && !focusQuestion && (
+            <div className="flex-shrink-0 px-6 pt-4 pb-0 bg-gray-50 border-b border-[#1a2744]/10">
+              <div className="p-3 bg-[#eef0f5] border border-[#1a2744]/20 rounded-xl space-y-2 shadow-sm mb-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#1a2744" strokeWidth="1.8">
+                    <circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5l3 3"/>
+                  </svg>
+                  <span className="text-xs font-semibold text-[#1a2744] uppercase tracking-wide">Open Search</span>
+                  <span className="text-gray-400 text-xs">— search all transcripts by keyword</span>
+                  <button onClick={() => { setOpenSearchMode(false); setCustomKeywords([]); setKeywordStates(new Map()); }} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">clear</button>
+                </div>
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-gray-400">click chip: off → OR →</span>
+                    <span className="text-[10px] font-bold text-emerald-600">★ MUST</span>
+                  </div>
+                  {customKeywords.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {customKeywords.map(kw => {
+                        const st = keywordStates.get(kw);
+                        return (
+                          <button key={kw}
+                            title={st === 'or' ? 'Click to make MUST-HAVE' : st === 'must' ? 'Click to turn off' : 'Click to add as OR'}
+                            onClick={() => setKeywordStates(prev => {
+                              const n = new Map(prev);
+                              if (!st) n.set(kw, 'or');
+                              else if (st === 'or') n.set(kw, 'must');
+                              else n.delete(kw);
+                              return n;
+                            })}
+                            className={`text-[11px] px-2 py-0.5 rounded-full border font-mono transition-colors ${
+                              st === 'must' ? 'bg-emerald-500 text-white border-transparent font-bold ring-1 ring-emerald-400 ring-offset-1' :
+                              st === 'or'   ? 'bg-[#1a2744] text-white border-transparent' :
+                                             'bg-white text-gray-400 border-gray-200 line-through'
+                            }`}>
+                            {st === 'must' ? `★ ${kw}` : kw}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      const input = e.currentTarget.elements.namedItem('kw') as HTMLInputElement;
+                      const val = input.value.trim().toLowerCase();
+                      if (val && !customKeywords.includes(val)) {
+                        setCustomKeywords(prev => [...prev, val]);
+                        setKeywordStates(prev => { const n = new Map(prev); n.set(val, 'or'); return n; });
+                      }
+                      input.value = '';
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <input name="kw" placeholder="type a keyword and press Enter…"
+                      className="text-[11px] font-mono px-2 py-0.5 rounded-full border border-dashed border-gray-300 bg-white text-gray-500 w-52 focus:outline-none focus:border-[#1a2744]/40 placeholder:text-gray-300"
+                      autoFocus
+                    />
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Focus bar — always visible, never scrolls */}
           {focusQuestion && questionById[focusQuestion] && (
             <div className="flex-shrink-0 px-6 pt-4 pb-0 bg-gray-50 border-b border-[#1a2744]/10">
@@ -541,11 +631,17 @@ export default function TranscriptFinderPage() {
 
           {fetchError ? (
             <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-sm text-red-700 font-mono whitespace-pre-wrap">{fetchError}</div>
-          ) : !focusQuestion && !search ? (
+          ) : !focusQuestion && !search && !openSearchMode ? (
             <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl">←</div>
               <p className="text-gray-500 font-medium">Select a question to load matching transcripts</p>
-              <p className="text-gray-400 text-sm max-w-sm">Transcripts will be filtered by the question title so you only see relevant responses.</p>
+              <p className="text-gray-400 text-sm max-w-sm">Or use <strong>Open Search</strong> in the sidebar to search all transcripts by keyword.</p>
+            </div>
+          ) : openSearchMode && !search && keywordStates.size === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl">🔍</div>
+              <p className="text-gray-500 font-medium">Type a keyword above to start searching</p>
+              <p className="text-gray-400 text-sm max-w-sm">Add keywords one at a time. Set them to OR (any match) or ★ MUST (all required).</p>
             </div>
           ) : loading ? (
             <div className="text-sm text-gray-400 py-10 text-center">Searching transcripts…</div>
