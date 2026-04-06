@@ -106,15 +106,9 @@ export default function FeedPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [assessmentOpen, setAssessmentOpen] = useState(false);
   const assessmentDropdownRef = useRef<HTMLDivElement>(null);
-  const [bookmarks, setBookmarks] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    try {
-      const stored = localStorage.getItem(`bookmarks_${code}`);
-      if (stored) return new Set(JSON.parse(stored));
-    } catch { /* ignore */ }
-    return new Set();
-  });
+  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -143,34 +137,13 @@ export default function FeedPage() {
 
   useEffect(() => { setPage(1); }, [filters]);
 
-  // Scrub stale bookmark IDs once codeData is available
+  // Load bookmarks from server on mount
   useEffect(() => {
-    if (!codeData) return;
-    // Build the set of all valid sample IDs currently in the feed
-    const validIds = new Set<string>();
-    function collectIds(questions: { samples?: { id: string }[] }[]) {
-      for (const q of questions) for (const s of q.samples ?? []) validIds.add(s.id);
-    }
-    for (const a of codeData.assessments) {
-      if (a.type === 'bundle') {
-        for (const child of a.childAssessments ?? []) collectIds(child.questions);
-      } else {
-        collectIds(a.questions);
-      }
-    }
-    // Drop any bookmarked IDs that no longer exist
-    setBookmarks(prev => {
-      const cleaned = new Set([...prev].filter(id => validIds.has(id)));
-      return cleaned.size === prev.size ? prev : cleaned;
-    });
-  }, [codeData]);
-
-  // Persist bookmarks to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(`bookmarks_${code}`, JSON.stringify([...bookmarks]));
-    } catch { /* ignore */ }
-  }, [bookmarks, code]);
+    fetch(`/api/feed/bookmarks/${code}`)
+      .then(r => r.json())
+      .then(d => setBookmarks(new Set(d.bookmarks ?? [])))
+      .catch(() => {});
+  }, [code]);
 
   // Close assessment dropdown on outside click
   useEffect(() => {
@@ -258,6 +231,15 @@ export default function FeedPage() {
       const adding = !n.has(sampleId);
       adding ? n.add(sampleId) : n.delete(sampleId);
       track('feed_bookmark', code, { metadata: { sample_id: sampleId, action: adding ? 'add' : 'remove' } });
+      // Debounced save to server so rapid toggles batch into one request
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        fetch(`/api/feed/bookmarks/${code}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookmarks: [...n] }),
+        }).catch(() => {});
+      }, 600);
       return n;
     });
   }
