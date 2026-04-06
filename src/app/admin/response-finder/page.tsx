@@ -291,7 +291,8 @@ export default function TranscriptFinderPage() {
   // When focused question changes, regenerate keyword chips; open search starts with blank chips
   useEffect(() => {
     if (focusQuestion && !search) {
-      const focused = needsSamples.find(n => n.questionId === focusQuestion);
+      const focused = needsSamples.find(n => n.questionId === focusQuestion)
+                   ?? allQuestions.find(n => n.questionId === focusQuestion);
       if (focused) {
         const { en, es } = buildSearchTerms(focused.questionTitle, focused.questionText);
         setEnKeywords(en);
@@ -434,8 +435,19 @@ export default function TranscriptFinderPage() {
     return acc;
   }, {});
 
-  // Question lookup
-  const questionById = Object.fromEntries(needsSamples.map(n => [n.questionId, n]));
+  // Group allQuestions by assessment (for "All questions" view)
+  const byAssessmentAll = allQuestions.reduce<Record<string, { title: string; typeLabel: string; questions: NeedsSample[] }>>((acc, n) => {
+    if (!acc[n.assessmentId]) acc[n.assessmentId] = { title: n.assessmentTitle, typeLabel: n.typeLabel, questions: [] };
+    acc[n.assessmentId].questions.push(n);
+    return acc;
+  }, {});
+
+  // Question lookup — covers both lists
+  const questionById = Object.fromEntries([...allQuestions, ...needsSamples].map(n => [n.questionId, n]));
+
+  // Sidebar mode
+  const [sidebarMode, setSidebarMode] = useState<'needs' | 'all'>('needs');
+  const [expandedAll, setExpandedAll] = useState<Set<string>>(new Set());
 
   const INPUT  = 'border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20';
   const BTN_SM = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors';
@@ -503,43 +515,84 @@ export default function TranscriptFinderPage() {
             <span className="text-xs font-semibold">Open Search</span>
             {openSearchMode && <span className="ml-auto text-[10px] opacity-70">active</span>}
           </button>
-          <div className="px-4 py-3 border-b border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Questions needing samples</p>
-            <p className="text-xs text-gray-400 mt-0.5">{needsSamples.length} questions</p>
+          {/* Tab toggle */}
+          <div className="flex border-b border-gray-100">
+            <button
+              onClick={() => setSidebarMode('needs')}
+              className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors ${sidebarMode === 'needs' ? 'text-[#1a2744] border-b-2 border-[#1a2744]' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Needs samples
+              {needsSamples.length > 0 && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">{needsSamples.length}</span>}
+            </button>
+            <button
+              onClick={() => setSidebarMode('all')}
+              className={`flex-1 px-3 py-2.5 text-xs font-semibold transition-colors ${sidebarMode === 'all' ? 'text-[#1a2744] border-b-2 border-[#1a2744]' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              All questions
+            </button>
           </div>
+
           {needsLoading ? (
             <div className="px-4 py-6 text-xs text-gray-400">Loading…</div>
-          ) : needsSamples.length === 0 ? (
-            <div className="px-4 py-6 text-xs text-gray-400">All questions have samples 🎉</div>
-          ) : (
-            Object.entries(byAssessment).map(([aId, group]) => (
-              <div key={aId}>
-                <button
-                  onClick={() => setExpandedAssessments(s => { const n = new Set(s); n.has(aId) ? n.delete(aId) : n.add(aId); return n; })}
-                  className="w-full text-left px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-xs font-semibold text-gray-700 leading-tight">{group.title}</span>
-                  <span className="text-gray-400 text-xs ml-1">{expandedAssessments.has(aId) ? '▲' : '▼'}</span>
-                </button>
-                {expandedAssessments.has(aId) && group.questions.map(q => (
+          ) : sidebarMode === 'needs' ? (
+            needsSamples.length === 0 ? (
+              <div className="px-4 py-6 text-xs text-gray-400">All questions have samples 🎉</div>
+            ) : (
+              Object.entries(byAssessment).map(([aId, group]) => (
+                <div key={aId}>
                   <button
-                    key={q.questionId}
-                    onClick={() => { setOpenSearchMode(false); setFocusQuestion(focusQuestion === q.questionId ? null : q.questionId); }}
-                    className={`w-full text-left px-5 py-2 border-l-2 transition-colors ${
-                      focusQuestion === q.questionId
-                        ? 'border-[#1a2744] bg-[#1a2744]/5'
-                        : 'border-transparent hover:bg-gray-50'
-                    }`}
+                    onClick={() => setExpandedAssessments(s => { const n = new Set(s); n.has(aId) ? n.delete(aId) : n.add(aId); return n; })}
+                    className="w-full text-left px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
-                    <p className="text-xs text-gray-700 leading-snug">{q.questionTitle}</p>
-                    <div className="flex gap-1 mt-1">
-                      {q.missingEn && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium">needs EN</span>}
-                      {q.missingEs && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-medium">needs ES</span>}
-                    </div>
+                    <span className="text-xs font-semibold text-gray-700 leading-tight">{group.title}</span>
+                    <span className="text-gray-400 text-xs ml-1">{expandedAssessments.has(aId) ? '▲' : '▼'}</span>
                   </button>
-                ))}
-              </div>
-            ))
+                  {expandedAssessments.has(aId) && group.questions.map(q => (
+                    <button
+                      key={q.questionId}
+                      onClick={() => { setOpenSearchMode(false); setFocusQuestion(focusQuestion === q.questionId ? null : q.questionId); }}
+                      className={`w-full text-left px-5 py-2 border-l-2 transition-colors ${focusQuestion === q.questionId ? 'border-[#1a2744] bg-[#1a2744]/5' : 'border-transparent hover:bg-gray-50'}`}
+                    >
+                      <p className="text-xs text-gray-700 leading-snug">{q.questionTitle}</p>
+                      <div className="flex gap-1 mt-1">
+                        {q.missingEn && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium">needs EN</span>}
+                        {q.missingEs && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-medium">needs ES</span>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ))
+            )
+          ) : (
+            allQuestions.length === 0 ? (
+              <div className="px-4 py-6 text-xs text-gray-400">No questions found.</div>
+            ) : (
+              Object.entries(byAssessmentAll).map(([aId, group]) => (
+                <div key={aId}>
+                  <button
+                    onClick={() => setExpandedAll(s => { const n = new Set(s); n.has(aId) ? n.delete(aId) : n.add(aId); return n; })}
+                    className="w-full text-left px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-xs font-semibold text-gray-700 leading-tight">{group.title}</span>
+                    <span className="text-gray-400 text-xs ml-1">{expandedAll.has(aId) ? '▲' : '▼'}</span>
+                  </button>
+                  {expandedAll.has(aId) && group.questions.map(q => (
+                    <button
+                      key={q.questionId}
+                      onClick={() => { setOpenSearchMode(false); setFocusQuestion(focusQuestion === q.questionId ? null : q.questionId); }}
+                      className={`w-full text-left px-5 py-2 border-l-2 transition-colors ${focusQuestion === q.questionId ? 'border-[#1a2744] bg-[#1a2744]/5' : 'border-transparent hover:bg-gray-50'}`}
+                    >
+                      <p className="text-xs text-gray-700 leading-snug">{q.questionTitle}</p>
+                      <div className="flex gap-1 mt-1">
+                        {q.missingEn && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium">needs EN</span>}
+                        {q.missingEs && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-medium">needs ES</span>}
+                        {!q.missingEn && !q.missingEs && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-50 text-green-600 font-medium">✓ complete</span>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ))
+            )
           )}
         </aside>
 
