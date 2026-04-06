@@ -118,6 +118,8 @@ export default function EditAssessmentPage() {
   // Question drag state
   const dragQuestion = useRef<number | null>(null);
   const [dragOverQIdx, setDragOverQIdx] = useState<number | null>(null);
+  // Expanded extra samples per question (beyond first EN + first ES)
+  const [samplesExpanded, setSamplesExpanded] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetch('/api/admin/assessments')
@@ -499,8 +501,19 @@ export default function EditAssessmentPage() {
                     <p className="text-xs text-gray-400 mb-3">
                       Drag to reorder. The <span className="font-medium text-green-700">first English and first Spanish</span> show in the assessment player; additional samples go to the feed only.
                     </p>
+                    {(() => {
+                      const isExpanded = samplesExpanded.has(qi);
+                      // Always show the first EN and first ES; hide the rest unless expanded
+                      const firstEnIdx = q.question_samples.findIndex(s => s.language === 'english');
+                      const firstEsIdx = q.question_samples.findIndex(s => s.language === 'spanish');
+                      const defaultVisible = new Set([firstEnIdx, firstEsIdx].filter(i => i !== -1));
+                      const extraCount = q.question_samples.filter((_, i) => !defaultVisible.has(i)).length;
+                      const visibleSamples = isExpanded
+                        ? q.question_samples.map((s, si) => ({ s, si }))
+                        : q.question_samples.map((s, si) => ({ s, si })).filter(({ si }) => defaultVisible.has(si));
+                      return (
                     <div className="space-y-1.5">
-                      {q.question_samples.map((s, si) => {
+                      {visibleSamples.map(({ s, si }) => {
                         const sampleKey = `${qi}-${si}`;
                         const isDragOver = dragOverKey === sampleKey;
                         const isFirst = q.question_samples.findIndex(x => x.language === s.language) === si;
@@ -615,11 +628,31 @@ export default function EditAssessmentPage() {
                         );
                       })}
                     </div>
+                      );
+                    })()}
+                    {/* Load more / collapse extra samples */}
+                    {(() => {
+                      const firstEnIdx = q.question_samples.findIndex(s => s.language === 'english');
+                      const firstEsIdx = q.question_samples.findIndex(s => s.language === 'spanish');
+                      const defaultVisible = new Set([firstEnIdx, firstEsIdx].filter(i => i !== -1));
+                      const extraCount = q.question_samples.filter((_, i) => !defaultVisible.has(i)).length;
+                      const isExpanded = samplesExpanded.has(qi);
+                      if (extraCount === 0) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setSamplesExpanded(prev => { const n = new Set(prev); isExpanded ? n.delete(qi) : n.add(qi); return n; })}
+                          className="mt-1.5 w-full py-1.5 text-xs text-gray-400 hover:text-gray-600 border border-dashed border-gray-200 hover:border-gray-300 rounded-lg transition-colors"
+                        >
+                          {isExpanded ? `▲ Hide extra samples` : `▼ Show ${extraCount} more sample${extraCount !== 1 ? 's' : ''}`}
+                        </button>
+                      );
+                    })()}
                     <div className="flex gap-2 mt-2.5">
-                      <button type="button" onClick={() => addSample(qi, 'english')} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+                      <button type="button" onClick={() => { addSample(qi, 'english'); setSamplesExpanded(prev => new Set([...prev, qi])); }} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
                         + English sample
                       </button>
-                      <button type="button" onClick={() => addSample(qi, 'spanish')} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors">
+                      <button type="button" onClick={() => { addSample(qi, 'spanish'); setSamplesExpanded(prev => new Set([...prev, qi])); }} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors">
                         + Spanish sample
                       </button>
                     </div>
