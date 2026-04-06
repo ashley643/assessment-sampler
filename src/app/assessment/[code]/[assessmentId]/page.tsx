@@ -94,6 +94,7 @@ export default function AssessmentPlayerPage() {
   const [selectedBenchmark, setSelectedBenchmark] = useState<Assessment | null>(null);
   const searchParams = useSearchParams();
   const isPreview = searchParams.get('preview') === 'true';
+  const questionParam = searchParams.get('question');
   const [currentIdx, setCurrentIdx]           = useState(0);
   const [spanishMode, setSpanishMode]         = useState(false);
   const [showTyping, setShowTyping]           = useState(false);
@@ -129,6 +130,16 @@ export default function AssessmentPlayerPage() {
     if (a) document.title = `${a.title} — Impacter Pathway`;
     return () => { document.title = 'Impacter Pathway'; };
   }, [codeData, assessmentId]);
+
+  // Jump to a specific question when ?question=<id> is provided
+  useEffect(() => {
+    if (!codeData || !questionParam) return;
+    const a = codeData.assessments.find(a => a.id === assessmentId);
+    if (!a) return;
+    const qs = [...(a.questions ?? [])].sort((x, y) => x.order - y.order);
+    const idx = qs.findIndex(q => q.id === questionParam);
+    if (idx !== -1) setCurrentIdx(idx);
+  }, [codeData, questionParam, assessmentId]);
 
   // Scroll typing panel into view on mobile when it opens
   useEffect(() => {

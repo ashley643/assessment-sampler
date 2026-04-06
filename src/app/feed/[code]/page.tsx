@@ -625,7 +625,7 @@ export default function FeedPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
                         <a
-                          href={`/assessment/${code}/${assessment.id}`}
+                          href={`/assessment/${code}/${assessment.id}?question=${question.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-shrink-0 flex items-center gap-1 text-[10px] font-medium text-gray-400 hover:text-[#1a2744] border border-gray-200 hover:border-[#1a2744]/30 rounded-md px-1.5 py-0.5 transition-colors"
