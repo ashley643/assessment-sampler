@@ -29,19 +29,23 @@ export async function POST(req: Request) {
     ? (orders.length > 0 ? orders[0] - 1 : 0)
     : (orders.length > 0 ? orders[orders.length - 1] + 1 : 0);
 
-  // If this embed URL is already assigned somewhere, UPDATE it in-place (preserve ID so bookmarks stay valid)
+  // If this embed URL is already assigned somewhere, UPDATE it in-place (preserve ID so bookmarks stay valid).
+  // Use exact match on the full URL, then fall back to the URL without query params — never use LIKE
+  // which can accidentally match other samples and cause deletions.
   const normalisedUrl = embedUrl.split('?')[0];
-  const { data: dupRows } = await supabaseAdmin
-    .from('question_samples')
-    .select('id')
-    .like('embed_url', `${normalisedUrl}%`);
+  let dupId: string | null = null;
 
-  if (dupRows && dupRows.length > 0) {
-    // Update the first match; delete any extras (shouldn't exist, but clean up just in case)
-    const [keep, ...extras] = dupRows;
-    if (extras.length > 0) {
-      await supabaseAdmin.from('question_samples').delete().in('id', extras.map(r => r.id));
-    }
+  const { data: exact } = await supabaseAdmin
+    .from('question_samples').select('id').eq('embed_url', embedUrl).limit(1);
+  if (exact && exact.length > 0) {
+    dupId = exact[0].id as string;
+  } else if (normalisedUrl !== embedUrl) {
+    const { data: norm } = await supabaseAdmin
+      .from('question_samples').select('id').eq('embed_url', normalisedUrl).limit(1);
+    if (norm && norm.length > 0) dupId = norm[0].id as string;
+  }
+
+  if (dupId) {
     const { error } = await supabaseAdmin.from('question_samples').update({
       question_id: questionId,
       embed_url:   embedUrl,
@@ -51,9 +55,9 @@ export async function POST(req: Request) {
       gender:      gender?.trim()  || null,
       grade:       grade?.trim()   || null,
       excerpt:     excerpt?.trim() || null,
-    }).eq('id', keep.id);
+    }).eq('id', dupId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, action: 'updated', id: dupId });
   }
 
   // New sample
@@ -104,11 +108,11 @@ export async function DELETE(req: Request) {
   const { embedUrl } = await req.json();
   if (!embedUrl) return NextResponse.json({ error: 'embedUrl is required' }, { status: 400 });
 
-  const normalisedUrl = embedUrl.split('?')[0];
+  // Exact match only — LIKE can collide with other samples sharing a URL prefix
   const { error } = await supabaseAdmin
     .from('question_samples')
     .delete()
-    .like('embed_url', `${normalisedUrl}%`);
+    .eq('embed_url', embedUrl);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
