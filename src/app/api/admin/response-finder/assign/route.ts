@@ -47,6 +47,30 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
+// PATCH — edit an existing sample (embed URL, metadata, or reassign to different question)
+export async function PATCH(req: Request) {
+  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { sampleId, questionId, language, embedUrl, mediaType, grade, gender: rawGender, excerpt } = await req.json();
+  if (!sampleId) return NextResponse.json({ error: 'sampleId is required' }, { status: 400 });
+
+  const genderMap: Record<string, string> = { male: 'M', female: 'F', 'm': 'M', 'f': 'F' };
+  const gender = rawGender ? (genderMap[rawGender.toLowerCase().trim()] ?? rawGender.trim()) : rawGender;
+
+  const updates: Record<string, unknown> = {};
+  if (questionId  !== undefined) updates.question_id = questionId;
+  if (language    !== undefined) updates.language    = language;
+  if (embedUrl    !== undefined) updates.embed_url   = embedUrl;
+  if (mediaType   !== undefined) updates.media_type  = mediaType;
+  if (grade       !== undefined) updates.grade       = grade?.trim()   || null;
+  if (gender      !== undefined) updates.gender      = gender?.trim()  || null;
+  if (excerpt     !== undefined) updates.excerpt     = excerpt?.trim() || null;
+
+  const { error } = await supabaseAdmin.from('question_samples').update(updates).eq('id', sampleId);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

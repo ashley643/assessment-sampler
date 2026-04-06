@@ -19,11 +19,11 @@ export async function GET(req: Request) {
   // ── Questions that need samples (always returned) ───────────────────────
   const { data: assessmentsData } = await supabaseAdmin
     .from('assessments')
-    .select('id, title, type_label, questions ( id, title, question, question_samples ( id, language, embed_url, media_type, excerpt, sort_order ) )')
+    .select('id, title, type_label, questions ( id, title, question, question_samples ( id, language, embed_url, media_type, excerpt, grade, gender, sort_order ) )')
     .neq('type', 'bundle')
     .order('sort_order');
 
-  type QSample = { id: string; language: string; embed_url: string; media_type: string | null; excerpt: string | null; sort_order: number };
+  type QSample = { id: string; language: string; embed_url: string; media_type: string | null; excerpt: string | null; grade: string | null; gender: string | null; sort_order: number };
   type QRow    = { id: string; title: string; question: string | null; question_samples: QSample[] };
   type ARow    = { id: string; title: string; type_label: string; questions: QRow[] };
 
@@ -33,14 +33,20 @@ export async function GET(req: Request) {
       const langs     = samples.map(s => s.language);
       const missingEn = !langs.includes('english');
       const missingEs = !langs.includes('spanish');
-      const featuredEn = samples.find(s => s.language === 'english');
-      const featuredEs = samples.find(s => s.language === 'spanish');
       return {
         questionId: q.id, questionTitle: q.title, questionText: q.question ?? '',
         assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label,
         missingEn, missingEs,
-        featuredEn: featuredEn ? { embedUrl: featuredEn.embed_url, mediaType: featuredEn.media_type ?? 'video', excerpt: featuredEn.excerpt ?? '' } : null,
-        featuredEs: featuredEs ? { embedUrl: featuredEs.embed_url, mediaType: featuredEs.media_type ?? 'video', excerpt: featuredEs.excerpt ?? '' } : null,
+        samples: samples.map(s => ({
+          id: s.id,
+          embedUrl: s.embed_url,
+          language: s.language,
+          mediaType: s.media_type ?? 'video',
+          excerpt: s.excerpt ?? '',
+          grade: s.grade ?? '',
+          gender: s.gender ?? '',
+          sortOrder: s.sort_order,
+        })),
       };
     })
   );

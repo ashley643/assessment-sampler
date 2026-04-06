@@ -147,6 +147,21 @@ export default function FeedPage() {
       .catch(() => { bookmarksLoaded.current = true; });
   }, [code]);
 
+  // Scrub stale bookmark IDs once codeData loads (handles swapped/deleted samples)
+  useEffect(() => {
+    if (!codeData || !bookmarksLoaded.current) return;
+    const validIds = new Set<string>();
+    for (const a of codeData.assessments) {
+      const collectIds = (qs: { samples?: { id: string }[] }[]) => qs.forEach(q => (q.samples ?? []).forEach(s => validIds.add(s.id)));
+      if (a.type === 'bundle') (a.childAssessments ?? []).forEach(c => collectIds(c.questions));
+      else collectIds(a.questions);
+    }
+    setBookmarks(prev => {
+      const cleaned = new Set([...prev].filter(id => validIds.has(id)));
+      return cleaned.size === prev.size ? prev : cleaned;
+    });
+  }, [codeData]);
+
   // Save bookmarks to server whenever they change (debounced, skip initial load)
   useEffect(() => {
     if (!bookmarksLoaded.current) return;

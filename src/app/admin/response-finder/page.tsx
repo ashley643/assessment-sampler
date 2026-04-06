@@ -19,10 +19,15 @@ interface Transcript {
   createdAt: string;
 }
 
-interface FeaturedSample {
+interface AssignedSample {
+  id: string;
   embedUrl: string;
+  language: string;
   mediaType: string;
   excerpt: string;
+  grade: string;
+  gender: string;
+  sortOrder: number;
 }
 
 interface NeedsSample {
@@ -34,8 +39,7 @@ interface NeedsSample {
   typeLabel: string;
   missingEn: boolean;
   missingEs: boolean;
-  featuredEn: FeaturedSample | null;
-  featuredEs: FeaturedSample | null;
+  samples: AssignedSample[];
 }
 
 interface AssignedUrl {
@@ -181,6 +185,14 @@ export default function TranscriptFinderPage() {
   const [assigning, setAssigning]   = useState(false);
   const [assignError, setAssignError] = useState('');
   const [assigned, setAssigned]     = useState<Set<string>>(new Set()); // transcript ids assigned this session
+
+  // Edit-existing-sample modal
+  interface EditSampleState { sample: AssignedSample; questionId: string; }
+  const [editSample, setEditSample] = useState<EditSampleState | null>(null);
+  const [editSampleForm, setEditSampleForm] = useState<AssignedSample | null>(null);
+  const [editSampleTargetQ, setEditSampleTargetQ] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   // Expanded transcript
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -367,6 +379,51 @@ export default function TranscriptFinderPage() {
     const norm = embedUrl.split('?')[0];
     setAssignedUrls(prev => prev.filter(a => a.normalised !== norm));
     setAssigned(prev => { const n = new Set(prev); n.delete(transcriptId); return n; });
+    refreshNeeds();
+  }
+
+  function openEditSample(sample: AssignedSample, questionId: string) {
+    setEditSample({ sample, questionId });
+    setEditSampleForm({ ...sample });
+    setEditSampleTargetQ(questionId);
+    setEditError('');
+  }
+
+  async function submitEditSample() {
+    if (!editSample || !editSampleForm) return;
+    setEditSaving(true); setEditError('');
+    const res = await fetch('/api/admin/response-finder/assign', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sampleId:  editSample.sample.id,
+        questionId: editSampleTargetQ !== editSample.questionId ? editSampleTargetQ : undefined,
+        language:  editSampleForm.language,
+        embedUrl:  editSampleForm.embedUrl,
+        mediaType: editSampleForm.mediaType,
+        grade:     editSampleForm.grade,
+        gender:    editSampleForm.gender,
+        excerpt:   editSampleForm.excerpt,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) { setEditError(json.error ?? 'Save failed'); setEditSaving(false); return; }
+    setEditSample(null); setEditSampleForm(null);
+    setEditSaving(false);
+    refreshNeeds();
+  }
+
+  async function deleteExistingSample(sampleId: string, embedUrl: string) {
+    if (!confirm('Remove this sample?')) return;
+    const res = await fetch('/api/admin/response-finder/assign', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embedUrl }),
+    });
+    if (!res.ok) return;
+    const norm = embedUrl.split('?')[0];
+    setAssignedUrls(prev => prev.filter(a => a.normalised !== norm));
+    void sampleId;
     refreshNeeds();
   }
 
@@ -570,9 +627,8 @@ export default function TranscriptFinderPage() {
               {/* Existing assigned samples for this question */}
               {(() => {
                 const q = questionById[focusQuestion];
-                const hasEn = !!q.featuredEn;
-                const hasEs = !!q.featuredEs;
-                if (!hasEn && !hasEs) return (
+                const count = q.samples?.length ?? 0;
+                if (count === 0) return (
                   <div className="flex items-center gap-1.5 text-[11px] text-gray-400 bg-white/60 rounded-lg px-2.5 py-1.5 border border-gray-200">
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="6" cy="6" r="5"/><path d="M6 4v4M6 3v.5"/></svg>
                     No samples assigned to this question yet
@@ -586,31 +642,37 @@ export default function TranscriptFinderPage() {
                       className="flex items-center gap-1.5 text-[11px] font-semibold text-[#1a2744] bg-white/80 hover:bg-white border border-[#1a2744]/20 rounded-lg px-2.5 py-1.5 transition-colors w-full"
                     >
                       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="1" y="3" width="10" height="7" rx="1.5"/><path d="M4 3V2a2 2 0 014 0v1"/></svg>
-                      {showExisting ? '▲ Hide current samples' : `▼ View current samples (${[hasEn, hasEs].filter(Boolean).length} assigned)`}
+                      {showExisting ? '▲ Hide current samples' : `▼ View current samples (${count} assigned)`}
                     </button>
                     {showExisting && (
-                      <div className="mt-2 grid grid-cols-1 gap-2">
-                        {[{ lang: 'EN', sample: q.featuredEn }, { lang: 'ES', sample: q.featuredEs }]
-                          .filter(({ sample }) => !!sample)
-                          .map(({ lang, sample }) => (
-                            <div key={lang} className="bg-white rounded-lg border border-gray-200 p-2 space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${lang === 'EN' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{lang}</span>
-                                <span className="text-[10px] text-gray-400">{sample!.mediaType}</span>
-                                <span className="text-[10px] font-semibold text-green-600 ml-auto">★ Featured</span>
+                      <div className="mt-2 space-y-2">
+                        {(q.samples ?? []).map((s, si) => {
+                          const isFirstOfLang = q.samples.findIndex(x => x.language === s.language) === si;
+                          const langLabel = s.language === 'english' ? 'EN' : 'ES';
+                          return (
+                            <div key={s.id} className="bg-white rounded-lg border border-gray-200 p-2.5 space-y-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.language === 'english' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{langLabel}</span>
+                                {isFirstOfLang && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">★ Featured</span>}
+                                {s.grade  && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-600">{s.grade}</span>}
+                                {s.gender && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600">{s.gender}</span>}
+                                <span className="text-[10px] text-gray-400">{s.mediaType}</span>
+                                <div className="ml-auto flex gap-1">
+                                  <button onClick={() => openEditSample(s, q.questionId)} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium transition-colors">Edit / Reassign</button>
+                                  <button onClick={() => deleteExistingSample(s.id, s.embedUrl)} className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 hover:bg-red-100 text-red-500 font-medium transition-colors">Delete</button>
+                                </div>
                               </div>
-                              {sample!.excerpt && (
-                                <p className="text-[11px] text-gray-600 italic leading-relaxed">&ldquo;{sample!.excerpt.slice(0, 160)}{sample!.excerpt.length > 160 ? '…' : ''}&rdquo;</p>
-                              )}
-                              {sample!.mediaType === 'audio' ? (
-                                <audio controls preload="none" src={sample!.embedUrl} className="w-full" style={{ height: '32px' }} />
+                              {s.excerpt && <p className="text-[11px] text-gray-600 italic leading-relaxed">&ldquo;{s.excerpt.slice(0, 160)}{s.excerpt.length > 160 ? '…' : ''}&rdquo;</p>}
+                              {s.mediaType === 'audio' ? (
+                                <audio controls preload="none" src={s.embedUrl} className="w-full" style={{ height: '32px' }} />
                               ) : (
                                 <div className="aspect-video bg-gray-100 rounded overflow-hidden">
-                                  <iframe src={sample!.embedUrl} allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;" className="w-full h-full" style={{ border: 'none' }} loading="lazy" title={`${lang} featured sample`} />
+                                  <iframe src={s.embedUrl} allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;" className="w-full h-full" style={{ border: 'none' }} loading="lazy" title={`${langLabel} sample ${si + 1}`} />
                                 </div>
                               )}
                             </div>
-                          ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -983,7 +1045,7 @@ export default function TranscriptFinderPage() {
                 {/* Warning: existing featured sample will be replaced */}
                 {(() => {
                   const q = allQuestions.find(q => q.questionId === assign.questionId);
-                  const existing = assign.language === 'english' ? q?.featuredEn : q?.featuredEs;
+                  const existing = (q?.samples ?? []).find(s => s.language === assign.language); // first = featured
                   if (!existing) return null;
                   return (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
@@ -1095,6 +1157,95 @@ export default function TranscriptFinderPage() {
                 >
                   {assigning ? 'Saving…' : 'Add to question →'}
                 </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {/* ── Edit / Reassign existing sample modal ── */}
+      {editSample && editSampleForm && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setEditSample(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90dvh] flex flex-col">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+                <h2 className="text-sm font-semibold text-gray-800">Edit / Reassign Sample</h2>
+                <button onClick={() => setEditSample(null)} className="text-gray-400 hover:text-gray-600 p-1">
+                  <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 5l10 10M15 5L5 15"/></svg>
+                </button>
+              </div>
+              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+                {/* Reassign to question */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 block mb-1.5">Question</label>
+                  <select value={editSampleTargetQ} onChange={e => setEditSampleTargetQ(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20" size={6}>
+                    {allQuestions.map(q => (
+                      <option key={q.questionId} value={q.questionId}>{q.assessmentTitle} — {q.questionTitle}</option>
+                    ))}
+                  </select>
+                  {editSampleTargetQ !== editSample.questionId && (
+                    <p className="text-xs text-amber-600 mt-1">⚠ This will move the sample to a different question.</p>
+                  )}
+                </div>
+                {/* Language */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 block mb-1.5">Language</label>
+                  <div className="flex gap-2">
+                    {(['english', 'spanish'] as const).map(lang => (
+                      <button key={lang} type="button" onClick={() => setEditSampleForm(f => f ? { ...f, language: lang } : f)}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${editSampleForm.language === lang ? (lang === 'english' ? 'bg-blue-600 text-white border-transparent' : 'bg-orange-500 text-white border-transparent') : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        {lang === 'english' ? 'English' : 'Spanish'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Grade + Gender */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">Grade</label>
+                    <select value={editSampleForm.grade} onChange={e => setEditSampleForm(f => f ? { ...f, grade: e.target.value } : f)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20">
+                      <option value="">— Unknown —</option>
+                      {['TK','K','1','2','3','4','5','6','7','8','9','10','11','12','Parent','Staff'].map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">Gender</label>
+                    <select value={editSampleForm.gender} onChange={e => setEditSampleForm(f => f ? { ...f, gender: e.target.value } : f)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20">
+                      <option value="">— Unknown —</option>
+                      <option value="M">M</option>
+                      <option value="F">F</option>
+                    </select>
+                  </div>
+                </div>
+                {/* Embed URL */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 block mb-1.5">Embed URL</label>
+                  <input value={editSampleForm.embedUrl} onChange={e => setEditSampleForm(f => f ? { ...f, embedUrl: e.target.value } : f)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20" />
+                </div>
+                {/* Excerpt */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 block mb-1.5">Excerpt</label>
+                  <textarea value={editSampleForm.excerpt} onChange={e => setEditSampleForm(f => f ? { ...f, excerpt: e.target.value } : f)}
+                    rows={6} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20 resize-y" />
+                </div>
+                {editError && <p className="text-xs text-red-500">{editError}</p>}
+              </div>
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+                <button onClick={() => deleteExistingSample(editSample.sample.id, editSample.sample.embedUrl)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors">
+                  Delete sample
+                </button>
+                <div className="flex gap-3">
+                  <button onClick={() => setEditSample(null)} className="px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+                  <button onClick={submitEditSample} disabled={editSaving}
+                    className="px-5 py-2 rounded-lg text-sm font-semibold bg-[#1a2744] text-white hover:bg-[#243660] disabled:opacity-50 transition-colors">
+                    {editSaving ? 'Saving…' : 'Save changes'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
