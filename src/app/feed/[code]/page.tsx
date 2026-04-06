@@ -11,6 +11,7 @@ interface FeedItem {
   sample: QuestionSample;
   assessment: Assessment;
   bundleTitle?: string;
+  bundleId?: string;
 }
 
 type Filters = {
@@ -164,16 +165,16 @@ export default function FeedPage() {
   if (!codeData) return null;
 
   const allItems: FeedItem[] = [];
-  function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string) {
+  function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string, bundleId?: string) {
     for (const q of questions) {
       for (const sample of q.samples ?? []) {
-        allItems.push({ question: q, sample, assessment, bundleTitle });
+        allItems.push({ question: q, sample, assessment, bundleTitle, bundleId });
       }
     }
   }
   for (const a of codeData.assessments) {
     if (a.type === 'bundle') {
-      for (const child of a.childAssessments ?? []) collectQuestions(child.questions, child, a.title);
+      for (const child of a.childAssessments ?? []) collectQuestions(child.questions, child, a.title, a.id);
     } else {
       collectQuestions(a.questions, a);
     }
@@ -588,7 +589,7 @@ export default function FeedPage() {
         ) : (
           <>
             <div className="space-y-8">
-              {visible.map(({ question, sample, assessment }) => {
+              {visible.map(({ question, sample, assessment, bundleId }) => {
                 const mt = mediaTypeBadge(sample.mediaType);
                 return (
                   <div key={sample.id}
@@ -625,7 +626,10 @@ export default function FeedPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
                         <a
-                          href={`/assessment/${code}/${assessment.id}?question=${question.id}`}
+                          href={bundleId
+                            ? `/assessment/${code}/${bundleId}?child=${assessment.id}&question=${question.id}`
+                            : `/assessment/${code}/${assessment.id}?question=${question.id}`
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-shrink-0 flex items-center gap-1 text-[10px] font-medium text-gray-400 hover:text-[#1a2744] border border-gray-200 hover:border-[#1a2744]/30 rounded-md px-1.5 py-0.5 transition-colors"

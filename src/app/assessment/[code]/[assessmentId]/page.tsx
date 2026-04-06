@@ -95,6 +95,7 @@ export default function AssessmentPlayerPage() {
   const searchParams = useSearchParams();
   const isPreview = searchParams.get('preview') === 'true';
   const questionParam = searchParams.get('question');
+  const childParam = searchParams.get('child');
   const [currentIdx, setCurrentIdx]           = useState(0);
   const [spanishMode, setSpanishMode]         = useState(false);
   const [showTyping, setShowTyping]           = useState(false);
@@ -131,15 +132,29 @@ export default function AssessmentPlayerPage() {
     return () => { document.title = 'Impacter Pathway'; };
   }, [codeData, assessmentId]);
 
-  // Jump to a specific question when ?question=<id> is provided
+  // Auto-select bundle child and/or jump to question when URL params are provided
   useEffect(() => {
-    if (!codeData || !questionParam) return;
+    if (!codeData) return;
     const a = codeData.assessments.find(a => a.id === assessmentId);
     if (!a) return;
-    const qs = [...(a.questions ?? [])].sort((x, y) => x.order - y.order);
-    const idx = qs.findIndex(q => q.id === questionParam);
-    if (idx !== -1) setCurrentIdx(idx);
-  }, [codeData, questionParam, assessmentId]);
+
+    let targetQuestions = [...(a.questions ?? [])].sort((x, y) => x.order - y.order);
+
+    // For bundles, auto-select the child specified by ?child=
+    if (childParam && a.type === 'bundle') {
+      const child = (a.childAssessments ?? []).find(c => c.id === childParam);
+      if (child) {
+        setSelectedBenchmark(child);
+        targetQuestions = [...child.questions].sort((x, y) => x.order - y.order);
+      }
+    }
+
+    // Jump to the specific question if ?question= is provided
+    if (questionParam) {
+      const idx = targetQuestions.findIndex(q => q.id === questionParam);
+      if (idx !== -1) setCurrentIdx(idx);
+    }
+  }, [codeData, childParam, questionParam, assessmentId]);
 
   // Scroll typing panel into view on mobile when it opens
   useEffect(() => {
