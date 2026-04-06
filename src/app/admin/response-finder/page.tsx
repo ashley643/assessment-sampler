@@ -555,7 +555,7 @@ export default function TranscriptFinderPage() {
 
           {/* Focus bar — always visible, never scrolls */}
           {focusQuestion && questionById[focusQuestion] && (
-            <div className="flex-shrink-0 px-6 pt-4 pb-0 bg-gray-50 border-b border-[#1a2744]/10">
+            <div className="flex-shrink-0 px-6 pt-4 pb-0 bg-gray-50 border-b border-[#1a2744]/10 max-h-[55vh] overflow-y-auto">
               <div className="p-3 bg-[#eef0f5] border border-[#1a2744]/20 rounded-xl space-y-2 shadow-sm mb-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-[#1a2744] uppercase tracking-wide">Searching for: </span>
@@ -573,16 +573,20 @@ export default function TranscriptFinderPage() {
                 const hasEn = !!q.featuredEn;
                 const hasEs = !!q.featuredEs;
                 if (!hasEn && !hasEs) return (
-                  <p className="text-[10px] text-gray-400">No samples assigned yet.</p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-gray-400 bg-white/60 rounded-lg px-2.5 py-1.5 border border-gray-200">
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="6" cy="6" r="5"/><path d="M6 4v4M6 3v.5"/></svg>
+                    No samples assigned to this question yet
+                  </div>
                 );
                 return (
                   <div>
                     <button
                       type="button"
                       onClick={() => setShowExisting(v => !v)}
-                      className="text-[11px] font-medium text-[#1a2744]/70 hover:text-[#1a2744] underline"
+                      className="flex items-center gap-1.5 text-[11px] font-semibold text-[#1a2744] bg-white/80 hover:bg-white border border-[#1a2744]/20 rounded-lg px-2.5 py-1.5 transition-colors w-full"
                     >
-                      {showExisting ? '▲ Hide current samples' : `▼ View current samples (${[hasEn, hasEs].filter(Boolean).length})`}
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="1" y="3" width="10" height="7" rx="1.5"/><path d="M4 3V2a2 2 0 014 0v1"/></svg>
+                      {showExisting ? '▲ Hide current samples' : `▼ View current samples (${[hasEn, hasEs].filter(Boolean).length} assigned)`}
                     </button>
                     {showExisting && (
                       <div className="mt-2 grid grid-cols-1 gap-2">
