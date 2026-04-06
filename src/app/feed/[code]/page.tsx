@@ -154,15 +154,15 @@ export default function FeedPage() {
   // toggles a bookmark, so stale-ID cleanup is never written back to the server on its own.
   useEffect(() => {
     if (!codeData || !bookmarksLoaded.current) return;
-    const validIds = new Set<string>();
+    const validUrls = new Set<string>();
     for (const a of codeData.assessments) {
-      const collect = (qs: { samples?: { id: string }[] }[]) =>
-        qs.forEach(q => (q.samples ?? []).forEach(s => validIds.add(s.id)));
+      const collect = (qs: { samples?: { embedUrl: string }[] }[]) =>
+        qs.forEach(q => (q.samples ?? []).forEach(s => validUrls.add(s.embedUrl)));
       if (a.type === 'bundle') (a.childAssessments ?? []).forEach(c => collect(c.questions));
       else collect(a.questions);
     }
     setBookmarks(prev => {
-      const cleaned = new Set([...prev].filter(id => validIds.has(id)));
+      const cleaned = new Set([...prev].filter(url => validUrls.has(url)));
       return cleaned.size === prev.size ? prev : cleaned;
     });
   }, [codeData]);
@@ -212,7 +212,7 @@ export default function FeedPage() {
   }
 
   const filtered = sortForFeed(applyFilters(allItems, filters))
-    .filter(i => !bookmarksOnly || bookmarks.has(i.sample.id));
+    .filter(i => !bookmarksOnly || bookmarks.has(i.sample.embedUrl));
   const visible  = filtered.slice(0, page * PAGE_SIZE);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
@@ -262,13 +262,13 @@ export default function FeedPage() {
     track('feed_filter', code, { metadata: { filter: key, value } });
   }
 
-  function toggleBookmark(sampleId: string) {
+  function toggleBookmark(embedUrl: string) {
     pendingSave.current = true;
     setBookmarks(prev => {
       const n = new Set(prev);
-      const adding = !n.has(sampleId);
-      adding ? n.add(sampleId) : n.delete(sampleId);
-      track('feed_bookmark', code, { metadata: { sample_id: sampleId, action: adding ? 'add' : 'remove' } });
+      const adding = !n.has(embedUrl);
+      adding ? n.add(embedUrl) : n.delete(embedUrl);
+      track('feed_bookmark', code, { metadata: { embed_url: embedUrl, action: adding ? 'add' : 'remove' } });
       return n;
     });
   }
@@ -636,7 +636,7 @@ export default function FeedPage() {
                       }, { threshold: 0.5 });
                       observer.observe(el);
                     }}
-                    className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-colors ${bookmarks.has(sample.id) ? 'border-amber-300' : 'border-gray-200'}`}>
+                    className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-colors ${bookmarks.has(sample.embedUrl) ? 'border-amber-300' : 'border-gray-200'}`}>
                     <div className="px-5 pt-4 pb-3 border-b border-gray-100">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>{assessment.typeLabel}</span>
@@ -646,11 +646,11 @@ export default function FeedPage() {
                         {sample.gender && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{sample.gender}</span>}
                         {sample.grade  && <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-medium">{sample.grade}</span>}
                         <button
-                          onClick={() => toggleBookmark(sample.id)}
-                          title={bookmarks.has(sample.id) ? 'Remove bookmark' : 'Bookmark this response'}
+                          onClick={() => toggleBookmark(sample.embedUrl)}
+                          title={bookmarks.has(sample.embedUrl) ? 'Remove bookmark' : 'Bookmark this response'}
                           className="ml-auto p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                         >
-                          <svg width="16" height="16" viewBox="0 0 14 14" fill={bookmarks.has(sample.id) ? '#f59e0b' : 'none'} stroke={bookmarks.has(sample.id) ? '#f59e0b' : '#9ca3af'} strokeWidth="1.6">
+                          <svg width="16" height="16" viewBox="0 0 14 14" fill={bookmarks.has(sample.embedUrl) ? '#f59e0b' : 'none'} stroke={bookmarks.has(sample.embedUrl) ? '#f59e0b' : '#9ca3af'} strokeWidth="1.6">
                             <path d="M2 2h10v11l-5-3-5 3V2z"/>
                           </svg>
                         </button>
