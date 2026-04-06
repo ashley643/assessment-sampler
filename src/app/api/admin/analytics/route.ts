@@ -58,6 +58,7 @@ export async function GET(req: Request) {
   const byType: Record<string, number> = {};
   const byAssessment: Record<string, number> = {};
   const byBundle: Record<string, number> = {};
+  const bundleByCode: Record<string, Record<string, number>> = {};
 
   for (const ev of events ?? []) {
     byType[ev.event_type] = (byType[ev.event_type] ?? 0) + 1;
@@ -68,8 +69,9 @@ export async function GET(req: Request) {
       } else if (bundleTitleMap[ev.assessment_id]) {
         const label = bundleTitleMap[ev.assessment_id];
         byBundle[label] = (byBundle[label] ?? 0) + 1;
+        if (!bundleByCode[label]) bundleByCode[label] = {};
+        bundleByCode[label][ev.code] = (bundleByCode[label][ev.code] ?? 0) + 1;
       }
-      // orphaned IDs silently dropped
     }
   }
 
@@ -77,14 +79,17 @@ export async function GET(req: Request) {
   const dailyMap: Record<string, number> = {};
   let dailyQuery = supabaseAdmin
     .from('sessions')
-    .select('started_at')
+    .select('started_at, code')
     .gte('started_at', since);
   if (code) dailyQuery = dailyQuery.eq('code', code);
   const { data: dailySessions } = await dailyQuery;
 
+  const dailyByCode: Record<string, Record<string, number>> = {};
   for (const s of dailySessions ?? []) {
     const day = s.started_at.slice(0, 10);
     dailyMap[day] = (dailyMap[day] ?? 0) + 1;
+    if (!dailyByCode[day]) dailyByCode[day] = {};
+    dailyByCode[day][s.code] = (dailyByCode[day][s.code] ?? 0) + 1;
   }
 
   const daily = Object.entries(dailyMap)
@@ -99,5 +104,7 @@ export async function GET(req: Request) {
     byBundle,
     byCode,
     daily,
+    dailyByCode,
+    bundleByCode,
   });
 }
