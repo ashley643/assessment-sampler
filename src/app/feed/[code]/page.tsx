@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { AccessCode, Assessment, Question, QuestionSample } from '@/types/assessment';
@@ -195,24 +195,30 @@ export default function FeedPage() {
 
   if (!codeData) return null;
 
-  const allItems: FeedItem[] = [];
-  function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string, bundleId?: string) {
-    for (const q of questions) {
-      for (const sample of q.samples ?? []) {
-        allItems.push({ question: q, sample, assessment, bundleTitle, bundleId });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const allItems = useMemo<FeedItem[]>(() => {
+    const items: FeedItem[] = [];
+    function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string, bundleId?: string) {
+      for (const q of questions) {
+        for (const sample of q.samples ?? []) {
+          items.push({ question: q, sample, assessment, bundleTitle, bundleId });
+        }
       }
     }
-  }
-  for (const a of codeData.assessments) {
-    if (a.type === 'bundle') {
-      for (const child of a.childAssessments ?? []) collectQuestions(child.questions, child, a.title, a.id);
-    } else {
-      collectQuestions(a.questions, a);
+    for (const a of codeData.assessments) {
+      if (a.type === 'bundle') {
+        for (const child of a.childAssessments ?? []) collectQuestions(child.questions, child, a.title, a.id);
+      } else {
+        collectQuestions(a.questions, a);
+      }
     }
-  }
+    return items;
+  }, [codeData]);
 
-  const filtered = sortForFeed(applyFilters(allItems, filters))
-    .filter(i => !bookmarksOnly || bookmarks.has(i.sample.embedUrl));
+  // sortForFeed shuffles — memoize so bookmark toggles don't reshuffle the list
+  const sortedItems = useMemo(() => sortForFeed(applyFilters(allItems, filters)), [allItems, filters]);
+
+  const filtered = sortedItems.filter(i => !bookmarksOnly || bookmarks.has(i.sample.embedUrl));
   const visible  = filtered.slice(0, page * PAGE_SIZE);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
