@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ const SPANISH_BY_TOPIC: Record<string, string[]> = {
   knowledgeable:    ['conocimiento','aprendí','saber','entender','comprender','estudié','investigué','descubrí'],
 };
 
-function buildSearchTerms(title: string, questionText: string): { en: string[], es: string[] } {
+function buildSearchTerms(title: string, questionText: string): { en: string[], es: string[], core: string[] } {
   const titleKey = title.toLowerCase().trim();
 
   const fromQuestion = questionText
@@ -130,7 +130,10 @@ function buildSearchTerms(title: string, questionText: string): { en: string[], 
     ?? [];
   const es = esSet.slice(0, 8);
 
-  return { en, es };
+  // "core" = words derived directly from the question text (most specific, start active)
+  const core = fromQuestion.slice(0, 5);
+
+  return { en, es, core };
 }
 
 interface AssignState {
@@ -212,6 +215,8 @@ export default function TranscriptFinderPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // Show existing samples panel in focus bar
   const [showExisting, setShowExisting] = useState(false);
+  // Tracks which questionId chips were last generated for — prevents reset on needsSamples refresh
+  const chipsGeneratedFor = useRef<string | null>(null);
 
   // Node-title filter (filter out irrelevant VideoAsk questions from results)
   const [hiddenNodeTitles, setHiddenNodeTitles] = useState<Set<string>>(new Set());
@@ -281,7 +286,7 @@ export default function TranscriptFinderPage() {
       const text = await res.text();
       let data: Record<string, unknown>;
       try { data = JSON.parse(text); } catch { setFetchError(`Server returned (${res.status}): ${text.slice(0, 300)}`); setLoading(false); setLoadingMore(false); return; }
-      if (!res.ok) { setFetchError(`Error ${res.status}: ${(data.error as string) ?? JSON.stringify(data)}`); setLoading(false); setLoadingMore(false); return; }
+      if (!res.ok || data.error) { setFetchError(`Error ${res.status}: ${(data.error as string) ?? JSON.stringify(data)}`); setLoading(false); setLoadingMore(false); return; }
       setTranscripts(prev => replace ? ((data.transcripts as Transcript[]) ?? []) : [...prev, ...((data.transcripts as Transcript[]) ?? [])]);
       setHasMore((data.hasMore as boolean) ?? false);
       if (replace) {
@@ -293,7 +298,7 @@ export default function TranscriptFinderPage() {
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [focusQuestion, openSearchMode, mediaType, minWords, search, needsSamples, keywordStates, keywordLang, enKeywords, esKeywords, customKeywords]);
+  }, [focusQuestion, openSearchMode, mediaType, minWords, search, keywordStates, keywordLang, enKeywords, esKeywords, customKeywords]);
 
   // Reset filters when question or mode changes
   useEffect(() => {
@@ -307,25 +312,32 @@ export default function TranscriptFinderPage() {
   // When focused question changes, regenerate keyword chips; open search starts with blank chips
   useEffect(() => {
     if (focusQuestion && !search) {
+      // Only generate chips once per question — don't reset on needsSamples refresh
+      if (chipsGeneratedFor.current === focusQuestion) return;
       const focused = needsSamples.find(n => n.questionId === focusQuestion)
                    ?? allQuestions.find(n => n.questionId === focusQuestion);
       if (focused) {
-        const { en, es } = buildSearchTerms(focused.questionTitle, focused.questionText);
+        chipsGeneratedFor.current = focusQuestion;
+        const { en, es, core } = buildSearchTerms(focused.questionTitle, focused.questionText);
         setEnKeywords(en);
         setEsKeywords(es);
         setCustomKeywords([]);
         const initMap = new Map<string, 'or' | 'must'>();
-        [...en, ...es].forEach(kw => initMap.set(kw, 'or'));
+        // Start with only the core question-text words active (avoids huge OR queries);
+        // fallback words show as 'off' chips the user can click to enable.
+        const initialActive = core.length > 0 ? core : en.slice(0, 3);
+        initialActive.forEach(kw => initMap.set(kw, 'or'));
         setKeywordStates(initMap);
       }
     } else if (openSearchMode) {
       // Open search: user builds chips manually — don't touch customKeywords/keywordStates
       // enKeywords/esKeywords stay empty; setting them here would cause spurious re-fetches
     } else {
+      chipsGeneratedFor.current = null;
       setEnKeywords([]); setEsKeywords([]); setCustomKeywords([]);
       setKeywordStates(new Map());
     }
-  }, [focusQuestion, openSearchMode, needsSamples, search]);
+  }, [focusQuestion, openSearchMode, needsSamples, allQuestions, search]);
 
   useEffect(() => {
     setPage(1);
