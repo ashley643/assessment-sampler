@@ -364,22 +364,10 @@ export default function EditAssessmentPage() {
     <AdminShell>
       <div className="max-w-4xl">
         <button type="button" onClick={() => router.push('/admin/assessments')} className="text-sm text-gray-400 hover:text-gray-600 mb-3 block">← All assessments</button>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
-          {/* Mobile/tablet top buttons — hidden on lg where sticky panel takes over */}
-          <div className="flex items-center gap-3 lg:hidden">
-            {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
-            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
-            <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
-              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
-            </button>
-          </div>
-        </div>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-6">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
 
-        <div className="lg:flex lg:gap-8 lg:items-start">
-        {/* ── Main form column ── */}
-        <div className="flex-1 min-w-0">
-        <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
+        <div>
+        <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6 pb-20">
           <Section title="Details">
             <div className="grid grid-cols-2 gap-4">
               {isNew && (
@@ -703,43 +691,22 @@ export default function EditAssessmentPage() {
             </button>
           </Section>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          {/* Mobile/tablet bottom buttons — hidden on lg */}
-          <div className="flex items-center justify-end gap-3 pt-2 lg:hidden">
-            {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
-            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
-            <button type="submit" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
-              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
-            </button>
-          </div>
+          {error && <p className="text-sm text-red-500 md:hidden">{error}</p>}
         </form>
-        </div>{/* end main form column */}
-
-        {/* ── Sticky actions panel (lg+ only) ── */}
-        <div className="hidden lg:block flex-shrink-0 w-44 sticky top-6 self-start">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2.5 shadow-sm">
-            <button
-              type="submit"
-              form="assessment-form"
-              disabled={saving}
-              className="w-full px-3 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/admin/assessments')}
-              className="w-full px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-            {savedOk && <p className="text-center text-sm text-green-600 font-medium pt-1">Saved ✓</p>}
-            {error && <p className="text-xs text-red-500 text-center pt-1">{error}</p>}
-          </div>
         </div>
+      </div>
 
-        </div>{/* end lg flex row */}
+      {/* Fixed bottom save bar — always visible on desktop as you scroll */}
+      <div className="hidden md:flex fixed bottom-0 left-52 right-0 z-20 items-center gap-4 bg-white border-t border-gray-200 px-8 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+        {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
+        {error && <span className="text-sm text-red-500 truncate max-w-xs">{error}</span>}
+        <div className="flex-1" />
+        <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+          Cancel
+        </button>
+        <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
+          {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+        </button>
       </div>
 
       {showReorder && (
