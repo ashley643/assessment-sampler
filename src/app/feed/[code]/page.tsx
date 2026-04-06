@@ -529,7 +529,7 @@ export default function FeedPage() {
               </button>
 
               {/* ── Text search ── */}
-              <div className="px-5 py-3">
+              <div className="pl-5 pr-28 py-3">
                 <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-100 focus-within:border-gray-300 transition-colors">
                   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" className="flex-shrink-0">
                     <circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5l3 3"/>

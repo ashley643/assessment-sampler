@@ -103,6 +103,7 @@ export default function EditAssessmentPage() {
   });
   const [questions, setQuestions] = useState<Question[]>([newQuestion(1)]);
   const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
   const [error, setError] = useState('');
   const [typePresets, setTypePresets] = useState<TypePreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string | 'custom'>('');
@@ -332,7 +333,14 @@ export default function EditAssessmentPage() {
       ? await fetch('/api/admin/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       : await fetch(`/api/admin/assessments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (res.ok) {
-      router.push('/admin/assessments');
+      setSavedOk(true);
+      setSaving(false);
+      setTimeout(() => setSavedOk(false), 3000);
+      // For new assessments, navigate to the newly-created ID so URL is correct
+      if (isNew) {
+        const data = await res.json().catch(() => ({}));
+        if (data.id) router.replace(`/admin/assessments/${data.id}`);
+      }
     } else {
       const data = await res.json();
       setError(data.error ?? 'Save failed');
@@ -345,13 +353,17 @@ export default function EditAssessmentPage() {
   return (
     <AdminShell>
       <div className="max-w-3xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
-          <div className="flex gap-3">
-            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
-            <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
-              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
-            </button>
+        <div className="mb-6">
+          <button type="button" onClick={() => router.push('/admin/assessments')} className="text-sm text-gray-400 hover:text-gray-600 mb-3 block">← All assessments</button>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
+            <div className="flex items-center gap-3">
+              {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
+              <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+              <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
+                {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -681,6 +693,14 @@ export default function EditAssessmentPage() {
           </Section>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
+            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+            <button type="submit" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
+              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+            </button>
+          </div>
         </form>
       </div>
     </AdminShell>
