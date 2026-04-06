@@ -136,13 +136,34 @@ export default function FeedPage() {
 
   useEffect(() => { setPage(1); }, [filters]);
 
-  // Load bookmarks from localStorage on mount
+  // Load bookmarks from localStorage on mount; scrub stale IDs once codeData is available
   useEffect(() => {
     try {
       const stored = localStorage.getItem(`bookmarks_${code}`);
       if (stored) setBookmarks(new Set(JSON.parse(stored)));
     } catch { /* ignore */ }
   }, [code]);
+
+  useEffect(() => {
+    if (!codeData) return;
+    // Build the set of all valid sample IDs currently in the feed
+    const validIds = new Set<string>();
+    function collectIds(questions: { samples?: { id: string }[] }[]) {
+      for (const q of questions) for (const s of q.samples ?? []) validIds.add(s.id);
+    }
+    for (const a of codeData.assessments) {
+      if (a.type === 'bundle') {
+        for (const child of a.childAssessments ?? []) collectIds(child.questions);
+      } else {
+        collectIds(a.questions);
+      }
+    }
+    // Drop any bookmarked IDs that no longer exist
+    setBookmarks(prev => {
+      const cleaned = new Set([...prev].filter(id => validIds.has(id)));
+      return cleaned.size === prev.size ? prev : cleaned;
+    });
+  }, [codeData]);
 
   // Persist bookmarks to localStorage whenever they change
   useEffect(() => {
