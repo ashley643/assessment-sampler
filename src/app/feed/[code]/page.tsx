@@ -108,6 +108,7 @@ export default function FeedPage() {
   const assessmentDropdownRef = useRef<HTMLDivElement>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
+  const bookmarksLoaded = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -139,11 +140,25 @@ export default function FeedPage() {
 
   // Load bookmarks from server on mount
   useEffect(() => {
+    bookmarksLoaded.current = false;
     fetch(`/api/feed/bookmarks/${code}`)
       .then(r => r.json())
-      .then(d => setBookmarks(new Set(d.bookmarks ?? [])))
-      .catch(() => {});
+      .then(d => { setBookmarks(new Set(d.bookmarks ?? [])); bookmarksLoaded.current = true; })
+      .catch(() => { bookmarksLoaded.current = true; });
   }, [code]);
+
+  // Save bookmarks to server whenever they change (debounced, skip initial load)
+  useEffect(() => {
+    if (!bookmarksLoaded.current) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      fetch(`/api/feed/bookmarks/${code}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookmarks: [...bookmarks] }),
+      }).catch(() => {});
+    }, 600);
+  }, [bookmarks, code]);
 
   // Close assessment dropdown on outside click
   useEffect(() => {
@@ -231,15 +246,6 @@ export default function FeedPage() {
       const adding = !n.has(sampleId);
       adding ? n.add(sampleId) : n.delete(sampleId);
       track('feed_bookmark', code, { metadata: { sample_id: sampleId, action: adding ? 'add' : 'remove' } });
-      // Debounced save to server so rapid toggles batch into one request
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        fetch(`/api/feed/bookmarks/${code}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bookmarks: [...n] }),
-        }).catch(() => {});
-      }, 600);
       return n;
     });
   }
