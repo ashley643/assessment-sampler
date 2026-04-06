@@ -251,6 +251,7 @@ export default function TranscriptFinderPage() {
       // If we have a focused question or open search mode and no manual search, use keyword chips filtered by lang
       let effectiveSearch = search;
       let mustSearch = '';
+      let orSearch = '';
       if (!search && (focusQuestion || openSearchMode)) {
         const inLang = (kw: string) => {
           if (keywordLang === 'en') return enKeywords.includes(kw) || customKeywords.includes(kw);
@@ -259,9 +260,9 @@ export default function TranscriptFinderPage() {
         };
         const orKws   = [...keywordStates.entries()].filter(([kw, s]) => s === 'or'   && inLang(kw)).map(([kw]) => kw);
         const mustKws = [...keywordStates.entries()].filter(([kw, s]) => s === 'must' && inLang(kw)).map(([kw]) => kw);
-        effectiveSearch = orKws.join(' ');
-        mustSearch      = mustKws.join(' ');
-        if (!effectiveSearch && !mustSearch) {
+        orSearch   = orKws.join(' ');
+        mustSearch = mustKws.join(' ');
+        if (!orSearch && !mustSearch) {
           setLoading(false); setLoadingMore(false);
           setTranscripts([]); setHasMore(false);
           setTotalCount(0);
@@ -272,7 +273,8 @@ export default function TranscriptFinderPage() {
         page: String(pg),
         minWords: String(minWords),
         ...(mediaType ? { mediaType } : {}),
-        search: effectiveSearch,
+        ...(effectiveSearch ? { search: effectiveSearch } : {}),
+        ...(orSearch ? { orSearch } : {}),
         ...(mustSearch ? { must: mustSearch } : {}),
       });
       const res = await fetch(`/api/admin/response-finder?${params}`);

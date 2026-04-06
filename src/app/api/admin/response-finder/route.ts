@@ -7,11 +7,12 @@ export async function GET(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const needsOnly = searchParams.get('needsOnly') === 'true';
-  const mediaType = searchParams.get('mediaType');
-  const minWords  = parseInt(searchParams.get('minWords') ?? '40');
-  const search    = searchParams.get('search') ?? '';
-  const mustParam = searchParams.get('must') ?? '';
+  const needsOnly  = searchParams.get('needsOnly') === 'true';
+  const mediaType  = searchParams.get('mediaType');
+  const minWords   = parseInt(searchParams.get('minWords') ?? '40');
+  const search     = searchParams.get('search') ?? '';   // typed search bar — AND logic
+  const orParam    = searchParams.get('orSearch') ?? ''; // chip OR keywords — OR logic
+  const mustParam  = searchParams.get('must') ?? '';     // chip MUST keywords — AND logic
   const page      = parseInt(searchParams.get('page') ?? '1');
   const limit     = 24;
   const offset    = (page - 1) * limit;
@@ -74,16 +75,21 @@ export async function GET(req: Request) {
     }));
 
   // If only the needs list was requested, return early
-  if (needsOnly || (!search.trim() && !mustParam.trim())) {
+  if (needsOnly || (!search.trim() && !orParam.trim() && !mustParam.trim())) {
     return NextResponse.json({ transcripts: [], needsSamples, allQuestions, assignedUrls, page: 1, hasMore: false });
   }
 
   const impacter = getImpacterClient();
 
-  // Parse search: extract "quoted phrases" and remaining individual words
+  // Typed search bar: extract "quoted phrases" + remaining words — all AND
   const phrases: string[] = [];
-  const parsedSearch = search.trim().replace(/"([^"]+)"/g, (_, phrase) => { phrases.push(phrase.trim()); return ' '; });
-  const words = parsedSearch.trim().split(/\s+/).filter(w => w.length > 0);
+  const parsedSearch = search.trim().replace(/"([^"]+)"/g, (_, p) => { phrases.push(p.trim()); return ' '; });
+  const andWords = parsedSearch.trim().split(/\s+/).filter(Boolean);
+
+  // Chip OR keywords — any one match is sufficient
+  const orKeywords = orParam.trim() ? orParam.trim().split(/\s+/).filter(Boolean) : [];
+
+  // Chip MUST keywords — each must appear (AND)
   const mustKeywords = mustParam.trim() ? mustParam.trim().split(/\s+/).filter(Boolean) : [];
 
   // Helper to chain a filter that ANDs a condition across (transcript OR node_title)
@@ -101,23 +107,20 @@ export async function GET(req: Request) {
     qq = (qq as unknown as { neq: (col: string, val: string) => typeof qq }).neq('transcript', '') as typeof q;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     qq = (qq as unknown as { not: (col: string, op: string, val: any) => typeof qq }).not('media_url', 'is', null) as typeof q;
-    // Always exclude non-response VideoAsk nodes
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%Hi! Thanks for applying%') as typeof q;
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%real student response%') as typeof q;
     if (mediaType === 'audio') qq = (qq as unknown as { ilike: (col: string, val: string) => typeof qq }).ilike('media_url', '%audio.mp3%') as typeof q;
     if (mediaType === 'video') qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('media_url', 'ilike', '%audio.mp3%') as typeof q;
-    // Exact quoted phrases — each phrase is a separate AND condition
-    for (const phrase of phrases) {
-      qq = andOr(qq, phrase);
+    // Chip OR keywords: transcript must match at least one (single .or() call)
+    if (orKeywords.length > 0) {
+      const conds = orKeywords.flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`]).join(',');
+      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(conds) as typeof q;
     }
-    // Unquoted words — each word is a separate AND (transcript must contain every word)
-    for (const word of words) {
-      qq = andOr(qq, word);
-    }
-    // Chip must-keywords
-    for (const kw of mustKeywords) {
-      qq = andOr(qq, kw);
-    }
+    // Typed search — quoted phrases and unquoted words each AND
+    for (const phrase of phrases) qq = andOr(qq, phrase);
+    for (const word of andWords)  qq = andOr(qq, word);
+    // Chip MUST keywords — each is a separate AND
+    for (const kw of mustKeywords) qq = andOr(qq, kw);
     return qq;
   }
 
@@ -179,7 +182,7 @@ export async function GET(req: Request) {
   // ── 4. Score by keyword/phrase hit count, sort best first ──────────────
   function scoreRow(t: ReturnType<typeof normalize>): number {
     const haystack = (t.transcript + ' ' + t.nodeTitle).toLowerCase();
-    const allTerms = [...phrases, ...words, ...mustKeywords];
+    const allTerms = [...phrases, ...andWords, ...orKeywords, ...mustKeywords];
     return allTerms.reduce((s, term) => {
       const needle = term.toLowerCase();
       let count = 0, pos = 0;
