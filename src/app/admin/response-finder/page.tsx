@@ -722,7 +722,7 @@ export default function TranscriptFinderPage() {
                               {s.mediaType === 'audio' ? (
                                 <audio controls preload="none" src={s.embedUrl} className="w-full" style={{ height: '32px' }} />
                               ) : (
-                                <div className="aspect-video bg-gray-100 rounded overflow-hidden">
+                                <div className="w-1/2 aspect-video bg-gray-100 rounded overflow-hidden mx-auto">
                                   <iframe src={s.embedUrl} allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;" className="w-full h-full" style={{ border: 'none' }} loading="lazy" title={`${langLabel} sample ${si + 1}`} />
                                 </div>
                               )}
