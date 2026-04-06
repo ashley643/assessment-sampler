@@ -468,7 +468,7 @@ export default function FeedPage() {
             {/* ── Desktop filters ─────────────────────────────────── */}
             <div className="hidden md:block bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 mb-8 relative">
               <button
-                onClick={() => setBookmarksOnly(b => !b)}
+                onClick={() => { setBookmarksOnly(b => { if (!b) setFilters(EMPTY_FILTERS); return !b; }); }}
                 title={bookmarksOnly ? 'Show all' : 'Show saved only'}
                 className={`absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${bookmarksOnly ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-600'}`}
               >
