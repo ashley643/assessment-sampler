@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { AccessCode, Assessment, Question, QuestionSample } from '@/types/assessment';
+import { track } from '@/lib/track';
 
 interface FeedItem {
   question: Question;
@@ -115,9 +116,12 @@ export default function FeedPage() {
   }, [codeData, code, router]);
 
   useEffect(() => {
-    if (codeData) document.title = `Sample Responses — Impacter Pathway`;
+    if (codeData) {
+      track('feed_open', code);
+      document.title = `Sample Responses — Impacter Pathway`;
+    }
     return () => { document.title = 'Impacter Pathway'; };
-  }, [codeData]);
+  }, [codeData, code]);
 
   useEffect(() => { setPage(1); }, [filters]);
 
@@ -215,7 +219,9 @@ export default function FeedPage() {
   function toggleBookmark(sampleId: string) {
     setBookmarks(prev => {
       const n = new Set(prev);
-      n.has(sampleId) ? n.delete(sampleId) : n.add(sampleId);
+      const adding = !n.has(sampleId);
+      adding ? n.add(sampleId) : n.delete(sampleId);
+      track('feed_bookmark', code, { metadata: { sample_id: sampleId, action: adding ? 'add' : 'remove' } });
       return n;
     });
   }
