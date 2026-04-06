@@ -317,14 +317,14 @@ export default function EditAssessmentPage() {
     setDragOverQIdx(null);
   }
 
-  function moveQuestion(idx: number, dir: -1 | 1) {
-    const target = idx + dir;
-    if (target < 0 || target >= questions.length) return;
+  const [showReorder, setShowReorder] = useState(false);
+
+  function applyReorder(orderedIds: string[]) {
     setQuestions(prev => {
-      const qs = [...prev];
-      [qs[idx], qs[target]] = [qs[target], qs[idx]];
-      return qs;
+      const byId = Object.fromEntries(prev.map(q => [q.id, q]));
+      return orderedIds.map(id => byId[id]).filter(Boolean);
     });
+    setShowReorder(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -493,6 +493,18 @@ export default function EditAssessmentPage() {
           </Section>
 
           <Section title="Questions">
+            {questions.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setShowReorder(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+              >
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M2 4h10M2 7h7M2 10h5"/><path d="M11 9l2 2-2 2"/>
+                </svg>
+                Reorder questions
+              </button>
+            )}
             <div className="space-y-6">
               {questions.map((q, qi) => (
                 <div
@@ -502,44 +514,8 @@ export default function EditAssessmentPage() {
                   onDragEnd={onQuestionDragEnd}
                   className={`border rounded-xl p-4 space-y-4 transition-all ${dragOverQIdx === qi ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}
                 >
-                  <div className="flex items-center gap-1.5">
-                    {/* Drag handle */}
-                    <span
-                      draggable
-                      onDragStart={() => onQuestionDragStart(qi)}
-                      className="flex-shrink-0 cursor-grab text-gray-300 hover:text-gray-500 active:cursor-grabbing select-none"
-                      title="Drag to reorder"
-                    >
-                      <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
-                        <circle cx="3.5" cy="3.5" r="1.5"/><circle cx="8.5" cy="3.5" r="1.5"/>
-                        <circle cx="3.5" cy="8" r="1.5"/><circle cx="8.5" cy="8" r="1.5"/>
-                        <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
-                      </svg>
-                    </span>
-                    {/* Up/down buttons */}
-                    <button
-                      type="button"
-                      onClick={() => moveQuestion(qi, -1)}
-                      disabled={qi === 0}
-                      title="Move up"
-                      className="flex-shrink-0 p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-20 disabled:cursor-default transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M7 11V3M3 6l4-4 4 4"/>
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveQuestion(qi, 1)}
-                      disabled={qi === questions.length - 1}
-                      title="Move down"
-                      className="flex-shrink-0 p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-20 disabled:cursor-default transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M7 3v8M3 8l4 4 4-4"/>
-                      </svg>
-                    </button>
-                    <span className="text-xs font-semibold text-gray-500 flex-1 ml-1">Question {qi + 1}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 flex-1">Question {qi + 1}</span>
                     <button type="button" onClick={() => removeQuestion(qi)} className="text-xs text-red-400 hover:text-red-600">Remove</button>
                   </div>
                   <F label="Title">
@@ -741,7 +717,7 @@ export default function EditAssessmentPage() {
         </div>{/* end main form column */}
 
         {/* ── Sticky actions panel (lg+ only) ── */}
-        <div className="hidden lg:block flex-shrink-0 w-44 sticky top-6">
+        <div className="hidden lg:block flex-shrink-0 w-44 sticky top-6 self-start">
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2.5 shadow-sm">
             <button
               type="submit"
@@ -765,6 +741,14 @@ export default function EditAssessmentPage() {
 
         </div>{/* end lg flex row */}
       </div>
+
+      {showReorder && (
+        <ReorderModal
+          questions={questions}
+          onSave={applyReorder}
+          onClose={() => setShowReorder(false)}
+        />
+      )}
     </AdminShell>
   );
 }
@@ -784,6 +768,77 @@ function F({ label, hint, children }: { label: string; hint?: string; children: 
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
       {children}
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function ReorderModal({ questions, onSave, onClose }: {
+  questions: Question[];
+  onSave: (orderedIds: string[]) => void;
+  onClose: () => void;
+}) {
+  const [list, setList] = useState(questions.map(q => ({ id: q.id, title: q.title || '(untitled)' })));
+  const dragging = useRef<number | null>(null);
+  const [over, setOver] = useState<number | null>(null);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 flex flex-col" style={{ maxHeight: '85vh' }}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Reorder Questions</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Drag to reorder, then save</p>
+          </div>
+          <button type="button" onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors p-1">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
+          </button>
+        </div>
+
+        {/* List */}
+        <div className="overflow-y-auto px-4 py-3 space-y-1.5 flex-1">
+          {list.map((q, i) => (
+            <div
+              key={q.id}
+              draggable
+              onDragStart={() => { dragging.current = i; }}
+              onDragOver={e => { e.preventDefault(); if (dragging.current !== null && dragging.current !== i) setOver(i); }}
+              onDrop={() => {
+                if (dragging.current === null || dragging.current === i) return;
+                const next = [...list];
+                const [moved] = next.splice(dragging.current, 1);
+                next.splice(i, 0, moved);
+                setList(next);
+                dragging.current = null;
+                setOver(null);
+              }}
+              onDragEnd={() => { dragging.current = null; setOver(null); }}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-grab active:cursor-grabbing select-none transition-colors ${
+                over === i ? 'border-blue-400 bg-blue-50 shadow-sm' : 'border-gray-200 bg-white hover:bg-gray-50'
+              }`}
+            >
+              {/* Grip */}
+              <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor" className="flex-shrink-0 text-gray-300">
+                <circle cx="3.5" cy="3.5" r="1.5"/><circle cx="8.5" cy="3.5" r="1.5"/>
+                <circle cx="3.5" cy="8" r="1.5"/><circle cx="8.5" cy="8" r="1.5"/>
+                <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
+              </svg>
+              <span className="w-5 text-right text-xs font-medium text-gray-300 flex-shrink-0">{i + 1}</span>
+              <span className="text-sm text-gray-800 flex-1 leading-snug">{q.title}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-shrink-0">
+          <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+            Cancel
+          </button>
+          <button type="button" onClick={() => onSave(list.map(q => q.id))} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] transition-colors">
+            Save Order
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
