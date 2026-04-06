@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { questionId, language, embedUrl, mediaType, grade, gender: rawGender, excerpt } = await req.json();
+  const { questionId, language, embedUrl, mediaType, grade, gender: rawGender, excerpt, feature } = await req.json();
 
   // Normalise legacy "male"/"female" → "M"/"F"
   const genderMap: Record<string, string> = { male: 'M', female: 'F', 'm': 'M', 'f': 'F' };
@@ -14,6 +14,20 @@ export async function POST(req: Request) {
   if (!questionId || !language || !embedUrl) {
     return NextResponse.json({ error: 'questionId, language, and embedUrl are required' }, { status: 400 });
   }
+
+  // Compute the sort_order to use:
+  // feature=true → insert before all existing samples of this language (min - 1)
+  // feature=false → append after all existing samples (max + 1)
+  const { data: existingOrders } = await supabaseAdmin
+    .from('question_samples')
+    .select('sort_order')
+    .eq('question_id', questionId)
+    .order('sort_order', { ascending: true });
+
+  const orders = (existingOrders ?? []).map(r => r.sort_order as number);
+  const sortOrder = feature
+    ? (orders.length > 0 ? orders[0] - 1 : 0)
+    : (orders.length > 0 ? orders[orders.length - 1] + 1 : 0);
 
   // If this embed URL is already assigned somewhere, UPDATE it in-place (preserve ID so bookmarks stay valid)
   const normalisedUrl = embedUrl.split('?')[0];
@@ -33,6 +47,7 @@ export async function POST(req: Request) {
       embed_url:   embedUrl,
       language:    language,
       media_type:  mediaType ?? 'video',
+      sort_order:  sortOrder,
       gender:      gender?.trim()  || null,
       grade:       grade?.trim()   || null,
       excerpt:     excerpt?.trim() || null,
@@ -41,15 +56,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // New sample — get current max sort_order for this question and insert
-  const { data: existing } = await supabaseAdmin
-    .from('question_samples')
-    .select('sort_order')
-    .eq('question_id', questionId)
-    .order('sort_order', { ascending: false })
-    .limit(1);
-
-  const nextOrder = ((existing?.[0]?.sort_order ?? -1) as number) + 1;
+  // New sample
+  const nextOrder = sortOrder;
 
   const { error } = await supabaseAdmin.from('question_samples').insert({
     question_id:  questionId,

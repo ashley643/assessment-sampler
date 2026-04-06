@@ -141,6 +141,7 @@ interface AssignState {
   excerpt: string;
   grade: string;
   gender: string;
+  feature: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -332,6 +333,7 @@ export default function TranscriptFinderPage() {
       excerpt: t.transcript,
       grade: t.grade ?? '',
       gender: t.gender ?? '',
+      feature: false,
     });
     setAssignError('');
   }
@@ -351,6 +353,7 @@ export default function TranscriptFinderPage() {
         grade:      assign.grade,
         gender:     assign.gender,
         excerpt:    assign.excerpt,
+        feature:    assign.feature,
       }),
     });
     const json = await res.json();
@@ -1095,45 +1098,68 @@ export default function TranscriptFinderPage() {
                   </div>
                 </div>
 
-                {/* Warning: existing featured sample will be replaced */}
+                {/* Feature toggle */}
                 {(() => {
                   const q = allQuestions.find(q => q.questionId === assign.questionId);
-                  const existing = (q?.samples ?? []).find(s => s.language === assign.language); // first = featured
-                  if (!existing) return null;
+                  const existingFeatured = (q?.samples ?? []).find(s => s.language === assign.language);
                   return (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
-                      <div className="flex items-start gap-2">
-                        <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" viewBox="0 0 16 16" fill="currentColor">
-                          <path d="M8 1L1 14h14L8 1zm0 3l4.5 8.5h-9L8 4zm0 3v3m0 1.5v1"/>
-                          <path d="M8 4l4.5 8.5h-9L8 4z" fill="none" stroke="currentColor" strokeWidth="1"/>
-                          <rect x="7.25" y="7" width="1.5" height="3" rx=".5"/>
-                          <circle cx="8" cy="11.5" r=".75"/>
-                        </svg>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-amber-800">This will replace the current featured {assign.language} sample</p>
-                          {existing.excerpt && (
-                            <p className="text-xs text-amber-700 mt-1 italic leading-relaxed">&ldquo;{existing.excerpt.slice(0, 200)}{existing.excerpt.length > 200 ? '…' : ''}&rdquo;</p>
-                          )}
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={() => setAssign(a => a ? { ...a, feature: !a.feature } : a)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left ${
+                          assign.feature
+                            ? 'border-green-400 bg-green-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          assign.feature ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                        }`}>
+                          {assign.feature && <svg viewBox="0 0 10 10" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 5l2.5 2.5L8 3"/></svg>}
                         </div>
-                      </div>
-                      {/* Preview of existing sample */}
-                      <div>
-                        <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-1.5">Currently featured — watch before replacing:</p>
-                        {existing.mediaType === 'audio' ? (
-                          <audio controls preload="none" src={existing.embedUrl} className="w-full" style={{ height: '36px' }} />
-                        ) : (
-                          <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
-                            <iframe
-                              src={existing.embedUrl}
-                              allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;"
-                              className="w-full h-full"
-                              style={{ border: 'none' }}
-                              title="Current featured sample"
-                              loading="lazy"
-                            />
+                        <div>
+                          <p className={`text-sm font-semibold ${assign.feature ? 'text-green-800' : 'text-gray-700'}`}>Feature in assessment player</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Makes this the default response shown for this question. Leave off to add to bank only.</p>
+                        </div>
+                      </button>
+
+                      {/* Warning: only shown when feature is ON and there's already a featured sample */}
+                      {assign.feature && existingFeatured && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" viewBox="0 0 16 16" fill="currentColor">
+                              <path d="M8 1L1 14h14L8 1zm0 3l4.5 8.5h-9L8 4zm0 3v3m0 1.5v1"/>
+                              <path d="M8 4l4.5 8.5h-9L8 4z" fill="none" stroke="currentColor" strokeWidth="1"/>
+                              <rect x="7.25" y="7" width="1.5" height="3" rx=".5"/>
+                              <circle cx="8" cy="11.5" r=".75"/>
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-amber-800">This will replace the current featured {assign.language} sample</p>
+                              {existingFeatured.excerpt && (
+                                <p className="text-xs text-amber-700 mt-1 italic leading-relaxed">&ldquo;{existingFeatured.excerpt.slice(0, 200)}{existingFeatured.excerpt.length > 200 ? '…' : ''}&rdquo;</p>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
+                          <div>
+                            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-1.5">Currently featured — watch before replacing:</p>
+                            {existingFeatured.mediaType === 'audio' ? (
+                              <audio controls preload="none" src={existingFeatured.embedUrl} className="w-full" style={{ height: '36px' }} />
+                            ) : (
+                              <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
+                                <iframe
+                                  src={existingFeatured.embedUrl}
+                                  allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;"
+                                  className="w-full h-full"
+                                  style={{ border: 'none' }}
+                                  title="Current featured sample"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
