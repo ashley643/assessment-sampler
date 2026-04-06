@@ -112,9 +112,12 @@ export default function EditAssessmentPage() {
 
   // Excerpt edit state: sampleId → draft text (undefined = not editing)
   const [excerptEditing, setExcerptEditing] = useState<Record<string, string | undefined>>({});
-  // Drag state
+  // Sample drag state
   const dragSample = useRef<{ qIdx: number; sIdx: number } | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+  // Question drag state
+  const dragQuestion = useRef<number | null>(null);
+  const [dragOverQIdx, setDragOverQIdx] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/assessments')
@@ -266,6 +269,34 @@ export default function EditAssessmentPage() {
   function onDragEnd() {
     dragSample.current = null;
     setDragOverKey(null);
+  }
+
+  // Question drag handlers
+  function onQuestionDragStart(qi: number) {
+    dragQuestion.current = qi;
+  }
+
+  function onQuestionDragOver(e: React.DragEvent, qi: number) {
+    e.preventDefault();
+    if (dragQuestion.current !== null && dragQuestion.current !== qi) setDragOverQIdx(qi);
+  }
+
+  function onQuestionDrop(qi: number) {
+    const from = dragQuestion.current;
+    if (from === null || from === qi) { dragQuestion.current = null; setDragOverQIdx(null); return; }
+    setQuestions(prev => {
+      const qs = [...prev];
+      const [moved] = qs.splice(from, 1);
+      qs.splice(qi, 0, moved);
+      return qs;
+    });
+    dragQuestion.current = null;
+    setDragOverQIdx(null);
+  }
+
+  function onQuestionDragEnd() {
+    dragQuestion.current = null;
+    setDragOverQIdx(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -423,9 +454,28 @@ export default function EditAssessmentPage() {
           <Section title="Questions">
             <div className="space-y-6">
               {questions.map((q, qi) => (
-                <div key={q.id} className="border border-gray-200 rounded-xl p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500">Question {qi + 1}</span>
+                <div
+                  key={q.id}
+                  onDragOver={e => onQuestionDragOver(e, qi)}
+                  onDrop={() => onQuestionDrop(qi)}
+                  onDragEnd={onQuestionDragEnd}
+                  className={`border rounded-xl p-4 space-y-4 transition-all ${dragOverQIdx === qi ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    {/* Question drag handle */}
+                    <span
+                      draggable
+                      onDragStart={() => onQuestionDragStart(qi)}
+                      className="flex-shrink-0 cursor-grab text-gray-300 hover:text-gray-500 active:cursor-grabbing select-none"
+                      title="Drag to reorder"
+                    >
+                      <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                        <circle cx="3.5" cy="3.5" r="1.5"/><circle cx="8.5" cy="3.5" r="1.5"/>
+                        <circle cx="3.5" cy="8" r="1.5"/><circle cx="8.5" cy="8" r="1.5"/>
+                        <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
+                      </svg>
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 flex-1">Question {qi + 1}</span>
                     <button type="button" onClick={() => removeQuestion(qi)} className="text-xs text-red-400 hover:text-red-600">Remove</button>
                   </div>
                   <F label="Title">
