@@ -193,10 +193,8 @@ export default function FeedPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [assessmentOpen]);
 
-  if (!codeData) return null;
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const allItems = useMemo<FeedItem[]>(() => {
+    if (!codeData) return [];
     const items: FeedItem[] = [];
     function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string, bundleId?: string) {
       for (const q of questions) {
@@ -217,6 +215,8 @@ export default function FeedPage() {
 
   // sortForFeed shuffles — memoize so bookmark toggles don't reshuffle the list
   const sortedItems = useMemo(() => sortForFeed(applyFilters(allItems, filters)), [allItems, filters]);
+
+  if (!codeData) return null;
 
   const filtered = sortedItems.filter(i => !bookmarksOnly || bookmarks.has(i.sample.embedUrl));
   const visible  = filtered.slice(0, page * PAGE_SIZE);
