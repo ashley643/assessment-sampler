@@ -948,10 +948,19 @@ export default function TranscriptFinderPage() {
                       {/* Actions */}
                       <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-3 flex-wrap">
                         {(t.shareUrl || t.mediaUrl) && (
-                          <a href={t.shareUrl ?? t.mediaUrl} target="_blank" rel="noopener noreferrer"
-                            className={`${BTN_SM} bg-white border border-gray-200 text-gray-600 hover:border-gray-300`}>
-                            Watch / Listen ↗
-                          </a>
+                          <div className="flex items-center gap-1.5">
+                            <a href={t.shareUrl ?? t.mediaUrl} target="_blank" rel="noopener noreferrer"
+                              className={`${BTN_SM} bg-white border border-gray-200 text-gray-600 hover:border-gray-300`}>
+                              Watch / Listen ↗
+                            </a>
+                            {t.mediaUrl && (
+                              <a href={t.mediaUrl} download
+                                className={`${BTN_SM} bg-white border border-gray-200 text-gray-600 hover:border-gray-300`}
+                                title={`Download ${t.mediaType === 'audio' ? 'MP3' : 'MP4'}`}>
+                                ↓ {t.mediaType === 'audio' ? 'MP3' : 'MP4'}
+                              </a>
+                            )}
+                          </div>
                         )}
                         {isAssigned || existingAssignment ? (
                           <>
@@ -1027,10 +1036,19 @@ export default function TranscriptFinderPage() {
                   </div>
                   <p className="text-sm text-gray-700 leading-relaxed">{excerpt(assign.transcript.transcript, 300)}</p>
                   {(assign.transcript.shareUrl || assign.transcript.mediaUrl) && (
-                    <a href={assign.transcript.shareUrl ?? assign.transcript.mediaUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-xs text-[#1a2744] underline mt-2 inline-block">
-                      Watch / Listen ↗
-                    </a>
+                    <div className="flex items-center gap-3 mt-2">
+                      <a href={assign.transcript.shareUrl ?? assign.transcript.mediaUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-[#1a2744] underline">
+                        Watch / Listen ↗
+                      </a>
+                      {assign.transcript.mediaUrl && (
+                        <a href={assign.transcript.mediaUrl} download
+                          className="text-xs text-[#1a2744] underline"
+                          title={`Download ${assign.transcript.mediaType === 'audio' ? 'MP3' : 'MP4'}`}>
+                          ↓ Download {assign.transcript.mediaType === 'audio' ? 'MP3' : 'MP4'}
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
 
