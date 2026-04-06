@@ -109,6 +109,7 @@ export default function FeedPage() {
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
   const bookmarksLoaded = useRef(false);
+  const pendingSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -141,15 +142,36 @@ export default function FeedPage() {
   // Load bookmarks from server on mount
   useEffect(() => {
     bookmarksLoaded.current = false;
+    pendingSave.current = false;
     fetch(`/api/feed/bookmarks/${code}`)
       .then(r => r.json())
       .then(d => { setBookmarks(new Set(d.bookmarks ?? [])); bookmarksLoaded.current = true; })
       .catch(() => { bookmarksLoaded.current = true; });
   }, [code]);
 
-  // Save bookmarks to server whenever they change (debounced, skip initial load)
+  // Once codeData is available, scrub bookmark IDs that no longer exist in the data.
+  // This does NOT trigger a save — pendingSave stays false until the user explicitly
+  // toggles a bookmark, so stale-ID cleanup is never written back to the server on its own.
   useEffect(() => {
-    if (!bookmarksLoaded.current) return;
+    if (!codeData || !bookmarksLoaded.current) return;
+    const validIds = new Set<string>();
+    for (const a of codeData.assessments) {
+      const collect = (qs: { samples?: { id: string }[] }[]) =>
+        qs.forEach(q => (q.samples ?? []).forEach(s => validIds.add(s.id)));
+      if (a.type === 'bundle') (a.childAssessments ?? []).forEach(c => collect(c.questions));
+      else collect(a.questions);
+    }
+    setBookmarks(prev => {
+      const cleaned = new Set([...prev].filter(id => validIds.has(id)));
+      return cleaned.size === prev.size ? prev : cleaned;
+    });
+  }, [codeData]);
+
+  // Save bookmarks to server whenever they change — but only after the user has actually
+  // toggled something (pendingSave). The scrub above never sets pendingSave, so it can't
+  // accidentally overwrite the server.
+  useEffect(() => {
+    if (!pendingSave.current) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       fetch(`/api/feed/bookmarks/${code}`, {
@@ -241,6 +263,7 @@ export default function FeedPage() {
   }
 
   function toggleBookmark(sampleId: string) {
+    pendingSave.current = true;
     setBookmarks(prev => {
       const n = new Set(prev);
       const adding = !n.has(sampleId);

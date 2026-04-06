@@ -15,14 +15,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'questionId, language, and embedUrl are required' }, { status: 400 });
   }
 
-  // Remove any existing assignment that uses the same embed URL (prevent double-assign)
+  // If this embed URL is already assigned somewhere, UPDATE it in-place (preserve ID so bookmarks stay valid)
   const normalisedUrl = embedUrl.split('?')[0];
-  await supabaseAdmin
+  const { data: dupRows } = await supabaseAdmin
     .from('question_samples')
-    .delete()
+    .select('id')
     .like('embed_url', `${normalisedUrl}%`);
 
-  // Get current max sort_order for this question
+  if (dupRows && dupRows.length > 0) {
+    // Update the first match; delete any extras (shouldn't exist, but clean up just in case)
+    const [keep, ...extras] = dupRows;
+    if (extras.length > 0) {
+      await supabaseAdmin.from('question_samples').delete().in('id', extras.map(r => r.id));
+    }
+    const { error } = await supabaseAdmin.from('question_samples').update({
+      question_id: questionId,
+      embed_url:   embedUrl,
+      language:    language,
+      media_type:  mediaType ?? 'video',
+      gender:      gender?.trim()  || null,
+      grade:       grade?.trim()   || null,
+      excerpt:     excerpt?.trim() || null,
+    }).eq('id', keep.id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // New sample — get current max sort_order for this question and insert
   const { data: existing } = await supabaseAdmin
     .from('question_samples')
     .select('sort_order')
