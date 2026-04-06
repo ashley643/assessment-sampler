@@ -317,6 +317,16 @@ export default function EditAssessmentPage() {
     setDragOverQIdx(null);
   }
 
+  function moveQuestion(idx: number, dir: -1 | 1) {
+    const target = idx + dir;
+    if (target < 0 || target >= questions.length) return;
+    setQuestions(prev => {
+      const qs = [...prev];
+      [qs[idx], qs[target]] = [qs[target], qs[idx]];
+      return qs;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -352,21 +362,23 @@ export default function EditAssessmentPage() {
 
   return (
     <AdminShell>
-      <div className="max-w-3xl">
-        <div className="mb-6">
-          <button type="button" onClick={() => router.push('/admin/assessments')} className="text-sm text-gray-400 hover:text-gray-600 mb-3 block">← All assessments</button>
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
-            <div className="flex items-center gap-3">
-              {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
-              <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
-              <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
-                {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
-              </button>
-            </div>
+      <div className="max-w-4xl">
+        <button type="button" onClick={() => router.push('/admin/assessments')} className="text-sm text-gray-400 hover:text-gray-600 mb-3 block">← All assessments</button>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
+          {/* Mobile/tablet top buttons — hidden on lg where sticky panel takes over */}
+          <div className="flex items-center gap-3 lg:hidden">
+            {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
+            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
+            <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
+              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+            </button>
           </div>
         </div>
 
+        <div className="lg:flex lg:gap-8 lg:items-start">
+        {/* ── Main form column ── */}
+        <div className="flex-1 min-w-0">
         <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
           <Section title="Details">
             <div className="grid grid-cols-2 gap-4">
@@ -490,8 +502,8 @@ export default function EditAssessmentPage() {
                   onDragEnd={onQuestionDragEnd}
                   className={`border rounded-xl p-4 space-y-4 transition-all ${dragOverQIdx === qi ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}
                 >
-                  <div className="flex items-center gap-2">
-                    {/* Question drag handle */}
+                  <div className="flex items-center gap-1.5">
+                    {/* Drag handle */}
                     <span
                       draggable
                       onDragStart={() => onQuestionDragStart(qi)}
@@ -504,7 +516,30 @@ export default function EditAssessmentPage() {
                         <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
                       </svg>
                     </span>
-                    <span className="text-xs font-semibold text-gray-500 flex-1">Question {qi + 1}</span>
+                    {/* Up/down buttons */}
+                    <button
+                      type="button"
+                      onClick={() => moveQuestion(qi, -1)}
+                      disabled={qi === 0}
+                      title="Move up"
+                      className="flex-shrink-0 p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-20 disabled:cursor-default transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 11V3M3 6l4-4 4 4"/>
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveQuestion(qi, 1)}
+                      disabled={qi === questions.length - 1}
+                      title="Move down"
+                      className="flex-shrink-0 p-0.5 text-gray-300 hover:text-gray-600 disabled:opacity-20 disabled:cursor-default transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 3v8M3 8l4 4 4-4"/>
+                      </svg>
+                    </button>
+                    <span className="text-xs font-semibold text-gray-500 flex-1 ml-1">Question {qi + 1}</span>
                     <button type="button" onClick={() => removeQuestion(qi)} className="text-xs text-red-400 hover:text-red-600">Remove</button>
                   </div>
                   <F label="Title">
@@ -694,7 +729,8 @@ export default function EditAssessmentPage() {
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          {/* Mobile/tablet bottom buttons — hidden on lg */}
+          <div className="flex items-center justify-end gap-3 pt-2 lg:hidden">
             {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
             <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
             <button type="submit" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
@@ -702,6 +738,32 @@ export default function EditAssessmentPage() {
             </button>
           </div>
         </form>
+        </div>{/* end main form column */}
+
+        {/* ── Sticky actions panel (lg+ only) ── */}
+        <div className="hidden lg:block flex-shrink-0 w-44 sticky top-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2.5 shadow-sm">
+            <button
+              type="submit"
+              form="assessment-form"
+              disabled={saving}
+              className="w-full px-3 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/admin/assessments')}
+              className="w-full px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            {savedOk && <p className="text-center text-sm text-green-600 font-medium pt-1">Saved ✓</p>}
+            {error && <p className="text-xs text-red-500 text-center pt-1">{error}</p>}
+          </div>
+        </div>
+
+        </div>{/* end lg flex row */}
       </div>
     </AdminShell>
   );
