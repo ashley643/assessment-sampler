@@ -108,6 +108,7 @@ export default function FeedPage() {
   const assessmentDropdownRef = useRef<HTMLDivElement>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
+  const [textSearch, setTextSearch] = useState('');
   const bookmarksLoaded = useRef(false);
   const pendingSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -218,7 +219,10 @@ export default function FeedPage() {
 
   if (!codeData) return null;
 
-  const filtered = sortedItems.filter(i => !bookmarksOnly || bookmarks.has(i.sample.embedUrl));
+  const needle = textSearch.trim().toLowerCase();
+  const filtered = sortedItems
+    .filter(i => !bookmarksOnly || bookmarks.has(i.sample.embedUrl))
+    .filter(i => !needle || (i.sample.excerpt ?? '').toLowerCase().includes(needle));
   const visible  = filtered.slice(0, page * PAGE_SIZE);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
@@ -415,6 +419,23 @@ export default function FeedPage() {
                       </div>
                     </div>
                     <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 border border-gray-100 focus-within:border-gray-300 transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" className="flex-shrink-0">
+                          <circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5l3 3"/>
+                        </svg>
+                        <input
+                          type="text"
+                          value={textSearch}
+                          onChange={e => { setTextSearch(e.target.value); setPage(1); }}
+                          placeholder="Search responses…"
+                          className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none min-w-0"
+                        />
+                        {textSearch && (
+                          <button onClick={() => { setTextSearch(''); setPage(1); }} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 2l6 6M8 2L2 8"/></svg>
+                          </button>
+                        )}
+                      </div>
                       {bundleNames.length > 0 && (
                         <div>
                           <p className="text-xs font-semibold text-gray-500 mb-2">Bundle</p>
@@ -506,6 +527,27 @@ export default function FeedPage() {
                 </svg>
                 {bookmarks.size > 0 ? `Saved (${bookmarks.size})` : 'Saved'}
               </button>
+
+              {/* ── Text search ── */}
+              <div className="px-5 py-3">
+                <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-100 focus-within:border-gray-300 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" className="flex-shrink-0">
+                    <circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5l3 3"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={textSearch}
+                    onChange={e => { setTextSearch(e.target.value); setPage(1); }}
+                    placeholder="Search responses…"
+                    className="flex-1 bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none min-w-0"
+                  />
+                  {textSearch && (
+                    <button onClick={() => { setTextSearch(''); setPage(1); }} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 2l6 6M8 2L2 8"/></svg>
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* ── WHAT row ── */}
               <div className="px-5 py-4">
