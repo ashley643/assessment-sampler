@@ -106,7 +106,14 @@ export default function FeedPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [assessmentOpen, setAssessmentOpen] = useState(false);
   const assessmentDropdownRef = useRef<HTMLDivElement>(null);
-  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
+  const [bookmarks, setBookmarks] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const stored = localStorage.getItem(`bookmarks_${code}`);
+      if (stored) return new Set(JSON.parse(stored));
+    } catch { /* ignore */ }
+    return new Set();
+  });
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
 
   useEffect(() => {
@@ -136,14 +143,7 @@ export default function FeedPage() {
 
   useEffect(() => { setPage(1); }, [filters]);
 
-  // Load bookmarks from localStorage on mount; scrub stale IDs once codeData is available
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(`bookmarks_${code}`);
-      if (stored) setBookmarks(new Set(JSON.parse(stored)));
-    } catch { /* ignore */ }
-  }, [code]);
-
+  // Scrub stale bookmark IDs once codeData is available
   useEffect(() => {
     if (!codeData) return;
     // Build the set of all valid sample IDs currently in the feed
