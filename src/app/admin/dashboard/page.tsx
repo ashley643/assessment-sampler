@@ -142,11 +142,12 @@ export default function DashboardPage() {
             {data.daily.length > 0 && (
               <Section title="Daily Visits">
                 <div className="p-4 space-y-3">
-                  {data.daily.map(d => {
+                  {data.daily.map((d, idx) => {
                     const max = Math.max(...data.daily.map(x => x.count));
                     const pct = max > 0 ? (d.count / max) * 100 : 0;
                     const byCode = data.dailyByCode?.[d.date] ?? {};
                     const sorted = Object.entries(byCode).sort((a, b) => b[1] - a[1]);
+                    const isBottom = idx >= Math.ceil(data.daily.length / 2);
                     return (
                       <div key={d.date} className="flex items-center gap-3 text-sm group relative">
                         <span className="w-12 text-xs text-gray-600 tabular-nums flex-shrink-0 text-right">{new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
@@ -155,7 +156,7 @@ export default function DashboardPage() {
                         </div>
                         <span className="w-8 text-right text-xs text-gray-700 tabular-nums flex-shrink-0">{d.count}</span>
                         {sorted.length > 0 && (
-                          <div className="absolute left-16 top-full mt-1 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                          <div className={`absolute left-16 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-nowrap ${isBottom ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                             {sorted.map(([c, n]) => (
                               <div key={c} className="flex items-center justify-between gap-4">
                                 <span className="font-mono text-gray-300">{c}</span>
@@ -197,31 +198,35 @@ export default function DashboardPage() {
             {Object.keys(data.byBundle).length > 0 && (
               <Section title="Activity by Bundle">
                 <div className="p-4 space-y-3">
-                  {Object.entries(data.byBundle).sort((a, b) => b[1] - a[1]).map(([name, count]) => {
+                  {(() => {
+                    const bundleEntries = Object.entries(data.byBundle).sort((a, b) => b[1] - a[1]);
                     const max = Math.max(...Object.values(data.byBundle));
-                    const pct = max > 0 ? (count / max) * 100 : 0;
-                    const byCode = data.bundleByCode?.[name] ?? {};
-                    const sorted = Object.entries(byCode).sort((a, b) => b[1] - a[1]);
-                    return (
-                      <div key={name} className="flex items-center gap-3 text-sm group relative">
-                        <span className="w-40 text-xs text-gray-600 truncate flex-shrink-0 text-right">{name}</span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-2.5 cursor-default">
-                          <div className="bg-[#4a6fa5] h-2.5 rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className="w-8 text-right text-xs text-gray-700 tabular-nums flex-shrink-0">{count}</span>
-                        {sorted.length > 0 && (
-                          <div className="absolute left-44 top-full mt-1 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
-                            {sorted.map(([c, n]) => (
-                              <div key={c} className="flex items-center justify-between gap-4">
-                                <span className="font-mono text-gray-300">{c}</span>
-                                <span className="font-semibold">{n}</span>
-                              </div>
-                            ))}
+                    return bundleEntries.map(([name, count], idx) => {
+                      const pct = max > 0 ? (count / max) * 100 : 0;
+                      const byCode = data.bundleByCode?.[name] ?? {};
+                      const sorted = Object.entries(byCode).sort((a, b) => b[1] - a[1]);
+                      const isBottom = idx >= Math.ceil(bundleEntries.length / 2);
+                      return (
+                        <div key={name} className="flex items-center gap-3 text-sm group relative">
+                          <span className="w-40 text-xs text-gray-600 truncate flex-shrink-0 text-right">{name}</span>
+                          <div className="flex-1 bg-gray-100 rounded-full h-2.5 cursor-default">
+                            <div className="bg-[#4a6fa5] h-2.5 rounded-full" style={{ width: `${pct}%` }} />
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          <span className="w-8 text-right text-xs text-gray-700 tabular-nums flex-shrink-0">{count}</span>
+                          {sorted.length > 0 && (
+                            <div className={`absolute left-44 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-nowrap ${isBottom ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+                              {sorted.map(([c, n]) => (
+                                <div key={c} className="flex items-center justify-between gap-4">
+                                  <span className="font-mono text-gray-300">{c}</span>
+                                  <span className="font-semibold">{n}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </Section>
             )}
