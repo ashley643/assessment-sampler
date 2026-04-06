@@ -19,20 +19,29 @@ export async function GET(req: Request) {
   // ── Questions that need samples (always returned) ───────────────────────
   const { data: assessmentsData } = await supabaseAdmin
     .from('assessments')
-    .select('id, title, type_label, questions ( id, title, question, question_samples ( id, language ) )')
+    .select('id, title, type_label, questions ( id, title, question, question_samples ( id, language, embed_url, media_type, excerpt, sort_order ) )')
     .neq('type', 'bundle')
     .order('sort_order');
 
-  type QSample = { id: string; language: string };
+  type QSample = { id: string; language: string; embed_url: string; media_type: string | null; excerpt: string | null; sort_order: number };
   type QRow    = { id: string; title: string; question: string | null; question_samples: QSample[] };
   type ARow    = { id: string; title: string; type_label: string; questions: QRow[] };
 
   const allRows = ((assessmentsData ?? []) as ARow[]).flatMap(a =>
     (a.questions ?? []).map(q => {
-      const langs     = (q.question_samples ?? []).map(s => s.language);
+      const samples   = [...(q.question_samples ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+      const langs     = samples.map(s => s.language);
       const missingEn = !langs.includes('english');
       const missingEs = !langs.includes('spanish');
-      return { questionId: q.id, questionTitle: q.title, questionText: q.question ?? '', assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
+      const featuredEn = samples.find(s => s.language === 'english');
+      const featuredEs = samples.find(s => s.language === 'spanish');
+      return {
+        questionId: q.id, questionTitle: q.title, questionText: q.question ?? '',
+        assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label,
+        missingEn, missingEs,
+        featuredEn: featuredEn ? { embedUrl: featuredEn.embed_url, mediaType: featuredEn.media_type ?? 'video', excerpt: featuredEn.excerpt ?? '' } : null,
+        featuredEs: featuredEs ? { embedUrl: featuredEs.embed_url, mediaType: featuredEs.media_type ?? 'video', excerpt: featuredEs.excerpt ?? '' } : null,
+      };
     })
   );
 

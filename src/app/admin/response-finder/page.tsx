@@ -19,6 +19,12 @@ interface Transcript {
   createdAt: string;
 }
 
+interface FeaturedSample {
+  embedUrl: string;
+  mediaType: string;
+  excerpt: string;
+}
+
 interface NeedsSample {
   questionId: string;
   questionTitle: string;
@@ -28,6 +34,8 @@ interface NeedsSample {
   typeLabel: string;
   missingEn: boolean;
   missingEs: boolean;
+  featuredEn: FeaturedSample | null;
+  featuredEs: FeaturedSample | null;
 }
 
 interface AssignedUrl {
@@ -176,6 +184,8 @@ export default function TranscriptFinderPage() {
 
   // Expanded transcript
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Show existing samples panel in focus bar
+  const [showExisting, setShowExisting] = useState(false);
 
   // Node-title filter (filter out irrelevant VideoAsk questions from results)
   const [hiddenNodeTitles, setHiddenNodeTitles] = useState<Set<string>>(new Set());
@@ -263,6 +273,7 @@ export default function TranscriptFinderPage() {
     setKeywordLang('all');
     setTotalCount(null);
     setAllNodeTitles([]);
+    setShowExisting(false);
   }, [focusQuestion, openSearchMode]);
 
   // When focused question changes, regenerate keyword chips; open search starts with blank chips
@@ -556,6 +567,51 @@ export default function TranscriptFinderPage() {
               {questionById[focusQuestion].questionText && (
                 <p className="text-xs text-gray-500 italic">{questionById[focusQuestion].questionText}</p>
               )}
+              {/* Existing assigned samples for this question */}
+              {(() => {
+                const q = questionById[focusQuestion];
+                const hasEn = !!q.featuredEn;
+                const hasEs = !!q.featuredEs;
+                if (!hasEn && !hasEs) return (
+                  <p className="text-[10px] text-gray-400">No samples assigned yet.</p>
+                );
+                return (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowExisting(v => !v)}
+                      className="text-[11px] font-medium text-[#1a2744]/70 hover:text-[#1a2744] underline"
+                    >
+                      {showExisting ? '▲ Hide current samples' : `▼ View current samples (${[hasEn, hasEs].filter(Boolean).length})`}
+                    </button>
+                    {showExisting && (
+                      <div className="mt-2 grid grid-cols-1 gap-2">
+                        {[{ lang: 'EN', sample: q.featuredEn }, { lang: 'ES', sample: q.featuredEs }]
+                          .filter(({ sample }) => !!sample)
+                          .map(({ lang, sample }) => (
+                            <div key={lang} className="bg-white rounded-lg border border-gray-200 p-2 space-y-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${lang === 'EN' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{lang}</span>
+                                <span className="text-[10px] text-gray-400">{sample!.mediaType}</span>
+                                <span className="text-[10px] font-semibold text-green-600 ml-auto">★ Featured</span>
+                              </div>
+                              {sample!.excerpt && (
+                                <p className="text-[11px] text-gray-600 italic leading-relaxed">&ldquo;{sample!.excerpt.slice(0, 160)}{sample!.excerpt.length > 160 ? '…' : ''}&rdquo;</p>
+                              )}
+                              {sample!.mediaType === 'audio' ? (
+                                <audio controls preload="none" src={sample!.embedUrl} className="w-full" style={{ height: '32px' }} />
+                              ) : (
+                                <div className="aspect-video bg-gray-100 rounded overflow-hidden">
+                                  <iframe src={sample!.embedUrl} allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;" className="w-full h-full" style={{ border: 'none' }} loading="lazy" title={`${lang} featured sample`} />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {!search && (
                 <div className="space-y-1.5 pt-0.5">
                   {/* Language toggle + chip legend — only show if there are auto-generated chips */}
@@ -919,6 +975,49 @@ export default function TranscriptFinderPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Warning: existing featured sample will be replaced */}
+                {(() => {
+                  const q = allQuestions.find(q => q.questionId === assign.questionId);
+                  const existing = assign.language === 'english' ? q?.featuredEn : q?.featuredEs;
+                  if (!existing) return null;
+                  return (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M8 1L1 14h14L8 1zm0 3l4.5 8.5h-9L8 4zm0 3v3m0 1.5v1"/>
+                          <path d="M8 4l4.5 8.5h-9L8 4z" fill="none" stroke="currentColor" strokeWidth="1"/>
+                          <rect x="7.25" y="7" width="1.5" height="3" rx=".5"/>
+                          <circle cx="8" cy="11.5" r=".75"/>
+                        </svg>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-amber-800">This will replace the current featured {assign.language} sample</p>
+                          {existing.excerpt && (
+                            <p className="text-xs text-amber-700 mt-1 italic leading-relaxed">&ldquo;{existing.excerpt.slice(0, 200)}{existing.excerpt.length > 200 ? '…' : ''}&rdquo;</p>
+                          )}
+                        </div>
+                      </div>
+                      {/* Preview of existing sample */}
+                      <div>
+                        <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-1.5">Currently featured — watch before replacing:</p>
+                        {existing.mediaType === 'audio' ? (
+                          <audio controls preload="none" src={existing.embedUrl} className="w-full" style={{ height: '36px' }} />
+                        ) : (
+                          <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
+                            <iframe
+                              src={existing.embedUrl}
+                              allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;"
+                              className="w-full h-full"
+                              style={{ border: 'none' }}
+                              title="Current featured sample"
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Grade + Gender */}
                 <div className="grid grid-cols-2 gap-3">
