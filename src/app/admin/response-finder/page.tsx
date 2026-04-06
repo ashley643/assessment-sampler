@@ -279,8 +279,8 @@ export default function TranscriptFinderPage() {
         setKeywordStates(initMap);
       }
     } else if (openSearchMode) {
-      // Open search: no pre-populated chips, user adds their own
-      setEnKeywords([]); setEsKeywords([]);
+      // Open search: user builds chips manually — don't touch customKeywords/keywordStates
+      // enKeywords/esKeywords stay empty; setting them here would cause spurious re-fetches
     } else {
       setEnKeywords([]); setEsKeywords([]); setCustomKeywords([]);
       setKeywordStates(new Map());
@@ -556,20 +556,28 @@ export default function TranscriptFinderPage() {
               {questionById[focusQuestion].questionText && (
                 <p className="text-xs text-gray-500 italic">{questionById[focusQuestion].questionText}</p>
               )}
-              {!search && (enKeywords.length > 0 || esKeywords.length > 0) && (
+              {!search && (
                 <div className="space-y-1.5 pt-0.5">
-                  {/* Language toggle + chip legend */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] text-gray-400">Search:</span>
-                    {(['all', 'en', 'es'] as const).map(lang => (
-                      <button key={lang} onClick={() => setKeywordLang(lang)}
-                        className={`text-[11px] px-2 py-0.5 rounded-full border font-medium transition-colors ${keywordLang === lang ? 'bg-[#1a2744] text-white border-transparent' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
-                        {lang === 'all' ? 'EN + ES' : lang === 'en' ? 'EN only' : 'ES only'}
-                      </button>
-                    ))}
-                    <span className="text-[10px] text-gray-400 ml-2">· click chip: off → OR →</span>
-                    <span className="text-[10px] font-bold text-emerald-600">★ MUST</span>
-                  </div>
+                  {/* Language toggle + chip legend — only show if there are auto-generated chips */}
+                  {(enKeywords.length > 0 || esKeywords.length > 0) && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] text-gray-400">Search:</span>
+                      {(['all', 'en', 'es'] as const).map(lang => (
+                        <button key={lang} onClick={() => setKeywordLang(lang)}
+                          className={`text-[11px] px-2 py-0.5 rounded-full border font-medium transition-colors ${keywordLang === lang ? 'bg-[#1a2744] text-white border-transparent' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                          {lang === 'all' ? 'EN + ES' : lang === 'en' ? 'EN only' : 'ES only'}
+                        </button>
+                      ))}
+                      <span className="text-[10px] text-gray-400 ml-2">· click chip: off → OR →</span>
+                      <span className="text-[10px] font-bold text-emerald-600">★ MUST</span>
+                    </div>
+                  )}
+                  {(enKeywords.length === 0 && esKeywords.length === 0) && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-gray-400">click chip: off → OR →</span>
+                      <span className="text-[10px] font-bold text-emerald-600">★ MUST</span>
+                    </div>
+                  )}
                   {/* Chip rows */}
                   {[{ label: 'EN', words: enKeywords, dimmed: keywordLang === 'es' },
                     { label: 'ES', words: esKeywords, dimmed: keywordLang === 'en' },
