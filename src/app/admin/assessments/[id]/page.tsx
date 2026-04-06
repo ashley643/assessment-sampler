@@ -112,7 +112,7 @@ export default function EditAssessmentPage() {
 
   // Excerpt edit state: sampleId → draft text (undefined = not editing)
   const [excerptEditing, setExcerptEditing] = useState<Record<string, string | undefined>>({});
-  // Sample drag state
+  // Sample drag state (kept for potential future use but samples no longer draggable)
   const dragSample = useRef<{ qIdx: number; sIdx: number } | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   // Question drag state
@@ -241,6 +241,21 @@ export default function EditAssessmentPage() {
     setQuestions(prev => prev.map((q, i) => {
       if (i !== qIdx) return q;
       return { ...q, question_samples: q.question_samples.filter((_, j) => j !== sIdx) };
+    }));
+  }
+
+  // Move the chosen sample to front of its language group (becomes the featured/player sample)
+  function featureSample(qIdx: number, sIdx: number) {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIdx) return q;
+      const lang = q.question_samples[sIdx].language;
+      const others = q.question_samples.filter((_, j) => j !== sIdx);
+      const featured = q.question_samples[sIdx];
+      // Insert featured at the front of its language group, preserving other language order
+      const firstOfLang = others.findIndex(s => s.language === lang);
+      const reordered = [...others];
+      reordered.splice(firstOfLang === -1 ? 0 : firstOfLang, 0, featured);
+      return { ...q, question_samples: reordered };
     }));
   }
 
@@ -523,23 +538,23 @@ export default function EditAssessmentPage() {
                         return (
                           <div
                             key={s.id}
-                            draggable
-                            onDragStart={() => onDragStart(qi, si)}
-                            onDragOver={e => onDragOver(e, sampleKey)}
-                            onDrop={() => onDrop(qi, si)}
-                            onDragEnd={onDragEnd}
-                            className={`rounded-lg border transition-all ${isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'}`}
+                            className={`rounded-lg border transition-all ${isFirst ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-white'}`}
                           >
                             {/* Row header */}
                             <div className="flex items-center gap-2 px-2.5 py-2">
-                              {/* Drag handle */}
-                              <span className="flex-shrink-0 cursor-grab text-gray-300 hover:text-gray-500 active:cursor-grabbing select-none">
-                                <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
-                                  <circle cx="3.5" cy="3.5" r="1.5"/><circle cx="8.5" cy="3.5" r="1.5"/>
-                                  <circle cx="3.5" cy="8" r="1.5"/><circle cx="8.5" cy="8" r="1.5"/>
-                                  <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
-                                </svg>
-                              </span>
+                              {/* Feature radio */}
+                              <button
+                                type="button"
+                                title={isFirst ? 'Currently featured in player' : 'Click to feature in player'}
+                                onClick={() => !isFirst && featureSample(qi, si)}
+                                className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  isFirst
+                                    ? 'border-green-500 bg-green-500'
+                                    : 'border-gray-300 hover:border-green-400 bg-white'
+                                }`}
+                              >
+                                {isFirst && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              </button>
 
                               {/* Language badge */}
                               <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${s.language === 'english' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
@@ -548,7 +563,7 @@ export default function EditAssessmentPage() {
 
                               {/* Placement badge */}
                               {isFirst
-                                ? <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Player + Feed</span>
+                                ? <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">★ Featured in player</span>
                                 : <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Feed only</span>
                               }
 
