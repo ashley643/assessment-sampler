@@ -622,7 +622,21 @@ export default function FeedPage() {
                           </svg>
                         </button>
                       </div>
-                      <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
+                        <a
+                          href={`/assessment/${code}/${assessment.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 flex items-center gap-1 text-[10px] font-medium text-gray-400 hover:text-[#1a2744] border border-gray-200 hover:border-[#1a2744]/30 rounded-md px-1.5 py-0.5 transition-colors"
+                          title="Open this question in the assessment player"
+                        >
+                          View question
+                          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.6">
+                            <path d="M1.5 7.5l6-6M7.5 7.5V1.5H1.5"/>
+                          </svg>
+                        </a>
+                      </div>
                     </div>
                     {sample.excerpt && (
                       <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
