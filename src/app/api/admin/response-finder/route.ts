@@ -79,6 +79,7 @@ export async function GET(req: Request) {
     // Always exclude non-response VideoAsk nodes
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%Hi! Thanks for applying%') as typeof q;
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%real student response%') as typeof q;
+    qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%Now you\'ll hear the full%') as typeof q;
     if (mediaType === 'audio') qq = (qq as unknown as { ilike: (col: string, val: string) => typeof qq }).ilike('media_url', '%audio.mp3%') as typeof q;
     if (mediaType === 'video') qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('media_url', 'ilike', '%audio.mp3%') as typeof q;
     if (keywords.length > 0) {
