@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { AccessCode, Assessment, Question, QuestionSample } from '@/types/assessment';
+import { track } from '@/lib/track';
 
 interface FeedItem {
   question: Question;
@@ -89,6 +90,7 @@ export default function FeedPage() {
 
   const [codeData, setCodeData] = useState<AccessCode | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const viewedSamples = useRef<Set<string>>(new Set());
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -115,9 +117,12 @@ export default function FeedPage() {
   }, [codeData, code, router]);
 
   useEffect(() => {
-    if (codeData) document.title = `Sample Responses — Impacter Pathway`;
+    if (codeData) {
+      track('feed_open', code);
+      document.title = `Sample Responses — Impacter Pathway`;
+    }
     return () => { document.title = 'Impacter Pathway'; };
-  }, [codeData]);
+  }, [codeData, code]);
 
   useEffect(() => { setPage(1); }, [filters]);
 
@@ -212,10 +217,16 @@ export default function FeedPage() {
     }));
   }
 
+  function trackFilter(key: string, value: unknown) {
+    track('feed_filter', code, { metadata: { filter: key, value } });
+  }
+
   function toggleBookmark(sampleId: string) {
     setBookmarks(prev => {
       const n = new Set(prev);
-      n.has(sampleId) ? n.delete(sampleId) : n.add(sampleId);
+      const adding = !n.has(sampleId);
+      adding ? n.add(sampleId) : n.delete(sampleId);
+      track('feed_bookmark', code, { metadata: { sample_id: sampleId, action: adding ? 'add' : 'remove' } });
       return n;
     });
   }
@@ -571,7 +582,19 @@ export default function FeedPage() {
               {visible.map(({ question, sample, assessment }) => {
                 const mt = mediaTypeBadge(sample.mediaType);
                 return (
-                  <div key={sample.id} className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-colors ${bookmarks.has(sample.id) ? 'border-amber-300' : 'border-gray-200'}`}>
+                  <div key={sample.id}
+                    ref={el => {
+                      if (!el) return;
+                      const observer = new IntersectionObserver(([entry]) => {
+                        if (entry.isIntersecting && !viewedSamples.current.has(sample.id)) {
+                          viewedSamples.current.add(sample.id);
+                          track('feed_view', code, { metadata: { sample_id: sample.id, question: question.title, media_type: sample.mediaType ?? 'video' } });
+                          observer.disconnect();
+                        }
+                      }, { threshold: 0.5 });
+                      observer.observe(el);
+                    }}
+                    className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-colors ${bookmarks.has(sample.id) ? 'border-amber-300' : 'border-gray-200'}`}>
                     <div className="px-5 pt-4 pb-3 border-b border-gray-100">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>{assessment.typeLabel}</span>
@@ -614,7 +637,7 @@ export default function FeedPage() {
             {visible.length < filtered.length && (
               <div className="mt-10 text-center">
                 <button
-                  onClick={() => setPage(p => p + 1)}
+                  onClick={() => { setPage(p => p + 1); track('feed_load_more', code); }}
                   className="px-6 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 shadow-sm transition-all"
                 >
                   Load more <span className="text-gray-400">({filtered.length - visible.length} remaining)</span>

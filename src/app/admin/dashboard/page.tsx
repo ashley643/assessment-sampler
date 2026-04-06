@@ -12,6 +12,11 @@ const EVENT_LABELS: Record<string, string> = {
   format_change: 'Switched to typed response',
   version_switch: 'Switched versions',
   text_response: 'Submitted a typed response',
+  feed_open: 'Opened sample responses feed',
+  feed_view: 'Viewed a sample response',
+  feed_bookmark: 'Bookmarked a response',
+  feed_filter: 'Applied a feed filter',
+  feed_load_more: 'Loaded more feed results',
 };
 import AdminShell from '@/components/admin/AdminShell';
 
