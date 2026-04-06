@@ -80,8 +80,18 @@ export async function GET(req: Request) {
 
   const impacter = getImpacterClient();
 
-  const keywords     = search.trim().split(/\s+/).filter(Boolean);
+  // Parse search: extract "quoted phrases" and remaining individual words
+  const phrases: string[] = [];
+  const parsedSearch = search.trim().replace(/"([^"]+)"/g, (_, phrase) => { phrases.push(phrase.trim()); return ' '; });
+  const words = parsedSearch.trim().split(/\s+/).filter(w => w.length > 0);
   const mustKeywords = mustParam.trim() ? mustParam.trim().split(/\s+/).filter(Boolean) : [];
+
+  // Helper to chain a filter that ANDs a condition across (transcript OR node_title)
+  function andOr<T>(q: T, term: string): T {
+    return (q as unknown as { or: (cond: string) => T }).or(
+      `transcript.ilike.%${term}%,node_title.ilike.%${term}%`
+    );
+  }
 
   // Helper: apply shared filters to any query on this table
   function applyFilters<T>(q: T): T {
@@ -96,13 +106,17 @@ export async function GET(req: Request) {
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%real student response%') as typeof q;
     if (mediaType === 'audio') qq = (qq as unknown as { ilike: (col: string, val: string) => typeof qq }).ilike('media_url', '%audio.mp3%') as typeof q;
     if (mediaType === 'video') qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('media_url', 'ilike', '%audio.mp3%') as typeof q;
-    if (keywords.length > 0) {
-      const conditions = keywords.flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`]).join(',');
-      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(conditions) as typeof q;
+    // Exact quoted phrases — each phrase is a separate AND condition
+    for (const phrase of phrases) {
+      qq = andOr(qq, phrase);
     }
-    // Must-have keywords: each chained separately so they AND together
+    // Unquoted words — each word is a separate AND (transcript must contain every word)
+    for (const word of words) {
+      qq = andOr(qq, word);
+    }
+    // Chip must-keywords
     for (const kw of mustKeywords) {
-      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(`transcript.ilike.%${kw}%,node_title.ilike.%${kw}%`) as typeof q;
+      qq = andOr(qq, kw);
     }
     return qq;
   }
@@ -162,12 +176,12 @@ export async function GET(req: Request) {
     };
   }
 
-  // ── 4. Score by keyword hit count, sort best first ──────────────────────
+  // ── 4. Score by keyword/phrase hit count, sort best first ──────────────
   function scoreRow(t: ReturnType<typeof normalize>): number {
     const haystack = (t.transcript + ' ' + t.nodeTitle).toLowerCase();
-    const allKws = [...keywords, ...mustKeywords];
-    return allKws.reduce((s, kw) => {
-      const needle = kw.toLowerCase();
+    const allTerms = [...phrases, ...words, ...mustKeywords];
+    return allTerms.reduce((s, term) => {
+      const needle = term.toLowerCase();
       let count = 0, pos = 0;
       while ((pos = haystack.indexOf(needle, pos)) !== -1) { count++; pos++; }
       return s + count;

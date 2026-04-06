@@ -482,7 +482,7 @@ export default function TranscriptFinderPage() {
             <input
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
-              placeholder="Search transcripts…"
+              placeholder='Search… use "quotes" for exact phrase'
               className={`${INPUT} w-52`}
             />
             <button type="submit" className={`${BTN_SM} bg-[#1a2744] text-white`}>Search</button>
