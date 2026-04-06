@@ -62,6 +62,15 @@ function sortForFeed(items: FeedItem[]): FeedItem[] {
   return [...interleave(videos), ...interleave(audios)];
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function interleave(items: FeedItem[]): FeedItem[] {
   // Group by gender+grade combo so the feed cycles through a diverse range of respondents
   const groups = new Map<string, FeedItem[]>();
@@ -70,8 +79,8 @@ function interleave(items: FeedItem[]): FeedItem[] {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(item);
   }
-  // Round-robin across groups
-  const queues = [...groups.values()];
+  // Shuffle within each group so the same response doesn't always lead, then round-robin across groups
+  const queues = shuffle([...groups.values()]).map(group => shuffle(group));
   const result: FeedItem[] = [];
   let i = 0;
   while (result.length < items.length) {
