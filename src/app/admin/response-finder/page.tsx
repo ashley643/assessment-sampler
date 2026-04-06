@@ -147,6 +147,19 @@ interface AssignState {
 // ── Helpers ────────────────────────────────────────────────────────────────
 function wordCount(s: string) { return s.trim().split(/\s+/).filter(Boolean).length; }
 function excerpt(s: string, n = 180) { return s.length > n ? s.slice(0, n).trim() + '…' : s; }
+// Direct audio file URL (can be used as <audio src>). VideoAsk share URLs are NOT direct files.
+function isDirectAudio(url: string) { return /\.(mp3|ogg|m4a|wav|aac)(\?|$)/i.test(url); }
+
+function SamplePlayer({ embedUrl, mediaType, title }: { embedUrl: string; mediaType: string; title: string }) {
+  if (mediaType === 'audio' && isDirectAudio(embedUrl)) {
+    return <audio controls preload="none" src={embedUrl} className="w-full" style={{ height: '36px' }} />;
+  }
+  return (
+    <div className="w-1/2 aspect-video bg-gray-100 rounded-lg overflow-hidden mx-auto">
+      <iframe src={embedUrl} allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;" className="w-full h-full" style={{ border: 'none' }} loading="lazy" title={title} />
+    </div>
+  );
+}
 
 export default function TranscriptFinderPage() {
   const [transcripts, setTranscripts]   = useState<Transcript[]>([]);
@@ -719,13 +732,7 @@ export default function TranscriptFinderPage() {
                                 </div>
                               </div>
                               {s.excerpt && <p className="text-[11px] text-gray-600 italic leading-relaxed">&ldquo;{s.excerpt.slice(0, 160)}{s.excerpt.length > 160 ? '…' : ''}&rdquo;</p>}
-                              {s.mediaType === 'audio' ? (
-                                <audio controls preload="none" src={s.embedUrl} className="w-full" style={{ height: '32px' }} />
-                              ) : (
-                                <div className="w-1/2 aspect-video bg-gray-100 rounded overflow-hidden mx-auto">
-                                  <iframe src={s.embedUrl} allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;" className="w-full h-full" style={{ border: 'none' }} loading="lazy" title={`${langLabel} sample ${si + 1}`} />
-                                </div>
-                              )}
+                              <SamplePlayer embedUrl={s.embedUrl} mediaType={s.mediaType} title={`${langLabel} sample ${si + 1}`} />
                             </div>
                           );
                         })}
@@ -1161,20 +1168,7 @@ export default function TranscriptFinderPage() {
                           </div>
                           <div>
                             <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-1.5">Currently featured — watch before replacing:</p>
-                            {existingFeatured.mediaType === 'audio' ? (
-                              <audio controls preload="none" src={existingFeatured.embedUrl} className="w-full" style={{ height: '36px' }} />
-                            ) : (
-                              <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
-                                <iframe
-                                  src={existingFeatured.embedUrl}
-                                  allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;"
-                                  className="w-full h-full"
-                                  style={{ border: 'none' }}
-                                  title="Current featured sample"
-                                  loading="lazy"
-                                />
-                              </div>
-                            )}
+                            <SamplePlayer embedUrl={existingFeatured.embedUrl} mediaType={existingFeatured.mediaType} title="Current featured sample" />
                           </div>
                         </div>
                       )}
