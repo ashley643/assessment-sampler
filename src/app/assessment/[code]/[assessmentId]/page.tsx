@@ -433,8 +433,8 @@ export default function AssessmentPlayerPage() {
                     onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('language_switch', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { language: spanishMode ? 'english' : 'spanish' } }); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                     style={spanishMode
-                      ? { background: '#e8735a', color: 'white', boxShadow: '0 0 0 2px #e8735a' }
-                      : { background: 'white', color: '#e8735a', boxShadow: '0 0 0 2px #e8735a' }}
+                      ? { background: 'white', color: '#e8735a', boxShadow: '0 0 0 2px #e8735a' }
+                      : { background: '#e8735a', color: 'white', boxShadow: '0 0 0 2px #e8735a' }}
                   >
                     <span>🌐</span> {spanishMode ? 'Try in English' : 'Try in Spanish'}
                   </button>
@@ -509,8 +509,8 @@ export default function AssessmentPlayerPage() {
                   onClick={() => setShowSample(s => !s)}
                   className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
                   style={showSample
-                    ? { background: '#1D9E75', color: 'white', boxShadow: '0 0 0 2px #1D9E75' }
-                    : { background: 'white', color: '#1D9E75', boxShadow: '0 0 0 2px #1D9E75' }}
+                    ? { background: 'white', color: '#1D9E75', boxShadow: '0 0 0 2px #1D9E75' }
+                    : { background: '#1D9E75', color: 'white', boxShadow: '0 0 0 2px #1D9E75' }}
                 >
                   <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                     <circle cx="7.5" cy="7.5" r="6" stroke="currentColor" strokeWidth="1.4"/>
@@ -533,7 +533,7 @@ export default function AssessmentPlayerPage() {
           )}
 
           {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
-          <div className={`flex justify-center px-4 md:px-8 py-4 bg-gray-50 transition-colors duration-300 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}
+          <div className={`flex justify-center px-2 md:px-4 py-4 bg-gray-50 transition-colors duration-300 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}
             style={
               spanishMode && hasSample ? { background: 'linear-gradient(135deg, #e8735a18 0%, #1D9E7518 100%)' }
               : spanishMode ? { background: '#e8735a0f' }
@@ -545,7 +545,7 @@ export default function AssessmentPlayerPage() {
               key={`${currentQ.id}-${spanishMode}-${hasSample}`}
               src={embedSrc}
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              className={`w-full md:max-w-[960px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
+              className={`w-full ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
               style={{
                 border: 'none',
                 borderRadius: 16,
@@ -619,8 +619,8 @@ export default function AssessmentPlayerPage() {
                 onClick={() => setShowSample(s => !s)}
                 className="md:hidden flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99]"
                 style={showSample
-                  ? { background: '#1D9E75', color: 'white', boxShadow: '0 0 0 2px #1D9E75' }
-                  : { background: 'white', color: '#1D9E75', boxShadow: '0 0 0 2px #1D9E75' }}
+                  ? { background: 'white', color: '#1D9E75', boxShadow: '0 0 0 2px #1D9E75' }
+                  : { background: '#1D9E75', color: 'white', boxShadow: '0 0 0 2px #1D9E75' }}
               >
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                   <circle cx="7.5" cy="7.5" r="6" stroke="white" strokeWidth="1.4"/>
