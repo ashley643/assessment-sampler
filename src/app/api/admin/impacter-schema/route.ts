@@ -1,54 +1,45 @@
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
+import { getImpacterClient } from '@/lib/impacter-client';
 
-const IMPACTER_URL = 'https://leeevvjenekdldngwkek.supabase.co';
-
-// Temporary discovery route — fetches the PostgREST OpenAPI spec which lists
-// every accessible table + column in the Impacter Supabase.
+// Targeted discovery — shows columns + sample rows for the tables we care about
+// for building the district/school Response Finder.
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const key = process.env.IMPACTER_SERVICE_ROLE_KEY!;
+  const db = getImpacterClient();
 
-  // PostgREST exposes a full OpenAPI spec at /rest/v1/ — includes all schemas,
-  // tables, and column definitions the service role can access.
-  const specRes = await fetch(`${IMPACTER_URL}/rest/v1/`, {
-    headers: {
-      'apikey': key,
-      'Authorization': `Bearer ${key}`,
-      'Accept': 'application/openapi+json',
-    },
-  });
-
-  if (!specRes.ok) {
-    return NextResponse.json({ error: `OpenAPI fetch failed: ${specRes.status}`, body: await specRes.text() });
+  async function probe(table: string, schema = 'public') {
+    const { data, error } = await db.schema(schema as 'public').from(table).select('*').limit(2);
+    if (error) return { error: error.message };
+    if (!data || data.length === 0) return { columns: [], rows: [] };
+    return {
+      columns: Object.keys(data[0] as object),
+      rows: data,
+    };
   }
 
-  const spec = await specRes.json() as {
-    definitions?: Record<string, { properties?: Record<string, { type?: string; format?: string; description?: string }> }>;
-    paths?: Record<string, unknown>;
-  };
+  const [studentResponses, answers, responses, vAll] = await Promise.all([
+    probe('student_responses'),
+    probe('answers'),
+    probe('responses'),
+    probe('v_all_student_responses'),
+  ]);
 
-  // Extract table → columns map from OpenAPI definitions
-  const tables: Record<string, { column: string; type: string; description?: string }[]> = {};
-  for (const [name, def] of Object.entries(spec.definitions ?? {})) {
-    tables[name] = Object.entries(def.properties ?? {}).map(([col, info]) => ({
-      column: col,
-      type: info.format ?? info.type ?? 'unknown',
-      ...(info.description ? { description: info.description } : {}),
-    }));
-  }
+  // Also get distinct districts from student_responses
+  const { data: districts } = await db
+    .from('student_responses')
+    .select('district_name')
+    .not('district_name', 'is', null)
+    .limit(200);
 
-  // Also grab one sample row from every table so we can see real values
-  const samples: Record<string, unknown> = {};
-  for (const tableName of Object.keys(tables)) {
-    try {
-      const r = await fetch(`${IMPACTER_URL}/rest/v1/${tableName}?limit=1`, {
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` },
-      });
-      if (r.ok) samples[tableName] = await r.json();
-    } catch { /* skip inaccessible tables */ }
-  }
+  const distinctDistricts = [...new Set((districts ?? []).map((r: Record<string, unknown>) => r.district_name as string))].sort();
 
-  return NextResponse.json({ tableCount: Object.keys(tables).length, tables, samples });
+  return NextResponse.json({
+    student_responses: studentResponses,
+    answers: answers,
+    responses: responses,
+    v_all_student_responses: vAll,
+    distinct_districts_sample: distinctDistricts,
+  }, { status: 200 });
 }
