@@ -1,0 +1,579 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+
+// The student_responses columns we can populate, with friendly labels
+const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
+  { col: 'district_name',     label: 'District Name' },
+  { col: 'school_name',       label: 'School Name' },
+  { col: 'class_name',        label: 'Class Name' },
+  { col: 'teacher_name',      label: 'Teacher Name' },
+  { col: 'current_grade',     label: 'Grade' },
+  { col: 'gender',            label: 'Gender' },
+  { col: 'hispanic',          label: 'Hispanic', hint: 'true/false' },
+  { col: 'ell',               label: 'ELL', hint: 'true/false' },
+  { col: 'frl',               label: 'FRL', hint: 'true/false' },
+  { col: 'iep',               label: 'IEP', hint: 'true/false' },
+  { col: 'ethnicity',         label: 'Ethnicity' },
+  { col: 'home_language',     label: 'Home Language' },
+  { col: 'session_name',      label: 'Session Name' },
+  { col: 'course_id',         label: 'Course ID' },
+  { col: 'response_type',     label: 'Response Type' },
+  { col: 'question',          label: 'Question' },
+  { col: 'answer',            label: 'Answer / Transcript' },
+  { col: 'harvard_attribute', label: 'Harvard Attribute' },
+  { col: 'harvard_score',     label: 'Harvard Score' },
+  { col: 'casel_attribute',   label: 'CASEL Attribute' },
+  { col: 'casel_score',       label: 'CASEL Score' },
+  { col: 'url',               label: 'Media URL' },
+  { col: 'answer_date',       label: 'Answer Date' },
+  { col: 'source_id',         label: 'Source ID' },
+];
+
+// Smart default mappings: videoask.steps column → student_responses column
+const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
+  answer:       'transcript',
+  url:          'media_url',
+  answer_date:  'created_at',
+  current_grade:'grade',
+  gender:       'gender',
+  school_name:  'school_name',
+  question:     'node_title',
+};
+
+type FormInfo = {
+  formTitle: string;
+  totalSteps: number;
+  importedSteps: number;
+};
+
+type ImportConfig = {
+  staticValues: Record<string, string>;
+  columnMappings: Record<string, string>;
+};
+
+type RunResult = {
+  inserted?: number;
+  skipped?: number;
+  wouldInsert?: number;
+  wouldSkip?: number;
+  sample?: Record<string, unknown>[];
+  error?: string;
+};
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function Badge({ children, variant }: { children: React.ReactNode; variant: 'green' | 'yellow' | 'gray' }) {
+  const cls = {
+    green:  'bg-green-50 text-green-700 border border-green-200',
+    yellow: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
+    gray:   'bg-gray-100 text-gray-500 border border-gray-200',
+  }[variant];
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{children}</span>;
+}
+
+// Mapping row: one student_responses column mapped to either a source col or static value
+function MappingRow({
+  srCol,
+  label,
+  hint,
+  sourceColumns,
+  mappingType,
+  sourceCol,
+  staticVal,
+  onMappingTypeChange,
+  onSourceColChange,
+  onStaticValChange,
+}: {
+  srCol: string;
+  label: string;
+  hint?: string;
+  sourceColumns: string[];
+  mappingType: 'source' | 'static' | 'none';
+  sourceCol: string;
+  staticVal: string;
+  onMappingTypeChange: (t: 'source' | 'static' | 'none') => void;
+  onSourceColChange: (v: string) => void;
+  onStaticValChange: (v: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-[140px_100px_1fr] gap-2 items-center py-1.5 border-b border-gray-100 last:border-0">
+      <div>
+        <span className="text-sm text-gray-700">{label}</span>
+        {hint && <span className="ml-1 text-xs text-gray-400">({hint})</span>}
+        <span className="block text-xs text-gray-400 font-mono">{srCol}</span>
+      </div>
+      <select
+        value={mappingType}
+        onChange={e => onMappingTypeChange(e.target.value as 'source' | 'static' | 'none')}
+        className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+      >
+        <option value="none">— skip —</option>
+        <option value="source">From column</option>
+        <option value="static">Static value</option>
+      </select>
+      {mappingType === 'source' && (
+        <select
+          value={sourceCol}
+          onChange={e => onSourceColChange(e.target.value)}
+          className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        >
+          <option value="">— choose column —</option>
+          {sourceColumns.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      )}
+      {mappingType === 'static' && (
+        <input
+          type="text"
+          value={staticVal}
+          onChange={e => onStaticValChange(e.target.value)}
+          placeholder="Static value…"
+          className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        />
+      )}
+      {mappingType === 'none' && <div />}
+    </div>
+  );
+}
+
+// ── Main Page ──────────────────────────────────────────────────────────────
+
+export default function VideoAskImportPage() {
+  const [view, setView] = useState<'list' | 'configure' | 'result'>('list');
+  const [forms, setForms] = useState<FormInfo[]>([]);
+  const [loadingForms, setLoadingForms] = useState(false);
+  const [formsError, setFormsError] = useState('');
+
+  // Selected form + its source columns + sample rows
+  const [selectedForm, setSelectedForm] = useState<FormInfo | null>(null);
+  const [sourceColumns, setSourceColumns] = useState<string[]>([]);
+  const [sampleRows, setSampleRows] = useState<Record<string, unknown>[]>([]);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
+  // Mapping state: for each SR column track type + source col + static val
+  const [mappingTypes, setMappingTypes] = useState<Record<string, 'source' | 'static' | 'none'>>({});
+  const [sourceCols, setSourceCols] = useState<Record<string, string>>({});
+  const [staticVals, setStaticVals] = useState<Record<string, string>>({});
+
+  // Save / run state
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+  const [dryRunning, setDryRunning] = useState(false);
+  const [dryResult, setDryResult] = useState<RunResult | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
+
+  // Discover forms
+  async function discoverForms() {
+    setLoadingForms(true);
+    setFormsError('');
+    try {
+      const res = await fetch('/api/admin/videoask-import/discover');
+      const json = await res.json();
+      if (json.error) { setFormsError(json.error); return; }
+      setForms(json.forms ?? []);
+    } finally {
+      setLoadingForms(false);
+    }
+  }
+
+  // Load preview + saved config when a form is selected
+  const loadFormConfig = useCallback(async (form: FormInfo) => {
+    setSelectedForm(form);
+    setView('configure');
+    setLoadingPreview(true);
+    setDryResult(null);
+    setRunResult(null);
+    setSaveMsg('');
+
+    try {
+      const [previewRes, configRes] = await Promise.all([
+        fetch(`/api/admin/videoask-import/preview?formTitle=${encodeURIComponent(form.formTitle)}`),
+        fetch(`/api/admin/videoask-import/configs?formTitle=${encodeURIComponent(form.formTitle)}`),
+      ]);
+      const [previewJson, configJson] = await Promise.all([previewRes.json(), configRes.json()]);
+
+      const cols: string[] = previewJson.columns ?? [];
+      setSourceColumns(cols);
+      setSampleRows(previewJson.rows ?? []);
+
+      // Build initial mapping state: start with defaults, then overlay saved config
+      const initTypes: Record<string, 'source' | 'static' | 'none'> = {};
+      const initSource: Record<string, string> = {};
+      const initStatic: Record<string, string> = {};
+
+      for (const { col } of SR_COLUMNS) {
+        initTypes[col] = 'none';
+        initSource[col] = '';
+        initStatic[col] = '';
+      }
+
+      // Apply defaults
+      for (const [srCol, stepCol] of Object.entries(DEFAULT_COLUMN_MAPPINGS)) {
+        if (cols.includes(stepCol)) {
+          initTypes[srCol] = 'source';
+          initSource[srCol] = stepCol;
+        }
+      }
+
+      // Overlay saved config
+      if (configJson.config) {
+        const saved = configJson.config;
+        for (const [srCol, stepCol] of Object.entries(saved.column_mappings ?? {}) as [string, string][]) {
+          if (stepCol && cols.includes(stepCol)) {
+            initTypes[srCol] = 'source';
+            initSource[srCol] = stepCol;
+          }
+        }
+        for (const [srCol, val] of Object.entries(saved.static_values ?? {}) as [string, string][]) {
+          if (val) {
+            initTypes[srCol] = 'static';
+            initStatic[srCol] = val;
+          }
+        }
+      }
+
+      setMappingTypes(initTypes);
+      setSourceCols(initSource);
+      setStaticVals(initStatic);
+    } finally {
+      setLoadingPreview(false);
+    }
+  }, []);
+
+  // Build the config objects from current state
+  function buildConfig(): ImportConfig {
+    const columnMappings: Record<string, string> = {};
+    const staticValues: Record<string, string> = {};
+    for (const { col } of SR_COLUMNS) {
+      if (mappingTypes[col] === 'source' && sourceCols[col]) {
+        columnMappings[col] = sourceCols[col];
+      } else if (mappingTypes[col] === 'static' && staticVals[col]) {
+        staticValues[col] = staticVals[col];
+      }
+    }
+    return { columnMappings, staticValues };
+  }
+
+  async function saveConfig() {
+    if (!selectedForm) return;
+    setSaving(true);
+    setSaveMsg('');
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formTitle: selectedForm.formTitle, columnMappings, staticValues }),
+      });
+      const json = await res.json();
+      setSaveMsg(json.error ? `Error: ${json.error}` : 'Saved.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function dryRun() {
+    if (!selectedForm) return;
+    setDryRunning(true);
+    setDryResult(null);
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formTitle: selectedForm.formTitle, columnMappings, staticValues, dryRun: true }),
+      });
+      setDryResult(await res.json());
+    } finally {
+      setDryRunning(false);
+    }
+  }
+
+  async function runImport() {
+    if (!selectedForm) return;
+    setImporting(true);
+    setRunResult(null);
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formTitle: selectedForm.formTitle, columnMappings, staticValues }),
+      });
+      const json = await res.json();
+      setRunResult(json);
+      if (!json.error) {
+        setView('result');
+        // Refresh form list in background
+        discoverForms();
+      }
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-3">
+          {view !== 'list' && (
+            <button
+              onClick={() => { setView('list'); setSelectedForm(null); }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Back"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900">VideoAsk Import</h1>
+            <p className="text-sm text-gray-500">
+              {view === 'list' && 'Import VideoAsk pilot responses into Student Responses.'}
+              {view === 'configure' && selectedForm && `Mapping columns for: ${selectedForm.formTitle}`}
+              {view === 'result' && 'Import complete.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto">
+        {/* ── LIST VIEW ── */}
+        {view === 'list' && (
+          <div className="p-6 max-w-2xl">
+            <button
+              onClick={discoverForms}
+              disabled={loadingForms}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mb-6"
+            >
+              {loadingForms ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Scanning…
+                </>
+              ) : 'Find VideoAsk Pilots'}
+            </button>
+
+            {formsError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formsError}</div>
+            )}
+
+            {forms.length > 0 && (
+              <div className="space-y-2">
+                {forms.map(f => {
+                  const fullyImported = f.importedSteps === f.totalSteps && f.totalSteps > 0;
+                  const partiallyImported = f.importedSteps > 0 && f.importedSteps < f.totalSteps;
+                  return (
+                    <button
+                      key={f.formTitle}
+                      onClick={() => loadFormConfig(f)}
+                      className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                    >
+                      <div>
+                        <span className="text-sm font-medium text-gray-900">{f.formTitle}</span>
+                        <span className="block text-xs text-gray-500 mt-0.5">
+                          {f.totalSteps} response{f.totalSteps !== 1 ? 's' : ''}
+                          {f.importedSteps > 0 && ` · ${f.importedSteps} already imported`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {fullyImported && <Badge variant="green">Imported</Badge>}
+                        {partiallyImported && <Badge variant="yellow">Partial</Badge>}
+                        {f.importedSteps === 0 && <Badge variant="gray">Not imported</Badge>}
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-400">
+                          <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {!loadingForms && forms.length === 0 && (
+              <p className="text-sm text-gray-500">Click the button above to scan for VideoAsk pilots.</p>
+            )}
+          </div>
+        )}
+
+        {/* ── CONFIGURE VIEW ── */}
+        {view === 'configure' && selectedForm && (
+          <div className="flex h-full overflow-hidden">
+            {/* Left: sample data table */}
+            <div className="w-1/2 border-r border-gray-200 overflow-auto p-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Sample rows from videoask.steps
+              </p>
+              {loadingPreview ? (
+                <p className="text-sm text-gray-400">Loading…</p>
+              ) : sampleRows.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="text-xs border-collapse min-w-full">
+                    <thead>
+                      <tr>
+                        {sourceColumns.map(c => (
+                          <th key={c} className="px-2 py-1.5 border border-gray-200 bg-gray-50 text-left font-medium text-gray-600 whitespace-nowrap">
+                            {c}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sampleRows.map((row, i) => (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          {sourceColumns.map(c => {
+                            const val = String(row[c] ?? '');
+                            return (
+                              <td key={c} className="px-2 py-1.5 border border-gray-200 text-gray-700 max-w-[200px]">
+                                <span className="block truncate" title={val}>{val}</span>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">No rows found for this form.</p>
+              )}
+            </div>
+
+            {/* Right: mapping UI */}
+            <div className="w-1/2 overflow-y-auto p-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Column Mappings → student_responses
+              </p>
+
+              {loadingPreview ? (
+                <p className="text-sm text-gray-400">Loading…</p>
+              ) : (
+                <div className="mb-6">
+                  {SR_COLUMNS.map(({ col, label, hint }) => (
+                    <MappingRow
+                      key={col}
+                      srCol={col}
+                      label={label}
+                      hint={hint}
+                      sourceColumns={sourceColumns}
+                      mappingType={mappingTypes[col] ?? 'none'}
+                      sourceCol={sourceCols[col] ?? ''}
+                      staticVal={staticVals[col] ?? ''}
+                      onMappingTypeChange={t => setMappingTypes(prev => ({ ...prev, [col]: t }))}
+                      onSourceColChange={v => setSourceCols(prev => ({ ...prev, [col]: v }))}
+                      onStaticValChange={v => setStaticVals(prev => ({ ...prev, [col]: v }))}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-3 pb-1 space-y-2">
+                {saveMsg && (
+                  <p className={`text-xs ${saveMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>{saveMsg}</p>
+                )}
+
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={saveConfig}
+                    disabled={saving}
+                    className="px-3 py-1.5 border border-gray-300 text-sm text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    {saving ? 'Saving…' : 'Save mapping'}
+                  </button>
+                  <button
+                    onClick={dryRun}
+                    disabled={dryRunning || loadingPreview}
+                    className="px-3 py-1.5 border border-blue-300 text-sm text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
+                  >
+                    {dryRunning ? 'Previewing…' : 'Preview import'}
+                  </button>
+                </div>
+
+                {dryResult && (
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm space-y-2">
+                    {dryResult.error ? (
+                      <p className="text-red-600">Error: {dryResult.error}</p>
+                    ) : (
+                      <>
+                        <p className="text-gray-700">
+                          <strong>{dryResult.wouldInsert}</strong> rows to import
+                          {(dryResult.wouldSkip ?? 0) > 0 && (
+                            <>, <strong>{dryResult.wouldSkip}</strong> already imported (skipped)</>
+                          )}
+                        </p>
+                        {dryResult.sample && dryResult.sample.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 mb-1">Sample output row:</p>
+                            <pre className="text-xs text-gray-600 bg-white border border-gray-200 rounded p-2 overflow-x-auto">
+                              {JSON.stringify(dryResult.sample[0], null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        {(dryResult.wouldInsert ?? 0) > 0 && (
+                          <button
+                            onClick={runImport}
+                            disabled={importing}
+                            className="w-full py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                          >
+                            {importing ? 'Importing…' : `Import ${dryResult.wouldInsert} rows into student_responses`}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {runResult?.error && (
+                  <p className="text-sm text-red-600">Import error: {runResult.error}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── RESULT VIEW ── */}
+        {view === 'result' && runResult && (
+          <div className="p-6 max-w-md">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-4">
+              <p className="text-green-800 font-medium">Import complete!</p>
+              <p className="text-sm text-green-700 mt-1">
+                <strong>{runResult.inserted}</strong> rows inserted
+                {(runResult.skipped ?? 0) > 0 && (
+                  <>, <strong>{runResult.skipped}</strong> already existed (skipped)</>
+                )}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setView('list'); setSelectedForm(null); setRunResult(null); }}
+                className="px-4 py-2 border border-gray-300 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Back to list
+              </button>
+              {selectedForm && (
+                <button
+                  onClick={() => loadFormConfig(selectedForm)}
+                  className="px-4 py-2 border border-blue-300 text-sm text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  Re-configure mapping
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
