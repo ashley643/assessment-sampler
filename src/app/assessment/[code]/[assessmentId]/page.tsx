@@ -490,19 +490,6 @@ export default function AssessmentPlayerPage() {
                   </div>
                 </div>
               )}
-              <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
-                <button
-                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('format_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { format: showTyping ? 'video' : 'text' } }); }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                  style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
-                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                  </svg>
-                  I prefer to type
-                </button>
-              </Tooltip>
               {/* Desktop sample button lives in the iframe overlay — hidden here */}
             </div>
             </div>{/* end top row */}
@@ -534,19 +521,6 @@ export default function AssessmentPlayerPage() {
                   </button>
                 </Tooltip>
               )}
-              <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
-                <button
-                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('format_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { format: showTyping ? 'video' : 'text' } }); }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all hover:opacity-90 active:scale-[0.99]"
-                  style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
-                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                  </svg>
-                  I prefer to type
-                </button>
-              </Tooltip>
               {sampleAvailable && (
                 <button
                   onClick={() => setShowSample(s => !s)}
@@ -562,6 +536,19 @@ export default function AssessmentPlayerPage() {
                   {showSample ? 'Back to question' : 'See a sample response'}
                 </button>
               )}
+              <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
+                <button
+                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('format_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { format: showTyping ? 'video' : 'text' } }); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  I prefer to type
+                </button>
+              </Tooltip>
             </div>
             <iframe
               key={`${currentQ.id}-${spanishMode}-${hasSample}`}
@@ -635,7 +622,7 @@ export default function AssessmentPlayerPage() {
 
           {/* Bottom nav */}
           <div className="flex-shrink-0 border-t border-gray-200 px-4 md:px-6 py-3 flex flex-col items-stretch bg-white gap-2">
-            {/* Mobile-only sample button row */}
+            {/* Mobile-only sample + type buttons */}
             {sampleAvailable && (
               <button
                 onClick={() => setShowSample(s => !s)}
@@ -651,6 +638,17 @@ export default function AssessmentPlayerPage() {
                 {showSample ? 'Back to question' : 'See a sample response'}
               </button>
             )}
+            <button
+              onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('format_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { format: showTyping ? 'video' : 'text' } }); }}
+              className="md:hidden flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99]"
+              style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
+            >
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+              I prefer to type
+            </button>
           <div className="flex items-center justify-between gap-4">
             <button onClick={goPrev} disabled={currentIdx === 0} className="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-0 transition-all">← Previous</button>
 
