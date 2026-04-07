@@ -1,27 +1,51 @@
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
 import { getImpacterClient } from '@/lib/impacter-client';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+
+const CACHE_KEY = '__discover_cache__';
 
 function extractUuid(url: string): string | null {
   const m = url.match(/\/transcoded\/([0-9a-f-]{36})\//);
   return m ? m[1] : null;
 }
 
+type FormEntry = { total: number; sampleTitle: string | null; formName: string | null };
+
+type CacheState = {
+  lastStepId?: string;
+  lastSrId?: number;
+  forms?: Record<string, FormEntry>;
+  // compact uuid→formId map for cross-referencing import status
+  uuidToFormId?: Record<string, string>;
+};
+
 // GET /api/admin/videoask-import/discover
-// Returns all VideoAsk forms with import status.
-// Uses cursor-based pagination on both tables to avoid statement timeouts.
+// First call: full scan. Subsequent calls: only fetch steps/responses added since last scan.
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
+  const ourDb = getSupabaseAdmin();
   const PAGE = 1000;
 
-  // 1. Cursor-scan videoask.steps for form_id / media_url / node_title
-  type StepRow = { id: string; form_id: string; media_url: string | null; node_title: string | null };
-  const allSteps: StepRow[] = [];
-  let lastStepId = '00000000-0000-0000-0000-000000000000';
+  // ── 1. Load cached state ──────────────────────────────────────────────────
+  const { data: cacheRow } = await ourDb
+    .from('videoask_import_configs')
+    .select('column_mappings')
+    .eq('form_title', CACHE_KEY)
+    .maybeSingle();
 
+  const cache = (cacheRow?.column_mappings ?? {}) as CacheState;
+  const formMap    = new Map<string, FormEntry>(Object.entries(cache.forms ?? {}));
+  const uuidToForm = new Map<string, string>(Object.entries(cache.uuidToFormId ?? {}));
+  let lastStepId: string = cache.lastStepId ?? '00000000-0000-0000-0000-000000000000';
+  let lastSrId:   number = cache.lastSrId   ?? 0;
+  const isFirstRun = !cacheRow;
+
+  // ── 2. Scan NEW videoask.steps (cursor-based) ─────────────────────────────
+  let maxStepId = lastStepId;
   while (true) {
     const { data, error } = await impacter
       .schema('videoask')
@@ -33,16 +57,27 @@ export async function GET() {
       .limit(PAGE);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    const rows = (data ?? []) as StepRow[];
-    allSteps.push(...rows);
+    const rows = (data ?? []) as { id: string; form_id: string; media_url: string | null; node_title: string | null }[];
+
+    for (const step of rows) {
+      const fid = step.form_id;
+      if (!fid) continue;
+      if (!formMap.has(fid)) formMap.set(fid, { total: 0, sampleTitle: step.node_title, formName: null });
+      formMap.get(fid)!.total++;
+      const uuid = extractUuid(step.media_url ?? '');
+      if (uuid) uuidToForm.set(uuid, fid);
+      if (step.id > maxStepId) maxStepId = step.id;
+    }
+
     if (rows.length < PAGE) break;
     lastStepId = rows[rows.length - 1].id;
   }
 
-  // 2. Cursor-scan student_responses for imported URL UUIDs
-  const importedUuids = new Set<string>();
-  let lastSrId = 0;
-
+  // ── 3. Scan NEW student_responses (cursor-based) for import status ────────
+  const importedByForm = new Map<string, number>();
+  // Pre-fill from existing knowledge (forms already marked imported stay imported)
+  // We'll recount from new SR rows only — tracks incremental imports correctly
+  let maxSrId = lastSrId;
   while (true) {
     const { data, error } = await impacter
       .from('student_responses')
@@ -54,50 +89,61 @@ export async function GET() {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const rows = (data ?? []) as { id: number; url: string }[];
+
     for (const row of rows) {
+      if (row.id > maxSrId) maxSrId = row.id;
       const uuid = extractUuid(row.url ?? '');
-      if (uuid) importedUuids.add(uuid);
+      if (!uuid) continue;
+      const fid = uuidToForm.get(uuid);
+      if (fid) importedByForm.set(fid, (importedByForm.get(fid) ?? 0) + 1);
     }
+
     if (rows.length < PAGE) break;
     lastSrId = rows[rows.length - 1].id;
   }
 
-  // 3. Build form map
-  type FormEntry = { total: number; imported: number; sampleTitle: string | null };
-  const formMap = new Map<string, FormEntry>();
-
-  for (const step of allSteps) {
-    const fid = step.form_id;
-    if (!fid) continue;
-    if (!formMap.has(fid)) formMap.set(fid, { total: 0, imported: 0, sampleTitle: step.node_title });
-    const entry = formMap.get(fid)!;
-    entry.total++;
-    const uuid = extractUuid(step.media_url ?? '');
-    if (uuid && importedUuids.has(uuid)) entry.imported++;
+  // ── 4. Fetch form names (only on first run or when new forms found) ────────
+  if (isFirstRun || importedByForm.size > 0) {
+    try {
+      const { data: formsData } = await impacter.schema('videoask').from('forms').select('id, title, name');
+      if (formsData) {
+        for (const f of formsData as { id: string; title?: string; name?: string }[]) {
+          const label = f.title || f.name || '';
+          if (label && formMap.has(f.id)) formMap.get(f.id)!.formName = label;
+        }
+      }
+    } catch { /* forms table may not exist */ }
   }
 
-  // 4. Try to get form names from videoask.forms (may not exist)
-  const formNames = new Map<string, string>();
-  try {
-    const { data: formsData } = await impacter.schema('videoask').from('forms').select('id, title, name');
-    if (formsData) {
-      for (const f of formsData as { id: string; title?: string; name?: string }[]) {
-        const label = f.title || f.name || '';
-        if (label) formNames.set(f.id, label);
-      }
-    }
-  } catch { /* forms table may not exist */ }
+  // ── 5. Merge new import counts into cached imported totals ─────────────────
+  // We store per-form imported counts in cache so they accumulate across scans
+  const cachedImported = (cache as CacheState & { imported?: Record<string, number> }).imported ?? {};
+  for (const [fid, count] of importedByForm) {
+    cachedImported[fid] = (cachedImported[fid] ?? 0) + count;
+  }
 
-  // 5. Return all forms; unimported first, then by response count desc
+  // ── 6. Save updated cache ─────────────────────────────────────────────────
+  const newCache: CacheState & { imported?: Record<string, number> } = {
+    lastStepId: maxStepId,
+    lastSrId:   maxSrId,
+    forms:         Object.fromEntries(formMap),
+    uuidToFormId:  Object.fromEntries(uuidToForm),
+    imported:      cachedImported,
+  };
+
+  await ourDb
+    .from('videoask_import_configs')
+    .upsert(
+      { form_title: CACHE_KEY, column_mappings: newCache, static_values: {} },
+      { onConflict: 'form_title' }
+    );
+
+  // ── 7. Build response ─────────────────────────────────────────────────────
   const forms = Array.from(formMap.entries())
-    .map(([formId, { total, imported, sampleTitle }]) => ({
-      formId,
-      formName: formNames.get(formId) ?? null,
-      sampleTitle,
-      totalSteps: total,
-      imported,
-      isImported: imported > 0,
-    }))
+    .map(([formId, { total, sampleTitle, formName }]) => {
+      const imported = cachedImported[formId] ?? 0;
+      return { formId, formName, sampleTitle, totalSteps: total, imported, isImported: imported > 0 };
+    })
     .sort((a, b) => {
       if (a.isImported !== b.isImported) return a.isImported ? 1 : -1;
       return b.totalSteps - a.totalSteps;
