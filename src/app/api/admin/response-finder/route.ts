@@ -7,11 +7,12 @@ export async function GET(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const needsOnly = searchParams.get('needsOnly') === 'true';
-  const mediaType = searchParams.get('mediaType');
-  const minWords  = parseInt(searchParams.get('minWords') ?? '40');
-  const search    = searchParams.get('search') ?? '';
-  const mustParam = searchParams.get('must') ?? '';
+  const needsOnly  = searchParams.get('needsOnly') === 'true';
+  const mediaType  = searchParams.get('mediaType');
+  const minWords   = parseInt(searchParams.get('minWords') ?? '40');
+  const search     = searchParams.get('search') ?? '';   // typed search bar — AND logic
+  const orParam    = searchParams.get('orSearch') ?? ''; // chip OR keywords — OR logic
+  const mustParam  = searchParams.get('must') ?? '';     // chip MUST keywords — AND logic
   const page      = parseInt(searchParams.get('page') ?? '1');
   const limit     = 24;
   const offset    = (page - 1) * limit;
@@ -19,20 +20,35 @@ export async function GET(req: Request) {
   // ── Questions that need samples (always returned) ───────────────────────
   const { data: assessmentsData } = await supabaseAdmin
     .from('assessments')
-    .select('id, title, type_label, questions ( id, title, question, question_samples ( id, language ) )')
+    .select('id, title, type_label, questions ( id, title, question, question_samples ( id, language, embed_url, media_type, excerpt, grade, gender, sort_order ) )')
     .neq('type', 'bundle')
     .order('sort_order');
 
-  type QSample = { id: string; language: string };
+  type QSample = { id: string; language: string; embed_url: string; media_type: string | null; excerpt: string | null; grade: string | null; gender: string | null; sort_order: number };
   type QRow    = { id: string; title: string; question: string | null; question_samples: QSample[] };
   type ARow    = { id: string; title: string; type_label: string; questions: QRow[] };
 
   const allRows = ((assessmentsData ?? []) as ARow[]).flatMap(a =>
     (a.questions ?? []).map(q => {
-      const langs     = (q.question_samples ?? []).map(s => s.language);
+      const samples   = [...(q.question_samples ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+      const langs     = samples.map(s => s.language);
       const missingEn = !langs.includes('english');
       const missingEs = !langs.includes('spanish');
-      return { questionId: q.id, questionTitle: q.title, questionText: q.question ?? '', assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label, missingEn, missingEs };
+      return {
+        questionId: q.id, questionTitle: q.title, questionText: q.question ?? '',
+        assessmentId: a.id, assessmentTitle: a.title, typeLabel: a.type_label,
+        missingEn, missingEs,
+        samples: samples.map(s => ({
+          id: s.id,
+          embedUrl: s.embed_url,
+          language: s.language,
+          mediaType: s.media_type ?? 'video',
+          excerpt: s.excerpt ?? '',
+          grade: s.grade ?? '',
+          gender: s.gender ?? '',
+          sortOrder: s.sort_order,
+        })),
+      };
     })
   );
 
@@ -59,14 +75,29 @@ export async function GET(req: Request) {
     }));
 
   // If only the needs list was requested, return early
-  if (needsOnly || (!search.trim() && !mustParam.trim())) {
+  if (needsOnly || (!search.trim() && !orParam.trim() && !mustParam.trim())) {
     return NextResponse.json({ transcripts: [], needsSamples, allQuestions, assignedUrls, page: 1, hasMore: false });
   }
 
   const impacter = getImpacterClient();
 
-  const keywords     = search.trim().split(/\s+/).filter(Boolean);
+  // Typed search bar: extract "quoted phrases" + remaining words — all AND
+  const phrases: string[] = [];
+  const parsedSearch = search.trim().replace(/"([^"]+)"/g, (_, p) => { phrases.push(p.trim()); return ' '; });
+  const andWords = parsedSearch.trim().split(/\s+/).filter(Boolean);
+
+  // Chip OR keywords — any one match is sufficient
+  const orKeywords = orParam.trim() ? orParam.trim().split(/\s+/).filter(Boolean) : [];
+
+  // Chip MUST keywords — each must appear (AND)
   const mustKeywords = mustParam.trim() ? mustParam.trim().split(/\s+/).filter(Boolean) : [];
+
+  // Helper to chain a filter that ANDs a condition across (transcript OR node_title)
+  function andOr<T>(q: T, term: string): T {
+    return (q as unknown as { or: (cond: string) => T }).or(
+      `transcript.ilike.%${term}%,node_title.ilike.%${term}%`
+    );
+  }
 
   // Helper: apply shared filters to any query on this table
   function applyFilters<T>(q: T): T {
@@ -76,20 +107,21 @@ export async function GET(req: Request) {
     qq = (qq as unknown as { neq: (col: string, val: string) => typeof qq }).neq('transcript', '') as typeof q;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     qq = (qq as unknown as { not: (col: string, op: string, val: any) => typeof qq }).not('media_url', 'is', null) as typeof q;
-    // Always exclude non-response VideoAsk nodes
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%Hi! Thanks for applying%') as typeof q;
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%real student response%') as typeof q;
     qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('node_title', 'ilike', '%Now you\'ll hear the full%') as typeof q;
     if (mediaType === 'audio') qq = (qq as unknown as { ilike: (col: string, val: string) => typeof qq }).ilike('media_url', '%audio.mp3%') as typeof q;
     if (mediaType === 'video') qq = (qq as unknown as { not: (col: string, op: string, val: string) => typeof qq }).not('media_url', 'ilike', '%audio.mp3%') as typeof q;
-    if (keywords.length > 0) {
-      const conditions = keywords.flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`]).join(',');
-      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(conditions) as typeof q;
+    // Chip OR keywords: transcript must match at least one (single .or() call)
+    if (orKeywords.length > 0) {
+      const conds = orKeywords.flatMap(k => [`transcript.ilike.%${k}%`, `node_title.ilike.%${k}%`]).join(',');
+      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(conds) as typeof q;
     }
-    // Must-have keywords: each chained separately so they AND together
-    for (const kw of mustKeywords) {
-      qq = (qq as unknown as { or: (cond: string) => typeof qq }).or(`transcript.ilike.%${kw}%,node_title.ilike.%${kw}%`) as typeof q;
-    }
+    // Typed search — quoted phrases and unquoted words each AND
+    for (const phrase of phrases) qq = andOr(qq, phrase);
+    for (const word of andWords)  qq = andOr(qq, word);
+    // Chip MUST keywords — each is a separate AND
+    for (const kw of mustKeywords) qq = andOr(qq, kw);
     return qq;
   }
 
@@ -148,12 +180,12 @@ export async function GET(req: Request) {
     };
   }
 
-  // ── 4. Score by keyword hit count, sort best first ──────────────────────
+  // ── 4. Score by keyword/phrase hit count, sort best first ──────────────
   function scoreRow(t: ReturnType<typeof normalize>): number {
     const haystack = (t.transcript + ' ' + t.nodeTitle).toLowerCase();
-    const allKws = [...keywords, ...mustKeywords];
-    return allKws.reduce((s, kw) => {
-      const needle = kw.toLowerCase();
+    const allTerms = [...phrases, ...andWords, ...orKeywords, ...mustKeywords];
+    return allTerms.reduce((s, term) => {
+      const needle = term.toLowerCase();
       let count = 0, pos = 0;
       while ((pos = haystack.indexOf(needle, pos)) !== -1) { count++; pos++; }
       return s + count;

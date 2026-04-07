@@ -12,7 +12,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/bundles':          'Bundles — Admin',
   '/admin/audit':            'Audit Log — Admin',
   '/admin/response-finder':  'Response Finder — Admin',
-  '/admin/district-finder':  'District Finder — Admin',
+  '/admin/district-finder':  'District Response Finder — Admin',
+  '/admin/videoask-import':  'VideoAsk Import — Admin',
 };
 
 const NAV = [
@@ -25,7 +26,8 @@ const NAV = [
 
 const NAV_EXTERNAL = [
   { href: '/admin/response-finder', label: 'Response Finder' },
-  { href: '/admin/district-finder', label: 'District Finder' },
+  { href: '/admin/district-finder', label: 'District Response Finder' },
+  { href: '/admin/videoask-import', label: 'VideoAsk Import' },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
@@ -33,13 +35,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
 
+  // Pages that manage their own layout and don't want admin padding
+  const fullBleed = pathname.startsWith('/admin/district-finder')
+    || pathname.startsWith('/admin/response-finder')
+    || pathname.startsWith('/admin/videoask-import');
+
   useEffect(() => {
     const match = Object.entries(PAGE_TITLES).find(([k]) => pathname.startsWith(k));
     document.title = match ? match[1] : 'Admin — Impacter Pathway';
   }, [pathname]);
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="h-screen overflow-hidden flex bg-gray-50">
       {/* Mobile overlay */}
       {open && (
         <div
@@ -130,7 +137,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </button>
           <span className="text-sm font-semibold text-gray-900">Impacter Pathway Admin</span>
         </div>
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">{children}</main>
+        <main className={`flex-1 overflow-y-auto overflow-x-hidden ${fullBleed ? 'p-0' : 'p-6 md:p-8'}`}>{children}</main>
       </div>
     </div>
   );

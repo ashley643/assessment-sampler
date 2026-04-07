@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { AccessCode, Assessment, Question, QuestionSample } from '@/types/assessment';
@@ -11,6 +11,7 @@ interface FeedItem {
   sample: QuestionSample;
   assessment: Assessment;
   bundleTitle?: string;
+  bundleId?: string;
 }
 
 type Filters = {
@@ -107,6 +108,10 @@ export default function FeedPage() {
   const assessmentDropdownRef = useRef<HTMLDivElement>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
+  const [textSearch, setTextSearch] = useState('');
+  const bookmarksLoaded = useRef(false);
+  const pendingSave = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch(`/api/codes/${code}`)
@@ -135,19 +140,47 @@ export default function FeedPage() {
 
   useEffect(() => { setPage(1); }, [filters]);
 
-  // Load bookmarks from localStorage on mount
+  // Load bookmarks from server on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(`bookmarks_${code}`);
-      if (stored) setBookmarks(new Set(JSON.parse(stored)));
-    } catch { /* ignore */ }
+    bookmarksLoaded.current = false;
+    pendingSave.current = false;
+    fetch(`/api/feed/bookmarks/${code}`)
+      .then(r => r.json())
+      .then(d => { setBookmarks(new Set(d.bookmarks ?? [])); bookmarksLoaded.current = true; })
+      .catch(() => { bookmarksLoaded.current = true; });
   }, [code]);
 
-  // Persist bookmarks to localStorage whenever they change
+  // Once codeData is available, scrub bookmark IDs that no longer exist in the data.
+  // This does NOT trigger a save — pendingSave stays false until the user explicitly
+  // toggles a bookmark, so stale-ID cleanup is never written back to the server on its own.
   useEffect(() => {
-    try {
-      localStorage.setItem(`bookmarks_${code}`, JSON.stringify([...bookmarks]));
-    } catch { /* ignore */ }
+    if (!codeData || !bookmarksLoaded.current) return;
+    const validUrls = new Set<string>();
+    for (const a of codeData.assessments) {
+      const collect = (qs: { samples?: { embedUrl: string }[] }[]) =>
+        qs.forEach(q => (q.samples ?? []).forEach(s => validUrls.add(s.embedUrl)));
+      if (a.type === 'bundle') (a.childAssessments ?? []).forEach(c => collect(c.questions));
+      else collect(a.questions);
+    }
+    setBookmarks(prev => {
+      const cleaned = new Set([...prev].filter(url => validUrls.has(url)));
+      return cleaned.size === prev.size ? prev : cleaned;
+    });
+  }, [codeData]);
+
+  // Save bookmarks to server whenever they change — but only after the user has actually
+  // toggled something (pendingSave). The scrub above never sets pendingSave, so it can't
+  // accidentally overwrite the server.
+  useEffect(() => {
+    if (!pendingSave.current) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      fetch(`/api/feed/bookmarks/${code}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookmarks: [...bookmarks] }),
+      }).catch(() => {});
+    }, 600);
   }, [bookmarks, code]);
 
   // Close assessment dropdown on outside click
@@ -161,26 +194,35 @@ export default function FeedPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [assessmentOpen]);
 
-  if (!codeData) return null;
-
-  const allItems: FeedItem[] = [];
-  function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string) {
-    for (const q of questions) {
-      for (const sample of q.samples ?? []) {
-        allItems.push({ question: q, sample, assessment, bundleTitle });
+  const allItems = useMemo<FeedItem[]>(() => {
+    if (!codeData) return [];
+    const items: FeedItem[] = [];
+    function collectQuestions(questions: Question[], assessment: Assessment, bundleTitle?: string, bundleId?: string) {
+      for (const q of questions) {
+        for (const sample of q.samples ?? []) {
+          items.push({ question: q, sample, assessment, bundleTitle, bundleId });
+        }
       }
     }
-  }
-  for (const a of codeData.assessments) {
-    if (a.type === 'bundle') {
-      for (const child of a.childAssessments ?? []) collectQuestions(child.questions, child, a.title);
-    } else {
-      collectQuestions(a.questions, a);
+    for (const a of codeData.assessments) {
+      if (a.type === 'bundle') {
+        for (const child of a.childAssessments ?? []) collectQuestions(child.questions, child, a.title, a.id);
+      } else {
+        collectQuestions(a.questions, a);
+      }
     }
-  }
+    return items;
+  }, [codeData]);
 
-  const filtered = sortForFeed(applyFilters(allItems, filters))
-    .filter(i => !bookmarksOnly || bookmarks.has(i.sample.id));
+  // sortForFeed shuffles — memoize so bookmark toggles don't reshuffle the list
+  const sortedItems = useMemo(() => sortForFeed(applyFilters(allItems, filters)), [allItems, filters]);
+
+  if (!codeData) return null;
+
+  const needle = textSearch.trim().toLowerCase();
+  const filtered = sortedItems
+    .filter(i => !bookmarksOnly || bookmarks.has(i.sample.embedUrl))
+    .filter(i => !needle || (i.sample.excerpt ?? '').toLowerCase().includes(needle));
   const visible  = filtered.slice(0, page * PAGE_SIZE);
 
   function availableValues<T extends string>(key: keyof Filters, pick: (item: FeedItem) => T | undefined): Set<T> {
@@ -230,12 +272,13 @@ export default function FeedPage() {
     track('feed_filter', code, { metadata: { filter: key, value } });
   }
 
-  function toggleBookmark(sampleId: string) {
+  function toggleBookmark(embedUrl: string) {
+    pendingSave.current = true;
     setBookmarks(prev => {
       const n = new Set(prev);
-      const adding = !n.has(sampleId);
-      adding ? n.add(sampleId) : n.delete(sampleId);
-      track('feed_bookmark', code, { metadata: { sample_id: sampleId, action: adding ? 'add' : 'remove' } });
+      const adding = !n.has(embedUrl);
+      adding ? n.add(embedUrl) : n.delete(embedUrl);
+      track('feed_bookmark', code, { metadata: { embed_url: embedUrl, action: adding ? 'add' : 'remove' } });
       return n;
     });
   }
@@ -376,6 +419,23 @@ export default function FeedPage() {
                       </div>
                     </div>
                     <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 border border-gray-100 focus-within:border-gray-300 transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" className="flex-shrink-0">
+                          <circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5l3 3"/>
+                        </svg>
+                        <input
+                          type="text"
+                          value={textSearch}
+                          onChange={e => { setTextSearch(e.target.value); setPage(1); }}
+                          placeholder="Search responses…"
+                          className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none min-w-0"
+                        />
+                        {textSearch && (
+                          <button onClick={() => { setTextSearch(''); setPage(1); }} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 2l6 6M8 2L2 8"/></svg>
+                          </button>
+                        )}
+                      </div>
                       {bundleNames.length > 0 && (
                         <div>
                           <p className="text-xs font-semibold text-gray-500 mb-2">Bundle</p>
@@ -458,7 +518,7 @@ export default function FeedPage() {
             {/* ── Desktop filters ─────────────────────────────────── */}
             <div className="hidden md:block bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 mb-8 relative">
               <button
-                onClick={() => setBookmarksOnly(b => !b)}
+                onClick={() => { setBookmarksOnly(b => { if (!b) setFilters(EMPTY_FILTERS); return !b; }); }}
                 title={bookmarksOnly ? 'Show all' : 'Show saved only'}
                 className={`absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${bookmarksOnly ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-600'}`}
               >
@@ -467,6 +527,27 @@ export default function FeedPage() {
                 </svg>
                 {bookmarks.size > 0 ? `Saved (${bookmarks.size})` : 'Saved'}
               </button>
+
+              {/* ── Text search ── */}
+              <div className="pl-5 pr-28 py-3">
+                <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-100 focus-within:border-gray-300 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" className="flex-shrink-0">
+                    <circle cx="6" cy="6" r="4.5"/><path d="M9.5 9.5l3 3"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={textSearch}
+                    onChange={e => { setTextSearch(e.target.value); setPage(1); }}
+                    placeholder="Search responses…"
+                    className="flex-1 bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none min-w-0"
+                  />
+                  {textSearch && (
+                    <button onClick={() => { setTextSearch(''); setPage(1); }} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 2l6 6M8 2L2 8"/></svg>
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* ── WHAT row ── */}
               <div className="px-5 py-4">
@@ -588,7 +669,7 @@ export default function FeedPage() {
         ) : (
           <>
             <div className="space-y-8">
-              {visible.map(({ question, sample, assessment }) => {
+              {visible.map(({ question, sample, assessment, bundleId }) => {
                 const mt = mediaTypeBadge(sample.mediaType);
                 return (
                   <div key={sample.id}
@@ -603,7 +684,7 @@ export default function FeedPage() {
                       }, { threshold: 0.5 });
                       observer.observe(el);
                     }}
-                    className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-colors ${bookmarks.has(sample.id) ? 'border-amber-300' : 'border-gray-200'}`}>
+                    className={`bg-white rounded-2xl border overflow-hidden shadow-sm transition-colors ${bookmarks.has(sample.embedUrl) ? 'border-amber-300' : 'border-gray-200'}`}>
                     <div className="px-5 pt-4 pb-3 border-b border-gray-100">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: assessment.badgeBg, color: assessment.badgeText }}>{assessment.typeLabel}</span>
@@ -613,16 +694,33 @@ export default function FeedPage() {
                         {sample.gender && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{sample.gender}</span>}
                         {sample.grade  && <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-medium">{sample.grade}</span>}
                         <button
-                          onClick={() => toggleBookmark(sample.id)}
-                          title={bookmarks.has(sample.id) ? 'Remove bookmark' : 'Bookmark this response'}
+                          onClick={() => toggleBookmark(sample.embedUrl)}
+                          title={bookmarks.has(sample.embedUrl) ? 'Remove bookmark' : 'Bookmark this response'}
                           className="ml-auto p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                         >
-                          <svg width="16" height="16" viewBox="0 0 14 14" fill={bookmarks.has(sample.id) ? '#f59e0b' : 'none'} stroke={bookmarks.has(sample.id) ? '#f59e0b' : '#9ca3af'} strokeWidth="1.6">
+                          <svg width="16" height="16" viewBox="0 0 14 14" fill={bookmarks.has(sample.embedUrl) ? '#f59e0b' : 'none'} stroke={bookmarks.has(sample.embedUrl) ? '#f59e0b' : '#9ca3af'} strokeWidth="1.6">
                             <path d="M2 2h10v11l-5-3-5 3V2z"/>
                           </svg>
                         </button>
                       </div>
-                      <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-gray-900">{question.title}</h3>
+                        <a
+                          href={bundleId
+                            ? `/assessment/${code}/${bundleId}?child=${assessment.id}&question=${question.id}`
+                            : `/assessment/${code}/${assessment.id}?question=${question.id}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 flex items-center gap-1 text-[10px] font-medium text-gray-400 hover:text-[#1a2744] border border-gray-200 hover:border-[#1a2744]/30 rounded-md px-1.5 py-0.5 transition-colors"
+                          title="Open this question in the assessment player"
+                        >
+                          View question
+                          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.6">
+                            <path d="M1.5 7.5l6-6M7.5 7.5V1.5H1.5"/>
+                          </svg>
+                        </a>
+                      </div>
                     </div>
                     {sample.excerpt && (
                       <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">

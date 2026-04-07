@@ -103,6 +103,7 @@ export default function EditAssessmentPage() {
   });
   const [questions, setQuestions] = useState<Question[]>([newQuestion(1)]);
   const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
   const [error, setError] = useState('');
   const [typePresets, setTypePresets] = useState<TypePreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string | 'custom'>('');
@@ -112,9 +113,14 @@ export default function EditAssessmentPage() {
 
   // Excerpt edit state: sampleId → draft text (undefined = not editing)
   const [excerptEditing, setExcerptEditing] = useState<Record<string, string | undefined>>({});
-  // Drag state
+  // Sample drag state (kept for potential future use but samples no longer draggable)
   const dragSample = useRef<{ qIdx: number; sIdx: number } | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+  // Question drag state
+  const dragQuestion = useRef<number | null>(null);
+  const [dragOverQIdx, setDragOverQIdx] = useState<number | null>(null);
+  // Expanded extra samples per question (beyond first EN + first ES)
+  const [samplesExpanded, setSamplesExpanded] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetch('/api/admin/assessments')
@@ -239,6 +245,21 @@ export default function EditAssessmentPage() {
     }));
   }
 
+  // Move the chosen sample to front of its language group (becomes the featured/player sample)
+  function featureSample(qIdx: number, sIdx: number) {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== qIdx) return q;
+      const lang = q.question_samples[sIdx].language;
+      const others = q.question_samples.filter((_, j) => j !== sIdx);
+      const featured = q.question_samples[sIdx];
+      // Insert featured at the front of its language group, preserving other language order
+      const firstOfLang = others.findIndex(s => s.language === lang);
+      const reordered = [...others];
+      reordered.splice(firstOfLang === -1 ? 0 : firstOfLang, 0, featured);
+      return { ...q, question_samples: reordered };
+    }));
+  }
+
   // Drag handlers
   function onDragStart(qIdx: number, sIdx: number) {
     dragSample.current = { qIdx, sIdx };
@@ -268,6 +289,44 @@ export default function EditAssessmentPage() {
     setDragOverKey(null);
   }
 
+  // Question drag handlers
+  function onQuestionDragStart(qi: number) {
+    dragQuestion.current = qi;
+  }
+
+  function onQuestionDragOver(e: React.DragEvent, qi: number) {
+    e.preventDefault();
+    if (dragQuestion.current !== null && dragQuestion.current !== qi) setDragOverQIdx(qi);
+  }
+
+  function onQuestionDrop(qi: number) {
+    const from = dragQuestion.current;
+    if (from === null || from === qi) { dragQuestion.current = null; setDragOverQIdx(null); return; }
+    setQuestions(prev => {
+      const qs = [...prev];
+      const [moved] = qs.splice(from, 1);
+      qs.splice(qi, 0, moved);
+      return qs;
+    });
+    dragQuestion.current = null;
+    setDragOverQIdx(null);
+  }
+
+  function onQuestionDragEnd() {
+    dragQuestion.current = null;
+    setDragOverQIdx(null);
+  }
+
+  const [showReorder, setShowReorder] = useState(false);
+
+  function applyReorder(orderedIds: string[]) {
+    setQuestions(prev => {
+      const byId = Object.fromEntries(prev.map(q => [q.id, q]));
+      return orderedIds.map(id => byId[id]).filter(Boolean);
+    });
+    setShowReorder(false);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -284,7 +343,14 @@ export default function EditAssessmentPage() {
       ? await fetch('/api/admin/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       : await fetch(`/api/admin/assessments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (res.ok) {
-      router.push('/admin/assessments');
+      setSavedOk(true);
+      setSaving(false);
+      setTimeout(() => setSavedOk(false), 3000);
+      // For new assessments, navigate to the newly-created ID so URL is correct
+      if (isNew) {
+        const data = await res.json().catch(() => ({}));
+        if (data.id) router.replace(`/admin/assessments/${data.id}`);
+      }
     } else {
       const data = await res.json();
       setError(data.error ?? 'Save failed');
@@ -296,18 +362,12 @@ export default function EditAssessmentPage() {
 
   return (
     <AdminShell>
-      <div className="max-w-3xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
-          <div className="flex gap-3">
-            <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>
-            <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
-              {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
-            </button>
-          </div>
-        </div>
+      <div className="max-w-4xl">
+        <button type="button" onClick={() => router.push('/admin/assessments')} className="text-sm text-gray-400 hover:text-gray-600 mb-3 block">← All assessments</button>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-6">{isNew ? 'New Assessment' : 'Edit Assessment'}</h1>
 
-        <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6">
+        <div>
+        <form id="assessment-form" onSubmit={handleSubmit} className="space-y-6 pb-20">
           <Section title="Details">
             <div className="grid grid-cols-2 gap-4">
               {isNew && (
@@ -421,11 +481,29 @@ export default function EditAssessmentPage() {
           </Section>
 
           <Section title="Questions">
+            {questions.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setShowReorder(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+              >
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M2 4h10M2 7h7M2 10h5"/><path d="M11 9l2 2-2 2"/>
+                </svg>
+                Reorder questions
+              </button>
+            )}
             <div className="space-y-6">
               {questions.map((q, qi) => (
-                <div key={q.id} className="border border-gray-200 rounded-xl p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500">Question {qi + 1}</span>
+                <div
+                  key={q.id}
+                  onDragOver={e => onQuestionDragOver(e, qi)}
+                  onDrop={() => onQuestionDrop(qi)}
+                  onDragEnd={onQuestionDragEnd}
+                  className={`border rounded-xl p-4 space-y-4 transition-all ${dragOverQIdx === qi ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 flex-1">Question {qi + 1}</span>
                     <button type="button" onClick={() => removeQuestion(qi)} className="text-xs text-red-400 hover:text-red-600">Remove</button>
                   </div>
                   <F label="Title">
@@ -449,8 +527,19 @@ export default function EditAssessmentPage() {
                     <p className="text-xs text-gray-400 mb-3">
                       Drag to reorder. The <span className="font-medium text-green-700">first English and first Spanish</span> show in the assessment player; additional samples go to the feed only.
                     </p>
+                    {(() => {
+                      const isExpanded = samplesExpanded.has(qi);
+                      // Always show the first EN and first ES; hide the rest unless expanded
+                      const firstEnIdx = q.question_samples.findIndex(s => s.language === 'english');
+                      const firstEsIdx = q.question_samples.findIndex(s => s.language === 'spanish');
+                      const defaultVisible = new Set([firstEnIdx, firstEsIdx].filter(i => i !== -1));
+                      const extraCount = q.question_samples.filter((_, i) => !defaultVisible.has(i)).length;
+                      const visibleSamples = isExpanded
+                        ? q.question_samples.map((s, si) => ({ s, si }))
+                        : q.question_samples.map((s, si) => ({ s, si })).filter(({ si }) => defaultVisible.has(si));
+                      return (
                     <div className="space-y-1.5">
-                      {q.question_samples.map((s, si) => {
+                      {visibleSamples.map(({ s, si }) => {
                         const sampleKey = `${qi}-${si}`;
                         const isDragOver = dragOverKey === sampleKey;
                         const isFirst = q.question_samples.findIndex(x => x.language === s.language) === si;
@@ -460,23 +549,23 @@ export default function EditAssessmentPage() {
                         return (
                           <div
                             key={s.id}
-                            draggable
-                            onDragStart={() => onDragStart(qi, si)}
-                            onDragOver={e => onDragOver(e, sampleKey)}
-                            onDrop={() => onDrop(qi, si)}
-                            onDragEnd={onDragEnd}
-                            className={`rounded-lg border transition-all ${isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'}`}
+                            className={`rounded-lg border transition-all ${isFirst ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-white'}`}
                           >
                             {/* Row header */}
                             <div className="flex items-center gap-2 px-2.5 py-2">
-                              {/* Drag handle */}
-                              <span className="flex-shrink-0 cursor-grab text-gray-300 hover:text-gray-500 active:cursor-grabbing select-none">
-                                <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
-                                  <circle cx="3.5" cy="3.5" r="1.5"/><circle cx="8.5" cy="3.5" r="1.5"/>
-                                  <circle cx="3.5" cy="8" r="1.5"/><circle cx="8.5" cy="8" r="1.5"/>
-                                  <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
-                                </svg>
-                              </span>
+                              {/* Feature radio */}
+                              <button
+                                type="button"
+                                title={isFirst ? 'Currently featured in player' : 'Click to feature in player'}
+                                onClick={() => !isFirst && featureSample(qi, si)}
+                                className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                  isFirst
+                                    ? 'border-green-500 bg-green-500'
+                                    : 'border-gray-300 hover:border-green-400 bg-white'
+                                }`}
+                              >
+                                {isFirst && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              </button>
 
                               {/* Language badge */}
                               <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${s.language === 'english' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
@@ -485,7 +574,7 @@ export default function EditAssessmentPage() {
 
                               {/* Placement badge */}
                               {isFirst
-                                ? <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Player + Feed</span>
+                                ? <span className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">★ Featured in player</span>
                                 : <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">Feed only</span>
                               }
 
@@ -565,11 +654,31 @@ export default function EditAssessmentPage() {
                         );
                       })}
                     </div>
+                      );
+                    })()}
+                    {/* Load more / collapse extra samples */}
+                    {(() => {
+                      const firstEnIdx = q.question_samples.findIndex(s => s.language === 'english');
+                      const firstEsIdx = q.question_samples.findIndex(s => s.language === 'spanish');
+                      const defaultVisible = new Set([firstEnIdx, firstEsIdx].filter(i => i !== -1));
+                      const extraCount = q.question_samples.filter((_, i) => !defaultVisible.has(i)).length;
+                      const isExpanded = samplesExpanded.has(qi);
+                      if (extraCount === 0) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setSamplesExpanded(prev => { const n = new Set(prev); isExpanded ? n.delete(qi) : n.add(qi); return n; })}
+                          className="mt-1.5 w-full py-1.5 text-xs text-gray-400 hover:text-gray-600 border border-dashed border-gray-200 hover:border-gray-300 rounded-lg transition-colors"
+                        >
+                          {isExpanded ? `▲ Hide extra samples` : `▼ Show ${extraCount} more sample${extraCount !== 1 ? 's' : ''}`}
+                        </button>
+                      );
+                    })()}
                     <div className="flex gap-2 mt-2.5">
-                      <button type="button" onClick={() => addSample(qi, 'english')} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+                      <button type="button" onClick={() => { addSample(qi, 'english'); setSamplesExpanded(prev => new Set([...prev, qi])); }} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
                         + English sample
                       </button>
-                      <button type="button" onClick={() => addSample(qi, 'spanish')} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors">
+                      <button type="button" onClick={() => { addSample(qi, 'spanish'); setSamplesExpanded(prev => new Set([...prev, qi])); }} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors">
                         + Spanish sample
                       </button>
                     </div>
@@ -582,9 +691,31 @@ export default function EditAssessmentPage() {
             </button>
           </Section>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-red-500 md:hidden">{error}</p>}
         </form>
+        </div>
       </div>
+
+      {/* Fixed bottom save bar — always visible on desktop as you scroll */}
+      <div className="hidden md:flex fixed bottom-0 left-52 right-0 z-20 items-center gap-4 bg-white border-t border-gray-200 px-8 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+        {savedOk && <span className="text-sm text-green-600 font-medium">Saved ✓</span>}
+        {error && <span className="text-sm text-red-500 truncate max-w-xs">{error}</span>}
+        <div className="flex-1" />
+        <button type="button" onClick={() => router.push('/admin/assessments')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+          Cancel
+        </button>
+        <button type="submit" form="assessment-form" disabled={saving} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] disabled:opacity-50 transition-colors">
+          {saving ? 'Saving…' : isNew ? 'Create' : 'Save'}
+        </button>
+      </div>
+
+      {showReorder && (
+        <ReorderModal
+          questions={questions}
+          onSave={applyReorder}
+          onClose={() => setShowReorder(false)}
+        />
+      )}
     </AdminShell>
   );
 }
@@ -604,6 +735,77 @@ function F({ label, hint, children }: { label: string; hint?: string; children: 
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
       {children}
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function ReorderModal({ questions, onSave, onClose }: {
+  questions: Question[];
+  onSave: (orderedIds: string[]) => void;
+  onClose: () => void;
+}) {
+  const [list, setList] = useState(questions.map(q => ({ id: q.id, title: q.title || '(untitled)' })));
+  const dragging = useRef<number | null>(null);
+  const [over, setOver] = useState<number | null>(null);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 flex flex-col" style={{ maxHeight: '85vh' }}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Reorder Questions</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Drag to reorder, then save</p>
+          </div>
+          <button type="button" onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors p-1">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l12 12M14 2L2 14"/></svg>
+          </button>
+        </div>
+
+        {/* List */}
+        <div className="overflow-y-auto px-4 py-3 space-y-1.5 flex-1">
+          {list.map((q, i) => (
+            <div
+              key={q.id}
+              draggable
+              onDragStart={() => { dragging.current = i; }}
+              onDragOver={e => { e.preventDefault(); if (dragging.current !== null && dragging.current !== i) setOver(i); }}
+              onDrop={() => {
+                if (dragging.current === null || dragging.current === i) return;
+                const next = [...list];
+                const [moved] = next.splice(dragging.current, 1);
+                next.splice(i, 0, moved);
+                setList(next);
+                dragging.current = null;
+                setOver(null);
+              }}
+              onDragEnd={() => { dragging.current = null; setOver(null); }}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-grab active:cursor-grabbing select-none transition-colors ${
+                over === i ? 'border-blue-400 bg-blue-50 shadow-sm' : 'border-gray-200 bg-white hover:bg-gray-50'
+              }`}
+            >
+              {/* Grip */}
+              <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor" className="flex-shrink-0 text-gray-300">
+                <circle cx="3.5" cy="3.5" r="1.5"/><circle cx="8.5" cy="3.5" r="1.5"/>
+                <circle cx="3.5" cy="8" r="1.5"/><circle cx="8.5" cy="8" r="1.5"/>
+                <circle cx="3.5" cy="12.5" r="1.5"/><circle cx="8.5" cy="12.5" r="1.5"/>
+              </svg>
+              <span className="w-5 text-right text-xs font-medium text-gray-300 flex-shrink-0">{i + 1}</span>
+              <span className="text-sm text-gray-800 flex-1 leading-snug">{q.title}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-shrink-0">
+          <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+            Cancel
+          </button>
+          <button type="button" onClick={() => onSave(list.map(q => q.id))} className="px-4 py-2 bg-[#4a6fa5] text-white text-sm font-medium rounded-lg hover:bg-[#3d5d8f] transition-colors">
+            Save Order
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
