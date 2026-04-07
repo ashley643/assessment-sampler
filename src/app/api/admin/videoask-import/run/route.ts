@@ -24,14 +24,14 @@ const SR_COLUMNS = new Set([
 export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { formTitle, staticValues, columnMappings, dryRun } = await req.json() as {
-    formTitle: string;
+  const { formId, staticValues, columnMappings, dryRun } = await req.json() as {
+    formId: string;
     staticValues: Record<string, string>;
     columnMappings: Record<string, string>;
     dryRun?: boolean;
   };
 
-  if (!formTitle) return NextResponse.json({ error: 'formTitle required' }, { status: 400 });
+  if (!formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     .schema('videoask')
     .from('steps')
     .select('*')
-    .eq('form_title', formTitle);
+    .eq('form_id', formId);
 
   if (stepsErr) return NextResponse.json({ error: stepsErr.message }, { status: 500 });
 
@@ -76,21 +76,28 @@ export async function POST(req: Request) {
 
     const row: Record<string, unknown> = {};
 
-    // Apply static values first (lowest precedence)
+    // Apply static values first
     for (const [col, val] of Object.entries(staticValues ?? {})) {
       if (SR_COLUMNS.has(col)) row[col] = val;
     }
 
-    // Apply column mappings: srColumn → videoaskStepColumn
+    // Apply column mappings: srColumn → videoask step column (or raw sub-field)
     for (const [srCol, stepCol] of Object.entries(columnMappings ?? {})) {
-      if (!SR_COLUMNS.has(srCol)) continue;
-      if (!stepCol) continue;
-      if (step[stepCol] !== undefined && step[stepCol] !== null) {
+      if (!SR_COLUMNS.has(srCol) || !stepCol) continue;
+
+      // Support "raw.field_name" to pull from the raw JSONB
+      if (stepCol.startsWith('raw.')) {
+        const rawKey = stepCol.slice(4);
+        const raw = (step.raw ?? {}) as Record<string, unknown>;
+        if (raw[rawKey] !== undefined && raw[rawKey] !== null) {
+          row[srCol] = raw[rawKey];
+        }
+      } else if (step[stepCol] !== undefined && step[stepCol] !== null) {
         row[srCol] = step[stepCol];
       }
     }
 
-    // Always ensure url is populated from media_url if not explicitly mapped
+    // Always ensure url is populated from media_url
     if (!row.url && mediaUrl) row.url = mediaUrl;
 
     toInsert.push(row);

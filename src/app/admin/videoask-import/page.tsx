@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 // The student_responses columns we can populate, with friendly labels
 const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
@@ -30,26 +30,22 @@ const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
   { col: 'source_id',         label: 'Source ID' },
 ];
 
-// Smart default mappings: videoask.steps column → student_responses column
+// Smart default mappings: student_responses column → videoask.steps column
 const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
-  answer:       'transcript',
-  url:          'media_url',
-  answer_date:  'created_at',
-  current_grade:'grade',
-  gender:       'gender',
-  school_name:  'school_name',
-  question:     'node_title',
+  answer:        'transcript',
+  url:           'media_url',
+  answer_date:   'created_at',
+  question:      'node_title',
+  response_type: 'media_type',
 };
 
 type FormInfo = {
-  formTitle: string;
+  formId: string;
+  formName: string | null;
+  shareId: string | null;
+  sampleTitle: string | null;
   totalSteps: number;
   importedSteps: number;
-};
-
-type ImportConfig = {
-  staticValues: Record<string, string>;
-  columnMappings: Record<string, string>;
 };
 
 type RunResult = {
@@ -61,8 +57,6 @@ type RunResult = {
   error?: string;
 };
 
-// ── Sub-components ──────────────────────────────────────────────────────────
-
 function Badge({ children, variant }: { children: React.ReactNode; variant: 'green' | 'yellow' | 'gray' }) {
   const cls = {
     green:  'bg-green-50 text-green-700 border border-green-200',
@@ -72,26 +66,13 @@ function Badge({ children, variant }: { children: React.ReactNode; variant: 'gre
   return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{children}</span>;
 }
 
-// Mapping row: one student_responses column mapped to either a source col or static value
 function MappingRow({
-  srCol,
-  label,
-  hint,
-  sourceColumns,
-  mappingType,
-  sourceCol,
-  staticVal,
-  onMappingTypeChange,
-  onSourceColChange,
-  onStaticValChange,
+  srCol, label, hint, sourceColumns,
+  mappingType, sourceCol, staticVal,
+  onMappingTypeChange, onSourceColChange, onStaticValChange,
 }: {
-  srCol: string;
-  label: string;
-  hint?: string;
-  sourceColumns: string[];
-  mappingType: 'source' | 'static' | 'none';
-  sourceCol: string;
-  staticVal: string;
+  srCol: string; label: string; hint?: string; sourceColumns: string[];
+  mappingType: 'source' | 'static' | 'none'; sourceCol: string; staticVal: string;
   onMappingTypeChange: (t: 'source' | 'static' | 'none') => void;
   onSourceColChange: (v: string) => void;
   onStaticValChange: (v: string) => void;
@@ -119,9 +100,7 @@ function MappingRow({
           className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
         >
           <option value="">— choose column —</option>
-          {sourceColumns.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
+          {sourceColumns.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       )}
       {mappingType === 'static' && (
@@ -138,26 +117,21 @@ function MappingRow({
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────
-
 export default function VideoAskImportPage() {
   const [view, setView] = useState<'list' | 'configure' | 'result'>('list');
   const [forms, setForms] = useState<FormInfo[]>([]);
   const [loadingForms, setLoadingForms] = useState(false);
   const [formsError, setFormsError] = useState('');
 
-  // Selected form + its source columns + sample rows
   const [selectedForm, setSelectedForm] = useState<FormInfo | null>(null);
   const [sourceColumns, setSourceColumns] = useState<string[]>([]);
   const [sampleRows, setSampleRows] = useState<Record<string, unknown>[]>([]);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
-  // Mapping state: for each SR column track type + source col + static val
   const [mappingTypes, setMappingTypes] = useState<Record<string, 'source' | 'static' | 'none'>>({});
   const [sourceCols, setSourceCols] = useState<Record<string, string>>({});
   const [staticVals, setStaticVals] = useState<Record<string, string>>({});
 
-  // Save / run state
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [dryRunning, setDryRunning] = useState(false);
@@ -165,7 +139,6 @@ export default function VideoAskImportPage() {
   const [importing, setImporting] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
 
-  // Discover forms
   async function discoverForms() {
     setLoadingForms(true);
     setFormsError('');
@@ -179,7 +152,6 @@ export default function VideoAskImportPage() {
     }
   }
 
-  // Load preview + saved config when a form is selected
   const loadFormConfig = useCallback(async (form: FormInfo) => {
     setSelectedForm(form);
     setView('configure');
@@ -190,8 +162,8 @@ export default function VideoAskImportPage() {
 
     try {
       const [previewRes, configRes] = await Promise.all([
-        fetch(`/api/admin/videoask-import/preview?formTitle=${encodeURIComponent(form.formTitle)}`),
-        fetch(`/api/admin/videoask-import/configs?formTitle=${encodeURIComponent(form.formTitle)}`),
+        fetch(`/api/admin/videoask-import/preview?formId=${encodeURIComponent(form.formId)}`),
+        fetch(`/api/admin/videoask-import/configs?formId=${encodeURIComponent(form.formId)}`),
       ]);
       const [previewJson, configJson] = await Promise.all([previewRes.json(), configRes.json()]);
 
@@ -199,7 +171,6 @@ export default function VideoAskImportPage() {
       setSourceColumns(cols);
       setSampleRows(previewJson.rows ?? []);
 
-      // Build initial mapping state: start with defaults, then overlay saved config
       const initTypes: Record<string, 'source' | 'static' | 'none'> = {};
       const initSource: Record<string, string> = {};
       const initStatic: Record<string, string> = {};
@@ -210,7 +181,7 @@ export default function VideoAskImportPage() {
         initStatic[col] = '';
       }
 
-      // Apply defaults
+      // Apply smart defaults
       for (const [srCol, stepCol] of Object.entries(DEFAULT_COLUMN_MAPPINGS)) {
         if (cols.includes(stepCol)) {
           initTypes[srCol] = 'source';
@@ -222,16 +193,10 @@ export default function VideoAskImportPage() {
       if (configJson.config) {
         const saved = configJson.config;
         for (const [srCol, stepCol] of Object.entries(saved.column_mappings ?? {}) as [string, string][]) {
-          if (stepCol && cols.includes(stepCol)) {
-            initTypes[srCol] = 'source';
-            initSource[srCol] = stepCol;
-          }
+          if (stepCol) { initTypes[srCol] = 'source'; initSource[srCol] = stepCol; }
         }
         for (const [srCol, val] of Object.entries(saved.static_values ?? {}) as [string, string][]) {
-          if (val) {
-            initTypes[srCol] = 'static';
-            initStatic[srCol] = val;
-          }
+          if (val) { initTypes[srCol] = 'static'; initStatic[srCol] = val; }
         }
       }
 
@@ -243,16 +208,12 @@ export default function VideoAskImportPage() {
     }
   }, []);
 
-  // Build the config objects from current state
-  function buildConfig(): ImportConfig {
+  function buildConfig() {
     const columnMappings: Record<string, string> = {};
     const staticValues: Record<string, string> = {};
     for (const { col } of SR_COLUMNS) {
-      if (mappingTypes[col] === 'source' && sourceCols[col]) {
-        columnMappings[col] = sourceCols[col];
-      } else if (mappingTypes[col] === 'static' && staticVals[col]) {
-        staticValues[col] = staticVals[col];
-      }
+      if (mappingTypes[col] === 'source' && sourceCols[col]) columnMappings[col] = sourceCols[col];
+      else if (mappingTypes[col] === 'static' && staticVals[col]) staticValues[col] = staticVals[col];
     }
     return { columnMappings, staticValues };
   }
@@ -266,7 +227,7 @@ export default function VideoAskImportPage() {
       const res = await fetch('/api/admin/videoask-import/configs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formTitle: selectedForm.formTitle, columnMappings, staticValues }),
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues }),
       });
       const json = await res.json();
       setSaveMsg(json.error ? `Error: ${json.error}` : 'Saved.');
@@ -284,7 +245,7 @@ export default function VideoAskImportPage() {
       const res = await fetch('/api/admin/videoask-import/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formTitle: selectedForm.formTitle, columnMappings, staticValues, dryRun: true }),
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, dryRun: true }),
       });
       setDryResult(await res.json());
     } finally {
@@ -301,21 +262,29 @@ export default function VideoAskImportPage() {
       const res = await fetch('/api/admin/videoask-import/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formTitle: selectedForm.formTitle, columnMappings, staticValues }),
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues }),
       });
       const json = await res.json();
       setRunResult(json);
-      if (!json.error) {
-        setView('result');
-        // Refresh form list in background
-        discoverForms();
-      }
+      if (!json.error) { setView('result'); discoverForms(); }
     } finally {
       setImporting(false);
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Display name for a form: formName > shareId > truncated formId
+  function displayName(f: FormInfo) {
+    if (f.formName) return f.formName;
+    if (f.shareId) return `Form ${f.shareId}`;
+    return f.formId.slice(0, 8) + '…';
+  }
+
+  function displaySub(f: FormInfo) {
+    const parts: string[] = [];
+    if (f.sampleTitle) parts.push(f.sampleTitle);
+    if (!f.formName) parts.push(f.formId);
+    return parts.join(' · ');
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -337,14 +306,13 @@ export default function VideoAskImportPage() {
             <h1 className="text-lg font-semibold text-gray-900">VideoAsk Import</h1>
             <p className="text-sm text-gray-500">
               {view === 'list' && 'Import VideoAsk pilot responses into Student Responses.'}
-              {view === 'configure' && selectedForm && `Mapping columns for: ${selectedForm.formTitle}`}
+              {view === 'configure' && selectedForm && `Mapping columns for: ${displayName(selectedForm)}`}
               {view === 'result' && 'Import complete.'}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto">
         {/* ── LIST VIEW ── */}
         {view === 'list' && (
@@ -376,18 +344,19 @@ export default function VideoAskImportPage() {
                   const partiallyImported = f.importedSteps > 0 && f.importedSteps < f.totalSteps;
                   return (
                     <button
-                      key={f.formTitle}
+                      key={f.formId}
                       onClick={() => loadFormConfig(f)}
                       className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
                     >
-                      <div>
-                        <span className="text-sm font-medium text-gray-900">{f.formTitle}</span>
-                        <span className="block text-xs text-gray-500 mt-0.5">
+                      <div className="min-w-0 flex-1 pr-3">
+                        <span className="text-sm font-medium text-gray-900 block truncate">{displayName(f)}</span>
+                        <span className="block text-xs text-gray-500 mt-0.5 truncate">
                           {f.totalSteps} response{f.totalSteps !== 1 ? 's' : ''}
                           {f.importedSteps > 0 && ` · ${f.importedSteps} already imported`}
+                          {displaySub(f) && ` · ${displaySub(f)}`}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         {fullyImported && <Badge variant="green">Imported</Badge>}
                         {partiallyImported && <Badge variant="yellow">Partial</Badge>}
                         {f.importedSteps === 0 && <Badge variant="gray">Not imported</Badge>}
@@ -410,7 +379,7 @@ export default function VideoAskImportPage() {
         {/* ── CONFIGURE VIEW ── */}
         {view === 'configure' && selectedForm && (
           <div className="flex h-full overflow-hidden">
-            {/* Left: sample data table */}
+            {/* Left: sample data */}
             <div className="w-1/2 border-r border-gray-200 overflow-auto p-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                 Sample rows from videoask.steps
@@ -423,9 +392,7 @@ export default function VideoAskImportPage() {
                     <thead>
                       <tr>
                         {sourceColumns.map(c => (
-                          <th key={c} className="px-2 py-1.5 border border-gray-200 bg-gray-50 text-left font-medium text-gray-600 whitespace-nowrap">
-                            {c}
-                          </th>
+                          <th key={c} className="px-2 py-1.5 border border-gray-200 bg-gray-50 text-left font-medium text-gray-600 whitespace-nowrap">{c}</th>
                         ))}
                       </tr>
                     </thead>
@@ -463,9 +430,7 @@ export default function VideoAskImportPage() {
                   {SR_COLUMNS.map(({ col, label, hint }) => (
                     <MappingRow
                       key={col}
-                      srCol={col}
-                      label={label}
-                      hint={hint}
+                      srCol={col} label={label} hint={hint}
                       sourceColumns={sourceColumns}
                       mappingType={mappingTypes[col] ?? 'none'}
                       sourceCol={sourceCols[col] ?? ''}
@@ -483,7 +448,6 @@ export default function VideoAskImportPage() {
                 {saveMsg && (
                   <p className={`text-xs ${saveMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>{saveMsg}</p>
                 )}
-
                 <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={saveConfig}

@@ -2,20 +2,20 @@ import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
-// GET /api/admin/videoask-import/configs?formTitle=...
-// Returns saved config for a specific form, or all configs if no formTitle.
+// GET /api/admin/videoask-import/configs?formId=...
+// Returns saved config for a specific form (by form_id), or all configs.
 export async function GET(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const formTitle = searchParams.get('formTitle');
+  const formId = searchParams.get('formId');
   const db = getSupabaseAdmin();
 
-  if (formTitle) {
+  if (formId) {
     const { data, error } = await db
       .from('videoask_import_configs')
       .select('*')
-      .eq('form_title', formTitle)
+      .eq('form_title', formId)
       .maybeSingle();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,18 +32,18 @@ export async function GET(req: Request) {
 }
 
 // POST /api/admin/videoask-import/configs
-// Saves (upserts) a column mapping config for a form.
+// Saves (upserts) a column mapping config for a form (keyed by form_id).
 export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { formTitle, staticValues, columnMappings } = body as {
-    formTitle: string;
+  const { formId, staticValues, columnMappings } = body as {
+    formId: string;
     staticValues: Record<string, string>;
     columnMappings: Record<string, string>;
   };
 
-  if (!formTitle) return NextResponse.json({ error: 'formTitle required' }, { status: 400 });
+  if (!formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
 
   const db = getSupabaseAdmin();
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     .from('videoask_import_configs')
     .upsert(
       {
-        form_title: formTitle,
+        form_title: formId,   // reuse form_title column as the unique key (stores form_id)
         static_values: staticValues ?? {},
         column_mappings: columnMappings ?? {},
         updated_at: new Date().toISOString(),
