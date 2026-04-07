@@ -397,8 +397,8 @@ export default function AssessmentPlayerPage() {
         {/* ── Main content ────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-y-auto">
 
-          {/* Header + mode toggle strip */}
-          <div className="flex-shrink-0 flex flex-col px-4 md:px-6 pt-3 pb-1 bg-gray-50 gap-1">
+          {/* Header + mode toggle strip — mobile only; desktop buttons overlay the iframe */}
+          <div className="md:hidden flex-shrink-0 flex flex-col px-4 pt-3 pb-1 bg-gray-50 gap-1">
             <div className="flex items-start justify-between gap-3">
             {/* Mobile-only question info (left side) */}
             <div className="md:hidden flex-1 min-w-0">
@@ -503,11 +503,54 @@ export default function AssessmentPlayerPage() {
                   I prefer to type
                 </button>
               </Tooltip>
-              {/* Desktop: sample button stays in right column */}
+              {/* Desktop sample button lives in the iframe overlay — hidden here */}
+            </div>
+            </div>{/* end top row */}
+
+            {/* Mobile: sample button left-aligned below */}
+          </div>
+
+          {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
+          <div className={`relative flex justify-center px-2 md:px-4 py-4 bg-gray-50 transition-colors duration-300 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}
+            style={
+              spanishMode && hasSample ? { background: 'linear-gradient(135deg, #e8735a18 0%, #1D9E7518 100%)' }
+              : spanishMode ? { background: '#e8735a0f' }
+              : hasSample  ? { background: '#1D9E750f' }
+              : undefined
+            }
+          >
+            {/* Desktop overlay buttons — float over top-right of iframe */}
+            <div className="hidden md:flex flex-col items-end gap-2 absolute top-4 right-6 z-10">
+              {currentQ.spanishEmbedUrl && (
+                <Tooltip text="Other prompt languages can be configured for your population.">
+                  <button
+                    onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('language_switch', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { language: spanishMode ? 'english' : 'spanish' } }); }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all hover:opacity-90 active:scale-[0.99]"
+                    style={spanishMode
+                      ? { background: 'white', color: '#e8735a', boxShadow: '0 0 0 2px #e8735a' }
+                      : { background: '#e8735a', color: 'white', boxShadow: '0 0 0 2px #e8735a' }}
+                  >
+                    <span>🌐</span> {spanishMode ? 'Try in English' : 'Try in Spanish'}
+                  </button>
+                </Tooltip>
+              )}
+              <Tooltip text="Customers may choose to enable typed responses as an alternative submission format to audio or video recording.">
+                <button
+                  onClick={() => { setShowTyping(t => !t); setSpanishMode(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('format_change', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { format: showTyping ? 'video' : 'text' } }); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all hover:opacity-90 active:scale-[0.99]"
+                  style={showTyping ? { background: '#4a6fa5', color: 'white', outline: '2px solid #2d4a7a' } : { background: '#4a6fa5', color: 'white' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="white" strokeWidth="1.4"/>
+                    <path d="M4 7h7M4 9.5h4.5" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  I prefer to type
+                </button>
+              </Tooltip>
               {sampleAvailable && (
                 <button
                   onClick={() => setShowSample(s => !s)}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all hover:opacity-90 active:scale-[0.99]"
                   style={showSample
                     ? { background: 'white', color: '#1D9E75', boxShadow: '0 0 0 2px #1D9E75' }
                     : { background: '#1D9E75', color: 'white', boxShadow: '0 0 0 2px #1D9E75' }}
@@ -520,27 +563,6 @@ export default function AssessmentPlayerPage() {
                 </button>
               )}
             </div>
-            </div>{/* end top row */}
-
-            {/* Mobile: sample button left-aligned below */}
-          </div>
-
-          {/* Spanish language note — shown above embed when Spanish mode is active */}
-          {spanishMode && (
-            <p className="text-xs text-gray-400 text-center leading-relaxed px-4 pt-2 bg-gray-50">
-              Other prompt languages can be configured for your population.
-            </p>
-          )}
-
-          {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
-          <div className={`flex justify-center px-2 md:px-4 py-4 bg-gray-50 transition-colors duration-300 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}
-            style={
-              spanishMode && hasSample ? { background: 'linear-gradient(135deg, #e8735a18 0%, #1D9E7518 100%)' }
-              : spanishMode ? { background: '#e8735a0f' }
-              : hasSample  ? { background: '#1D9E750f' }
-              : undefined
-            }
-          >
             <iframe
               key={`${currentQ.id}-${spanishMode}-${hasSample}`}
               src={embedSrc}
