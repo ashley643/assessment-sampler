@@ -3,7 +3,7 @@ import { getAdminSession } from '@/lib/auth';
 import { getImpacterClient } from '@/lib/impacter-client';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyQuery = { select: (...a: any[]) => any; in: (...a: any[]) => any; eq: (...a: any[]) => any; limit: (...a: any[]) => any; ilike: (...a: any[]) => any; not: (...a: any[]) => any };
+type AnyQuery = any;
 type FlexClient = { from: (t: string) => AnyQuery };
 
 export async function GET(req: Request) {
@@ -16,224 +16,129 @@ export async function GET(req: Request) {
 
   // ── SIDEBAR mode ──────────────────────────────────────────────────────────
   if (mode === 'sidebar') {
-    // Get pilot stats (includes district_name)
-    const { data: statsData, error: statsErr } = await db.from('v_pilot_stats')
-      .select('pilot_id, pilot_name, district_name, total_va_submissions');
+    // Fetch all distinct (district_name, school_name) pairs
+    const { data, error } = await db.from('student_responses')
+      .select('district_name, school_name')
+      .limit(20000);
 
-    if (statsErr) {
-      console.error('v_pilot_stats error:', statsErr);
-      return NextResponse.json({ error: statsErr.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    type Row = { district_name: string | null; school_name: string | null };
+    const rows = (data ?? []) as Row[];
+
+    // Build district → schools tree, deduplicating in JS
+    const districtMap: Record<string, Set<string>> = {};
+    for (const r of rows) {
+      const d = r.district_name ?? 'Unknown District';
+      if (!districtMap[d]) districtMap[d] = new Set();
+      if (r.school_name) districtMap[d].add(r.school_name);
     }
 
-    type StatRow = { pilot_id: string; pilot_name: string; district_name: string; total_va_submissions: number };
-    const stats = (statsData ?? []) as StatRow[];
-
-    // Get distinct (pilot_id, school_name) pairs from responses
-    const { data: responsesData, error: respErr } = await db.from('responses')
-      .select('pilot_id, school_name')
-      .limit(5000);
-
-    if (respErr) {
-      console.error('responses error:', respErr);
-      return NextResponse.json({ error: respErr.message }, { status: 500 });
-    }
-
-    type RespRow = { pilot_id: string; school_name: string };
-    const responses = (responsesData ?? []) as RespRow[];
-
-    // Deduplicate schools by pilot_id in JS
-    const schoolsByPilot: Record<string, Set<string>> = {};
-    for (const r of responses) {
-      if (!r.pilot_id) continue;
-      if (!schoolsByPilot[r.pilot_id]) schoolsByPilot[r.pilot_id] = new Set();
-      if (r.school_name) schoolsByPilot[r.pilot_id].add(r.school_name);
-    }
-
-    // Build district → pilots tree
-    const districtMap: Record<string, { name: string; pilots: { id: string; name: string; schools: string[]; totalSubmissions: number }[] }> = {};
-
-    for (const s of stats) {
-      const dName = s.district_name ?? 'Unknown District';
-      if (!districtMap[dName]) districtMap[dName] = { name: dName, pilots: [] };
-      districtMap[dName].pilots.push({
-        id: s.pilot_id,
-        name: s.pilot_name ?? 'Unknown Pilot',
-        schools: Array.from(schoolsByPilot[s.pilot_id] ?? []).sort(),
-        totalSubmissions: s.total_va_submissions ?? 0,
-      });
-    }
-
-    const districts = Object.values(districtMap).sort((a, b) => a.name.localeCompare(b.name));
+    const districts = Object.entries(districtMap)
+      .map(([name, schools]) => ({ name, schools: Array.from(schools).sort() }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     return NextResponse.json({ districts });
   }
 
-  // ── SEARCH mode (default) ─────────────────────────────────────────────────
-  const pilotIdsParam = searchParams.get('pilotIds') ?? '';
-  const school        = searchParams.get('school') ?? '';
+  // ── SEARCH mode ───────────────────────────────────────────────────────────
+  const districtName  = searchParams.get('district') ?? '';
+  const schoolName    = searchParams.get('school') ?? '';
   const grade         = searchParams.get('grade') ?? '';
-  const language      = searchParams.get('language') ?? '';
-  const mediaTypeParam = searchParams.get('mediaType') ?? '';
-  const promptTitle   = searchParams.get('promptTitle') ?? '';
+  const gender        = searchParams.get('gender') ?? '';
+  const sessionName   = searchParams.get('session') ?? '';
+  const courseId      = searchParams.get('course') ?? '';
+  const responseType  = searchParams.get('responseType') ?? '';
+  const attribute     = searchParams.get('attribute') ?? '';
   const search        = searchParams.get('search') ?? '';
-  const minWords      = parseInt(searchParams.get('minWords') ?? '15');
   const page          = parseInt(searchParams.get('page') ?? '1');
-  const limit         = 24;
+  const limit         = 30;
   const offset        = (page - 1) * limit;
 
-  if (!pilotIdsParam.trim()) {
-    return NextResponse.json({ transcripts: [], totalCount: 0, hasMore: false, filterOptions: { grades: [], genders: [], languages: [], promptTitles: [] } });
-  }
-
-  const pilotIds = pilotIdsParam.split(',').map(s => s.trim()).filter(Boolean);
-
-  // Step 1: get matching response IDs
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let responseQuery: any = db.from('responses')
-    .select('id, school_name, grade_level, gender, pilot_id')
-    .in('pilot_id', pilotIds);
-
-  if (school) responseQuery = responseQuery.eq('school_name', school);
-  if (grade)  responseQuery = responseQuery.eq('grade_level', grade);
-
-  const { data: responsesData, error: respErr } = await responseQuery.limit(5000);
-
-  if (respErr) {
-    console.error('responses query error:', respErr);
-    return NextResponse.json({ error: respErr.message }, { status: 500 });
-  }
-
-  type ResponseRow = { id: string; school_name: string; grade_level: string; gender: string | null; pilot_id: string };
-  const matchedResponses = (responsesData ?? []) as ResponseRow[];
-  const responseIds = matchedResponses.map(r => r.id);
-
-  if (responseIds.length === 0) {
-    return NextResponse.json({ transcripts: [], totalCount: 0, hasMore: false, filterOptions: { grades: [], genders: [], languages: [], promptTitles: [] } });
-  }
-
-  // Build lookup map for response metadata
-  const responseMeta: Record<string, ResponseRow> = {};
-  for (const r of matchedResponses) responseMeta[r.id] = r;
-
-  // Step 2: get answers for those response IDs
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let answersQuery: any = db.from('answers')
-    .select('id, response_id, prompt_index, prompt_title, media_type, media_url, share_url, thumbnail_url, transcript, detected_language, created_at')
-    .in('response_id', responseIds)
-    .not('transcript', 'is', null)
-    .neq('transcript', '');
-
-  if (mediaTypeParam === 'audio') answersQuery = answersQuery.eq('media_type', 'audio');
-  if (mediaTypeParam === 'video') answersQuery = answersQuery.eq('media_type', 'video');
-  if (language)    answersQuery = answersQuery.eq('detected_language', language);
-  if (promptTitle) answersQuery = answersQuery.eq('prompt_title', promptTitle);
-  if (search)      answersQuery = answersQuery.ilike('transcript', `%${search}%`);
-
-  const { data: answersData, error: answersErr } = await answersQuery.limit(2000);
-
-  if (answersErr) {
-    console.error('answers query error:', answersErr);
-    return NextResponse.json({ error: answersErr.message }, { status: 500 });
-  }
-
-  type AnswerRow = {
-    id: string;
-    response_id: string;
-    prompt_index: number;
-    prompt_title: string | null;
-    media_type: string | null;
-    media_url: string | null;
-    share_url: string | null;
-    thumbnail_url: string | null;
-    transcript: string;
-    detected_language: string | null;
-    created_at: string;
-  };
-
-  const allAnswers = (answersData ?? []) as AnswerRow[];
-
-  // Collect filterOptions from the full result set (before pagination/word-count filter)
-  const gradesSet    = new Set<string>();
-  const gendersSet   = new Set<string>();
-  const languagesSet = new Set<string>();
-  const titlesSet    = new Set<string>();
-
-  for (const a of allAnswers) {
-    const resp = responseMeta[a.response_id];
-    if (resp?.grade_level) gradesSet.add(resp.grade_level);
-    if (resp?.gender)      gendersSet.add(resp.gender);
-    if (a.detected_language) languagesSet.add(a.detected_language);
-    if (a.prompt_title)    titlesSet.add(a.prompt_title);
-  }
-
-  // Filter by min words + build normalized cards
-  type AnswerCard = {
-    id: string;
-    responseId: string;
-    promptTitle: string;
-    promptIndex: number;
-    mediaType: 'video' | 'audio';
-    mediaUrl: string | null;
-    shareUrl: string | null;
-    thumbnailUrl: string | null;
-    transcript: string;
-    language: string | null;
-    schoolName: string;
-    gradeLevel: string;
-    gender: string | null;
-    pilotId: string;
-    wordCount: number;
-    createdAt: string;
-  };
-
-  const normalized: AnswerCard[] = [];
-  for (const a of allAnswers) {
-    const resp = responseMeta[a.response_id];
-    if (!resp) continue;
-    const text = a.transcript ?? '';
-    const wc = text.trim().split(/\s+/).filter(Boolean).length;
-    if (wc < minWords) continue;
-
-    const rawMedia = (a.media_type ?? '').toLowerCase();
-    const mediaUrl = a.media_url ?? null;
-    const urlExt = (mediaUrl ?? '').toLowerCase().split('?')[0].split('.').pop() ?? '';
-    const mediaT: 'video' | 'audio' =
-      rawMedia === 'audio' || urlExt === 'mp3' || urlExt === 'ogg' || urlExt === 'm4a' ? 'audio' : 'video';
-
-    normalized.push({
-      id:           a.id,
-      responseId:   a.response_id,
-      promptTitle:  a.prompt_title ?? '',
-      promptIndex:  a.prompt_index ?? 0,
-      mediaType:    mediaT,
-      mediaUrl,
-      shareUrl:     a.share_url ?? null,
-      thumbnailUrl: a.thumbnail_url ?? null,
-      transcript:   text,
-      language:     a.detected_language ?? null,
-      schoolName:   resp.school_name ?? '',
-      gradeLevel:   resp.grade_level ?? '',
-      gender:       resp.gender ?? null,
-      pilotId:      resp.pilot_id,
-      wordCount:    wc,
-      createdAt:    a.created_at,
+  if (!districtName) {
+    return NextResponse.json({
+      rows: [], totalCount: 0, hasMore: false,
+      filterOptions: { grades: [], genders: [], sessions: [], courses: [], responseTypes: [], attributes: [] },
     });
   }
 
-  const totalCount = normalized.length;
-  const paginated  = normalized.slice(offset, offset + limit);
+  let q = db.from('student_responses')
+    .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
+    .eq('district_name', districtName);
+
+  if (schoolName)   q = q.eq('school_name', schoolName);
+  if (grade)        q = q.eq('current_grade', Number(grade));
+  if (gender)       q = q.eq('gender', gender);
+  if (sessionName)  q = q.eq('session_name', sessionName);
+  if (courseId)     q = q.eq('course_id', courseId);
+  if (responseType) q = q.eq('response_type', responseType);
+  if (attribute)    q = q.or(`harvard_attribute.eq.${attribute},casel_attribute.eq.${attribute}`);
+  if (search)       q = q.or(`question.ilike.%${search}%,answer.ilike.%${search}%`);
+
+  const { data, error } = await q.order('answer_date', { ascending: false }).limit(5000);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  type SRRow = {
+    id: number;
+    district_name: string;
+    school_name: string;
+    class_name: string | null;
+    teacher_name: string | null;
+    current_grade: number | null;
+    gender: string | null;
+    session_name: string | null;
+    course_id: string | null;
+    response_type: string | null;
+    question_num: string | null;
+    question: string | null;
+    answer: string | null;
+    harvard_attribute: string | null;
+    harvard_score: number | null;
+    harvard_impacter_score: number | null;
+    casel_attribute: string | null;
+    casel_score: number | null;
+    casel_impacter_score: number | null;
+    url: string | null;
+    answer_date: string | null;
+  };
+
+  const allRows = (data ?? []) as SRRow[];
+
+  // Collect filter options from full result set (before pagination)
+  const gradesSet        = new Set<string>();
+  const gendersSet       = new Set<string>();
+  const sessionsSet      = new Set<string>();
+  const coursesSet       = new Set<string>();
+  const responseTypesSet = new Set<string>();
+  const attributesSet    = new Set<string>();
+
+  for (const r of allRows) {
+    if (r.current_grade != null) gradesSet.add(String(r.current_grade));
+    if (r.gender)         gendersSet.add(r.gender);
+    if (r.session_name)   sessionsSet.add(r.session_name);
+    if (r.course_id)      coursesSet.add(r.course_id);
+    if (r.response_type)  responseTypesSet.add(r.response_type);
+    if (r.harvard_attribute) attributesSet.add(r.harvard_attribute);
+    if (r.casel_attribute)   attributesSet.add(r.casel_attribute);
+  }
+
+  const totalCount = allRows.length;
+  const paginated  = allRows.slice(offset, offset + limit);
   const hasMore    = totalCount > offset + limit;
 
   return NextResponse.json({
-    transcripts: paginated,
+    rows: paginated,
     totalCount,
     hasMore,
     page,
     filterOptions: {
-      grades:       Array.from(gradesSet).sort(),
-      genders:      Array.from(gendersSet).sort(),
-      languages:    Array.from(languagesSet).sort(),
-      promptTitles: Array.from(titlesSet).sort(),
+      grades:        Array.from(gradesSet).sort((a, b) => Number(a) - Number(b)),
+      genders:       Array.from(gendersSet).sort(),
+      sessions:      Array.from(sessionsSet).sort(),
+      courses:       Array.from(coursesSet).sort(),
+      responseTypes: Array.from(responseTypesSet).sort(),
+      attributes:    Array.from(attributesSet).sort(),
     },
   });
 }

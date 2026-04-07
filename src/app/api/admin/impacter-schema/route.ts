@@ -21,11 +21,16 @@ export async function GET() {
 
   const studentResponses = await probe('student_responses');
 
-  // Distinct districts from student_responses
-  const { data: srRows } = await db.from('student_responses' as 'pilots').select('*').limit(5);
+  // Sample rows where url IS NOT NULL (the VideoAsk media rows)
+  const { data: mediaRows, error: mediaErr } = await db
+    .from('student_responses' as 'pilots')
+    .select('*')
+    .not('url', 'is', null)
+    .limit(3);
 
   return NextResponse.json({
     student_responses: studentResponses,
-    sample_rows: srRows,
+    media_rows: mediaRows,
+    media_rows_error: mediaErr?.message ?? null,
   }, { status: 200 });
 }
