@@ -257,7 +257,7 @@ export default function DistrictFinderPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="h-full flex flex-col overflow-hidden -m-6 md:-m-8">
+    <div className="h-full flex flex-col overflow-hidden -mt-6 md:-mt-8 -mb-6 md:-mb-8 -mr-6 md:-mr-8">
 
       {/* Top bar */}
       <div className="flex-shrink-0 flex items-center gap-3 px-6 py-3 bg-white border-b border-gray-200">
