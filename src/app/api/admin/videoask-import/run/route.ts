@@ -104,11 +104,11 @@ export async function POST(req: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
 
-  // 1. Fetch all steps for this form
+  // 1. Fetch all steps for this form (only columns we actually use)
   const { data: stepsData, error: stepsErr } = await impacter
     .schema('videoask')
     .from('steps')
-    .select('*')
+    .select('id, interaction_id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
     .eq('form_id', formId);
 
   if (stepsErr) return NextResponse.json({ error: stepsErr.message }, { status: 500 });
