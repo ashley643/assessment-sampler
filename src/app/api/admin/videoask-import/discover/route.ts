@@ -16,8 +16,9 @@ type CacheState = {
   lastStepId?: string;
   lastSrId?: number;
   forms?: Record<string, FormEntry>;
-  // compact uuid→formId map for cross-referencing import status
   uuidToFormId?: Record<string, string>;
+  labels?: Record<string, string>;  // user-defined display labels
+  hidden?: string[];                 // deleted/hidden form IDs
 };
 
 // GET /api/admin/videoask-import/discover
@@ -40,6 +41,8 @@ export async function GET() {
   const cache = (cacheRow?.column_mappings ?? {}) as CacheState;
   const formMap    = new Map<string, FormEntry>(Object.entries(cache.forms ?? {}));
   const uuidToForm = new Map<string, string>(Object.entries(cache.uuidToFormId ?? {}));
+  const labelsMap  = new Map<string, string>(Object.entries(cache.labels ?? {}));
+  const hiddenSet  = new Set<string>(cache.hidden ?? []);
   let lastStepId: string = cache.lastStepId ?? '00000000-0000-0000-0000-000000000000';
   let lastSrId:   number = cache.lastSrId   ?? 0;
   const isFirstRun = !cacheRow;
@@ -129,6 +132,8 @@ export async function GET() {
     forms:         Object.fromEntries(formMap),
     uuidToFormId:  Object.fromEntries(uuidToForm),
     imported:      cachedImported,
+    labels:        Object.fromEntries(labelsMap),
+    hidden:        Array.from(hiddenSet),
   };
 
   await ourDb
@@ -140,9 +145,11 @@ export async function GET() {
 
   // ── 7. Build response ─────────────────────────────────────────────────────
   const forms = Array.from(formMap.entries())
+    .filter(([formId]) => !hiddenSet.has(formId))
     .map(([formId, { total, sampleTitle, formName }]) => {
       const imported = cachedImported[formId] ?? 0;
-      return { formId, formName, sampleTitle, totalSteps: total, imported, isImported: imported > 0 };
+      const customLabel = labelsMap.get(formId) ?? null;
+      return { formId, formName, customLabel, sampleTitle, totalSteps: total, imported, isImported: imported > 0 };
     })
     .sort((a, b) => {
       if (a.isImported !== b.isImported) return a.isImported ? 1 : -1;
@@ -150,4 +157,43 @@ export async function GET() {
     });
 
   return NextResponse.json({ forms });
+}
+
+// PATCH /api/admin/videoask-import/discover
+// body: { action: 'rename', formId: string, label: string }
+//     | { action: 'delete', formId: string }
+export async function PATCH(req: Request) {
+  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const body = await req.json() as { action: string; formId: string; label?: string };
+  const { action, formId } = body;
+  if (!formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
+
+  const ourDb = getSupabaseAdmin();
+  const { data: cacheRow } = await ourDb
+    .from('videoask_import_configs')
+    .select('column_mappings')
+    .eq('form_title', CACHE_KEY)
+    .maybeSingle();
+
+  const cache = (cacheRow?.column_mappings ?? {}) as CacheState & { imported?: Record<string, number> };
+  const labels = { ...(cache.labels ?? {}) };
+  const hidden = new Set<string>(cache.hidden ?? []);
+
+  if (action === 'rename') {
+    const label = (body.label ?? '').trim();
+    if (label) labels[formId] = label;
+    else delete labels[formId];
+  } else if (action === 'delete') {
+    hidden.add(formId);
+  } else {
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  }
+
+  const updated = { ...cache, labels, hidden: Array.from(hidden) };
+  await ourDb
+    .from('videoask_import_configs')
+    .upsert({ form_title: CACHE_KEY, column_mappings: updated, static_values: {} }, { onConflict: 'form_title' });
+
+  return NextResponse.json({ ok: true });
 }

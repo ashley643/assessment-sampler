@@ -57,6 +57,7 @@ const PER_NODE_COLS = new Set(['harvard_attribute', 'casel_attribute']);
 type FormInfo = {
   formId: string;
   formName: string | null;
+  customLabel: string | null;
   sampleTitle: string | null;
   totalSteps: number;
   imported: number;
@@ -310,6 +311,10 @@ export default function VideoAskImportPage() {
   const [updating, setUpdating] = useState(false);
   const [updateResult, setUpdateResult] = useState<{ updated?: number; error?: string } | null>(null);
 
+  // Rename / delete state
+  const [editingFormId, setEditingFormId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState('');
+
   // Columns covered by metadata nodes: col → node title
   const metadataCoveredCols = useMemo(() => {
     const map = new Map<string, string>();
@@ -481,7 +486,35 @@ export default function VideoAskImportPage() {
   }
 
   function displayName(f: FormInfo) {
-    return f.formName ?? (f.formId.slice(0, 8) + '…');
+    return f.customLabel ?? f.formName ?? (f.formId.slice(0, 8) + '…');
+  }
+
+  function startRename(f: FormInfo, e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditingFormId(f.formId);
+    setEditingLabel(f.customLabel ?? f.formName ?? '');
+  }
+
+  async function saveRename(formId: string) {
+    const label = editingLabel.trim();
+    setEditingFormId(null);
+    await fetch('/api/admin/videoask-import/discover', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'rename', formId, label }),
+    });
+    setForms(prev => prev.map(f => f.formId === formId ? { ...f, customLabel: label || null } : f));
+  }
+
+  async function deleteForm(formId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm('Remove this form from the list? It won\'t be deleted from VideoAsk.')) return;
+    await fetch('/api/admin/videoask-import/discover', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', formId }),
+    });
+    setForms(prev => prev.filter(f => f.formId !== formId));
   }
 
   const responseNodeCount = Object.values(nodeRoles).filter(r => r.role === 'response').length;
@@ -548,33 +581,72 @@ export default function VideoAskImportPage() {
             {forms.length > 0 && (
               <div className="space-y-2">
                 {forms.map(f => (
-                  <button
+                  <div
                     key={f.formId}
-                    onClick={() => loadFormConfig(f)}
-                    className={`w-full flex items-center justify-between px-4 py-3 bg-white border rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left ${
-                      f.isImported ? 'border-green-200' : 'border-gray-200'
-                    }`}
+                    className={`group w-full flex items-center justify-between px-4 py-3 bg-white border rounded-lg transition-colors text-left ${
+                      f.isImported ? 'border-green-200 hover:border-green-300' : 'border-gray-200 hover:border-blue-300'
+                    } ${editingFormId === f.formId ? '' : 'hover:bg-blue-50 cursor-pointer'}`}
+                    onClick={() => editingFormId !== f.formId && loadFormConfig(f)}
                   >
-                    <div className="min-w-0 flex-1 pr-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 truncate">{displayName(f)}</span>
-                        {f.isImported && (
-                          <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 font-medium">
-                            ✓ Imported
-                          </span>
-                        )}
-                      </div>
+                    <div className="min-w-0 flex-1 pr-2">
+                      {editingFormId === f.formId ? (
+                        <input
+                          autoFocus
+                          value={editingLabel}
+                          onChange={e => setEditingLabel(e.target.value)}
+                          onBlur={() => saveRename(f.formId)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') saveRename(f.formId);
+                            if (e.key === 'Escape') setEditingFormId(null);
+                          }}
+                          onClick={e => e.stopPropagation()}
+                          placeholder="Enter a name…"
+                          className="w-full text-sm font-medium border border-blue-400 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 truncate">{displayName(f)}</span>
+                          {f.isImported && (
+                            <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 font-medium">
+                              ✓ Imported
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <span className="block text-xs text-gray-500 mt-0.5 truncate">
                         {f.totalSteps} response{f.totalSteps !== 1 ? 's' : ''}
                         {f.isImported && ` · ${f.imported} imported`}
                         {f.sampleTitle && ` · ${f.sampleTitle}`}
-                        {!f.formName && ` · ${f.formId}`}
+                        {!f.formName && !f.customLabel && ` · ${f.formId}`}
                       </span>
                     </div>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-400 flex-shrink-0">
-                      <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+                    <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      {/* Rename button */}
+                      <button
+                        onClick={e => startRename(f, e)}
+                        title="Rename"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                          <path d="M9 2l2 2L4 11H2V9L9 2z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      {/* Delete button */}
+                      <button
+                        onClick={e => deleteForm(f.formId, e)}
+                        title="Remove from list"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                          <path d="M2 3.5h9M5 3.5V2.5h3v1M10 3.5l-.7 7H3.7L3 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      {/* Navigate arrow */}
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-400 ml-0.5">
+                        <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
