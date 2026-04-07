@@ -19,29 +19,13 @@ export async function GET() {
     };
   }
 
-  const [pilots, vPilotStats, responses, answers] = await Promise.all([
-    probe('pilots'),
-    probe('v_pilot_stats'),
-    probe('responses'),
-    probe('answers'),
-  ]);
+  const studentResponses = await probe('student_responses');
 
-  // Distinct districts from v_pilot_stats if it has district_name
-  const { data: districtRows } = await db.from('v_pilot_stats' as 'pilots').select('*').limit(50);
-  const distinctDistricts = [...new Set((districtRows ?? []).map((r: Record<string, unknown>) => r.district_name as string).filter(Boolean))].sort();
-
-  // Nested join test: answers → responses → pilots
-  const { data: joinTest, error: joinErr } = await db
-    .from('answers')
-    .select('id, prompt_title, media_type, share_url, transcript, responses(school_name, grade_level, gender, pilot_id, pilots(name))')
-    .limit(2);
+  // Distinct districts from student_responses
+  const { data: srRows } = await db.from('student_responses' as 'pilots').select('*').limit(5);
 
   return NextResponse.json({
-    pilots,
-    v_pilot_stats: vPilotStats,
-    responses,
-    answers,
-    distinct_districts_from_v_pilot_stats: distinctDistricts,
-    join_test: { data: joinTest, error: joinErr },
+    student_responses: studentResponses,
+    sample_rows: srRows,
   }, { status: 200 });
 }
