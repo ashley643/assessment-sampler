@@ -42,11 +42,14 @@ export async function GET() {
     .not('url', 'is', null)
     .limit(3);
 
+  const videoaskSteps = await probe('steps', 'videoask');
+
   return NextResponse.json({
     student_responses: studentResponses,
     total_row_count: totalCount,
     rows_with_url_count: mediaCount,
     media_rows: mediaRows,
     media_rows_error: mediaErr?.message ?? null,
+    videoask_steps: videoaskSteps,
   }, { status: 200 });
 }
