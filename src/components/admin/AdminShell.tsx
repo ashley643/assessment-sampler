@@ -33,6 +33,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
 
+  // Pages that manage their own layout and don't want admin padding
+  const fullBleed = pathname.startsWith('/admin/district-finder') || pathname.startsWith('/admin/response-finder');
+
   useEffect(() => {
     const match = Object.entries(PAGE_TITLES).find(([k]) => pathname.startsWith(k));
     document.title = match ? match[1] : 'Admin — Impacter Pathway';
@@ -130,7 +133,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </button>
           <span className="text-sm font-semibold text-gray-900">Impacter Pathway Admin</span>
         </div>
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8">{children}</main>
+        <main className={`flex-1 overflow-y-auto overflow-x-hidden ${fullBleed ? 'p-0' : 'p-6 md:p-8'}`}>{children}</main>
       </div>
     </div>
   );

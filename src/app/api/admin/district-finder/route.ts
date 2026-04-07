@@ -5,13 +5,14 @@ import { getImpacterClient } from '@/lib/impacter-client';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = any;
 
-/** Extract the VideoAsk media UUID from a signed URL like
- *  https://media.videoask.com/transcoded/{uuid}/video.mp4?token=...
- *  Also handles audio: .../audio.mp3?token=...
- */
 function extractUuid(url: string): string | null {
   const m = url.match(/transcoded\/([0-9a-f-]{36})\//i);
   return m ? m[1] : null;
+}
+
+function wordCount(text: string | null): number {
+  if (!text) return 0;
+  return text.replace(/^"|"$/g, '').trim().split(/\s+/).filter(Boolean).length;
 }
 
 export async function GET(req: Request) {
@@ -19,16 +20,12 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get('mode') ?? 'search';
-
   const db = getImpacterClient() as unknown as DB;
 
-  // ── SIDEBAR mode ──────────────────────────────────────────────────────────
-  // Paginates through student_responses ordered by district/school to build
-  // the full district → school tree regardless of PostgREST row limits.
+  // ── SIDEBAR ───────────────────────────────────────────────────────────────
   if (mode === 'sidebar') {
     type Row = { district_name: string | null; school_name: string | null };
     const districtMap: Record<string, Set<string>> = {};
-
     const PAGE = 1000;
     let from = 0;
     let keepGoing = true;
@@ -61,40 +58,52 @@ export async function GET(req: Request) {
     return NextResponse.json({ districts });
   }
 
-  // ── SEARCH mode ───────────────────────────────────────────────────────────
+  // ── SEARCH ────────────────────────────────────────────────────────────────
   const districtName = searchParams.get('district') ?? '';
-  const schoolName   = searchParams.get('school') ?? '';
-  const grade        = searchParams.get('grade') ?? '';
-  const gender       = searchParams.get('gender') ?? '';
-  const sessionName  = searchParams.get('session') ?? '';
-  const courseId     = searchParams.get('course') ?? '';
+  const schoolName   = searchParams.get('school')   ?? '';
+  const grade        = searchParams.get('grade')     ?? '';
+  const gender       = searchParams.get('gender')    ?? '';
+  const ethnicity    = searchParams.get('ethnicity') ?? '';
+  const homeLang     = searchParams.get('homeLang')  ?? '';
+  const hispanic     = searchParams.get('hispanic')  ?? ''; // 'true' | 'false' | ''
+  const ell          = searchParams.get('ell')        ?? '';
+  const frl          = searchParams.get('frl')        ?? '';
+  const iep          = searchParams.get('iep')        ?? '';
+  const sessionName  = searchParams.get('session')   ?? '';
+  const courseId     = searchParams.get('course')    ?? '';
   const attribute    = searchParams.get('attribute') ?? '';
-  const mediaType    = searchParams.get('mediaType') ?? ''; // 'video' | 'audio' | ''
-  const search       = searchParams.get('search') ?? '';
+  const mediaType    = searchParams.get('mediaType') ?? '';
+  const minScore     = parseInt(searchParams.get('minScore') ?? '0');
+  const minWords     = parseInt(searchParams.get('minWords') ?? '0');
+  const search       = searchParams.get('search')    ?? '';
   const page         = parseInt(searchParams.get('page') ?? '1');
   const limit        = 24;
   const offset       = (page - 1) * limit;
 
   if (!districtName) {
-    return NextResponse.json({
-      rows: [], totalCount: 0, hasMore: false,
-      filterOptions: { grades: [], genders: [], sessions: [], courses: [], attributes: [] },
-    });
+    return NextResponse.json({ rows: [], totalCount: 0, hasMore: false, filterOptions: {} });
   }
 
   let q = db
     .from('student_responses')
-    .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
+    .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
     .not('url', 'is', null)
     .eq('district_name', districtName);
 
   if (schoolName)  q = q.eq('school_name', schoolName);
   if (grade)       q = q.eq('current_grade', Number(grade));
   if (gender)      q = q.eq('gender', gender);
+  if (ethnicity)   q = q.eq('ethnicity', ethnicity);
+  if (homeLang)    q = q.eq('home_language', homeLang);
+  if (hispanic)    q = q.eq('hispanic', hispanic === 'true');
+  if (ell)         q = q.eq('ell', ell === 'true');
+  if (frl)         q = q.eq('frl', frl === 'true');
+  if (iep)         q = q.eq('iep', iep === 'true');
   if (sessionName) q = q.eq('session_name', sessionName);
   if (courseId)    q = q.eq('course_id', courseId);
   if (attribute)   q = q.or(`harvard_attribute.eq.${attribute},casel_attribute.eq.${attribute}`);
   if (mediaType)   q = q.eq('response_type', mediaType);
+  if (minScore > 0) q = q.or(`harvard_score.gte.${minScore},casel_score.gte.${minScore}`);
   if (search)      q = q.or(`question.ilike.%${search}%,answer.ilike.%${search}%`);
 
   const { data, error } = await q
@@ -111,6 +120,12 @@ export async function GET(req: Request) {
     teacher_name: string | null;
     current_grade: number | null;
     gender: string | null;
+    ethnicity: string | null;
+    home_language: string | null;
+    hispanic: boolean | null;
+    ell: boolean | null;
+    frl: boolean | null;
+    iep: boolean | null;
     session_name: string | null;
     course_id: string | null;
     response_type: string | null;
@@ -127,63 +142,75 @@ export async function GET(req: Request) {
     answer_date: string | null;
   };
 
-  const allRows = (data ?? []) as SRRow[];
+  let allRows = (data ?? []) as SRRow[];
 
-  // Collect filter options from full result
-  const gradesSet   = new Set<string>();
-  const gendersSet  = new Set<string>();
-  const sessionsSet = new Set<string>();
-  const coursesSet  = new Set<string>();
-  const attribsSet  = new Set<string>();
+  // Word-count filter (done in JS since SQL can't easily count words)
+  if (minWords > 0) {
+    allRows = allRows.filter(r => wordCount(r.answer) >= minWords);
+  }
+
+  // ── Build filter options from full (pre-pagination) result set ────────────
+  const gradesSet    = new Set<string>();
+  const gendersSet   = new Set<string>();
+  const ethnicitiesSet = new Set<string>();
+  const homeLangsSet = new Set<string>();
+  const sessionsSet  = new Set<string>();
+  const coursesSet   = new Set<string>();
+  const attribsSet   = new Set<string>();
+
+  // Track booleans — only show as filter if both T and F exist
+  let hispanicHasTrue = false, hispanicHasFalse = false;
+  let ellHasTrue = false,      ellHasFalse = false;
+  let frlHasTrue = false,      frlHasFalse = false;
+  let iepHasTrue = false,      iepHasFalse = false;
 
   for (const r of allRows) {
-    if (r.current_grade != null) gradesSet.add(String(r.current_grade));
-    if (r.gender)        gendersSet.add(r.gender);
-    if (r.session_name)  sessionsSet.add(r.session_name);
-    if (r.course_id)     coursesSet.add(r.course_id);
-    if (r.harvard_attribute) attribsSet.add(r.harvard_attribute);
-    if (r.casel_attribute)   attribsSet.add(r.casel_attribute);
+    if (r.current_grade != null)  gradesSet.add(String(r.current_grade));
+    if (r.gender)                 gendersSet.add(r.gender);
+    if (r.ethnicity && r.ethnicity !== 'Unknown') ethnicitiesSet.add(r.ethnicity);
+    if (r.home_language && r.home_language !== 'NA') homeLangsSet.add(r.home_language);
+    if (r.session_name)           sessionsSet.add(r.session_name);
+    if (r.course_id)              coursesSet.add(r.course_id);
+    if (r.harvard_attribute)      attribsSet.add(r.harvard_attribute);
+    if (r.casel_attribute)        attribsSet.add(r.casel_attribute);
+
+    if (r.hispanic === true)  hispanicHasTrue  = true;
+    if (r.hispanic === false) hispanicHasFalse = true;
+    if (r.ell === true)       ellHasTrue       = true;
+    if (r.ell === false)      ellHasFalse      = true;
+    if (r.frl === true)       frlHasTrue       = true;
+    if (r.frl === false)      frlHasFalse      = true;
+    if (r.iep === true)       iepHasTrue       = true;
+    if (r.iep === false)      iepHasFalse      = true;
   }
 
   const totalCount = allRows.length;
   const paginated  = allRows.slice(offset, offset + limit);
   const hasMore    = totalCount > offset + limit;
 
-  // ── Cross-reference videoask.steps for share_url ─────────────────────────
-  // student_responses.url = signed direct download URL (mp4/mp3)
-  // videoask.steps.media_url = same base path (may differ by token)
-  // We match on the UUID in the path: .../transcoded/{uuid}/video.mp4
+  // ── Cross-reference videoask.steps for share_url ──────────────────────────
   const shareUrlMap: Record<string, string> = {};
-
-  const uuids = paginated
-    .map(r => extractUuid(r.url))
-    .filter((u): u is string => u !== null);
+  const uuids = paginated.map(r => extractUuid(r.url)).filter((u): u is string => u !== null);
 
   if (uuids.length > 0) {
     try {
-      // Build OR condition: media_url.ilike.%{uuid}% for each UUID
       const orConds = uuids.map(u => `media_url.ilike.%${u}%`).join(',');
       const { data: stepsData } = await db
         .schema('videoask')
         .from('steps')
         .select('media_url, share_url')
         .or(orConds)
-        .limit(uuids.length * 2); // a step can have multiple entries, grab a few per UUID
+        .limit(uuids.length * 2);
 
       if (stepsData) {
         for (const s of stepsData as { media_url: string | null; share_url: string | null }[]) {
           const uuid = extractUuid(s.media_url ?? '');
-          if (uuid && s.share_url && !shareUrlMap[uuid]) {
-            shareUrlMap[uuid] = s.share_url;
-          }
+          if (uuid && s.share_url && !shareUrlMap[uuid]) shareUrlMap[uuid] = s.share_url;
         }
       }
-    } catch {
-      // Non-fatal — we'll just show the download URL without a share link
-    }
+    } catch { /* non-fatal */ }
   }
 
-  // Attach share_url to each paginated row
   const rowsWithShare = paginated.map(r => ({
     ...r,
     shareUrl: shareUrlMap[extractUuid(r.url) ?? ''] ?? null,
@@ -195,11 +222,18 @@ export async function GET(req: Request) {
     hasMore,
     page,
     filterOptions: {
-      grades:     Array.from(gradesSet).sort((a, b) => Number(a) - Number(b)),
-      genders:    Array.from(gendersSet).sort(),
-      sessions:   Array.from(sessionsSet).sort(),
-      courses:    Array.from(coursesSet).sort(),
-      attributes: Array.from(attribsSet).sort(),
+      grades:      Array.from(gradesSet).sort((a, b) => Number(a) - Number(b)),
+      genders:     Array.from(gendersSet).sort(),
+      ethnicities: Array.from(ethnicitiesSet).sort(),
+      homeLangs:   Array.from(homeLangsSet).sort(),
+      sessions:    Array.from(sessionsSet).sort(),
+      courses:     Array.from(coursesSet).sort(),
+      attributes:  Array.from(attribsSet).sort(),
+      // boolean fields: only true if BOTH values present in result
+      hispanicVaries: hispanicHasTrue && hispanicHasFalse,
+      ellVaries:      ellHasTrue && ellHasFalse,
+      frlVaries:      frlHasTrue && frlHasFalse,
+      iepVaries:      iepHasTrue && iepHasFalse,
     },
   });
 }
