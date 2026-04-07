@@ -193,7 +193,7 @@ export default function DistrictFinderPage() {
   const [needsSync, setNeedsSync]           = useState(false);
   const [notSetUp, setNotSetUp]             = useState(false);
   const [syncing, setSyncing]               = useState(false);
-  const [syncResult, setSyncResult]         = useState<{ added: number; total: number } | null>(null);
+  const [syncResult, setSyncResult]         = useState<{ added: number; total: number; totalScanned?: number; districtsFound?: string[] } | null>(null);
   const [openDistricts, setOpenDistricts]   = useState<Set<string>>(new Set());
 
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -531,9 +531,20 @@ export default function DistrictFinderPage() {
           {/* Sync button at sidebar bottom */}
           <div className="flex-shrink-0 border-t border-gray-100 p-3 space-y-2">
             {syncResult && (
-              <p className="text-xs text-green-600 font-medium">
-                {syncResult.added > 0 ? `Added ${syncResult.added} new entries (${syncResult.total} total)` : 'Already up to date'}
-              </p>
+              <div className="text-xs space-y-1">
+                <p className="text-green-600 font-medium">
+                  {syncResult.added > 0 ? `Added ${syncResult.added} new entries` : 'No new entries found'}
+                  {syncResult.totalScanned != null && ` · scanned ${syncResult.totalScanned.toLocaleString()} rows`}
+                </p>
+                {syncResult.districtsFound && syncResult.districtsFound.length > 0 && (
+                  <details className="text-gray-500">
+                    <summary className="cursor-pointer">{syncResult.districtsFound.length} district{syncResult.districtsFound.length !== 1 ? 's' : ''} found in data</summary>
+                    <ul className="mt-1 space-y-0.5 pl-2">
+                      {syncResult.districtsFound.map(d => <li key={d}>{d}</li>)}
+                    </ul>
+                  </details>
+                )}
+              </div>
             )}
             <button
               onClick={runSync}

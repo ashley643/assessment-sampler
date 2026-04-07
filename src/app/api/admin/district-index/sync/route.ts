@@ -3,18 +3,12 @@ import { getAdminSession } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getImpacterClient } from '@/lib/impacter-client';
 
-// Sentinel district name used to store sync cursor in district_school_index.
-// Filtered out in the GET /api/admin/district-index response.
-const SYNC_CURSOR_KEY = '__sync_cursor__';
-
 // Rows without a district_name are grouped under this label in the sidebar.
 export const NO_DISTRICT = '(No District)';
 
 // POST /api/admin/district-index/sync
 // Full cursor-based scan of student_responses every time.
-// Cursor-based (id > lastId ORDER BY id) is O(log n) per page — fast even
-// at 200k rows. We can't use an incremental cursor because UPDATE operations
-// don't change row IDs, so updated rows would be missed by a position cursor.
+// Uses id > lastId ORDER BY id (O(log n) per page via PK index, never times out).
 export async function POST() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -25,8 +19,7 @@ export async function POST() {
   // ── Step 1: Load pairs we already know about ──────────────────────────────
   const { data: existing, error: existErr } = await ourDb
     .from('district_school_index')
-    .select('district_name, school_name')
-    .neq('district_name', SYNC_CURSOR_KEY);
+    .select('district_name, school_name');
 
   if (existErr && existErr.code !== '42P01') {
     return NextResponse.json({ error: existErr.message }, { status: 500 });
@@ -38,10 +31,11 @@ export async function POST() {
   );
 
   // ── Step 2: Full cursor-based scan of student_responses ───────────────────
-  // Cursor-based (id > lastId) avoids the O(offset) slowdown of OFFSET queries.
   const newPairs: Pair[] = [];
   let cursorId = 0;
   const PAGE = 1000;
+  let totalScanned = 0;
+  const allDistricts = new Set<string>();
 
   while (true) {
     const { data, error } = await joshDb
@@ -54,11 +48,18 @@ export async function POST() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     const rows = (data ?? []) as { id: number; district_name: string | null; school_name: string | null }[];
+    totalScanned += rows.length;
 
     for (const r of rows) {
-      const districtName = r.district_name?.trim() || NO_DISTRICT;
-      const schoolName   = r.school_name?.trim()   || null;
-      if (!schoolName) continue;
+      // Skip rows with no district at all
+      const districtName = r.district_name?.trim() || null;
+      if (!districtName) continue;
+
+      allDistricts.add(districtName);
+
+      // Use empty string for null school_name — district still appears in sidebar
+      // even if no individual school names are available
+      const schoolName = r.school_name?.trim() ?? '';
 
       const key = `${districtName}|||${schoolName}`;
       if (!knownPairs.has(key)) {
@@ -86,5 +87,11 @@ export async function POST() {
   }
 
   const total = (existing?.length ?? 0) + added;
-  return NextResponse.json({ added, total });
+  // Return diagnostic info so we can verify what was actually found
+  return NextResponse.json({
+    added,
+    total,
+    totalScanned,
+    districtsFound: Array.from(allDistricts).sort(),
+  });
 }
