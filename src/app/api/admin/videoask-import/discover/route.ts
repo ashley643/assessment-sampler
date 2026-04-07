@@ -16,14 +16,25 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
 
-  // 1. All (form_id, media_url, node_title, raw) from videoask.steps
-  const { data: stepsData, error: stepsErr } = await impacter
-    .schema('videoask')
-    .from('steps')
-    .select('form_id, media_url, node_title, raw')
-    .not('form_id', 'is', null);
+  // 1. Paginate ALL rows from videoask.steps (Supabase default page size is 1000)
+  type StepRow = { form_id: string; media_url: string | null; node_title: string | null; raw: Record<string, unknown> | null };
+  const allSteps: StepRow[] = [];
+  const PAGE = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await impacter
+      .schema('videoask')
+      .from('steps')
+      .select('form_id, media_url, node_title, raw')
+      .not('form_id', 'is', null)
+      .range(offset, offset + PAGE - 1);
 
-  if (stepsErr) return NextResponse.json({ error: stepsErr.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const rows = (data ?? []) as StepRow[];
+    allSteps.push(...rows);
+    if (rows.length < PAGE) break;
+    offset += PAGE;
+  }
 
   // 2. Try to get form names from videoask.forms table (may not exist)
   const formNames = new Map<string, string>();
@@ -42,29 +53,33 @@ export async function GET() {
     // forms table may not exist — that's fine
   }
 
-  // 3. All URLs already in student_responses
-  const { data: srUrls, error: srErr } = await impacter
-    .from('student_responses')
-    .select('url')
-    .not('url', 'is', null);
-
-  if (srErr) return NextResponse.json({ error: srErr.message }, { status: 500 });
-
+  // 3. Paginate all URLs already in student_responses
   const importedUuids = new Set<string>();
-  for (const row of (srUrls ?? []) as { url: string }[]) {
-    const uuid = extractUuid(row.url ?? '');
-    if (uuid) importedUuids.add(uuid);
+  let srOffset = 0;
+  while (true) {
+    const { data: srUrls, error: srErr } = await impacter
+      .from('student_responses')
+      .select('url')
+      .not('url', 'is', null)
+      .range(srOffset, srOffset + PAGE - 1);
+
+    if (srErr) return NextResponse.json({ error: srErr.message }, { status: 500 });
+    const rows = (srUrls ?? []) as { url: string }[];
+    for (const row of rows) {
+      const uuid = extractUuid(row.url ?? '');
+      if (uuid) importedUuids.add(uuid);
+    }
+    if (rows.length < PAGE) break;
+    srOffset += PAGE;
   }
 
   // 4. Group steps by form_id, collect display info + counts
-  type StepRow = { form_id: string; media_url: string | null; node_title: string | null; raw: Record<string, unknown> | null };
   const formMap = new Map<string, { total: number; imported: number; sampleTitle: string | null; shareId: string | null }>();
 
-  for (const step of (stepsData ?? []) as StepRow[]) {
+  for (const step of allSteps) {
     const fid = step.form_id ?? '';
     if (!fid) continue;
     if (!formMap.has(fid)) {
-      // Try to extract a share ID and form title from raw JSONB
       const raw = step.raw ?? {};
       const shareId = (raw.form_share_id as string) ?? null;
       formMap.set(fid, { total: 0, imported: 0, sampleTitle: step.node_title, shareId });
@@ -82,7 +97,7 @@ export async function GET() {
     sampleTitle,
     totalSteps: total,
     importedSteps: imported,
-  })).sort((a, b) => (a.formName ?? a.formId).localeCompare(b.formName ?? b.formId));
+  })).sort((a, b) => (a.formName ?? a.shareId ?? a.formId).localeCompare(b.formName ?? b.shareId ?? b.formId));
 
   return NextResponse.json({ forms });
 }
