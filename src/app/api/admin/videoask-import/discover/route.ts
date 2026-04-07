@@ -94,16 +94,21 @@ export async function GET() {
     }
   } catch { /* forms table may not exist */ }
 
-  // 6. Only return forms where nothing has been imported yet
+  // 6. Return all forms; mark ones that have already been imported
   const forms = Array.from(formMap.entries())
-    .filter(([, { imported }]) => imported === 0)
-    .map(([formId, { total, sampleTitle }]) => ({
+    .map(([formId, { total, imported, sampleTitle }]) => ({
       formId,
       formName: formNames.get(formId) ?? null,
       sampleTitle,
       totalSteps: total,
+      imported,
+      isImported: imported > 0,
     }))
-    .sort((a, b) => b.totalSteps - a.totalSteps);
+    .sort((a, b) => {
+      // Unimported first, then by response count descending
+      if (a.isImported !== b.isImported) return a.isImported ? 1 : -1;
+      return b.totalSteps - a.totalSteps;
+    });
 
   return NextResponse.json({ forms });
 }

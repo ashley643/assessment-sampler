@@ -59,6 +59,8 @@ type FormInfo = {
   formName: string | null;
   sampleTitle: string | null;
   totalSteps: number;
+  imported: number;
+  isImported: boolean;
 };
 
 type NodeInfo = {
@@ -530,12 +532,22 @@ export default function VideoAskImportPage() {
                   <button
                     key={f.formId}
                     onClick={() => loadFormConfig(f)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                    className={`w-full flex items-center justify-between px-4 py-3 bg-white border rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left ${
+                      f.isImported ? 'border-green-200' : 'border-gray-200'
+                    }`}
                   >
                     <div className="min-w-0 flex-1 pr-3">
-                      <span className="text-sm font-medium text-gray-900 block truncate">{displayName(f)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 truncate">{displayName(f)}</span>
+                        {f.isImported && (
+                          <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 font-medium">
+                            ✓ Imported
+                          </span>
+                        )}
+                      </div>
                       <span className="block text-xs text-gray-500 mt-0.5 truncate">
                         {f.totalSteps} response{f.totalSteps !== 1 ? 's' : ''}
+                        {f.isImported && ` · ${f.imported} imported`}
                         {f.sampleTitle && ` · ${f.sampleTitle}`}
                         {!f.formName && ` · ${f.formId}`}
                       </span>
