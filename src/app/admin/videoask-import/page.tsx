@@ -42,10 +42,8 @@ const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
 type FormInfo = {
   formId: string;
   formName: string | null;
-  shareId: string | null;
   sampleTitle: string | null;
   totalSteps: number;
-  importedSteps: number;
 };
 
 type RunResult = {
@@ -126,6 +124,7 @@ export default function VideoAskImportPage() {
   const [selectedForm, setSelectedForm] = useState<FormInfo | null>(null);
   const [sourceColumns, setSourceColumns] = useState<string[]>([]);
   const [sampleRows, setSampleRows] = useState<Record<string, unknown>[]>([]);
+  const [importStatus, setImportStatus] = useState<{ total: number; imported: number } | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
   const [mappingTypes, setMappingTypes] = useState<Record<string, 'source' | 'static' | 'none'>>({});
@@ -170,6 +169,7 @@ export default function VideoAskImportPage() {
       const cols: string[] = previewJson.columns ?? [];
       setSourceColumns(cols);
       setSampleRows(previewJson.rows ?? []);
+      setImportStatus({ total: previewJson.totalSteps ?? 0, imported: previewJson.importedSteps ?? 0 });
 
       const initTypes: Record<string, 'source' | 'static' | 'none'> = {};
       const initSource: Record<string, string> = {};
@@ -272,18 +272,8 @@ export default function VideoAskImportPage() {
     }
   }
 
-  // Display name for a form: formName > shareId > truncated formId
   function displayName(f: FormInfo) {
-    if (f.formName) return f.formName;
-    if (f.shareId) return `Form ${f.shareId}`;
-    return f.formId.slice(0, 8) + '…';
-  }
-
-  function displaySub(f: FormInfo) {
-    const parts: string[] = [];
-    if (f.sampleTitle) parts.push(f.sampleTitle);
-    if (!f.formName) parts.push(f.formId);
-    return parts.join(' · ');
+    return f.formName ?? (f.formId.slice(0, 8) + '…');
   }
 
   return (
@@ -306,7 +296,16 @@ export default function VideoAskImportPage() {
             <h1 className="text-lg font-semibold text-gray-900">VideoAsk Import</h1>
             <p className="text-sm text-gray-500">
               {view === 'list' && 'Import VideoAsk pilot responses into Student Responses.'}
-              {view === 'configure' && selectedForm && `Mapping columns for: ${displayName(selectedForm)}`}
+              {view === 'configure' && selectedForm && (
+                <>
+                  {displayName(selectedForm)}
+                  {importStatus && !loadingPreview && (
+                    <span className="ml-2 text-xs text-gray-400">
+                      {importStatus.imported}/{importStatus.total} already imported
+                    </span>
+                  )}
+                </>
+              )}
               {view === 'result' && 'Import complete.'}
             </p>
           </div>
@@ -339,34 +338,25 @@ export default function VideoAskImportPage() {
 
             {forms.length > 0 && (
               <div className="space-y-2">
-                {forms.map(f => {
-                  const fullyImported = f.importedSteps === f.totalSteps && f.totalSteps > 0;
-                  const partiallyImported = f.importedSteps > 0 && f.importedSteps < f.totalSteps;
-                  return (
-                    <button
-                      key={f.formId}
-                      onClick={() => loadFormConfig(f)}
-                      className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
-                    >
-                      <div className="min-w-0 flex-1 pr-3">
-                        <span className="text-sm font-medium text-gray-900 block truncate">{displayName(f)}</span>
-                        <span className="block text-xs text-gray-500 mt-0.5 truncate">
-                          {f.totalSteps} response{f.totalSteps !== 1 ? 's' : ''}
-                          {f.importedSteps > 0 && ` · ${f.importedSteps} already imported`}
-                          {displaySub(f) && ` · ${displaySub(f)}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {fullyImported && <Badge variant="green">Imported</Badge>}
-                        {partiallyImported && <Badge variant="yellow">Partial</Badge>}
-                        {f.importedSteps === 0 && <Badge variant="gray">Not imported</Badge>}
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-400">
-                          <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                    </button>
-                  );
-                })}
+                {forms.map(f => (
+                  <button
+                    key={f.formId}
+                    onClick={() => loadFormConfig(f)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                  >
+                    <div className="min-w-0 flex-1 pr-3">
+                      <span className="text-sm font-medium text-gray-900 block truncate">{displayName(f)}</span>
+                      <span className="block text-xs text-gray-500 mt-0.5 truncate">
+                        {f.totalSteps} response{f.totalSteps !== 1 ? 's' : ''}
+                        {f.sampleTitle && ` · ${f.sampleTitle}`}
+                        {!f.formName && ` · ${f.formId}`}
+                      </span>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-400 flex-shrink-0">
+                      <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                ))}
               </div>
             )}
 
