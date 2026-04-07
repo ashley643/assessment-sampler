@@ -175,18 +175,13 @@ export async function POST(req: Request) {
           value = step.transcript ?? null;
         } else if (sourceField === 'poll_option') {
           const raw = (step.raw ?? {}) as Record<string, unknown>;
-          // Try raw.answer first (direct selected answer field)
-          if (typeof raw.answer === 'string' && raw.answer) {
-            value = raw.answer;
+          // VideoAsk stores the selected option directly in poll_option_content
+          if (typeof raw.poll_option_content === 'string' && raw.poll_option_content) {
+            value = raw.poll_option_content;
           } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const pollOptions = raw.poll_options as Array<{ label?: string; selected?: boolean; votes?: number }> | undefined;
-            if (pollOptions?.length) {
-              // Find the option the student actually selected (selected flag or votes > 0)
-              const selected = pollOptions.find(o => o.selected === true || (typeof o.votes === 'number' && o.votes > 0))
-                ?? pollOptions[0]; // fallback to first if no selection marker
-              value = selected?.label ?? null;
-            }
+            // Fallback: poll_options only contains the selected option, field is 'content' not 'label'
+            const pollOptions = raw.poll_options as Array<{ content?: string; label?: string }> | undefined;
+            value = pollOptions?.[0]?.content ?? pollOptions?.[0]?.label ?? null;
           }
         }
 

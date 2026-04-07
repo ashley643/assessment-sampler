@@ -42,9 +42,9 @@ export async function GET(req: Request) {
     const nodeId = String(step.node_id ?? '');
     if (!nodeId) continue;
     const raw = (step.raw ?? {}) as Record<string, unknown>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pollOptions = raw.poll_options as any[] | undefined;
-    const pollLabel = pollOptions?.[0]?.label ?? null;
+    const pollOptions = raw.poll_options as Array<{ content?: string; label?: string }> | undefined;
+    const pollLabel = (typeof raw.poll_option_content === 'string' ? raw.poll_option_content : null)
+      ?? pollOptions?.[0]?.content ?? pollOptions?.[0]?.label ?? null;
 
     const existing = nodeMap.get(nodeId);
     if (!existing) {
