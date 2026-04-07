@@ -9,14 +9,14 @@ function extractUuid(url: string): string | null {
 
 // Map VideoAsk internal media_type values to readable response types
 function normalizeResponseType(raw: string, url?: string): string {
+  // No URL = typed/text response regardless of what VideoAsk says
+  if (url !== undefined && url === '') return 'text';
   switch (raw.toLowerCase()) {
     case 'standard': {
       // Derive from URL extension: .mp3 = audio, .mp4 = video
-      if (url) {
-        const lower = url.toLowerCase();
-        if (lower.includes('.mp3')) return 'audio';
-        if (lower.includes('.mp4')) return 'video';
-      }
+      const lower = (url ?? '').toLowerCase();
+      if (lower.includes('.mp3')) return 'audio';
+      if (lower.includes('.mp4')) return 'video';
       return 'video'; // fallback
     }
     case 'audio':    return 'audio';
