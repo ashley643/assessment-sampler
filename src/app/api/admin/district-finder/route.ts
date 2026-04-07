@@ -28,7 +28,6 @@ export async function GET(req: Request) {
     const { data, error } = await db
       .from('student_responses')
       .select('district_name, school_name')
-      .not('url', 'is', null)
       .limit(50000);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
