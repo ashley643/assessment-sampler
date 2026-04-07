@@ -107,14 +107,17 @@ function RoleBtn({ active, onClick, children }: { active: boolean; onClick: () =
 function NodeCard({
   node,
   role,
+  formId,
   onRoleChange,
 }: {
   node: NodeInfo;
   role: NodeRoleValue;
+  formId: string;
   onRoleChange: (r: NodeRoleValue) => void;
 }) {
   const mediaIcon = node.hasMedia ? '🎥' : node.samplePollOption ? '☑️' : '📝';
   const preview = node.sampleTranscript ?? node.samplePollOption ?? '';
+  const rawUrl = `/api/admin/videoask-import/raw-sample?formId=${encodeURIComponent(formId)}&nodeId=${encodeURIComponent(node.nodeId)}`;
 
   return (
     <div className="border border-gray-200 rounded-lg p-3 bg-white space-y-2">
@@ -126,6 +129,11 @@ function NodeCard({
             <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{preview.slice(0, 120)}{preview.length > 120 ? '…' : ''}</p>
           )}
         </div>
+        <a href={rawUrl} target="_blank" rel="noreferrer"
+          title="Inspect raw JSON"
+          className="flex-shrink-0 text-xs text-gray-300 hover:text-blue-500 transition-colors font-mono mt-0.5">
+          {'{ }'}
+        </a>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap">
         <RoleBtn active={role.role === 'skip'} onClick={() => onRoleChange({ role: 'skip' })}>Skip</RoleBtn>
@@ -681,6 +689,7 @@ export default function VideoAskImportPage() {
                   <NodeCard
                     key={node.nodeId}
                     node={node}
+                    formId={selectedForm.formId}
                     role={nodeRoles[node.nodeId] ?? { role: 'skip' }}
                     onRoleChange={r => setNodeRoles(prev => ({ ...prev, [node.nodeId]: r }))}
                   />
