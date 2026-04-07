@@ -362,9 +362,39 @@ export default function DistrictFinderPage() {
           </>
         )}
 
-        {selectedDistrict && totalCount != null && (
-          <span className="ml-auto text-xs text-gray-400 whitespace-nowrap">{totalCount.toLocaleString()} responses</span>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {selectedDistrict && totalCount != null && (
+            <span className="text-xs text-gray-400 whitespace-nowrap">{totalCount.toLocaleString()} responses</span>
+          )}
+
+          {/* Export CSV */}
+          {selectedDistrict && (
+            <a
+              href={`/api/admin/district-finder?mode=export&district=${encodeURIComponent(selectedDistrict)}${selectedSchool ? `&school=${encodeURIComponent(selectedSchool)}` : ''}`}
+              download
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-colors whitespace-nowrap"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M6 1v7M3 5l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Export CSV
+            </a>
+          )}
+
+          {/* VideoAsk Import */}
+          <a
+            href="/admin/videoask-import"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-colors whitespace-nowrap"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 2l5 3-5 3V2z" fill="currentColor"/>
+              <rect x="8" y="2" width="2" height="8" rx="0.5" fill="currentColor"/>
+            </svg>
+            VideoAsk Import
+          </a>
+        </div>
       </div>
 
       {/* Expandable filter panel */}

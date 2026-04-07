@@ -27,7 +27,6 @@ const NAV = [
 const NAV_EXTERNAL = [
   { href: '/admin/response-finder', label: 'Response Finder' },
   { href: '/admin/district-finder', label: 'District Response Finder' },
-  { href: '/admin/videoask-import', label: 'VideoAsk Import' },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {

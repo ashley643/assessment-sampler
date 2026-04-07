@@ -58,6 +58,45 @@ export async function GET(req: Request) {
     return NextResponse.json({ districts });
   }
 
+  // ── EXPORT CSV ────────────────────────────────────────────────────────────
+  if (mode === 'export') {
+    const districtName = searchParams.get('district') ?? '';
+    const schoolName   = searchParams.get('school')   ?? '';
+    if (!districtName) return NextResponse.json({ error: 'district required' }, { status: 400 });
+
+    let q = db
+      .from('student_responses')
+      .select('id, district_name, school_name, class_name, teacher_name, first_name, last_name, student_email, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date, source_id')
+      .not('url', 'is', null)
+      .eq('district_name', districtName);
+
+    if (schoolName) q = q.eq('school_name', schoolName);
+
+    const { data, error } = await q.order('answer_date', { ascending: false }).limit(50000);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const rows = (data ?? []) as Record<string, unknown>[];
+    if (rows.length === 0) return new Response('id\n', {
+      headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="export.csv"` },
+    });
+
+    const cols = Object.keys(rows[0]);
+    function csvEscape(v: unknown): string {
+      if (v == null) return '';
+      const s = String(v);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    }
+    const csv = [cols.join(','), ...rows.map(r => cols.map(c => csvEscape(r[c])).join(','))].join('\n');
+    const safeName = (schoolName || districtName).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${safeName}_export.csv"`,
+      },
+    });
+  }
+
   // ── SEARCH ────────────────────────────────────────────────────────────────
   const districtName = searchParams.get('district') ?? '';
   const schoolName   = searchParams.get('school')   ?? '';

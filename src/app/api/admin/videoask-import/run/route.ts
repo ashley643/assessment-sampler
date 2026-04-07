@@ -115,18 +115,33 @@ export async function POST(req: Request) {
 
   const steps = (stepsData ?? []) as Record<string, unknown>[];
 
-  // 2. Get existing URLs to skip already-imported rows
-  const { data: existingUrls, error: urlErr } = await impacter
+  // 2. Get existing URLs to skip already-imported rows (paginated to avoid timeout)
+  const { count: srCount, error: countErr } = await impacter
     .from('student_responses')
-    .select('url')
+    .select('url', { count: 'exact', head: true })
     .not('url', 'is', null);
 
-  if (urlErr) return NextResponse.json({ error: urlErr.message }, { status: 500 });
+  if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
+
+  const SR_PAGE = 1000;
+  const srPages = Math.ceil((srCount ?? 0) / SR_PAGE);
+  const srResults = await Promise.all(
+    Array.from({ length: srPages }, (_, i) =>
+      impacter
+        .from('student_responses')
+        .select('url')
+        .not('url', 'is', null)
+        .range(i * SR_PAGE, (i + 1) * SR_PAGE - 1)
+    )
+  );
 
   const importedUuids = new Set<string>();
-  for (const row of (existingUrls ?? []) as { url: string }[]) {
-    const uuid = extractUuid(row.url ?? '');
-    if (uuid) importedUuids.add(uuid);
+  for (const { data, error } of srResults as { data: { url: string }[] | null; error: { message: string } | null }[]) {
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    for (const row of (data ?? [])) {
+      const uuid = extractUuid(row.url ?? '');
+      if (uuid) importedUuids.add(uuid);
+    }
   }
 
   // 3. Build rows to insert
