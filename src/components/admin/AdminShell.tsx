@@ -12,7 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/bundles':          'Bundles — Admin',
   '/admin/audit':            'Audit Log — Admin',
   '/admin/response-finder':  'Response Finder — Admin',
-  '/admin/district-finder':  'District Finder — Admin',
+  '/admin/district-finder':  'District Response Finder — Admin',
 };
 
 const NAV = [
@@ -25,7 +25,7 @@ const NAV = [
 
 const NAV_EXTERNAL = [
   { href: '/admin/response-finder', label: 'Response Finder' },
-  { href: '/admin/district-finder', label: 'District Finder' },
+  { href: '/admin/district-finder', label: 'District Response Finder' },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
