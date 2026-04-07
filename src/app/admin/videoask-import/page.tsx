@@ -307,6 +307,8 @@ export default function VideoAskImportPage() {
   const [dryResult, setDryResult] = useState<RunResult | null>(null);
   const [importing, setImporting] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [updateResult, setUpdateResult] = useState<{ updated?: number; error?: string } | null>(null);
 
   // Columns covered by metadata nodes: col → node title
   const metadataCoveredCols = useMemo(() => {
@@ -439,6 +441,23 @@ export default function VideoAskImportPage() {
       setDryResult(await res.json());
     } finally {
       setDryRunning(false);
+    }
+  }
+
+  async function runUpdate() {
+    if (!selectedForm) return;
+    setUpdating(true);
+    setUpdateResult(null);
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles, updateExisting: true }),
+      });
+      setUpdateResult(await res.json());
+    } finally {
+      setUpdating(false);
     }
   }
 
@@ -646,7 +665,19 @@ export default function VideoAskImportPage() {
                   >
                     {dryRunning ? 'Previewing…' : 'Preview import'}
                   </button>
+                  <button
+                    onClick={runUpdate}
+                    disabled={updating || loadingPreview}
+                    className="px-3 py-1.5 border border-amber-300 text-sm text-amber-700 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                  >
+                    {updating ? 'Updating…' : 'Update existing'}
+                  </button>
                 </div>
+                {updateResult && (
+                  <p className={`text-xs ${updateResult.error ? 'text-red-500' : 'text-amber-700'}`}>
+                    {updateResult.error ? `Update error: ${updateResult.error}` : `✓ Updated ${updateResult.updated} existing rows`}
+                  </p>
+                )}
 
                 {dryResult && (
                   <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm space-y-2">

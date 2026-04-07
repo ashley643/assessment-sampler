@@ -91,12 +91,13 @@ type NodeRoles = Record<string, NodeRole>; // keyed by node_id
 export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { formId, staticValues, columnMappings, dryRun, nodeRoles } = await req.json() as {
+  const { formId, staticValues, columnMappings, dryRun, nodeRoles, updateExisting } = await req.json() as {
     formId: string;
     staticValues: Record<string, string>;
     columnMappings: Record<string, string>;
     dryRun?: boolean;
     nodeRoles?: NodeRoles;
+    updateExisting?: boolean;
   };
 
   if (!formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
@@ -142,7 +143,7 @@ export async function POST(req: Request) {
     lastId = rows[rows.length - 1].id;
   }
 
-  // 3. Build rows to insert
+  // 3. Build rows to insert (or update)
   const toInsert: Record<string, unknown>[] = [];
   let skipped = 0;
 
@@ -193,9 +194,11 @@ export async function POST(req: Request) {
         // UUID dedup check
         const mediaUrl = String(step.media_url ?? '');
         const uuid = extractUuid(mediaUrl);
-        if (uuid && importedUuids.has(uuid)) {
-          skipped++;
-          continue;
+        const alreadyImported = !!(uuid && importedUuids.has(uuid));
+        if (updateExisting) {
+          if (!alreadyImported || !mediaUrl) continue; // only rows that exist
+        } else {
+          if (alreadyImported) { skipped++; continue; } // skip already-imported
         }
 
         const row: Record<string, unknown> = {};
@@ -254,9 +257,11 @@ export async function POST(req: Request) {
     for (const step of steps) {
       const mediaUrl = String(step.media_url ?? '');
       const uuid = extractUuid(mediaUrl);
-      if (uuid && importedUuids.has(uuid)) {
-        skipped++;
-        continue;
+      const alreadyImported = !!(uuid && importedUuids.has(uuid));
+      if (updateExisting) {
+        if (!alreadyImported || !mediaUrl) continue;
+      } else {
+        if (alreadyImported) { skipped++; continue; }
       }
 
       const row: Record<string, unknown> = {};
@@ -306,7 +311,30 @@ export async function POST(req: Request) {
     });
   }
 
-  // 4. Insert in chunks
+  // 4a. UPDATE existing rows (patch by url)
+  if (updateExisting) {
+    let updated = 0;
+    const BATCH = 20;
+    for (let i = 0; i < toInsert.length; i += BATCH) {
+      const results = await Promise.all(
+        toInsert.slice(i, i + BATCH).map(row => {
+          const url = String(row.url ?? '');
+          if (!url) return Promise.resolve({ error: null });
+          return impacter
+            .from('student_responses')
+            .update(row)
+            .eq('url', url);
+        })
+      );
+      for (const { error } of results as { error: { message: string } | null }[]) {
+        if (error) return NextResponse.json({ error: error.message, updatedSoFar: updated }, { status: 500 });
+      }
+      updated += Math.min(BATCH, toInsert.length - i);
+    }
+    return NextResponse.json({ updated });
+  }
+
+  // 4b. INSERT new rows in chunks
   let inserted = 0;
   const CHUNK = 100;
   for (let i = 0; i < toInsert.length; i += CHUNK) {
