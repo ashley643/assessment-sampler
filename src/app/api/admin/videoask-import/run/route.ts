@@ -115,33 +115,31 @@ export async function POST(req: Request) {
 
   const steps = (stepsData ?? []) as Record<string, unknown>[];
 
-  // 2. Get existing URLs to skip already-imported rows (paginated to avoid timeout)
-  const { count: srCount, error: countErr } = await impacter
-    .from('student_responses')
-    .select('url', { count: 'exact', head: true })
-    .not('url', 'is', null);
-
-  if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
-
-  const SR_PAGE = 1000;
-  const srPages = Math.ceil((srCount ?? 0) / SR_PAGE);
-  const srResults = await Promise.all(
-    Array.from({ length: srPages }, (_, i) =>
-      impacter
-        .from('student_responses')
-        .select('url')
-        .not('url', 'is', null)
-        .range(i * SR_PAGE, (i + 1) * SR_PAGE - 1)
-    )
-  );
-
+  // 2. Get existing URLs to skip already-imported rows.
+  //    Use cursor-based pagination (id > lastId) instead of OFFSET to avoid
+  //    statement timeouts — high-offset queries are O(offset) on large tables.
   const importedUuids = new Set<string>();
-  for (const { data, error } of srResults as { data: { url: string }[] | null; error: { message: string } | null }[]) {
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    for (const row of (data ?? [])) {
+  const SR_PAGE = 1000;
+  let lastId = 0;
+  while (true) {
+    const { data: urlPage, error: urlErr } = await impacter
+      .from('student_responses')
+      .select('id, url')
+      .not('url', 'is', null)
+      .gt('id', lastId)
+      .order('id', { ascending: true })
+      .limit(SR_PAGE);
+
+    if (urlErr) return NextResponse.json({ error: urlErr.message }, { status: 500 });
+
+    const rows = (urlPage ?? []) as { id: number; url: string }[];
+    for (const row of rows) {
       const uuid = extractUuid(row.url ?? '');
       if (uuid) importedUuids.add(uuid);
     }
+
+    if (rows.length < SR_PAGE) break;
+    lastId = rows[rows.length - 1].id;
   }
 
   // 3. Build rows to insert
