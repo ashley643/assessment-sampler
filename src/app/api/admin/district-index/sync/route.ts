@@ -11,8 +11,10 @@ const SYNC_CURSOR_KEY = '__sync_cursor__';
 export const NO_DISTRICT = '(No District)';
 
 // POST /api/admin/district-index/sync
-// Only scans student_responses rows newer than the last sync (cursor-based).
-// This makes repeated syncs fast regardless of table size.
+// Full cursor-based scan of student_responses every time.
+// Cursor-based (id > lastId ORDER BY id) is O(log n) per page — fast even
+// at 200k rows. We can't use an incremental cursor because UPDATE operations
+// don't change row IDs, so updated rows would be missed by a position cursor.
 export async function POST() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -20,16 +22,7 @@ export async function POST() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const joshDb = getImpacterClient() as any;
 
-  // ── Step 1: Read last synced ID from our cursor row ───────────────────────
-  const { data: cursorRow } = await ourDb
-    .from('district_school_index')
-    .select('school_name')
-    .eq('district_name', SYNC_CURSOR_KEY)
-    .maybeSingle();
-
-  const lastSyncedId: number = cursorRow ? parseInt(cursorRow.school_name, 10) || 0 : 0;
-
-  // ── Step 2: Load pairs we already know about ──────────────────────────────
+  // ── Step 1: Load pairs we already know about ──────────────────────────────
   const { data: existing, error: existErr } = await ourDb
     .from('district_school_index')
     .select('district_name, school_name')
@@ -44,10 +37,10 @@ export async function POST() {
     ((existing ?? []) as Pair[]).map(r => `${r.district_name}|||${r.school_name}`)
   );
 
-  // ── Step 3: Cursor-scan new rows from Josh's table ────────────────────────
+  // ── Step 2: Full cursor-based scan of student_responses ───────────────────
+  // Cursor-based (id > lastId) avoids the O(offset) slowdown of OFFSET queries.
   const newPairs: Pair[] = [];
-  let maxSeenId = lastSyncedId;
-  let cursorId = lastSyncedId;
+  let cursorId = 0;
   const PAGE = 1000;
 
   while (true) {
@@ -63,11 +56,9 @@ export async function POST() {
     const rows = (data ?? []) as { id: number; district_name: string | null; school_name: string | null }[];
 
     for (const r of rows) {
-      if (r.id > maxSeenId) maxSeenId = r.id;
-
       const districtName = r.district_name?.trim() || NO_DISTRICT;
       const schoolName   = r.school_name?.trim()   || null;
-      if (!schoolName) continue; // skip rows with no school either
+      if (!schoolName) continue;
 
       const key = `${districtName}|||${schoolName}`;
       if (!knownPairs.has(key)) {
@@ -80,7 +71,7 @@ export async function POST() {
     cursorId = rows[rows.length - 1].id;
   }
 
-  // ── Step 4: Insert new pairs ──────────────────────────────────────────────
+  // ── Step 3: Insert new pairs ──────────────────────────────────────────────
   let added = 0;
   if (newPairs.length > 0) {
     const CHUNK = 500;
@@ -90,23 +81,8 @@ export async function POST() {
         .upsert(newPairs.slice(i, i + CHUNK), { onConflict: 'district_name,school_name', ignoreDuplicates: true });
 
       if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
-      added += CHUNK;
     }
     added = newPairs.length;
-  }
-
-  // ── Step 5: Persist new cursor position ───────────────────────────────────
-  // We store it as district_name=SYNC_CURSOR_KEY, school_name='cursor'.
-  // The actual last_id is stored via an update since the row is stable.
-  if (maxSeenId > lastSyncedId) {
-    // Delete old cursor row and insert fresh one (avoids unique constraint issues)
-    await ourDb
-      .from('district_school_index')
-      .delete()
-      .eq('district_name', SYNC_CURSOR_KEY);
-    await ourDb
-      .from('district_school_index')
-      .insert({ district_name: SYNC_CURSOR_KEY, school_name: String(maxSeenId) });
   }
 
   const total = (existing?.length ?? 0) + added;
