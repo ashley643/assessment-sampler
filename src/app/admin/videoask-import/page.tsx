@@ -202,7 +202,7 @@ export default function VideoAskImportPage() {
     'id', 'form_id', 'node_id', 'node_title', 'node_text', 'media_type',
     'media_url', 'share_url', 'transcript', 'created_at', 'contact_email', 'form_share_id',
   ]);
-  const [importStatus, setImportStatus] = useState<{ total: number; imported: number } | null>(null);
+  const [totalSteps, setTotalSteps] = useState<number | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
   const [mappingTypes, setMappingTypes] = useState<Record<string, 'source' | 'static' | 'none'>>({});
@@ -247,7 +247,7 @@ export default function VideoAskImportPage() {
       // Set nodes + default roles (media nodes → response, others → skip)
       const fetchedNodes: NodeInfo[] = previewJson.nodes ?? [];
       setNodes(fetchedNodes);
-      setImportStatus({ total: previewJson.totalSteps ?? 0, imported: previewJson.importedSteps ?? 0 });
+      setTotalSteps(previewJson.totalSteps ?? 0);
 
       // Init mapping state
       const initTypes: Record<string, 'source' | 'static' | 'none'> = {};
@@ -387,10 +387,8 @@ export default function VideoAskImportPage() {
               {view === 'configure' && selectedForm && (
                 <>
                   {displayName(selectedForm)}
-                  {importStatus && !loadingPreview && (
-                    <span className="ml-2 text-xs text-gray-400">
-                      {importStatus.imported}/{importStatus.total} already imported
-                    </span>
+                  {totalSteps !== null && !loadingPreview && (
+                    <span className="ml-2 text-xs text-gray-400">{totalSteps} responses</span>
                   )}
                 </>
               )}
