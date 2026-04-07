@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react';
 
-// The student_responses columns we can populate, with friendly labels
 const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
   { col: 'district_name',     label: 'District Name' },
   { col: 'school_name',       label: 'School Name' },
@@ -30,7 +29,6 @@ const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
   { col: 'source_id',         label: 'Source ID' },
 ];
 
-// Smart default mappings: student_responses column → videoask.steps column
 const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
   answer:        'transcript',
   url:           'media_url',
@@ -46,6 +44,20 @@ type FormInfo = {
   totalSteps: number;
 };
 
+type NodeInfo = {
+  nodeId: string;
+  nodeTitle: string;
+  hasMedia: boolean;
+  sampleTranscript: string | null;
+  samplePollOption: string | null;
+  count: number;
+};
+
+type NodeRoleValue =
+  | { role: 'skip' }
+  | { role: 'response' }
+  | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' };
+
 type RunResult = {
   inserted?: number;
   skipped?: number;
@@ -55,13 +67,73 @@ type RunResult = {
   error?: string;
 };
 
-function Badge({ children, variant }: { children: React.ReactNode; variant: 'green' | 'yellow' | 'gray' }) {
-  const cls = {
-    green:  'bg-green-50 text-green-700 border border-green-200',
-    yellow: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
-    gray:   'bg-gray-100 text-gray-500 border border-gray-200',
-  }[variant];
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{children}</span>;
+// ── Small components ──────────────────────────────────────────────────────
+
+function RoleBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+        active
+          ? 'bg-blue-600 text-white border-blue-600'
+          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function NodeCard({
+  node,
+  role,
+  onRoleChange,
+}: {
+  node: NodeInfo;
+  role: NodeRoleValue;
+  onRoleChange: (r: NodeRoleValue) => void;
+}) {
+  const mediaIcon = node.hasMedia ? '🎥' : node.samplePollOption ? '☑️' : '📝';
+  const preview = node.sampleTranscript ?? node.samplePollOption ?? '';
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-3 bg-white space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="text-sm font-medium text-gray-900">{mediaIcon} {node.nodeTitle}</span>
+          <span className="ml-2 text-xs text-gray-400">{node.count} responses</span>
+          {preview && (
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{preview.slice(0, 120)}{preview.length > 120 ? '…' : ''}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <RoleBtn active={role.role === 'skip'} onClick={() => onRoleChange({ role: 'skip' })}>Skip</RoleBtn>
+        <RoleBtn active={role.role === 'response'} onClick={() => onRoleChange({ role: 'response' })}>Response</RoleBtn>
+        <RoleBtn active={role.role === 'metadata'} onClick={() => onRoleChange({ role: 'metadata', targetColumn: 'current_grade', sourceField: 'transcript' })}>Metadata →</RoleBtn>
+
+        {role.role === 'metadata' && (
+          <>
+            <select
+              value={role.targetColumn}
+              onChange={e => onRoleChange({ ...role, targetColumn: e.target.value })}
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              {SR_COLUMNS.map(c => <option key={c.col} value={c.col}>{c.label}</option>)}
+            </select>
+            <select
+              value={role.sourceField}
+              onChange={e => onRoleChange({ ...role, sourceField: e.target.value as 'transcript' | 'poll_option' })}
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              <option value="transcript">Transcript</option>
+              <option value="poll_option">Poll answer</option>
+            </select>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function MappingRow({
@@ -115,6 +187,8 @@ function MappingRow({
   );
 }
 
+// ── Main page ──────────────────────────────────────────────────────────────
+
 export default function VideoAskImportPage() {
   const [view, setView] = useState<'list' | 'configure' | 'result'>('list');
   const [forms, setForms] = useState<FormInfo[]>([]);
@@ -122,8 +196,12 @@ export default function VideoAskImportPage() {
   const [formsError, setFormsError] = useState('');
 
   const [selectedForm, setSelectedForm] = useState<FormInfo | null>(null);
-  const [sourceColumns, setSourceColumns] = useState<string[]>([]);
-  const [sampleRows, setSampleRows] = useState<Record<string, unknown>[]>([]);
+  const [nodes, setNodes] = useState<NodeInfo[]>([]);
+  const [nodeRoles, setNodeRoles] = useState<Record<string, NodeRoleValue>>({});
+  const [sourceColumns] = useState<string[]>([
+    'id', 'form_id', 'node_id', 'node_title', 'node_text', 'media_type',
+    'media_url', 'share_url', 'transcript', 'created_at', 'contact_email', 'form_share_id',
+  ]);
   const [importStatus, setImportStatus] = useState<{ total: number; imported: number } | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
@@ -166,27 +244,29 @@ export default function VideoAskImportPage() {
       ]);
       const [previewJson, configJson] = await Promise.all([previewRes.json(), configRes.json()]);
 
-      const cols: string[] = previewJson.columns ?? [];
-      setSourceColumns(cols);
-      setSampleRows(previewJson.rows ?? []);
+      // Set nodes + default roles (media nodes → response, others → skip)
+      const fetchedNodes: NodeInfo[] = previewJson.nodes ?? [];
+      setNodes(fetchedNodes);
       setImportStatus({ total: previewJson.totalSteps ?? 0, imported: previewJson.importedSteps ?? 0 });
 
+      // Init mapping state
       const initTypes: Record<string, 'source' | 'static' | 'none'> = {};
       const initSource: Record<string, string> = {};
       const initStatic: Record<string, string> = {};
-
       for (const { col } of SR_COLUMNS) {
         initTypes[col] = 'none';
         initSource[col] = '';
         initStatic[col] = '';
       }
-
-      // Apply smart defaults
       for (const [srCol, stepCol] of Object.entries(DEFAULT_COLUMN_MAPPINGS)) {
-        if (cols.includes(stepCol)) {
-          initTypes[srCol] = 'source';
-          initSource[srCol] = stepCol;
-        }
+        initTypes[srCol] = 'source';
+        initSource[srCol] = stepCol;
+      }
+
+      // Default node roles: media → response, else → skip
+      const initRoles: Record<string, NodeRoleValue> = {};
+      for (const n of fetchedNodes) {
+        initRoles[n.nodeId] = n.hasMedia ? { role: 'response' } : { role: 'skip' };
       }
 
       // Overlay saved config
@@ -198,11 +278,17 @@ export default function VideoAskImportPage() {
         for (const [srCol, val] of Object.entries(saved.static_values ?? {}) as [string, string][]) {
           if (val) { initTypes[srCol] = 'static'; initStatic[srCol] = val; }
         }
+        if (saved.nodeRoles) {
+          for (const [nodeId, role] of Object.entries(saved.nodeRoles) as [string, NodeRoleValue][]) {
+            initRoles[nodeId] = role;
+          }
+        }
       }
 
       setMappingTypes(initTypes);
       setSourceCols(initSource);
       setStaticVals(initStatic);
+      setNodeRoles(initRoles);
     } finally {
       setLoadingPreview(false);
     }
@@ -227,7 +313,7 @@ export default function VideoAskImportPage() {
       const res = await fetch('/api/admin/videoask-import/configs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues }),
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles }),
       });
       const json = await res.json();
       setSaveMsg(json.error ? `Error: ${json.error}` : 'Saved.');
@@ -245,7 +331,7 @@ export default function VideoAskImportPage() {
       const res = await fetch('/api/admin/videoask-import/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, dryRun: true }),
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles, dryRun: true }),
       });
       setDryResult(await res.json());
     } finally {
@@ -262,7 +348,7 @@ export default function VideoAskImportPage() {
       const res = await fetch('/api/admin/videoask-import/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues }),
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles }),
       });
       const json = await res.json();
       setRunResult(json);
@@ -276,16 +362,18 @@ export default function VideoAskImportPage() {
     return f.formName ?? (f.formId.slice(0, 8) + '…');
   }
 
+  const responseNodeCount = Object.values(nodeRoles).filter(r => r.role === 'response').length;
+  const metadataNodeCount = Object.values(nodeRoles).filter(r => r.role === 'metadata').length;
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-200 bg-white">
+      <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
           {view !== 'list' && (
             <button
               onClick={() => { setView('list'); setSelectedForm(null); }}
               className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Back"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
@@ -312,10 +400,11 @@ export default function VideoAskImportPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
+
         {/* ── LIST VIEW ── */}
         {view === 'list' && (
-          <div className="p-6 max-w-2xl">
+          <div className="h-full overflow-y-auto p-6 max-w-2xl">
             <button
               onClick={discoverForms}
               disabled={loadingForms}
@@ -369,72 +458,62 @@ export default function VideoAskImportPage() {
         {/* ── CONFIGURE VIEW ── */}
         {view === 'configure' && selectedForm && (
           <div className="flex h-full overflow-hidden">
-            {/* Left: sample data */}
-            <div className="w-1/2 border-r border-gray-200 overflow-auto p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Sample rows from videoask.steps
-              </p>
-              {loadingPreview ? (
-                <p className="text-sm text-gray-400">Loading…</p>
-              ) : sampleRows.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="text-xs border-collapse min-w-full">
-                    <thead>
-                      <tr>
-                        {sourceColumns.map(c => (
-                          <th key={c} className="px-2 py-1.5 border border-gray-200 bg-gray-50 text-left font-medium text-gray-600 whitespace-nowrap">{c}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sampleRows.map((row, i) => (
-                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          {sourceColumns.map(c => {
-                            const val = String(row[c] ?? '');
-                            return (
-                              <td key={c} className="px-2 py-1.5 border border-gray-200 text-gray-700 max-w-[200px]">
-                                <span className="block truncate" title={val}>{val}</span>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">No rows found for this form.</p>
-              )}
+
+            {/* Left: node roles */}
+            <div className="w-1/2 border-r border-gray-200 flex flex-col overflow-hidden">
+              <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-gray-100 bg-gray-50">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Questions in this form
+                </p>
+                {!loadingPreview && nodes.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {responseNodeCount} response node{responseNodeCount !== 1 ? 's' : ''}
+                    {metadataNodeCount > 0 && ` · ${metadataNodeCount} metadata node${metadataNodeCount !== 1 ? 's' : ''}`}
+                  </p>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {loadingPreview ? (
+                  <p className="text-sm text-gray-400 p-2">Loading…</p>
+                ) : nodes.length > 0 ? nodes.map(node => (
+                  <NodeCard
+                    key={node.nodeId}
+                    node={node}
+                    role={nodeRoles[node.nodeId] ?? { role: 'skip' }}
+                    onRoleChange={r => setNodeRoles(prev => ({ ...prev, [node.nodeId]: r }))}
+                  />
+                )) : (
+                  <p className="text-sm text-gray-400 p-2">No nodes found.</p>
+                )}
+              </div>
             </div>
 
-            {/* Right: mapping UI */}
-            <div className="w-1/2 overflow-y-auto p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Column Mappings → student_responses
-              </p>
+            {/* Right: column mappings + actions */}
+            <div className="w-1/2 flex flex-col overflow-hidden">
+              <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-gray-100 bg-gray-50">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Column mappings
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">Applied to Response nodes</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {SR_COLUMNS.map(({ col, label, hint }) => (
+                  <MappingRow
+                    key={col}
+                    srCol={col} label={label} hint={hint}
+                    sourceColumns={sourceColumns}
+                    mappingType={mappingTypes[col] ?? 'none'}
+                    sourceCol={sourceCols[col] ?? ''}
+                    staticVal={staticVals[col] ?? ''}
+                    onMappingTypeChange={t => setMappingTypes(prev => ({ ...prev, [col]: t }))}
+                    onSourceColChange={v => setSourceCols(prev => ({ ...prev, [col]: v }))}
+                    onStaticValChange={v => setStaticVals(prev => ({ ...prev, [col]: v }))}
+                  />
+                ))}
+              </div>
 
-              {loadingPreview ? (
-                <p className="text-sm text-gray-400">Loading…</p>
-              ) : (
-                <div className="mb-6">
-                  {SR_COLUMNS.map(({ col, label, hint }) => (
-                    <MappingRow
-                      key={col}
-                      srCol={col} label={label} hint={hint}
-                      sourceColumns={sourceColumns}
-                      mappingType={mappingTypes[col] ?? 'none'}
-                      sourceCol={sourceCols[col] ?? ''}
-                      staticVal={staticVals[col] ?? ''}
-                      onMappingTypeChange={t => setMappingTypes(prev => ({ ...prev, [col]: t }))}
-                      onSourceColChange={v => setSourceCols(prev => ({ ...prev, [col]: v }))}
-                      onStaticValChange={v => setStaticVals(prev => ({ ...prev, [col]: v }))}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-3 pb-1 space-y-2">
+              {/* Actions bar */}
+              <div className="flex-shrink-0 border-t border-gray-200 px-4 pt-3 pb-4 bg-white space-y-2">
                 {saveMsg && (
                   <p className={`text-xs ${saveMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>{saveMsg}</p>
                 )}
@@ -470,7 +549,7 @@ export default function VideoAskImportPage() {
                         {dryResult.sample && dryResult.sample.length > 0 && (
                           <div>
                             <p className="text-xs font-medium text-gray-500 mb-1">Sample output row:</p>
-                            <pre className="text-xs text-gray-600 bg-white border border-gray-200 rounded p-2 overflow-x-auto">
+                            <pre className="text-xs text-gray-600 bg-white border border-gray-200 rounded p-2 overflow-x-auto max-h-40">
                               {JSON.stringify(dryResult.sample[0], null, 2)}
                             </pre>
                           </div>
@@ -499,7 +578,7 @@ export default function VideoAskImportPage() {
 
         {/* ── RESULT VIEW ── */}
         {view === 'result' && runResult && (
-          <div className="p-6 max-w-md">
+          <div className="h-full overflow-y-auto p-6 max-w-md">
             <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-4">
               <p className="text-green-800 font-medium">Import complete!</p>
               <p className="text-sm text-green-700 mt-1">
@@ -521,7 +600,7 @@ export default function VideoAskImportPage() {
                   onClick={() => loadFormConfig(selectedForm)}
                   className="px-4 py-2 border border-blue-300 text-sm text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
                 >
-                  Re-configure mapping
+                  Re-configure
                 </button>
               )}
             </div>

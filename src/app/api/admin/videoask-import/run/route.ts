@@ -17,18 +17,27 @@ const SR_COLUMNS = new Set([
   'answer_date', 'source_id',
 ]);
 
+type NodeRole =
+  | { role: 'response' }
+  | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' }
+  | { role: 'skip' };
+
+type NodeRoles = Record<string, NodeRole>; // keyed by node_id
+
 // POST /api/admin/videoask-import/run
 // Applies column mappings + static values to videoask.steps rows
 // and inserts them into student_responses, skipping already-imported ones.
 // Pass dryRun: true to preview without writing.
+// Pass nodeRoles to enable grouped import with metadata extraction.
 export async function POST(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { formId, staticValues, columnMappings, dryRun } = await req.json() as {
+  const { formId, staticValues, columnMappings, dryRun, nodeRoles } = await req.json() as {
     formId: string;
     staticValues: Record<string, string>;
     columnMappings: Record<string, string>;
     dryRun?: boolean;
+    nodeRoles?: NodeRoles;
   };
 
   if (!formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
@@ -65,42 +74,133 @@ export async function POST(req: Request) {
   const toInsert: Record<string, unknown>[] = [];
   let skipped = 0;
 
-  for (const step of steps) {
-    // Skip if already imported
-    const mediaUrl = String(step.media_url ?? '');
-    const uuid = extractUuid(mediaUrl);
-    if (uuid && importedUuids.has(uuid)) {
-      skipped++;
-      continue;
+  const hasNodeRoles = nodeRoles && Object.keys(nodeRoles).length > 0;
+
+  if (hasNodeRoles) {
+    // ── NODE-ROLE MODE: group by interaction_id ──
+
+    // Group steps by interaction_id
+    const byInteraction = new Map<string, Record<string, unknown>[]>();
+    for (const step of steps) {
+      const interactionId = String(step.interaction_id ?? '');
+      if (!byInteraction.has(interactionId)) byInteraction.set(interactionId, []);
+      byInteraction.get(interactionId)!.push(step);
     }
 
-    const row: Record<string, unknown> = {};
+    for (const [, interactionSteps] of byInteraction) {
+      // a. Collect metadata values for this interaction
+      const metadataValues: Record<string, unknown> = {};
+      for (const step of interactionSteps) {
+        const nodeId = String(step.node_id ?? '');
+        const nodeRole = nodeRoles[nodeId];
+        if (!nodeRole || nodeRole.role !== 'metadata') continue;
+        const { targetColumn, sourceField } = nodeRole;
+        if (!SR_COLUMNS.has(targetColumn)) continue;
 
-    // Apply static values first
-    for (const [col, val] of Object.entries(staticValues ?? {})) {
-      if (SR_COLUMNS.has(col)) row[col] = val;
-    }
-
-    // Apply column mappings: srColumn → videoask step column (or raw sub-field)
-    for (const [srCol, stepCol] of Object.entries(columnMappings ?? {})) {
-      if (!SR_COLUMNS.has(srCol) || !stepCol) continue;
-
-      // Support "raw.field_name" to pull from the raw JSONB
-      if (stepCol.startsWith('raw.')) {
-        const rawKey = stepCol.slice(4);
-        const raw = (step.raw ?? {}) as Record<string, unknown>;
-        if (raw[rawKey] !== undefined && raw[rawKey] !== null) {
-          row[srCol] = raw[rawKey];
+        let value: unknown = null;
+        if (sourceField === 'transcript') {
+          value = step.transcript ?? null;
+        } else if (sourceField === 'poll_option') {
+          const raw = (step.raw ?? {}) as Record<string, unknown>;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pollOptions = raw.poll_options as any[] | undefined;
+          value = pollOptions?.[0]?.label ?? null;
         }
-      } else if (step[stepCol] !== undefined && step[stepCol] !== null) {
-        row[srCol] = step[stepCol];
+
+        if (value != null) {
+          metadataValues[targetColumn] = value;
+        }
+      }
+
+      // b. Build a row for each response-role step in this interaction
+      for (const step of interactionSteps) {
+        const nodeId = String(step.node_id ?? '');
+        const nodeRole = nodeRoles[nodeId];
+        if (!nodeRole || nodeRole.role !== 'response') continue;
+
+        // UUID dedup check
+        const mediaUrl = String(step.media_url ?? '');
+        const uuid = extractUuid(mediaUrl);
+        if (uuid && importedUuids.has(uuid)) {
+          skipped++;
+          continue;
+        }
+
+        const row: Record<string, unknown> = {};
+
+        // Apply static values first
+        for (const [col, val] of Object.entries(staticValues ?? {})) {
+          if (SR_COLUMNS.has(col)) row[col] = val;
+        }
+
+        // Apply column mappings
+        for (const [srCol, stepCol] of Object.entries(columnMappings ?? {})) {
+          if (!SR_COLUMNS.has(srCol) || !stepCol) continue;
+          if (stepCol.startsWith('raw.')) {
+            const rawKey = stepCol.slice(4);
+            const raw = (step.raw ?? {}) as Record<string, unknown>;
+            if (raw[rawKey] !== undefined && raw[rawKey] !== null) {
+              row[srCol] = raw[rawKey];
+            }
+          } else if (step[stepCol] !== undefined && step[stepCol] !== null) {
+            row[srCol] = step[stepCol];
+          }
+        }
+
+        // Always ensure url is populated from media_url
+        if (!row.url && mediaUrl) row.url = mediaUrl;
+
+        // Overlay interaction metadata (metadata wins over static/column values
+        // only for columns not already set by mappings — use Object.assign order
+        // so metadata fills in any gaps while explicit mappings take precedence)
+        for (const [col, val] of Object.entries(metadataValues)) {
+          // Only set if the column hasn't been explicitly set by static/column mappings
+          if (row[col] === undefined || row[col] === null || row[col] === '') {
+            row[col] = val;
+          }
+        }
+
+        toInsert.push(row);
       }
     }
+  } else {
+    // ── FLAT MODE: one row per step (original logic) ──
+    for (const step of steps) {
+      const mediaUrl = String(step.media_url ?? '');
+      const uuid = extractUuid(mediaUrl);
+      if (uuid && importedUuids.has(uuid)) {
+        skipped++;
+        continue;
+      }
 
-    // Always ensure url is populated from media_url
-    if (!row.url && mediaUrl) row.url = mediaUrl;
+      const row: Record<string, unknown> = {};
 
-    toInsert.push(row);
+      // Apply static values first
+      for (const [col, val] of Object.entries(staticValues ?? {})) {
+        if (SR_COLUMNS.has(col)) row[col] = val;
+      }
+
+      // Apply column mappings: srColumn → videoask step column (or raw sub-field)
+      for (const [srCol, stepCol] of Object.entries(columnMappings ?? {})) {
+        if (!SR_COLUMNS.has(srCol) || !stepCol) continue;
+
+        // Support "raw.field_name" to pull from the raw JSONB
+        if (stepCol.startsWith('raw.')) {
+          const rawKey = stepCol.slice(4);
+          const raw = (step.raw ?? {}) as Record<string, unknown>;
+          if (raw[rawKey] !== undefined && raw[rawKey] !== null) {
+            row[srCol] = raw[rawKey];
+          }
+        } else if (step[stepCol] !== undefined && step[stepCol] !== null) {
+          row[srCol] = step[stepCol];
+        }
+      }
+
+      // Always ensure url is populated from media_url
+      if (!row.url && mediaUrl) row.url = mediaUrl;
+
+      toInsert.push(row);
+    }
   }
 
   if (dryRun) {

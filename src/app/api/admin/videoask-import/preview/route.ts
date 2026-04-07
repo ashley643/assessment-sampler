@@ -7,9 +7,19 @@ function extractUuid(url: string): string | null {
   return m ? m[1] : null;
 }
 
+export type NodeInfo = {
+  nodeId: string;
+  nodeTitle: string;
+  hasMedia: boolean;
+  sampleTranscript: string | null;
+  samplePollOption: string | null;
+  count: number;
+};
+
 // GET /api/admin/videoask-import/preview?formId=...
 // Returns sample rows + columns from videoask.steps for a given form_id,
-// plus the import status (how many steps are already in student_responses).
+// plus the import status (how many steps are already in student_responses),
+// plus a nodes array listing every distinct node in the form.
 export async function GET(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -20,29 +30,55 @@ export async function GET(req: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
 
-  // Get all media_urls for this form (to check import status) + 5 sample rows
-  const [allUrlsRes, sampleRes] = await Promise.all([
-    impacter
-      .schema('videoask')
-      .from('steps')
-      .select('media_url')
-      .eq('form_id', formId),
-    impacter
-      .schema('videoask')
-      .from('steps')
-      .select('id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
-      .eq('form_id', formId)
-      .limit(5),
-  ]);
+  // Fetch all steps for this form (needed for nodes list + import status)
+  const allStepsRes = await impacter
+    .schema('videoask')
+    .from('steps')
+    .select('id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
+    .eq('form_id', formId);
 
-  if (allUrlsRes.error) return NextResponse.json({ error: allUrlsRes.error.message }, { status: 500 });
-  if (sampleRes.error) return NextResponse.json({ error: sampleRes.error.message }, { status: 500 });
+  if (allStepsRes.error) return NextResponse.json({ error: allStepsRes.error.message }, { status: 500 });
 
-  const allStepUrls = (allUrlsRes.data ?? []) as { media_url: string | null }[];
-  const uuids = allStepUrls.map(r => extractUuid(r.media_url ?? '')).filter(Boolean) as string[];
+  const allSteps = (allStepsRes.data ?? []) as Record<string, unknown>[];
+
+  // Build the nodes list from all steps
+  const nodeMap = new Map<string, NodeInfo>();
+  for (const step of allSteps) {
+    const nodeId = String(step.node_id ?? '');
+    if (!nodeId) continue;
+    const existing = nodeMap.get(nodeId);
+    const raw = (step.raw ?? {}) as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pollOptions = raw.poll_options as any[] | undefined;
+    const pollLabel = pollOptions?.[0]?.label ?? null;
+
+    if (!existing) {
+      nodeMap.set(nodeId, {
+        nodeId,
+        nodeTitle: String(step.node_title ?? nodeId),
+        hasMedia: step.media_url != null,
+        sampleTranscript: step.transcript != null ? String(step.transcript) : null,
+        samplePollOption: pollLabel ? String(pollLabel) : null,
+        count: 1,
+      });
+    } else {
+      existing.count++;
+      if (!existing.hasMedia && step.media_url != null) existing.hasMedia = true;
+      if (existing.sampleTranscript === null && step.transcript != null) {
+        existing.sampleTranscript = String(step.transcript);
+      }
+      if (existing.samplePollOption === null && pollLabel) {
+        existing.samplePollOption = String(pollLabel);
+      }
+    }
+  }
+  const nodes = Array.from(nodeMap.values());
 
   // Check which of this form's UUIDs are already in student_responses
-  // Use ilike OR conditions — one batch query
+  const uuids = allSteps
+    .map(r => extractUuid(String(r.media_url ?? '')))
+    .filter(Boolean) as string[];
+
   let importedCount = 0;
   if (uuids.length > 0) {
     const BATCH = 50;
@@ -56,11 +92,12 @@ export async function GET(req: Request) {
           .or(orCond);
       })
     );
-    importedCount = batches.reduce((sum, r) => sum + (r.count ?? 0), 0);
+    importedCount = batches.reduce((sum: number, r: { count?: number }) => sum + (r.count ?? 0), 0);
   }
 
-  const rows = (sampleRes.data ?? []) as Record<string, unknown>[];
-  const flatRows = rows.map(r => {
+  // Return only 3 sample rows for display
+  const sampleSteps = allSteps.slice(0, 3);
+  const flatRows = sampleSteps.map(r => {
     const raw = (r.raw ?? {}) as Record<string, unknown>;
     return {
       id:            r.id,
@@ -82,7 +119,8 @@ export async function GET(req: Request) {
   return NextResponse.json({
     rows: flatRows,
     columns,
-    totalSteps: allStepUrls.length,
+    totalSteps: allSteps.length,
     importedSteps: importedCount,
+    nodes,
   });
 }
