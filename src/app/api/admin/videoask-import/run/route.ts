@@ -15,10 +15,69 @@ const SR_COLUMNS = new Set([
   'response_type', 'question', 'answer', 'harvard_attribute',
   'harvard_score', 'casel_attribute', 'casel_score', 'url',
   'answer_date', 'source_id',
+  'first_name', 'last_name', 'student_email',
 ]);
 
+// ── Deterministic fun student name generation ──────────────────────────────
+
+const MALE_FIRST_NAMES = [
+  'Carlos', 'Marcus', 'Jaylen', 'Theo', 'Amir', 'Eli', 'Noah', 'Zion',
+  'Kofi', 'Miles', 'Leo', 'Darius', 'Andre', 'Kai', 'Omar', 'Micah',
+  'Rohan', 'Dante', 'Felix', 'Nico',
+];
+const FEMALE_FIRST_NAMES = [
+  'Mila', 'Sofia', 'Amara', 'Luna', 'Jade', 'Zara', 'Maya', 'Nia',
+  'Aria', 'Iris', 'Vera', 'Rosa', 'Nova', 'Eden', 'Lyra', 'Celeste',
+  'Imani', 'Adaeze', 'Paloma', 'Cleo',
+];
+const NEUTRAL_FIRST_NAMES = [
+  'Jordan', 'Sage', 'River', 'Phoenix', 'Indigo', 'Rowan', 'Quinn', 'Alex',
+  'Blake', 'Riley', 'Avery', 'Dakota', 'Finley', 'Morgan', 'Reese', 'Skylar',
+  'Taylor', 'Cameron', 'Jamie', 'Casey',
+];
+const FUN_LAST_NAMES = [
+  'Marvelous', 'Brilliant', 'Radiant', 'Stellar', 'Champion', 'Dazzling',
+  'Fearless', 'Glorious', 'Heroic', 'Inspired', 'Joyful', 'Luminous',
+  'Mighty', 'Notable', 'Outstanding', 'Profound', 'Remarkable', 'Splendid',
+  'Triumphant', 'Valiant', 'Wonderful', 'Excellent', 'Awesome', 'Bold',
+  'Cosmic', 'Dynamic', 'Vibrant', 'Radiant', 'Spirited', 'Unstoppable',
+];
+
+function djb2Hash(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash |= 0; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+function generateStudentName(interactionId: string, gender?: string | null): {
+  firstName: string; lastName: string; email: string;
+} {
+  const h1 = djb2Hash(interactionId);
+  const h2 = djb2Hash(interactionId + '_last');
+
+  let firstNames: string[];
+  const g = (gender ?? '').toLowerCase();
+  if (g === 'male' || g === 'm' || g === 'boy') {
+    firstNames = MALE_FIRST_NAMES;
+  } else if (g === 'female' || g === 'f' || g === 'girl' || g === 'woman' || g === 'woman') {
+    firstNames = FEMALE_FIRST_NAMES;
+  } else {
+    firstNames = NEUTRAL_FIRST_NAMES;
+  }
+
+  const firstName = firstNames[h1 % firstNames.length];
+  const lastName = FUN_LAST_NAMES[h2 % FUN_LAST_NAMES.length];
+  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@student.impacter.com`;
+  return { firstName, lastName, email };
+}
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
 type NodeRole =
-  | { role: 'response' }
+  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string }
   | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' }
   | { role: 'skip' };
 
@@ -87,7 +146,7 @@ export async function POST(req: Request) {
       byInteraction.get(interactionId)!.push(step);
     }
 
-    for (const [, interactionSteps] of byInteraction) {
+    for (const [interactionId, interactionSteps] of byInteraction) {
       // a. Collect metadata values for this interaction
       const metadataValues: Record<string, unknown> = {};
       for (const step of interactionSteps) {
@@ -150,14 +209,28 @@ export async function POST(req: Request) {
         // Always ensure url is populated from media_url
         if (!row.url && mediaUrl) row.url = mediaUrl;
 
-        // Overlay interaction metadata (metadata wins over static/column values
-        // only for columns not already set by mappings — use Object.assign order
-        // so metadata fills in any gaps while explicit mappings take precedence)
+        // Overlay interaction metadata (only fills gaps — explicit mappings take precedence)
         for (const [col, val] of Object.entries(metadataValues)) {
-          // Only set if the column hasn't been explicitly set by static/column mappings
           if (row[col] === undefined || row[col] === null || row[col] === '') {
             row[col] = val;
           }
+        }
+
+        // Apply per-node Harvard/CASEL attributes (only if not already set by mappings)
+        if (nodeRole.harvardAttribute && !row.harvard_attribute) {
+          row.harvard_attribute = nodeRole.harvardAttribute;
+        }
+        if (nodeRole.caselAttribute && !row.casel_attribute) {
+          row.casel_attribute = nodeRole.caselAttribute;
+        }
+
+        // Auto-generate fun anonymized student name per interaction (if not already mapped)
+        if (!row.first_name && !row.last_name && !row.student_email) {
+          const gender = typeof metadataValues.gender === 'string' ? metadataValues.gender : null;
+          const { firstName, lastName, email } = generateStudentName(interactionId, gender);
+          row.first_name = firstName;
+          row.last_name = lastName;
+          row.student_email = email;
         }
 
         toInsert.push(row);
@@ -198,6 +271,15 @@ export async function POST(req: Request) {
 
       // Always ensure url is populated from media_url
       if (!row.url && mediaUrl) row.url = mediaUrl;
+
+      // Auto-generate fun name per interaction_id in flat mode too
+      if (!row.first_name && !row.last_name && !row.student_email) {
+        const interactionId = String(step.interaction_id ?? step.id ?? '');
+        const { firstName, lastName, email } = generateStudentName(interactionId, null);
+        row.first_name = firstName;
+        row.last_name = lastName;
+        row.student_email = email;
+      }
 
       toInsert.push(row);
     }
