@@ -23,23 +23,35 @@ export async function GET(req: Request) {
   const db = getImpacterClient() as unknown as DB;
 
   // ── SIDEBAR mode ──────────────────────────────────────────────────────────
-  // Builds district → school tree from rows that have a media URL (video + audio).
+  // Paginates through student_responses ordered by district/school to build
+  // the full district → school tree regardless of PostgREST row limits.
   if (mode === 'sidebar') {
-    const { data, error } = await db
-      .from('student_responses')
-      .select('district_name, school_name')
-      .limit(50000);
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
     type Row = { district_name: string | null; school_name: string | null };
-    const rows = (data ?? []) as Row[];
-
     const districtMap: Record<string, Set<string>> = {};
-    for (const r of rows) {
-      const d = r.district_name ?? 'Unknown District';
-      if (!districtMap[d]) districtMap[d] = new Set();
-      if (r.school_name) districtMap[d].add(r.school_name);
+
+    const PAGE = 1000;
+    let from = 0;
+    let keepGoing = true;
+
+    while (keepGoing) {
+      const { data, error } = await db
+        .from('student_responses')
+        .select('district_name, school_name')
+        .order('district_name', { ascending: true })
+        .order('school_name',   { ascending: true })
+        .range(from, from + PAGE - 1);
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      const rows = (data ?? []) as Row[];
+      for (const r of rows) {
+        const d = r.district_name ?? 'Unknown District';
+        if (!districtMap[d]) districtMap[d] = new Set();
+        if (r.school_name) districtMap[d].add(r.school_name);
+      }
+
+      keepGoing = rows.length === PAGE && from < 200000;
+      from += PAGE;
     }
 
     const districts = Object.entries(districtMap)

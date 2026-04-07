@@ -130,7 +130,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </button>
           <span className="text-sm font-semibold text-gray-900">Impacter Pathway Admin</span>
         </div>
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8">{children}</main>
       </div>
     </div>
   );
