@@ -190,6 +190,10 @@ function MediaCard({ row }: { row: SRRow }) {
 export default function DistrictFinderPage() {
   const [districts, setDistricts]           = useState<District[]>([]);
   const [sidebarLoading, setSidebarLoading] = useState(true);
+  const [needsSync, setNeedsSync]           = useState(false);
+  const [notSetUp, setNotSetUp]             = useState(false);
+  const [syncing, setSyncing]               = useState(false);
+  const [syncResult, setSyncResult]         = useState<{ added: number; total: number } | null>(null);
   const [openDistricts, setOpenDistricts]   = useState<Set<string>>(new Set());
 
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -224,12 +228,35 @@ export default function DistrictFinderPage() {
   const [fetchError, setFetchError]       = useState('');
   const [page, setPage]                   = useState(1);
 
-  useEffect(() => {
-    fetch('/api/admin/district-finder?mode=sidebar')
+  function loadSidebar() {
+    setSidebarLoading(true);
+    fetch('/api/admin/district-index')
       .then(r => r.json())
-      .then(d => { setDistricts(d.districts ?? []); setSidebarLoading(false); })
+      .then(d => {
+        setDistricts(d.districts ?? []);
+        setNeedsSync(d.needsSync ?? false);
+        setNotSetUp(d.notSetUp ?? false);
+        setSidebarLoading(false);
+      })
       .catch(() => setSidebarLoading(false));
-  }, []);
+  }
+
+  useEffect(() => { loadSidebar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function runSync() {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res  = await fetch('/api/admin/district-index/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.error) { alert(`Sync error: ${data.error}`); }
+      else {
+        setSyncResult({ added: data.added, total: data.total });
+        loadSidebar();  // reload sidebar with new data
+      }
+    } catch (e) { alert(`Sync failed: ${e}`); }
+    setSyncing(false);
+  }
 
   const fetchRows = useCallback(async (pg: number, replace: boolean) => {
     if (!selectedDistrict) return;
@@ -429,8 +456,13 @@ export default function DistrictFinderPage() {
           <div className="flex-1 overflow-y-auto">
             {sidebarLoading ? (
               <p className="px-4 py-4 text-xs text-gray-400">Loading…</p>
-            ) : districts.length === 0 ? (
-              <p className="px-4 py-4 text-xs text-gray-400">No districts found.</p>
+            ) : notSetUp ? (
+              <div className="px-4 py-4 space-y-2">
+                <p className="text-xs text-amber-700 font-medium">Table not set up yet.</p>
+                <p className="text-xs text-gray-500">Run the SQL in <code className="bg-gray-100 px-1 rounded">supabase/migrations/20260407_district_school_index.sql</code> in your Supabase SQL editor, then sync.</p>
+              </div>
+            ) : needsSync ? (
+              <p className="px-4 py-4 text-xs text-gray-400">No districts yet — sync to populate.</p>
             ) : districts.map(d => {
               const isDistrictSel = selectedDistrict === d.name && !selectedSchool;
               const isOpen = openDistricts.has(d.name);
@@ -464,6 +496,26 @@ export default function DistrictFinderPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Sync button at sidebar bottom */}
+          <div className="flex-shrink-0 border-t border-gray-100 p-3 space-y-2">
+            {syncResult && (
+              <p className="text-xs text-green-600 font-medium">
+                {syncResult.added > 0 ? `Added ${syncResult.added} new entries (${syncResult.total} total)` : 'Already up to date'}
+              </p>
+            )}
+            <button
+              onClick={runSync}
+              disabled={syncing || notSetUp}
+              className="w-full text-xs px-3 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {syncing ? (
+                <><div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" /> Scanning…</>
+              ) : (
+                'Find new districts & schools'
+              )}
+            </button>
           </div>
         </aside>
 
