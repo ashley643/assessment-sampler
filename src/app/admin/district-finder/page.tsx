@@ -26,6 +26,7 @@ interface SRRow {
   gender: string | null;
   session_name: string | null;
   course_id: string | null;
+  response_type: string | null;
   question_num: string | null;
   question: string | null;
   answer: string | null;
@@ -36,14 +37,17 @@ interface SRRow {
   casel_score: number | null;
   casel_impacter_score: number | null;
   url: string;
+  shareUrl: string | null;
   answer_date: string | null;
 }
 
-// ── Video card ─────────────────────────────────────────────────────────────
-function VideoCard({ row }: { row: SRRow }) {
+// ── Media card ─────────────────────────────────────────────────────────────
+function MediaCard({ row }: { row: SRRow }) {
   const [expanded, setExpanded] = useState(false);
   const transcript = (row.answer ?? '').replace(/^"|"$/g, '').trim();
   const isLong = transcript.length > 300;
+  const isAudio = row.response_type === 'audio' ||
+    /\.(mp3|ogg|m4a|aac)(\?|$)/i.test(row.url);
 
   function attrLabel(s: string) {
     return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -53,7 +57,16 @@ function VideoCard({ row }: { row: SRRow }) {
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-4 pt-3 pb-2">
-        <p className="text-xs font-semibold text-blue-700 leading-snug">{row.question ?? 'Video response'}</p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-xs font-semibold text-blue-700 leading-snug flex-1">
+            {row.question ?? (isAudio ? 'Audio response' : 'Video response')}
+          </p>
+          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border font-medium ${
+            isAudio ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+          }`}>
+            {isAudio ? 'Audio' : 'Video'}
+          </span>
+        </div>
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
           {row.current_grade != null && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-medium">
@@ -68,27 +81,42 @@ function VideoCard({ row }: { row: SRRow }) {
           {row.harvard_attribute && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
               {attrLabel(row.harvard_attribute)}
-              {row.harvard_score != null ? ` ${row.harvard_score}` : ''}
+              {row.harvard_score != null ? ` · ${row.harvard_score}` : ''}
             </span>
           )}
           {row.casel_attribute && row.casel_attribute !== row.harvard_attribute && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
               {attrLabel(row.casel_attribute)}
-              {row.casel_score != null ? ` ${row.casel_score}` : ''}
+              {row.casel_score != null ? ` · ${row.casel_score}` : ''}
             </span>
           )}
           <span className="ml-auto text-xs text-gray-400">{row.answer_date ?? ''}</span>
         </div>
       </div>
 
-      {/* Video player */}
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <video
-        controls
-        preload="none"
-        src={row.url}
-        className="w-full aspect-video bg-black"
-      />
+      {/* Player — prefer share_url (iframe) for video; fall back to direct URL */}
+      {row.shareUrl && !isAudio ? (
+        <div className="px-4 pb-1">
+          <iframe
+            src={row.shareUrl}
+            allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *"
+            className="w-full aspect-video rounded-lg border border-gray-100"
+            style={{ border: 'none' }}
+            loading="lazy"
+            title={row.question ?? 'Video response'}
+          />
+        </div>
+      ) : isAudio ? (
+        <div className="px-4 pb-1">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio controls preload="none" src={row.shareUrl ?? row.url} className="w-full" />
+        </div>
+      ) : (
+        <div className="px-4 pb-1">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video controls preload="none" src={row.url} className="w-full aspect-video bg-black rounded-lg" />
+        </div>
+      )}
 
       {/* Transcript */}
       <div className="px-4 py-3">
@@ -104,9 +132,16 @@ function VideoCard({ row }: { row: SRRow }) {
 
       {/* Footer */}
       <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-400 flex-wrap">
-        <span className="truncate max-w-[220px]">{row.school_name}</span>
-        {row.class_name && <span className="truncate max-w-[180px]">{row.class_name.split(',')[0].trim()}</span>}
-        <a href={row.url} download className="ml-auto text-blue-500 hover:text-blue-700">↓ Download</a>
+        <span className="truncate max-w-[200px]">{row.school_name}</span>
+        {row.class_name && <span className="truncate max-w-[160px]">{row.class_name.split(',')[0].trim()}</span>}
+        <div className="ml-auto flex items-center gap-2">
+          {row.shareUrl && (
+            <a href={row.shareUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
+              Share ↗
+            </a>
+          )}
+          <a href={row.url} download className="text-gray-400 hover:text-gray-600">↓ Download</a>
+        </div>
       </div>
     </div>
   );
@@ -128,6 +163,7 @@ export default function DistrictFinderPage() {
   const [session, setSession]         = useState('');
   const [course, setCourse]           = useState('');
   const [attribute, setAttribute]     = useState('');
+  const [mediaType, setMediaType]     = useState(''); // '' | 'video' | 'audio'
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch]           = useState('');
 
@@ -151,7 +187,7 @@ export default function DistrictFinderPage() {
       .catch(() => setSidebarLoading(false));
   }, []);
 
-  // Fetch video rows
+  // Fetch media rows
   const fetchRows = useCallback(async (pg: number, replace: boolean) => {
     if (!selectedDistrict) return;
     if (pg === 1) setLoading(true); else setLoadingMore(true);
@@ -164,6 +200,7 @@ export default function DistrictFinderPage() {
     if (session)   params.set('session', session);
     if (course)    params.set('course', course);
     if (attribute) params.set('attribute', attribute);
+    if (mediaType) params.set('mediaType', mediaType);
     if (search)    params.set('search', search);
 
     try {
@@ -181,7 +218,7 @@ export default function DistrictFinderPage() {
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [selectedDistrict, selectedSchool, grade, gender, session, course, attribute, search]);
+  }, [selectedDistrict, selectedSchool, grade, gender, session, course, attribute, mediaType, search]);
 
   useEffect(() => {
     if (!selectedDistrict) { setRows([]); setTotalCount(null); return; }
@@ -196,7 +233,7 @@ export default function DistrictFinderPage() {
   }
 
   function clearFilters() {
-    setGrade(''); setGender(''); setSession(''); setCourse(''); setAttribute(''); setSearch(''); setSearchInput('');
+    setGrade(''); setGender(''); setSession(''); setCourse(''); setAttribute(''); setMediaType(''); setSearch(''); setSearchInput('');
   }
 
   function pickDistrict(name: string) {
@@ -216,7 +253,7 @@ export default function DistrictFinderPage() {
     return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  const hasActiveFilters = grade || gender || session || course || attribute || search;
+  const hasActiveFilters = grade || gender || session || course || attribute || mediaType || search;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -343,6 +380,15 @@ export default function DistrictFinderPage() {
                   {filterOptions.courses.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               )}
+              {/* Video / Audio toggle */}
+              <div className="flex items-center gap-1 border border-gray-200 rounded-lg overflow-hidden">
+                {(['', 'video', 'audio'] as const).map(t => (
+                  <button key={t} onClick={() => setMediaType(t)}
+                    className={`text-xs px-2.5 py-1 transition-colors ${mediaType === t ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                    {t === '' ? 'All' : t === 'video' ? 'Video' : 'Audio'}
+                  </button>
+                ))}
+              </div>
               {hasActiveFilters && (
                 <button onClick={clearFilters} className="ml-auto text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
                   Clear filters
@@ -356,7 +402,7 @@ export default function DistrictFinderPage() {
             {!selectedDistrict ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-8">
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-400 mb-3">←</div>
-                <p className="text-gray-500 font-medium">Select a district to browse video responses</p>
+                <p className="text-gray-500 font-medium">Select a district to browse media responses</p>
                 <p className="text-gray-400 text-sm mt-1">Expand a district to filter by school</p>
               </div>
             ) : loading ? (
@@ -367,7 +413,7 @@ export default function DistrictFinderPage() {
               <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-mono">{fetchError}</div>
             ) : rows.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-                <p className="font-medium text-gray-500">No video responses found</p>
+                <p className="font-medium text-gray-500">No media responses found</p>
                 <p className="text-sm mt-1">Try adjusting the filters</p>
               </div>
             ) : (
@@ -380,7 +426,7 @@ export default function DistrictFinderPage() {
                 </p>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {rows.map(row => <VideoCard key={row.id} row={row} />)}
+                  {rows.map(row => <MediaCard key={row.id} row={row} />)}
                 </div>
 
                 <div className="mt-6 flex justify-center">

@@ -5,6 +5,15 @@ import { getImpacterClient } from '@/lib/impacter-client';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = any;
 
+/** Extract the VideoAsk media UUID from a signed URL like
+ *  https://media.videoask.com/transcoded/{uuid}/video.mp4?token=...
+ *  Also handles audio: .../audio.mp3?token=...
+ */
+function extractUuid(url: string): string | null {
+  const m = url.match(/transcoded\/([0-9a-f-]{36})\//i);
+  return m ? m[1] : null;
+}
+
 export async function GET(req: Request) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -14,12 +23,11 @@ export async function GET(req: Request) {
   const db = getImpacterClient() as unknown as DB;
 
   // ── SIDEBAR mode ──────────────────────────────────────────────────────────
-  // Returns the district → school tree built from video rows only.
+  // Builds district → school tree from rows that have a media URL (video + audio).
   if (mode === 'sidebar') {
     const { data, error } = await db
       .from('student_responses')
       .select('district_name, school_name')
-      .eq('response_type', 'video')
       .not('url', 'is', null)
       .limit(50000);
 
@@ -43,17 +51,18 @@ export async function GET(req: Request) {
   }
 
   // ── SEARCH mode ───────────────────────────────────────────────────────────
-  const districtName  = searchParams.get('district') ?? '';
-  const schoolName    = searchParams.get('school') ?? '';
-  const grade         = searchParams.get('grade') ?? '';
-  const gender        = searchParams.get('gender') ?? '';
-  const sessionName   = searchParams.get('session') ?? '';
-  const courseId      = searchParams.get('course') ?? '';
-  const attribute     = searchParams.get('attribute') ?? '';
-  const search        = searchParams.get('search') ?? '';
-  const page          = parseInt(searchParams.get('page') ?? '1');
-  const limit         = 24;
-  const offset        = (page - 1) * limit;
+  const districtName = searchParams.get('district') ?? '';
+  const schoolName   = searchParams.get('school') ?? '';
+  const grade        = searchParams.get('grade') ?? '';
+  const gender       = searchParams.get('gender') ?? '';
+  const sessionName  = searchParams.get('session') ?? '';
+  const courseId     = searchParams.get('course') ?? '';
+  const attribute    = searchParams.get('attribute') ?? '';
+  const mediaType    = searchParams.get('mediaType') ?? ''; // 'video' | 'audio' | ''
+  const search       = searchParams.get('search') ?? '';
+  const page         = parseInt(searchParams.get('page') ?? '1');
+  const limit        = 24;
+  const offset       = (page - 1) * limit;
 
   if (!districtName) {
     return NextResponse.json({
@@ -64,8 +73,7 @@ export async function GET(req: Request) {
 
   let q = db
     .from('student_responses')
-    .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, session_name, course_id, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
-    .eq('response_type', 'video')
+    .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
     .not('url', 'is', null)
     .eq('district_name', districtName);
 
@@ -75,6 +83,7 @@ export async function GET(req: Request) {
   if (sessionName) q = q.eq('session_name', sessionName);
   if (courseId)    q = q.eq('course_id', courseId);
   if (attribute)   q = q.or(`harvard_attribute.eq.${attribute},casel_attribute.eq.${attribute}`);
+  if (mediaType)   q = q.eq('response_type', mediaType);
   if (search)      q = q.or(`question.ilike.%${search}%,answer.ilike.%${search}%`);
 
   const { data, error } = await q
@@ -93,6 +102,7 @@ export async function GET(req: Request) {
     gender: string | null;
     session_name: string | null;
     course_id: string | null;
+    response_type: string | null;
     question_num: string | null;
     question: string | null;
     answer: string | null;
@@ -108,12 +118,12 @@ export async function GET(req: Request) {
 
   const allRows = (data ?? []) as SRRow[];
 
-  // Collect filter options from full result set
-  const gradesSet    = new Set<string>();
-  const gendersSet   = new Set<string>();
-  const sessionsSet  = new Set<string>();
-  const coursesSet   = new Set<string>();
-  const attribsSet   = new Set<string>();
+  // Collect filter options from full result
+  const gradesSet   = new Set<string>();
+  const gendersSet  = new Set<string>();
+  const sessionsSet = new Set<string>();
+  const coursesSet  = new Set<string>();
+  const attribsSet  = new Set<string>();
 
   for (const r of allRows) {
     if (r.current_grade != null) gradesSet.add(String(r.current_grade));
@@ -128,8 +138,48 @@ export async function GET(req: Request) {
   const paginated  = allRows.slice(offset, offset + limit);
   const hasMore    = totalCount > offset + limit;
 
+  // ── Cross-reference videoask.steps for share_url ─────────────────────────
+  // student_responses.url = signed direct download URL (mp4/mp3)
+  // videoask.steps.media_url = same base path (may differ by token)
+  // We match on the UUID in the path: .../transcoded/{uuid}/video.mp4
+  const shareUrlMap: Record<string, string> = {};
+
+  const uuids = paginated
+    .map(r => extractUuid(r.url))
+    .filter((u): u is string => u !== null);
+
+  if (uuids.length > 0) {
+    try {
+      // Build OR condition: media_url.ilike.%{uuid}% for each UUID
+      const orConds = uuids.map(u => `media_url.ilike.%${u}%`).join(',');
+      const { data: stepsData } = await db
+        .schema('videoask')
+        .from('steps')
+        .select('media_url, share_url')
+        .or(orConds)
+        .limit(uuids.length * 2); // a step can have multiple entries, grab a few per UUID
+
+      if (stepsData) {
+        for (const s of stepsData as { media_url: string | null; share_url: string | null }[]) {
+          const uuid = extractUuid(s.media_url ?? '');
+          if (uuid && s.share_url && !shareUrlMap[uuid]) {
+            shareUrlMap[uuid] = s.share_url;
+          }
+        }
+      }
+    } catch {
+      // Non-fatal — we'll just show the download URL without a share link
+    }
+  }
+
+  // Attach share_url to each paginated row
+  const rowsWithShare = paginated.map(r => ({
+    ...r,
+    shareUrl: shareUrlMap[extractUuid(r.url) ?? ''] ?? null,
+  }));
+
   return NextResponse.json({
-    rows: paginated,
+    rows: rowsWithShare,
     totalCount,
     hasMore,
     page,
