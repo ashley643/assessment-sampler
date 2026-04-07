@@ -103,7 +103,7 @@ export async function GET() {
       sampleTitle,
       totalSteps: total,
     }))
-    .sort((a, b) => (a.formName ?? a.formId).localeCompare(b.formName ?? b.formId));
+    .sort((a, b) => b.totalSteps - a.totalSteps);
 
   return NextResponse.json({ forms });
 }
