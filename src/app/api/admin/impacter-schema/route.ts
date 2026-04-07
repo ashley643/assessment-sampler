@@ -44,6 +44,28 @@ export async function GET() {
 
   const videoaskSteps = await probe('steps', 'videoask');
 
+  // Check for a specific form_id
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: targetFormCount, error: targetErr } = await (db as any)
+    .schema('videoask')
+    .from('steps')
+    .select('*', { count: 'exact', head: true })
+    .eq('form_id', 'c90ddfd9-e3c1-4c6e-bb7e-4f7abfcc9a25');
+
+  // Also get distinct form_ids to see what's available
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: distinctForms } = await (db as any)
+    .schema('videoask')
+    .from('steps')
+    .select('form_id')
+    .limit(500);
+
+  const formIdCounts: Record<string, number> = {};
+  for (const row of (distinctForms ?? [])) {
+    const fid = row.form_id ?? 'null';
+    formIdCounts[fid] = (formIdCounts[fid] ?? 0) + 1;
+  }
+
   return NextResponse.json({
     student_responses: studentResponses,
     total_row_count: totalCount,
@@ -51,5 +73,8 @@ export async function GET() {
     media_rows: mediaRows,
     media_rows_error: mediaErr?.message ?? null,
     videoask_steps: videoaskSteps,
+    target_form_count: targetFormCount,
+    target_form_error: targetErr?.message ?? null,
+    distinct_form_ids: formIdCounts,
   }, { status: 200 });
 }
