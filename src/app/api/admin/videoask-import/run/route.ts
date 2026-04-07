@@ -8,9 +8,17 @@ function extractUuid(url: string): string | null {
 }
 
 // Map VideoAsk internal media_type values to readable response types
-function normalizeResponseType(raw: string): string {
+function normalizeResponseType(raw: string, url?: string): string {
   switch (raw.toLowerCase()) {
-    case 'standard': return 'video';
+    case 'standard': {
+      // Derive from URL extension: .mp3 = audio, .mp4 = video
+      if (url) {
+        const lower = url.toLowerCase();
+        if (lower.includes('.mp3')) return 'audio';
+        if (lower.includes('.mp4')) return 'video';
+      }
+      return 'video'; // fallback
+    }
     case 'audio':    return 'audio';
     case 'text':     return 'text';
     case 'poll':     return 'poll';
@@ -243,7 +251,7 @@ export async function POST(req: Request) {
         if (!row.url && mediaUrl) row.url = mediaUrl;
 
         // Normalize VideoAsk media_type → human-readable response_type
-        if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));
+        if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type), mediaUrl);
 
         // Overlay interaction metadata (only fills gaps — explicit mappings take precedence)
         for (const [col, val] of Object.entries(metadataValues)) {
