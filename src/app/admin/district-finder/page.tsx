@@ -1,442 +1,350 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 
 // ── Types ──────────────────────────────────────────────────────────────────
-
-interface Pilot {
-  id: string;
-  name: string;
-  schools: string[];
-  totalSubmissions: number;
-}
-
 interface District {
   name: string;
-  pilots: Pilot[];
-}
-
-interface SidebarData {
-  districts: District[];
+  schools: string[];
 }
 
 interface FilterOptions {
   grades: string[];
   genders: string[];
-  languages: string[];
-  promptTitles: string[];
+  sessions: string[];
+  courses: string[];
+  attributes: string[];
 }
 
-interface AnswerCard {
-  id: string;
-  responseId: string;
-  promptTitle: string;
-  promptIndex: number;
-  mediaType: 'video' | 'audio';
-  mediaUrl: string | null;
-  shareUrl: string | null;
-  thumbnailUrl: string | null;
-  transcript: string;
-  language: string | null;
-  schoolName: string;
-  gradeLevel: string | null;
+interface SRRow {
+  id: number;
+  district_name: string;
+  school_name: string;
+  class_name: string | null;
+  teacher_name: string | null;
+  current_grade: number | null;
   gender: string | null;
-  pilotId: string;
-  wordCount: number;
-  createdAt: string;
+  session_name: string | null;
+  course_id: string | null;
+  question_num: string | null;
+  question: string | null;
+  answer: string | null;
+  harvard_attribute: string | null;
+  harvard_score: number | null;
+  harvard_impacter_score: number | null;
+  casel_attribute: string | null;
+  casel_score: number | null;
+  casel_impacter_score: number | null;
+  url: string;
+  answer_date: string | null;
 }
 
-interface SearchResponse {
-  transcripts: AnswerCard[];
-  totalCount: number;
-  hasMore: boolean;
-  filterOptions: FilterOptions;
+// ── Video card ─────────────────────────────────────────────────────────────
+function VideoCard({ row }: { row: SRRow }) {
+  const [expanded, setExpanded] = useState(false);
+  const transcript = (row.answer ?? '').replace(/^"|"$/g, '').trim();
+  const isLong = transcript.length > 300;
+
+  function attrLabel(s: string) {
+    return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-4 pt-3 pb-2">
+        <p className="text-xs font-semibold text-blue-700 leading-snug">{row.question ?? 'Video response'}</p>
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+          {row.current_grade != null && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-medium">
+              Grade {row.current_grade}
+            </span>
+          )}
+          {row.gender && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">
+              {row.gender}
+            </span>
+          )}
+          {row.harvard_attribute && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+              {attrLabel(row.harvard_attribute)}
+              {row.harvard_score != null ? ` ${row.harvard_score}` : ''}
+            </span>
+          )}
+          {row.casel_attribute && row.casel_attribute !== row.harvard_attribute && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+              {attrLabel(row.casel_attribute)}
+              {row.casel_score != null ? ` ${row.casel_score}` : ''}
+            </span>
+          )}
+          <span className="ml-auto text-xs text-gray-400">{row.answer_date ?? ''}</span>
+        </div>
+      </div>
+
+      {/* Video player */}
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video
+        controls
+        preload="none"
+        src={row.url}
+        className="w-full aspect-video bg-black"
+      />
+
+      {/* Transcript */}
+      <div className="px-4 py-3">
+        <p className={`text-sm text-gray-700 leading-relaxed ${!expanded && isLong ? 'line-clamp-4' : ''}`}>
+          {transcript}
+        </p>
+        {isLong && (
+          <button onClick={() => setExpanded(v => !v)} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
+            {expanded ? 'Show less' : 'Show more'}
+          </button>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-400 flex-wrap">
+        <span className="truncate max-w-[220px]">{row.school_name}</span>
+        {row.class_name && <span className="truncate max-w-[180px]">{row.class_name.split(',')[0].trim()}</span>}
+        <a href={row.url} download className="ml-auto text-blue-500 hover:text-blue-700">↓ Download</a>
+      </div>
+    </div>
+  );
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function langLabel(code: string | null): string {
-  if (!code) return '';
-  if (code === 'en') return 'English';
-  if (code === 'es') return 'Spanish';
-  return code.toUpperCase();
-}
-
-function isDirectAudio(url: string): boolean {
-  return /\.(mp3|ogg|m4a|wav|aac)(\?|$)/i.test(url);
-}
-
-function excerptText(s: string, n = 200): string {
-  return s.length > n ? s.slice(0, n).trim() + '…' : s;
-}
-
-// ── Page component ─────────────────────────────────────────────────────────
-
+// ── Main page ──────────────────────────────────────────────────────────────
 export default function DistrictFinderPage() {
-  // Sidebar data
-  const [sidebarData, setSidebarData]       = useState<SidebarData | null>(null);
+  const [districts, setDistricts]           = useState<District[]>([]);
   const [sidebarLoading, setSidebarLoading] = useState(true);
-  const [expandedDistricts, setExpandedDistricts] = useState<Set<string>>(new Set());
-  const [expandedPilots, setExpandedPilots]       = useState<Set<string>>(new Set());
+  const [openDistricts, setOpenDistricts]   = useState<Set<string>>(new Set());
 
-  // Selection state
-  const [selectedPilotIds, setSelectedPilotIds] = useState<string[]>([]);
-  const [selectedSchool, setSelectedSchool]     = useState<string>('');
+  // Selection
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedSchool, setSelectedSchool]     = useState('');
 
-  // Search / filter state
+  // Filters
+  const [grade, setGrade]             = useState('');
+  const [gender, setGender]           = useState('');
+  const [session, setSession]         = useState('');
+  const [course, setCourse]           = useState('');
+  const [attribute, setAttribute]     = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch]           = useState('');
-  const [mediaType, setMediaType]     = useState<'video' | 'audio' | ''>('');
-  const [minWords, setMinWords]       = useState(15);
 
-  // Active filters (from filterOptions)
-  const [selectedGrade, setSelectedGrade]         = useState('');
-  const [selectedGender, setSelectedGender]       = useState('');
-  const [selectedLanguage, setSelectedLanguage]   = useState('');
-  const [selectedPromptTitle, setSelectedPromptTitle] = useState('');
+  // Results
+  const [rows, setRows]                   = useState<SRRow[]>([]);
+  const [totalCount, setTotalCount]       = useState<number | null>(null);
+  const [hasMore, setHasMore]             = useState(false);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    grades: [], genders: [], sessions: [], courses: [], attributes: [],
+  });
+  const [loading, setLoading]         = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [fetchError, setFetchError]   = useState('');
+  const [page, setPage]               = useState(1);
 
-  // Results state
-  const [transcripts, setTranscripts]       = useState<AnswerCard[]>([]);
-  const [totalCount, setTotalCount]         = useState<number | null>(null);
-  const [hasMore, setHasMore]               = useState(false);
-  const [filterOptions, setFilterOptions]   = useState<FilterOptions>({ grades: [], genders: [], languages: [], promptTitles: [] });
-  const [loading, setLoading]               = useState(false);
-  const [loadingMore, setLoadingMore]       = useState(false);
-  const [fetchError, setFetchError]         = useState('');
-  const [page, setPage]                     = useState(1);
-
-  // Expanded transcripts
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-  // ── Load sidebar ──────────────────────────────────────────────────────────
-
+  // Load sidebar once
   useEffect(() => {
-    setSidebarLoading(true);
     fetch('/api/admin/district-finder?mode=sidebar')
       .then(r => r.json())
-      .then((d: SidebarData) => {
-        setSidebarData(d);
-        // Expand all districts by default
-        const names = new Set((d.districts ?? []).map((dist: District) => dist.name));
-        setExpandedDistricts(names);
-        setSidebarLoading(false);
-      })
+      .then(d => { setDistricts(d.districts ?? []); setSidebarLoading(false); })
       .catch(() => setSidebarLoading(false));
   }, []);
 
-  // ── Fetch transcripts ─────────────────────────────────────────────────────
-
-  const fetchTranscripts = useCallback(async (pg: number, replace: boolean) => {
-    if (selectedPilotIds.length === 0) return;
+  // Fetch video rows
+  const fetchRows = useCallback(async (pg: number, replace: boolean) => {
+    if (!selectedDistrict) return;
     if (pg === 1) setLoading(true); else setLoadingMore(true);
     setFetchError('');
 
+    const params = new URLSearchParams({ mode: 'search', district: selectedDistrict, page: String(pg) });
+    if (selectedSchool) params.set('school', selectedSchool);
+    if (grade)     params.set('grade', grade);
+    if (gender)    params.set('gender', gender);
+    if (session)   params.set('session', session);
+    if (course)    params.set('course', course);
+    if (attribute) params.set('attribute', attribute);
+    if (search)    params.set('search', search);
+
     try {
-      const params = new URLSearchParams({
-        mode: 'search',
-        pilotIds: selectedPilotIds.join(','),
-        page: String(pg),
-        minWords: String(minWords),
-      });
-      if (selectedSchool)       params.set('school', selectedSchool);
-      if (selectedGrade)        params.set('grade', selectedGrade);
-      if (selectedGender)       params.set('gender', selectedGender);
-      if (selectedLanguage)     params.set('language', selectedLanguage);
-      if (selectedPromptTitle)  params.set('promptTitle', selectedPromptTitle);
-      if (mediaType)            params.set('mediaType', mediaType);
-      if (search)               params.set('search', search);
-
-      const res = await fetch(`/api/admin/district-finder?${params}`);
-      const text = await res.text();
-      let data: SearchResponse;
-      try { data = JSON.parse(text); }
-      catch { setFetchError(`Server returned (${res.status}): ${text.slice(0, 300)}`); setLoading(false); setLoadingMore(false); return; }
-
-      if (!res.ok) { setFetchError(`Error ${res.status}: ${JSON.stringify(data)}`); setLoading(false); setLoadingMore(false); return; }
-
-      setTranscripts(prev => replace ? data.transcripts : [...prev, ...data.transcripts]);
+      const res  = await fetch(`/api/admin/district-finder?${params}`);
+      const data = await res.json();
+      if (!res.ok || data.error) { setFetchError(data.error ?? `Error ${res.status}`); setLoading(false); setLoadingMore(false); return; }
+      setRows(prev => replace ? data.rows : [...prev, ...data.rows]);
       setHasMore(data.hasMore ?? false);
       if (replace) {
         setTotalCount(data.totalCount ?? null);
-        setFilterOptions(data.filterOptions ?? { grades: [], genders: [], languages: [], promptTitles: [] });
+        setFilterOptions(data.filterOptions ?? { grades: [], genders: [], sessions: [], courses: [], attributes: [] });
       }
     } catch (e) {
       setFetchError(`Network error: ${e}`);
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [selectedPilotIds, selectedSchool, selectedGrade, selectedGender, selectedLanguage, selectedPromptTitle, mediaType, minWords, search]);
+  }, [selectedDistrict, selectedSchool, grade, gender, session, course, attribute, search]);
 
-  // Re-fetch when dependencies change
   useEffect(() => {
-    if (selectedPilotIds.length === 0) {
-      setTranscripts([]);
-      setTotalCount(null);
-      setFilterOptions({ grades: [], genders: [], languages: [], promptTitles: [] });
-      return;
-    }
+    if (!selectedDistrict) { setRows([]); setTotalCount(null); return; }
     setPage(1);
-    setExpanded(new Set());
-    fetchTranscripts(1, true);
-  }, [fetchTranscripts, selectedPilotIds]);
+    fetchRows(1, true);
+  }, [fetchRows, selectedDistrict]);
 
   function loadMore() {
     const next = page + 1;
     setPage(next);
-    fetchTranscripts(next, false);
+    fetchRows(next, false);
   }
 
-  // Clear all filters (except pilot/school selection)
   function clearFilters() {
-    setSelectedGrade('');
-    setSelectedGender('');
-    setSelectedLanguage('');
-    setSelectedPromptTitle('');
-    setSearch('');
-    setSearchInput('');
-    setMediaType('');
+    setGrade(''); setGender(''); setSession(''); setCourse(''); setAttribute(''); setSearch(''); setSearchInput('');
   }
 
-  const hasActiveFilters = selectedGrade || selectedGender || selectedLanguage || selectedPromptTitle || search || mediaType;
+  function pickDistrict(name: string) {
+    setSelectedDistrict(name);
+    setSelectedSchool('');
+    clearFilters();
+    setOpenDistricts(prev => { const n = new Set(prev); n.add(name); return n; });
+  }
 
-  // ── Styles ────────────────────────────────────────────────────────────────
+  function pickSchool(district: string, school: string) {
+    setSelectedDistrict(district);
+    setSelectedSchool(school);
+    clearFilters();
+  }
 
-  const INPUT  = 'border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20';
-  const BTN_SM = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors';
+  function attrLabel(s: string) {
+    return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  const hasActiveFilters = grade || gender || session || course || attribute || search;
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      {/* ── Header ── */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4 flex-wrap flex-shrink-0">
-        <Link href="/admin" className="text-gray-400 hover:text-gray-600 text-sm">← Admin</Link>
+    <div className="h-screen flex flex-col overflow-hidden -m-6 md:-m-8">
+
+      {/* Top bar */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-6 py-3 bg-white border-b border-gray-200">
         <h1 className="text-base font-semibold text-gray-900">District Response Finder</h1>
-        <div className="flex-1" />
-        {/* Filters */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500">Min words</span>
-            <select
-              value={minWords}
-              onChange={e => setMinWords(Number(e.target.value))}
-              className={INPUT}
-            >
-              <option value={5}>5+</option>
-              <option value={15}>15+</option>
-              <option value={30}>30+</option>
-              <option value={60}>60+</option>
-              <option value={100}>100+</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-1">
-            {(['', 'video', 'audio'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setMediaType(t)}
-                className={`${BTN_SM} border ${mediaType === t ? 'bg-[#1a2744] text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
-              >
-                {t === '' ? 'All' : t === 'video' ? 'Video' : 'Audio'}
-              </button>
-            ))}
-          </div>
-          <form
-            onSubmit={e => { e.preventDefault(); setSearch(searchInput); setPage(1); }}
-            className="flex gap-1"
-          >
+        {selectedDistrict && (
+          <form onSubmit={e => { e.preventDefault(); setSearch(searchInput); setPage(1); }} className="flex gap-1 ml-4">
             <input
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
-              placeholder="Search transcripts…"
-              className={`${INPUT} w-44`}
+              placeholder="Search questions & transcripts…"
+              className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 w-52 focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
-            <button type="submit" className={`${BTN_SM} bg-[#1a2744] text-white`}>Search</button>
+            <button type="submit" className="text-xs px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-gray-900">Search</button>
             {search && (
-              <button
-                type="button"
-                onClick={() => { setSearch(''); setSearchInput(''); }}
-                className={`${BTN_SM} bg-white border border-gray-200 text-gray-500`}
-              >
-                ✕
-              </button>
+              <button type="button" onClick={() => { setSearch(''); setSearchInput(''); }}
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50">✕</button>
             )}
           </form>
-        </div>
+        )}
+        {selectedDistrict && totalCount != null && (
+          <span className="ml-auto text-xs text-gray-400">{totalCount.toLocaleString()} videos</span>
+        )}
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Sidebar ── */}
-        <aside className="w-72 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
-          {sidebarLoading ? (
-            <div className="px-4 py-6 text-xs text-gray-400">Loading districts…</div>
-          ) : !sidebarData || sidebarData.districts.length === 0 ? (
-            <div className="px-4 py-6 text-xs text-gray-400">No districts found.</div>
-          ) : (
-            sidebarData.districts.map(district => {
-              const isDistrictExpanded = expandedDistricts.has(district.name);
-              const allDistrictPilotIds = district.pilots.map(p => p.id);
-              const isDistrictSelected =
-                selectedPilotIds.length === allDistrictPilotIds.length &&
-                allDistrictPilotIds.every(id => selectedPilotIds.includes(id)) &&
-                !selectedSchool;
 
+        {/* Sidebar */}
+        <aside className="w-60 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-gray-100">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Districts</p>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {sidebarLoading ? (
+              <p className="px-4 py-4 text-xs text-gray-400">Loading…</p>
+            ) : districts.length === 0 ? (
+              <p className="px-4 py-4 text-xs text-gray-400">No districts found.</p>
+            ) : districts.map(d => {
+              const isDistrictSel = selectedDistrict === d.name && !selectedSchool;
+              const isOpen = openDistricts.has(d.name);
               return (
-                <div key={district.name} className="border-b border-gray-100 last:border-b-0">
-                  {/* District header */}
-                  <div className="flex items-center">
+                <div key={d.name} className="border-b border-gray-50 last:border-0">
+                  <div className="flex items-stretch">
                     <button
-                      onClick={() => {
-                        setSelectedPilotIds(allDistrictPilotIds);
-                        setSelectedSchool('');
-                      }}
-                      className={`flex-1 text-left px-4 py-2.5 transition-colors ${
-                        isDistrictSelected
-                          ? 'bg-[#1a2744]/5 text-[#1a2744]'
-                          : 'text-gray-700 hover:bg-gray-50'
+                      onClick={() => pickDistrict(d.name)}
+                      className={`flex-1 text-left px-3 py-2 text-xs leading-snug transition-colors ${
+                        isDistrictSel ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-gray-700 hover:bg-gray-50 font-medium'
                       }`}
                     >
-                      <span className="text-xs font-bold uppercase tracking-wide leading-tight">{district.name}</span>
+                      {d.name}
                     </button>
-                    <button
-                      onClick={() => setExpandedDistricts(s => {
-                        const n = new Set(s);
-                        n.has(district.name) ? n.delete(district.name) : n.add(district.name);
-                        return n;
-                      })}
-                      className="px-3 py-2.5 text-gray-400 hover:text-gray-600 text-xs flex-shrink-0"
-                    >
-                      {isDistrictExpanded ? '▲' : '▼'}
-                    </button>
+                    {d.schools.length > 0 && (
+                      <button
+                        onClick={() => setOpenDistricts(prev => { const n = new Set(prev); n.has(d.name) ? n.delete(d.name) : n.add(d.name); return n; })}
+                        className="px-2.5 text-gray-300 hover:text-gray-600 text-[10px]"
+                      >
+                        {isOpen ? '▲' : '▼'}
+                      </button>
+                    )}
                   </div>
-
-                  {/* Pilots under district */}
-                  {isDistrictExpanded && district.pilots.map(pilot => {
-                    const isPilotSelected =
-                      selectedPilotIds.length === 1 &&
-                      selectedPilotIds[0] === pilot.id &&
-                      !selectedSchool;
-                    const isPilotExpanded = expandedPilots.has(pilot.id);
-
+                  {isOpen && d.schools.map(s => {
+                    const isSchoolSel = selectedDistrict === d.name && selectedSchool === s;
                     return (
-                      <div key={pilot.id}>
-                        {/* Pilot row */}
-                        <div className="flex items-center pl-4">
-                          <button
-                            onClick={() => {
-                              setSelectedPilotIds([pilot.id]);
-                              setSelectedSchool('');
-                            }}
-                            className={`flex-1 text-left px-2 py-2 border-l-2 transition-colors ${
-                              isPilotSelected
-                                ? 'border-[#1a2744] bg-[#1a2744]/5 text-[#1a2744]'
-                                : 'border-transparent hover:bg-gray-50 text-gray-700'
-                            }`}
-                          >
-                            <p className="text-xs font-medium leading-snug">{pilot.name}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">{pilot.totalSubmissions} submissions</p>
-                          </button>
-                          {pilot.schools.length > 0 && (
-                            <button
-                              onClick={() => setExpandedPilots(s => {
-                                const n = new Set(s);
-                                n.has(pilot.id) ? n.delete(pilot.id) : n.add(pilot.id);
-                                return n;
-                              })}
-                              className="px-3 py-2 text-gray-400 hover:text-gray-600 text-xs flex-shrink-0"
-                            >
-                              {isPilotExpanded ? '▲' : '▼'}
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Schools under pilot */}
-                        {isPilotExpanded && pilot.schools.map(school => {
-                          const isSchoolSelected =
-                            selectedPilotIds.length === 1 &&
-                            selectedPilotIds[0] === pilot.id &&
-                            selectedSchool === school;
-
-                          return (
-                            <button
-                              key={school}
-                              onClick={() => {
-                                setSelectedPilotIds([pilot.id]);
-                                setSelectedSchool(school);
-                              }}
-                              className={`w-full text-left pl-10 pr-4 py-1.5 border-l-2 transition-colors ${
-                                isSchoolSelected
-                                  ? 'border-[#1a2744] bg-[#1a2744]/5 text-[#1a2744]'
-                                  : 'border-transparent hover:bg-gray-50 text-gray-600'
-                              }`}
-                            >
-                              <p className="text-xs leading-snug truncate">{school}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <button
+                        key={s}
+                        onClick={() => pickSchool(d.name, s)}
+                        className={`w-full text-left pl-5 pr-3 py-1.5 text-xs transition-colors truncate border-l-2 ${
+                          isSchoolSel ? 'bg-blue-50 text-blue-700 font-semibold border-blue-400' : 'text-gray-600 hover:bg-gray-50 border-transparent'
+                        }`}
+                      >
+                        {s}
+                      </button>
                     );
                   })}
                 </div>
               );
-            })
-          )}
+            })}
+          </div>
         </aside>
 
-        {/* ── Main content ── */}
+        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Filter chips row */}
-          {selectedPilotIds.length > 0 && (
-            <div className="flex-shrink-0 px-6 py-3 bg-white border-b border-gray-100 flex items-center gap-2 flex-wrap">
+
+          {/* Filter strip */}
+          {selectedDistrict && (
+            <div className="flex-shrink-0 px-5 py-2 bg-white border-b border-gray-100 flex items-center gap-2 flex-wrap min-h-[44px]">
               {/* Grade chips */}
               {filterOptions.grades.map(g => (
-                <button
-                  key={g}
-                  onClick={() => setSelectedGrade(prev => prev === g ? '' : g)}
-                  className={`${BTN_SM} border text-xs ${selectedGrade === g ? 'bg-teal-600 text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-teal-300'}`}
-                >
+                <button key={g} onClick={() => setGrade(prev => prev === g ? '' : g)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${grade === g ? 'bg-teal-600 text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-teal-300'}`}>
                   Grade {g}
                 </button>
               ))}
               {/* Gender chips */}
               {filterOptions.genders.map(g => (
-                <button
-                  key={g}
-                  onClick={() => setSelectedGender(prev => prev === g ? '' : g)}
-                  className={`${BTN_SM} border text-xs ${selectedGender === g ? 'bg-purple-600 text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300'}`}
-                >
+                <button key={g} onClick={() => setGender(prev => prev === g ? '' : g)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${gender === g ? 'bg-purple-600 text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300'}`}>
                   {g}
                 </button>
               ))}
-              {/* Language chips */}
-              {filterOptions.languages.map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => setSelectedLanguage(prev => prev === lang ? '' : lang)}
-                  className={`${BTN_SM} border text-xs ${selectedLanguage === lang ? 'bg-blue-600 text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'}`}
-                >
-                  {langLabel(lang)}
+              {/* Attribute chips (top 8 to avoid overflow) */}
+              {filterOptions.attributes.slice(0, 8).map(a => (
+                <button key={a} onClick={() => setAttribute(prev => prev === a ? '' : a)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${attribute === a ? 'bg-orange-500 text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'}`}>
+                  {attrLabel(a)}
                 </button>
               ))}
-              {/* Prompt title dropdown */}
-              {filterOptions.promptTitles.length > 0 && (
-                <select
-                  value={selectedPromptTitle}
-                  onChange={e => setSelectedPromptTitle(e.target.value)}
-                  className={`${INPUT} text-xs max-w-xs`}
-                >
-                  <option value="">All prompts</option>
-                  {filterOptions.promptTitles.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
+              {/* Session dropdown (only if multiple) */}
+              {filterOptions.sessions.length > 1 && (
+                <select value={session} onChange={e => setSession(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300">
+                  <option value="">All sessions</option>
+                  {filterOptions.sessions.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               )}
-              {/* Clear filters */}
+              {/* Course dropdown (only if multiple) */}
+              {filterOptions.courses.length > 1 && (
+                <select value={course} onChange={e => setCourse(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300">
+                  <option value="">All courses</option>
+                  {filterOptions.courses.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
               {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className={`${BTN_SM} bg-gray-100 text-gray-500 hover:bg-gray-200 ml-auto`}
-                >
+                <button onClick={clearFilters} className="ml-auto text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
                   Clear filters
                 </button>
               )}
@@ -444,169 +352,52 @@ export default function DistrictFinderPage() {
           )}
 
           {/* Scrollable results */}
-          <main className="flex-1 overflow-y-auto px-6 py-6">
-            {selectedPilotIds.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl text-gray-400">←</div>
-                <p className="text-gray-500 font-medium">Select a district, program, or school from the sidebar</p>
-                <p className="text-gray-400 text-sm max-w-sm">Click a district name to see all responses, or drill down into a specific school.</p>
+          <div className="flex-1 overflow-y-auto bg-gray-50">
+            {!selectedDistrict ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-8">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-400 mb-3">←</div>
+                <p className="text-gray-500 font-medium">Select a district to browse video responses</p>
+                <p className="text-gray-400 text-sm mt-1">Expand a district to filter by school</p>
+              </div>
+            ) : loading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : fetchError ? (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-sm text-red-700 font-mono whitespace-pre-wrap">{fetchError}</div>
-            ) : loading ? (
-              <div className="text-sm text-gray-400 py-10 text-center">Loading responses…</div>
-            ) : transcripts.length === 0 ? (
-              <div className="text-sm text-gray-400 py-10 text-center">No responses found. Try adjusting the filters or min word count.</div>
+              <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 font-mono">{fetchError}</div>
+            ) : rows.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                <p className="font-medium text-gray-500">No video responses found</p>
+                <p className="text-sm mt-1">Try adjusting the filters</p>
+              </div>
             ) : (
-              <>
+              <div className="p-5">
+                {/* Breadcrumb */}
                 <p className="text-xs text-gray-400 mb-4">
-                  {totalCount !== null ? `${totalCount} total · ` : ''}{transcripts.length} shown
-                  {selectedSchool && <span> · {selectedSchool}</span>}
+                  <span className="font-medium text-gray-600">{selectedDistrict}</span>
+                  {selectedSchool && <> › <span>{selectedSchool}</span></>}
+                  <span className="ml-2">{totalCount?.toLocaleString()} total · {rows.length} shown</span>
                 </p>
 
-                <div className="space-y-4">
-                  {transcripts.map(t => {
-                    const isExpanded = expanded.has(t.id);
-                    const pilotName = sidebarData?.districts
-                      .flatMap(d => d.pilots)
-                      .find(p => p.id === t.pilotId)?.name ?? '';
-
-                    return (
-                      <div
-                        key={t.id}
-                        className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
-                      >
-                        {/* Card header */}
-                        <div className="px-5 py-3 flex items-center gap-2 flex-wrap border-b border-gray-100">
-                          {t.promptTitle && (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#1a2744]/10 text-[#1a2744]">
-                              {t.promptTitle}
-                            </span>
-                          )}
-                          {t.mediaType === 'audio' ? (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">Audio</span>
-                          ) : (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Video</span>
-                          )}
-                          {t.gradeLevel && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-medium">Grade {t.gradeLevel}</span>
-                          )}
-                          {t.gender && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">{t.gender}</span>
-                          )}
-                          {t.language && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">{langLabel(t.language)}</span>
-                          )}
-                          <span className="text-xs text-gray-400">{t.wordCount} words</span>
-                          {t.schoolName && (
-                            <span className="text-xs text-gray-500 ml-auto truncate max-w-[200px]">{t.schoolName}</span>
-                          )}
-                          {pilotName && (
-                            <span className="text-xs text-gray-400 truncate max-w-[180px]">{pilotName}</span>
-                          )}
-                        </div>
-
-                        {/* Thumbnail (if available and no embed) */}
-                        {t.thumbnailUrl && !t.shareUrl && (
-                          <div className="px-5 pt-3 pb-1">
-                            <img
-                              src={t.thumbnailUrl}
-                              alt="Response thumbnail"
-                              className="rounded-xl w-32 h-auto object-cover"
-                            />
-                          </div>
-                        )}
-
-                        {/* Video embed via share_url */}
-                        {t.shareUrl && t.mediaType === 'video' && (
-                          <div className="px-5 pt-3 pb-1">
-                            <div className="w-1/2 aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                              <iframe
-                                src={t.shareUrl}
-                                allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;"
-                                className="w-full h-full"
-                                style={{ border: 'none' }}
-                                loading="lazy"
-                                title={t.promptTitle || 'Video response'}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Audio player */}
-                        {t.mediaType === 'audio' && t.shareUrl && isDirectAudio(t.shareUrl) && (
-                          <div className="px-5 pt-3 pb-1">
-                            <audio controls preload="none" src={t.shareUrl} className="w-full" style={{ height: '36px' }} />
-                          </div>
-                        )}
-                        {t.mediaType === 'audio' && !t.shareUrl && t.mediaUrl && isDirectAudio(t.mediaUrl) && (
-                          <div className="px-5 pt-3 pb-1">
-                            <audio controls preload="none" src={t.mediaUrl} className="w-full" style={{ height: '36px' }} />
-                          </div>
-                        )}
-
-                        {/* Transcript */}
-                        <div className="px-5 py-3">
-                          <p className="text-sm text-gray-700 leading-relaxed">
-                            {isExpanded ? t.transcript : excerptText(t.transcript)}
-                          </p>
-                          {t.transcript.length > 200 && (
-                            <button
-                              onClick={() => setExpanded(s => {
-                                const n = new Set(s);
-                                n.has(t.id) ? n.delete(t.id) : n.add(t.id);
-                                return n;
-                              })}
-                              className="text-xs text-[#1a2744] underline mt-1"
-                            >
-                              {isExpanded ? 'Show less' : 'Show more'}
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-3 flex-wrap">
-                          <span className="text-xs text-gray-400">{t.wordCount} words</span>
-                          {t.shareUrl && (
-                            <a
-                              href={t.shareUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`${BTN_SM} bg-white border border-gray-200 text-gray-600 hover:border-gray-300`}
-                            >
-                              Watch / Listen ↗
-                            </a>
-                          )}
-                          {t.mediaUrl && (
-                            <a
-                              href={t.mediaUrl}
-                              download
-                              className={`${BTN_SM} bg-white border border-gray-200 text-gray-600 hover:border-gray-300`}
-                              title={`Download ${t.mediaType === 'audio' ? 'audio' : 'video'}`}
-                            >
-                              ↓ Download
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {rows.map(row => <VideoCard key={row.id} row={row} />)}
                 </div>
 
-                {hasMore && (
-                  <div className="mt-8 text-center">
-                    <button
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                      className="px-6 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 shadow-sm transition-all disabled:opacity-50"
-                    >
-                      {loadingMore ? 'Loading…' : 'Load more'}
+                <div className="mt-6 flex justify-center">
+                  {loadingMore ? (
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  ) : hasMore ? (
+                    <button onClick={loadMore}
+                      className="px-5 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 shadow-sm">
+                      Load more
                     </button>
-                  </div>
-                )}
-              </>
+                  ) : (
+                    <p className="text-xs text-gray-400">All {totalCount?.toLocaleString()} responses shown</p>
+                  )}
+                </div>
+              </div>
             )}
-          </main>
+          </div>
         </div>
       </div>
     </div>
