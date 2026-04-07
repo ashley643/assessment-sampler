@@ -300,7 +300,16 @@ export default function AssessmentPlayerPage() {
     const next = { ...completion, [currentQ.id]: true };
     setCompletion(next);
     if (!isPreview) track('question_complete', code, { assessment_id: activeAssessment.id, question_id: currentQ.id });
-    finishQuestion(currentQ.id, next);
+
+    const nowAllDone = questions.every(q => !!next[q.id]);
+    if (nowAllDone && !celebrationShownRef.current) {
+      celebrationShownRef.current = true;
+      if (!isPreview) track('assessment_complete', code, { assessment_id: activeAssessment.id });
+      setTimeout(() => setShowCelebration(true), 400);
+    } else if (!nowAllDone && currentIdx < questions.length - 1) {
+      // Auto-advance to next question after a brief moment
+      setTimeout(() => goNext(), 550);
+    }
   };
 
 
@@ -423,7 +432,9 @@ export default function AssessmentPlayerPage() {
                   <button
                     onClick={() => { setSpanishMode(m => !m); setShowTyping(false); setTypedAnswer(''); setTypedSubmitted(false); if (!isPreview) track('language_switch', code, { assessment_id: activeAssessment.id, question_id: currentQ.id, metadata: { language: spanishMode ? 'english' : 'spanish' } }); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                    style={spanishMode ? { background: '#e8735a', color: 'white', outline: '2px solid #c75a3a' } : { background: '#e8735a', color: 'white' }}
+                    style={spanishMode
+                      ? { background: '#e8735a', color: 'white', boxShadow: '0 0 0 2px #e8735a' }
+                      : { background: 'white', color: '#e8735a', boxShadow: '0 0 0 2px #e8735a' }}
                   >
                     <span>🌐</span> {spanishMode ? 'Try in English' : 'Try in Spanish'}
                   </button>
@@ -497,11 +508,13 @@ export default function AssessmentPlayerPage() {
                 <button
                   onClick={() => setShowSample(s => !s)}
                   className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all hover:opacity-90 active:scale-[0.99]"
-                  style={showSample ? { background: '#1D9E75', color: 'white', outline: '2px solid #0f6e50' } : { background: '#1D9E75', color: 'white' }}
+                  style={showSample
+                    ? { background: '#1D9E75', color: 'white', boxShadow: '0 0 0 2px #1D9E75' }
+                    : { background: 'white', color: '#1D9E75', boxShadow: '0 0 0 2px #1D9E75' }}
                 >
                   <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                    <circle cx="7.5" cy="7.5" r="6" stroke="white" strokeWidth="1.4"/>
-                    <path d="M5.5 5.5l4 2-4 2V5.5z" fill="white"/>
+                    <circle cx="7.5" cy="7.5" r="6" stroke="currentColor" strokeWidth="1.4"/>
+                    <path d="M5.5 5.5l4 2-4 2V5.5z" fill="currentColor"/>
                   </svg>
                   {showSample ? 'Back to question' : 'See a sample response'}
                 </button>
@@ -520,13 +533,32 @@ export default function AssessmentPlayerPage() {
           )}
 
           {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
-          <div className={`flex justify-center px-4 md:px-16 py-4 bg-gray-50 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}>
+          <div className={`flex justify-center px-4 md:px-8 py-4 bg-gray-50 transition-colors duration-300 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}
+            style={
+              spanishMode && hasSample ? { background: 'linear-gradient(135deg, #e8735a18 0%, #1D9E7518 100%)' }
+              : spanishMode ? { background: '#e8735a0f' }
+              : hasSample  ? { background: '#1D9E750f' }
+              : undefined
+            }
+          >
             <iframe
               key={`${currentQ.id}-${spanishMode}-${hasSample}`}
               src={embedSrc}
               allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              className={`w-full md:max-w-[720px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
-              style={{ border: 'none', borderRadius: 16, display: 'block' }}
+              className={`w-full md:max-w-[960px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
+              style={{
+                border: 'none',
+                borderRadius: 16,
+                display: 'block',
+                boxShadow: spanishMode && hasSample
+                  ? '0 0 0 4px #e8735a, 0 0 0 8px #1D9E7566'
+                  : spanishMode
+                  ? '0 0 0 4px #e8735a'
+                  : hasSample
+                  ? '0 0 0 4px #1D9E75'
+                  : undefined,
+                transition: 'box-shadow 0.3s ease',
+              }}
               title={currentQ.title}
             />
           </div>
@@ -586,7 +618,9 @@ export default function AssessmentPlayerPage() {
               <button
                 onClick={() => setShowSample(s => !s)}
                 className="md:hidden flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99]"
-                style={showSample ? { background: '#1D9E75', color: 'white', outline: '2px solid #0f6e50' } : { background: '#1D9E75', color: 'white' }}
+                style={showSample
+                  ? { background: '#1D9E75', color: 'white', boxShadow: '0 0 0 2px #1D9E75' }
+                  : { background: 'white', color: '#1D9E75', boxShadow: '0 0 0 2px #1D9E75' }}
               >
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                   <circle cx="7.5" cy="7.5" r="6" stroke="white" strokeWidth="1.4"/>
