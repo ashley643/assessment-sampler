@@ -7,6 +7,18 @@ function extractUuid(url: string): string | null {
   return m ? m[1] : null;
 }
 
+// Map VideoAsk internal media_type values to readable response types
+function normalizeResponseType(raw: string): string {
+  switch (raw.toLowerCase()) {
+    case 'standard': return 'video';
+    case 'audio':    return 'audio';
+    case 'text':     return 'text';
+    case 'poll':     return 'poll';
+    case 'file':     return 'file';
+    default:         return raw;
+  }
+}
+
 // The valid student_responses columns we can populate
 const SR_COLUMNS = new Set([
   'district_name', 'school_name', 'class_name', 'teacher_name',
@@ -230,6 +242,9 @@ export async function POST(req: Request) {
         // Always ensure url is populated from media_url
         if (!row.url && mediaUrl) row.url = mediaUrl;
 
+        // Normalize VideoAsk media_type → human-readable response_type
+        if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));
+
         // Overlay interaction metadata (only fills gaps — explicit mappings take precedence)
         for (const [col, val] of Object.entries(metadataValues)) {
           if (row[col] === undefined || row[col] === null || row[col] === '') {
@@ -294,6 +309,9 @@ export async function POST(req: Request) {
 
       // Always ensure url is populated from media_url
       if (!row.url && mediaUrl) row.url = mediaUrl;
+
+      // Normalize VideoAsk media_type → human-readable response_type
+      if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));
 
       // Auto-generate fun name per interaction_id in flat mode too
       if (!row.first_name && !row.last_name && !row.student_email) {
