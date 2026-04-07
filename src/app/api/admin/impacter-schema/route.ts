@@ -1,63 +1,54 @@
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
-import { getImpacterClient } from '@/lib/impacter-client';
 
-// Temporary discovery route — hit GET /api/admin/impacter-schema to see
-// all tables + columns available in the Impacter Supabase.
+const IMPACTER_URL = 'https://leeevvjenekdldngwkek.supabase.co';
+
+// Temporary discovery route — fetches the PostgREST OpenAPI spec which lists
+// every accessible table + column in the Impacter Supabase.
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const impacter = getImpacterClient();
+  const key = process.env.IMPACTER_SERVICE_ROLE_KEY!;
 
-  // 1. List all schemas and tables
-  const { data: tables, error: tErr } = await (impacter as unknown as {
-    from: (t: string) => { select: (c: string) => { not: (c: string, op: string, v: string) => { order: (c: string) => { order: (c: string) => Promise<{data: unknown[], error: unknown}> } } } }
-  }).from('information_schema.tables')
-    .select('table_schema, table_name, table_type')
-    .not('table_schema', 'in', '(pg_catalog,pg_toast)')
-    .order('table_schema')
-    .order('table_name');
+  // PostgREST exposes a full OpenAPI spec at /rest/v1/ — includes all schemas,
+  // tables, and column definitions the service role can access.
+  const specRes = await fetch(`${IMPACTER_URL}/rest/v1/`, {
+    headers: {
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Accept': 'application/openapi+json',
+    },
+  });
 
-  if (tErr) {
-    // information_schema might be blocked — fall back to a direct table probe
-    return NextResponse.json({ error: 'information_schema not accessible', detail: String(tErr) });
+  if (!specRes.ok) {
+    return NextResponse.json({ error: `OpenAPI fetch failed: ${specRes.status}`, body: await specRes.text() });
   }
 
-  // 2. List all columns
-  const { data: columns } = await (impacter as unknown as {
-    from: (t: string) => { select: (c: string) => { not: (c: string, op: string, v: string) => { order: (c: string) => { order: (c: string) => { order: (c: string) => Promise<{data: unknown[]}> } } } } }
-  }).from('information_schema.columns')
-    .select('table_schema, table_name, column_name, data_type, ordinal_position')
-    .not('table_schema', 'in', '(pg_catalog,pg_toast)')
-    .order('table_schema')
-    .order('table_name')
-    .order('ordinal_position');
+  const spec = await specRes.json() as {
+    definitions?: Record<string, { properties?: Record<string, { type?: string; format?: string; description?: string }> }>;
+    paths?: Record<string, unknown>;
+  };
 
-  // Group columns by schema.table
-  type ColRow = { table_schema: string; table_name: string; column_name: string; data_type: string };
-  const byTable: Record<string, string[]> = {};
-  for (const col of (columns ?? []) as ColRow[]) {
-    const key = `${col.table_schema}.${col.table_name}`;
-    if (!byTable[key]) byTable[key] = [];
-    byTable[key].push(`${col.column_name} (${col.data_type})`);
+  // Extract table → columns map from OpenAPI definitions
+  const tables: Record<string, { column: string; type: string; description?: string }[]> = {};
+  for (const [name, def] of Object.entries(spec.definitions ?? {})) {
+    tables[name] = Object.entries(def.properties ?? {}).map(([col, info]) => ({
+      column: col,
+      type: info.format ?? info.type ?? 'unknown',
+      ...(info.description ? { description: info.description } : {}),
+    }));
   }
 
-  // 3. For tables outside information_schema, grab one sample row
-  type TableRow = { table_schema: string; table_name: string };
+  // Also grab one sample row from every table so we can see real values
   const samples: Record<string, unknown> = {};
-  for (const t of (tables ?? []) as TableRow[]) {
-    if (t.table_schema === 'information_schema') continue;
+  for (const tableName of Object.keys(tables)) {
     try {
-      const { data } = await impacter
-        .schema(t.table_schema as 'public')
-        .from(t.table_name)
-        .select('*')
-        .limit(1);
-      samples[`${t.table_schema}.${t.table_name}`] = data?.[0] ?? null;
-    } catch (e) {
-      samples[`${t.table_schema}.${t.table_name}`] = `error: ${e}`;
-    }
+      const r = await fetch(`${IMPACTER_URL}/rest/v1/${tableName}?limit=1`, {
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` },
+      });
+      if (r.ok) samples[tableName] = await r.json();
+    } catch { /* skip inaccessible tables */ }
   }
 
-  return NextResponse.json({ tables, columnsByTable: byTable, sampleRows: samples });
+  return NextResponse.json({ tableCount: Object.keys(tables).length, tables, samples });
 }
