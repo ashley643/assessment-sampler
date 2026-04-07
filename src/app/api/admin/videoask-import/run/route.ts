@@ -103,24 +103,25 @@ type NodeRole =
 
 type NodeRoles = Record<string, NodeRole>; // keyed by node_id
 
-// POST /api/admin/videoask-import/run
-// Applies column mappings + static values to videoask.steps rows
-// and inserts them into student_responses, skipping already-imported ones.
-// Pass dryRun: true to preview without writing.
-// Pass nodeRoles to enable grouped import with metadata extraction.
-export async function POST(req: Request) {
-  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+type RunParams = {
+  formId: string;
+  staticValues: Record<string, string>;
+  columnMappings: Record<string, string>;
+  dryRun?: boolean;
+  nodeRoles?: NodeRoles;
+  updateExisting?: boolean;
+};
 
-  const { formId, staticValues, columnMappings, dryRun, nodeRoles, updateExisting } = await req.json() as {
-    formId: string;
-    staticValues: Record<string, string>;
-    columnMappings: Record<string, string>;
-    dryRun?: boolean;
-    nodeRoles?: NodeRoles;
-    updateExisting?: boolean;
-  };
+export type RunResult =
+  | { inserted: number; skipped: number; error?: never }
+  | { updated: number; error?: never }
+  | { wouldInsert: number; wouldSkip: number; sample: Record<string, unknown>[]; error?: never }
+  | { error: string };
 
-  if (!formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
+// Core import logic — called by both POST handler and update-all route
+export async function runImportCore(params: RunParams): Promise<RunResult> {
+  const { formId, staticValues, columnMappings, dryRun, nodeRoles, updateExisting } = params;
+  if (!formId) return { error: 'formId required' };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
@@ -132,7 +133,7 @@ export async function POST(req: Request) {
     .select('id, interaction_id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
     .eq('form_id', formId);
 
-  if (stepsErr) return NextResponse.json({ error: stepsErr.message }, { status: 500 });
+  if (stepsErr) return { error: stepsErr.message };
 
   const steps = (stepsData ?? []) as Record<string, unknown>[];
 
@@ -151,7 +152,7 @@ export async function POST(req: Request) {
       .order('id', { ascending: true })
       .limit(SR_PAGE);
 
-    if (urlErr) return NextResponse.json({ error: urlErr.message }, { status: 500 });
+    if (urlErr) return { error: urlErr.message };
 
     const rows = (urlPage ?? []) as { id: number; url: string }[];
     for (const row of rows) {
@@ -335,11 +336,7 @@ export async function POST(req: Request) {
   }
 
   if (dryRun) {
-    return NextResponse.json({
-      wouldInsert: toInsert.length,
-      wouldSkip: skipped,
-      sample: toInsert.slice(0, 3),
-    });
+    return { wouldInsert: toInsert.length, wouldSkip: skipped, sample: toInsert.slice(0, 3) };
   }
 
   // 4a. UPDATE existing rows (patch by url)
@@ -351,18 +348,15 @@ export async function POST(req: Request) {
         toInsert.slice(i, i + BATCH).map(row => {
           const url = String(row.url ?? '');
           if (!url) return Promise.resolve({ error: null });
-          return impacter
-            .from('student_responses')
-            .update(row)
-            .eq('url', url);
+          return impacter.from('student_responses').update(row).eq('url', url);
         })
       );
       for (const { error } of results as { error: { message: string } | null }[]) {
-        if (error) return NextResponse.json({ error: error.message, updatedSoFar: updated }, { status: 500 });
+        if (error) return { error: error.message };
       }
       updated += Math.min(BATCH, toInsert.length - i);
     }
-    return NextResponse.json({ updated });
+    return { updated };
   }
 
   // 4b. INSERT new rows in chunks
@@ -370,15 +364,21 @@ export async function POST(req: Request) {
   const CHUNK = 100;
   for (let i = 0; i < toInsert.length; i += CHUNK) {
     const chunk = toInsert.slice(i, i + CHUNK);
-    const { error: insertErr } = await impacter
-      .from('student_responses')
-      .insert(chunk);
-
-    if (insertErr) {
-      return NextResponse.json({ error: insertErr.message, insertedSoFar: inserted }, { status: 500 });
-    }
+    const { error: insertErr } = await impacter.from('student_responses').insert(chunk);
+    if (insertErr) return { error: insertErr.message };
     inserted += chunk.length;
   }
 
-  return NextResponse.json({ inserted, skipped });
+  return { inserted, skipped };
+}
+
+// POST /api/admin/videoask-import/run
+export async function POST(req: Request) {
+  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const params = await req.json() as RunParams;
+  if (!params.formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
+
+  const result = await runImportCore(params);
+  return NextResponse.json(result, { status: 'error' in result ? 500 : 200 });
 }

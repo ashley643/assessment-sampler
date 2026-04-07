@@ -319,6 +319,10 @@ export default function VideoAskImportPage() {
   const [updating, setUpdating] = useState(false);
   const [updateResult, setUpdateResult] = useState<{ updated?: number; error?: string } | null>(null);
 
+  // Update-all state
+  const [updatingAll, setUpdatingAll] = useState(false);
+  const [updateAllProgress, setUpdateAllProgress] = useState<{ done: number; total: number; totalUpdated: number; errors: number } | null>(null);
+
   // Rename / delete state
   const [editingFormId, setEditingFormId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState('');
@@ -525,6 +529,46 @@ export default function VideoAskImportPage() {
     setForms(prev => prev.filter(f => f.formId !== formId));
   }
 
+  async function updateAll() {
+    setUpdatingAll(true);
+    setUpdateAllProgress({ done: 0, total: 0, totalUpdated: 0, errors: 0 });
+    try {
+      const res = await fetch('/api/admin/videoask-import/update-all', { method: 'POST' });
+      if (!res.body) return;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line) as {
+              type: string; total?: number; index?: number;
+              updated?: number; error?: string; totalUpdated?: number; totalErrors?: number;
+            };
+            if (msg.type === 'start') {
+              setUpdateAllProgress({ done: 0, total: msg.total ?? 0, totalUpdated: 0, errors: 0 });
+            } else if (msg.type === 'form_done') {
+              setUpdateAllProgress(prev => prev ? {
+                ...prev,
+                done: prev.done + 1,
+                totalUpdated: prev.totalUpdated + (msg.updated ?? 0),
+                errors: prev.errors + (msg.error ? 1 : 0),
+              } : prev);
+            }
+          } catch { /* ignore parse errors */ }
+        }
+      }
+    } finally {
+      setUpdatingAll(false);
+    }
+  }
+
   const responseNodeCount = Object.values(nodeRoles).filter(r => r.role === 'response').length;
   const metadataNodeCount = Object.values(nodeRoles).filter(r => r.role === 'metadata').length;
 
@@ -566,21 +610,46 @@ export default function VideoAskImportPage() {
         {/* ── LIST VIEW ── */}
         {view === 'list' && (
           <div className="h-full overflow-y-auto p-6 max-w-2xl">
-            <button
-              onClick={discoverForms}
-              disabled={loadingForms}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mb-6"
-            >
-              {loadingForms ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  Scanning…
-                </>
-              ) : 'Find VideoAsk Pilots'}
-            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                onClick={discoverForms}
+                disabled={loadingForms || updatingAll}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {loadingForms ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Scanning…
+                  </>
+                ) : 'Find VideoAsk Pilots'}
+              </button>
+              <button
+                onClick={updateAll}
+                disabled={updatingAll || loadingForms}
+                className="inline-flex items-center gap-2 px-4 py-2 border border-amber-300 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+              >
+                {updatingAll ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    {updateAllProgress
+                      ? `Updating ${updateAllProgress.done}/${updateAllProgress.total}…`
+                      : 'Starting…'}
+                  </>
+                ) : 'Update all'}
+              </button>
+            </div>
+            {!updatingAll && updateAllProgress && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                Updated {updateAllProgress.totalUpdated} rows across {updateAllProgress.total} forms
+                {updateAllProgress.errors > 0 && ` · ${updateAllProgress.errors} error${updateAllProgress.errors > 1 ? 's' : ''}`}
+              </div>
+            )}
 
             {formsError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formsError}</div>
