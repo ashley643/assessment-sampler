@@ -64,11 +64,18 @@ export async function GET(req: Request) {
     const schoolName   = searchParams.get('school')   ?? '';
     if (!districtName) return NextResponse.json({ error: 'district required' }, { status: 400 });
 
+    const NO_DISTRICT_EXPORT = '(No District)';
+
     let q = db
       .from('student_responses')
       .select('id, district_name, school_name, class_name, teacher_name, first_name, last_name, student_email, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date, source_id')
-      .not('url', 'is', null)
-      .eq('district_name', districtName);
+      .not('url', 'is', null);
+
+    if (districtName === NO_DISTRICT_EXPORT) {
+      q = q.is('district_name', null);
+    } else {
+      q = q.eq('district_name', districtName);
+    }
 
     if (schoolName) q = q.eq('school_name', schoolName);
 
@@ -123,11 +130,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ rows: [], totalCount: 0, hasMore: false, filterOptions: {} });
   }
 
+  const NO_DISTRICT = '(No District)';
+
   let q = db
     .from('student_responses')
     .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
-    .not('url', 'is', null)
-    .eq('district_name', districtName);
+    .not('url', 'is', null);
+
+  if (districtName === NO_DISTRICT) {
+    q = q.is('district_name', null);
+  } else {
+    q = q.eq('district_name', districtName);
+  }
 
   if (schoolName)  q = q.eq('school_name', schoolName);
   if (grade)       q = q.eq('current_grade', Number(grade));

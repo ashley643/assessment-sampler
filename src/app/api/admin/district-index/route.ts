@@ -14,6 +14,7 @@ export async function GET() {
   const { data, error } = await db
     .from('district_school_index')
     .select('district_name, school_name')
+    .neq('district_name', '__sync_cursor__')
     .order('district_name')
     .order('school_name');
 
