@@ -107,10 +107,10 @@ export async function GET() {
 
   // ── 4. Fetch form names — always, so any form with a missing name gets filled ─
   try {
-    const { data: formsData } = await impacter.schema('videoask').from('forms').select('id, title, name');
-    if (formsData) {
-      for (const f of formsData as { id: string; title?: string; name?: string }[]) {
-        const label = f.title || f.name || '';
+    const { data: formsData, error: formsErr } = await impacter.schema('videoask').from('forms').select('id, title');
+    if (!formsErr && formsData) {
+      for (const f of formsData as { id: string; title?: string }[]) {
+        const label = f.title ?? '';
         if (label && formMap.has(f.id)) formMap.get(f.id)!.formName = label;
       }
     }

@@ -500,7 +500,7 @@ export default function VideoAskImportPage() {
   }
 
   function displayName(f: FormInfo) {
-    return f.customLabel ?? f.formName ?? f.sampleTitle ?? (f.formId.slice(0, 8) + '…');
+    return f.customLabel ?? f.formName ?? (f.formId.slice(0, 8) + '…');
   }
 
   function startRename(f: FormInfo, e: React.MouseEvent) {

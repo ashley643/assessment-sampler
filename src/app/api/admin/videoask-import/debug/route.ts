@@ -62,7 +62,12 @@ export async function GET(req: Request) {
         }
         results.step_non_null_fields = preview;
         // Show raw keys
-        if (row.raw) results.step_raw_keys = Object.keys(row.raw as object);
+        if (row.raw) {
+          const rawObj = row.raw as Record<string, unknown>;
+          results.step_raw_keys = Object.keys(rawObj);
+          // form_metadata might contain all question definitions with overlay text
+          if (rawObj.form_metadata) results.step_raw_form_metadata = rawObj.form_metadata;
+        }
       }
       results.step_query_error = error?.message ?? null;
     } catch (e) { results.step_columns_err = String(e); }
