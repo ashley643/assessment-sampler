@@ -83,6 +83,7 @@ type RunResult = {
   skipped?: number;
   wouldInsert?: number;
   wouldSkip?: number;
+  totalStepsFetched?: number;
   sample?: Record<string, unknown>[];
   error?: string;
 };
@@ -839,6 +840,9 @@ export default function VideoAskImportPage() {
                           <strong>{dryResult.wouldInsert}</strong> rows to import
                           {(dryResult.wouldSkip ?? 0) > 0 && (
                             <>, <strong>{dryResult.wouldSkip}</strong> already imported (skipped)</>
+                          )}
+                          {dryResult.totalStepsFetched !== undefined && (
+                            <span className="text-gray-400 text-xs ml-2">({dryResult.totalStepsFetched} steps fetched)</span>
                           )}
                         </p>
                         {dryResult.sample && dryResult.sample.length > 0 && (

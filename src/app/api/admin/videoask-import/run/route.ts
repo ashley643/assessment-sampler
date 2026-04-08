@@ -370,7 +370,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   }
 
   if (dryRun) {
-    return { wouldInsert: toInsert.length, wouldSkip: skipped, sample: toInsert.slice(0, 3) };
+    return { wouldInsert: toInsert.length, wouldSkip: skipped, totalStepsFetched: steps.length, sample: toInsert.slice(0, 3) };
   }
 
   // 4a. UPDATE existing rows (patch by url)
