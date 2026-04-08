@@ -78,10 +78,18 @@ export async function GET(req: Request) {
 
     if (schoolName) q = q.eq('school_name', schoolName);
 
-    const { data, error } = await q.order('answer_date', { ascending: false }).limit(50000);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    const rows = (data ?? []) as Record<string, unknown>[];
+    // Paginate to bypass Supabase's 1,000-row single-query cap
+    const EXPORT_PAGE = 1000;
+    const rows: Record<string, unknown>[] = [];
+    let exportFrom = 0;
+    while (rows.length < 100000) { // safety cap
+      const { data: page, error } = await q.order('answer_date', { ascending: false }).range(exportFrom, exportFrom + EXPORT_PAGE - 1);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      const pageRows = (page ?? []) as Record<string, unknown>[];
+      rows.push(...pageRows);
+      if (pageRows.length < EXPORT_PAGE) break;
+      exportFrom += EXPORT_PAGE;
+    }
     if (rows.length === 0) return new Response('id\n', {
       headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="export.csv"` },
     });
