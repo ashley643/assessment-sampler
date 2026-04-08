@@ -279,13 +279,21 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
     }
   }
 
+  // 1b. Build set of UUIDs from this form's steps — used to scope usedFirstNames to this form only.
+  //     Pre-seeding from ALL districts would exhaust the name pool (~390 names) with large datasets.
+  const formStepUuids = new Set<string>();
+  for (const step of steps) {
+    const uuid = extractUuid(String(step.media_url ?? ''));
+    if (uuid) formStepUuids.add(uuid);
+  }
+
   // 2. Get existing URLs to skip already-imported rows.
   //    Use cursor-based pagination (id > lastId) instead of OFFSET to avoid
   //    statement timeouts — high-offset queries are O(offset) on large tables.
   const importedUuids = new Set<string>();
   const uuidToId   = new Map<string, number>(); // uuid → student_responses.id for fast PK updates
   const uuidToName = new Map<string, { firstName: string; lastName: string; email: string }>(); // existing names
-  const usedFirstNames = new Set<string>(); // first names already taken (pre-seeded from DB + this run)
+  const usedFirstNames = new Set<string>(); // first names taken within this form's rows + this run
   const SR_PAGE = 1000;
   let lastId = 0;
   while (true) {
@@ -305,10 +313,13 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       if (uuid) {
         importedUuids.add(uuid);
         uuidToId.set(uuid, row.id);
-        // Track existing names so we (a) reuse them for the same student and (b) don't re-assign them to others
         if (row.first_name) {
-          usedFirstNames.add(row.first_name);
           uuidToName.set(uuid, { firstName: row.first_name, lastName: row.last_name ?? '', email: row.student_email ?? '' });
+          // Only seed usedFirstNames from rows that belong to THIS form — prevents
+          // other districts from consuming name slots and causing "Student 6e2f76" fallbacks.
+          if (formStepUuids.has(uuid)) {
+            usedFirstNames.add(row.first_name);
+          }
         }
       }
     }
