@@ -127,11 +127,9 @@ function NodeCard({
         <div className="min-w-0">
           <span className="text-sm font-medium text-gray-900">{mediaIcon} {node.nodeTitle}</span>
           <span className="ml-2 text-xs text-gray-400">{node.count} responses</span>
-          {node.nodeText ? (
+          {node.nodeText && (
             <p className="text-xs text-blue-700 mt-1 italic line-clamp-3 whitespace-pre-line">{node.nodeText}</p>
-          ) : preview ? (
-            <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{preview.slice(0, 120)}{preview.length > 120 ? '…' : ''}</p>
-          ) : null}
+          )}
         </div>
         <a href={rawUrl} target="_blank" rel="noreferrer"
           title="Inspect raw JSON"
