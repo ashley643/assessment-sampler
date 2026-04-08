@@ -105,18 +105,16 @@ export async function GET() {
     lastSrId = rows[rows.length - 1].id;
   }
 
-  // ── 4. Fetch form names (only on first run or when new forms found) ────────
-  if (isFirstRun || importedByForm.size > 0) {
-    try {
-      const { data: formsData } = await impacter.schema('videoask').from('forms').select('id, title, name');
-      if (formsData) {
-        for (const f of formsData as { id: string; title?: string; name?: string }[]) {
-          const label = f.title || f.name || '';
-          if (label && formMap.has(f.id)) formMap.get(f.id)!.formName = label;
-        }
+  // ── 4. Fetch form names — always, so any form with a missing name gets filled ─
+  try {
+    const { data: formsData } = await impacter.schema('videoask').from('forms').select('id, title, name');
+    if (formsData) {
+      for (const f of formsData as { id: string; title?: string; name?: string }[]) {
+        const label = f.title || f.name || '';
+        if (label && formMap.has(f.id)) formMap.get(f.id)!.formName = label;
       }
-    } catch { /* forms table may not exist */ }
-  }
+    }
+  } catch { /* forms table may not exist */ }
 
   // ── 5. Merge new import counts into cached imported totals ─────────────────
   // We store per-form imported counts in cache so they accumulate across scans
