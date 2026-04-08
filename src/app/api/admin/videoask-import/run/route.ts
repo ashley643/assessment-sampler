@@ -40,34 +40,139 @@ const SR_COLUMNS = new Set([
 
 // ── Alliterative positive student name generation ─────────────────────────
 
-// Each letter maps to first names + positive trait "last names" starting with that letter
-const ALLITERATIVE_NAMES: Record<string, { first: string[]; trait: string[] }> = {
-  A: { first: ['Aaron','Aaliyah','Abby','Ace','Ada','Aiden','Alex','Aliya','Alvin','Amy'], trait: ['Achiever','Adventurous','Amazing','Ambitious','Artistic','Attentive','Authentic','Awesome'] },
-  B: { first: ['Bailey','Ben','Bianca','Blake','Bobby','Brandon','Brianna','Brooke','Bruno','Bryson'], trait: ['Balanced','Brave','Bright','Brilliant','Bubbly','Bold','Bouncy','Benevolent'] },
-  C: { first: ['Caleb','Camila','Carlos','Carmen','Casey','Charlie','Chloe','Clara','Cole','Corey'], trait: ['Calm','Capable','Caring','Cheerful','Clever','Compassionate','Confident','Creative','Curious'] },
-  D: { first: ['Dakota','Damian','Danika','Danny','Deja','Derek','Diana','Diego','Dominic','Dylan'], trait: ['Daring','Dedicated','Delightful','Determined','Devoted','Diligent','Dynamic','Driven'] },
-  E: { first: ['Eddie','Elena','Eli','Elijah','Elisa','Ella','Emma','Eric','Ethan','Eva'], trait: ['Eager','Earnest','Empathetic','Energetic','Enthusiastic','Expressive','Extraordinary','Excellent'] },
-  F: { first: ['Faith','Felix','Finn','Florence','Francisco','Frankie','Freddie','Freya','Fiona','Flynn'], trait: ['Fearless','Focused','Forthright','Friendly','Fulfilled','Fantastic','Flourishing','Forgiving'] },
-  G: { first: ['Gabriela','Gage','Genesis','Gianna','Gideon','Grace','Grant','Grayson','Greta','Gio'], trait: ['Generous','Gentle','Gifted','Glowing','Gracious','Grateful','Grounded','Genuine'] },
-  H: { first: ['Hannah','Harley','Harper','Harrison','Hayden','Hazel','Henry','Hope','Hudson','Hunter'], trait: ['Happy','Hardworking','Harmonious','Helpful','Honest','Hopeful','Humble','Heroic'] },
-  I: { first: ['Ian','Ida','Imani','Indigo','Ines','Isaac','Isabella','Isaiah','Ivan','Ivy'], trait: ['Imaginative','Inclusive','Independent','Industrious','Innovative','Insightful','Inspired','Intuitive'] },
-  J: { first: ['Jade','Jasmine','Javier','Jayden','Jenna','Jesse','Jordan','Joy','Julian','Juniper'], trait: ['Joyful','Jubilant','Just','Jovial','Judicious','Journeying','Jazzy','Justified'] },
-  K: { first: ['Kai','Kamila','Karen','Keanu','Keisha','Kelly','Kennedy','Kevin','Kim','Kyle'], trait: ['Kind','Keen','Kindhearted','Knowledgeable','Kooky','Kickstarting','Kaleidoscopic','Kudos'] },
-  L: { first: ['Lana','Laura','Lauren','Layla','Leo','Lexi','Liam','Lily','Logan','Lucas'], trait: ['Lively','Loyal','Luminous','Loving','Likable','Lighthearted','Leading','Legendary'] },
-  M: { first: ['Maddox','Makayla','Marcus','Maria','Mason','Maya','Mia','Miles','Morgan','Myles'], trait: ['Magnificent','Mindful','Motivated','Marvelous','Meaningful','Mighty','Masterful','Magnetic'] },
-  N: { first: ['Nadia','Nathan','Natalie','Nico','Nicole','Noel','Nora','Noah','Nova','Nyla'], trait: ['Natural','Nurturing','Noble','Notable','Nice','Nimble','Nifty','Noteworthy'] },
-  O: { first: ['Obi','Ocean','Olivia','Omar','Ona','Orlando','Oscar','Owen','Odessa','Orion'], trait: ['Open','Optimistic','Original','Outstanding','Outgoing','Openhearted','Observant','Organic'] },
-  P: { first: ['Paige','Parker','Patrick','Penelope','Peyton','Phoenix','Phoebe','Priya','Pierce','Paloma'], trait: ['Patient','Peaceful','Persistent','Playful','Positive','Powerful','Proactive','Proud'] },
-  Q: { first: ['Quinn','Quincy','Queen','Quest','Quentin','Quinella'], trait: ['Quick','Qualified','Quality','Quirky','Questioning','Quintessential'] },
-  R: { first: ['Rachel','Rafael','Ramon','Reagan','Reese','Ricardo','Riley','River','Robin','Ryan'], trait: ['Radiant','Reliable','Resilient','Resourceful','Respectful','Remarkable','Righteous','Rising'] },
-  S: { first: ['Sadie','Sam','Sara','Savannah','Sebastian','Selena','Siena','Skylar','Sofia','Summer'], trait: ['Sincere','Smart','Spirited','Splendid','Stellar','Strong','Supportive','Steadfast'] },
-  T: { first: ['Talia','Taylor','Theodore','Tia','Tobias','Tommy','Tori','Tristan','Tyra','Tyler'], trait: ['Talented','Thoughtful','Thriving','Tenacious','Trustworthy','Terrific','Transformative','True'] },
-  U: { first: ['Uma','Unique','Uri','Ursula','Ulani','Umberto'], trait: ['Understanding','United','Upbeat','Uplifting','Unifying','Unstoppable'] },
-  V: { first: ['Valencia','Valentina','Victor','Victoria','Vincent','Violet','Vivian','Vance'], trait: ['Vibrant','Victorious','Visionary','Vivid','Valuable','Versatile','Valiant','Virtuous'] },
-  W: { first: ['Wade','Wesley','Willow','Winter','Wren','Wyatt','Whitney','Warren'], trait: ['Warm','Wise','Wonderful','Witty','Worthy','Welcoming','Wholesome','Winning'] },
-  X: { first: ['Xander','Xavier','Xena','Xiomara','Xochi','Xavi'], trait: ['Xenial','Xtraordinary','Xceptional','Xcellent','Xpressive','Xploring'] },
-  Y: { first: ['Yasmine','Yolanda','Yusuf','Yvonne','Yara','Yael'], trait: ['Youthful','Yearning','Yielding','Yes-minded','Yielding','Yummy'] },
-  Z: { first: ['Zach','Zara','Zeke','Zelda','Zion','Zoey','Zola','Zuri'], trait: ['Zealous','Zestful','Zenful','Zippy','Zappy','Zingy','Zoned-in','Zeal'] },
+// Each first name tagged: 'f' = female-coded, 'm' = male-coded, 'n' = neutral
+type NameEntry = { name: string; g: 'f' | 'm' | 'n' };
+
+const ALLITERATIVE_NAMES: Record<string, { first: NameEntry[]; trait: string[] }> = {
+  A: { first: [
+    {name:'Aaliyah',g:'f'},{name:'Abby',g:'f'},{name:'Ada',g:'f'},{name:'Aliya',g:'f'},{name:'Amy',g:'f'},{name:'Amara',g:'f'},{name:'Aurora',g:'f'},
+    {name:'Aaron',g:'m'},{name:'Ace',g:'m'},{name:'Aiden',g:'m'},{name:'Alvin',g:'m'},{name:'Andre',g:'m'},
+    {name:'Alex',g:'n'},{name:'Avery',g:'n'},{name:'Ash',g:'n'},
+  ], trait: ['Achiever','Adventurous','Amazing','Ambitious','Artistic','Attentive','Authentic','Awesome','Adaptive','Assured'] },
+  B: { first: [
+    {name:'Bianca',g:'f'},{name:'Brianna',g:'f'},{name:'Brooke',g:'f'},{name:'Bella',g:'f'},{name:'Beatrice',g:'f'},
+    {name:'Ben',g:'m'},{name:'Bobby',g:'m'},{name:'Brandon',g:'m'},{name:'Bruno',g:'m'},{name:'Bryson',g:'m'},{name:'Barrett',g:'m'},
+    {name:'Bailey',g:'n'},{name:'Blake',g:'n'},{name:'Blair',g:'n'},
+  ], trait: ['Balanced','Brave','Bright','Brilliant','Bubbly','Bold','Bouncy','Benevolent','Blossoming','Beaming'] },
+  C: { first: [
+    {name:'Camila',g:'f'},{name:'Carmen',g:'f'},{name:'Chloe',g:'f'},{name:'Clara',g:'f'},{name:'Cora',g:'f'},{name:'Celeste',g:'f'},
+    {name:'Caleb',g:'m'},{name:'Carlos',g:'m'},{name:'Cole',g:'m'},{name:'Connor',g:'m'},{name:'Cruz',g:'m'},
+    {name:'Casey',g:'n'},{name:'Charlie',g:'n'},{name:'Corey',g:'n'},
+  ], trait: ['Calm','Capable','Caring','Cheerful','Clever','Compassionate','Confident','Creative','Curious','Courageous'] },
+  D: { first: [
+    {name:'Danika',g:'f'},{name:'Deja',g:'f'},{name:'Diana',g:'f'},{name:'Dahlia',g:'f'},{name:'Destiny',g:'f'},
+    {name:'Damian',g:'m'},{name:'Danny',g:'m'},{name:'Derek',g:'m'},{name:'Diego',g:'m'},{name:'Dominic',g:'m'},{name:'Damon',g:'m'},
+    {name:'Dakota',g:'n'},{name:'Dylan',g:'n'},{name:'Drew',g:'n'},
+  ], trait: ['Daring','Dedicated','Delightful','Determined','Devoted','Diligent','Dynamic','Driven','Dazzling','Dependable'] },
+  E: { first: [
+    {name:'Elena',g:'f'},{name:'Elisa',g:'f'},{name:'Ella',g:'f'},{name:'Emma',g:'f'},{name:'Eva',g:'f'},{name:'Esme',g:'f'},
+    {name:'Eddie',g:'m'},{name:'Eli',g:'m'},{name:'Elijah',g:'m'},{name:'Eric',g:'m'},{name:'Ethan',g:'m'},{name:'Emilio',g:'m'},
+    {name:'Emery',g:'n'},{name:'Elliot',g:'n'},
+  ], trait: ['Eager','Earnest','Empathetic','Energetic','Enthusiastic','Expressive','Extraordinary','Excellent','Evolving','Enduring'] },
+  F: { first: [
+    {name:'Faith',g:'f'},{name:'Florence',g:'f'},{name:'Freya',g:'f'},{name:'Fiona',g:'f'},{name:'Felicity',g:'f'},
+    {name:'Felix',g:'m'},{name:'Finn',g:'m'},{name:'Francisco',g:'m'},{name:'Freddie',g:'m'},{name:'Flynn',g:'m'},
+    {name:'Frankie',g:'n'},{name:'Finley',g:'n'},
+  ], trait: ['Fearless','Focused','Forthright','Friendly','Fulfilled','Fantastic','Flourishing','Forgiving','Forward','Fierce'] },
+  G: { first: [
+    {name:'Gabriela',g:'f'},{name:'Gianna',g:'f'},{name:'Grace',g:'f'},{name:'Greta',g:'f'},{name:'Gloria',g:'f'},
+    {name:'Gage',g:'m'},{name:'Gideon',g:'m'},{name:'Grant',g:'m'},{name:'Grayson',g:'m'},{name:'Garrett',g:'m'},
+    {name:'Genesis',g:'n'},{name:'Gio',g:'n'},
+  ], trait: ['Generous','Gentle','Gifted','Glowing','Gracious','Grateful','Grounded','Genuine','Growing','Gleaming'] },
+  H: { first: [
+    {name:'Hannah',g:'f'},{name:'Hazel',g:'f'},{name:'Hope',g:'f'},{name:'Holly',g:'f'},{name:'Hana',g:'f'},
+    {name:'Harrison',g:'m'},{name:'Henry',g:'m'},{name:'Hudson',g:'m'},{name:'Hugo',g:'m'},{name:'Hector',g:'m'},
+    {name:'Harley',g:'n'},{name:'Harper',g:'n'},{name:'Hayden',g:'n'},{name:'Hunter',g:'n'},
+  ], trait: ['Happy','Hardworking','Harmonious','Helpful','Honest','Hopeful','Humble','Heroic','Heartfelt','Healing'] },
+  I: { first: [
+    {name:'Ida',g:'f'},{name:'Ines',g:'f'},{name:'Isabella',g:'f'},{name:'Ivy',g:'f'},{name:'Iris',g:'f'},
+    {name:'Ian',g:'m'},{name:'Isaac',g:'m'},{name:'Isaiah',g:'m'},{name:'Ivan',g:'m'},{name:'Ignacio',g:'m'},
+    {name:'Imani',g:'n'},{name:'Indigo',g:'n'},
+  ], trait: ['Imaginative','Inclusive','Independent','Industrious','Innovative','Insightful','Inspired','Intuitive','Impactful','Inquisitive'] },
+  J: { first: [
+    {name:'Jade',g:'f'},{name:'Jasmine',g:'f'},{name:'Jenna',g:'f'},{name:'Joy',g:'f'},{name:'Juniper',g:'f'},{name:'Julia',g:'f'},
+    {name:'Javier',g:'m'},{name:'Jayden',g:'m'},{name:'Julian',g:'m'},{name:'Jonas',g:'m'},{name:'Joel',g:'m'},
+    {name:'Jesse',g:'n'},{name:'Jordan',g:'n'},{name:'Jamie',g:'n'},
+  ], trait: ['Joyful','Jubilant','Just','Jovial','Judicious','Journeying','Jazzy','Justified','Joyous','Jumping'] },
+  K: { first: [
+    {name:'Kamila',g:'f'},{name:'Karen',g:'f'},{name:'Keisha',g:'f'},{name:'Kira',g:'f'},{name:'Kylie',g:'f'},
+    {name:'Keanu',g:'m'},{name:'Kevin',g:'m'},{name:'Kyle',g:'m'},{name:'Kane',g:'m'},{name:'Knox',g:'m'},
+    {name:'Kai',g:'n'},{name:'Kelly',g:'n'},{name:'Kennedy',g:'n'},{name:'Kim',g:'n'},
+  ], trait: ['Kind','Keen','Kindhearted','Knowledgeable','Kickstarting','Kaleidoscopic','Kudos','Kicking','Kindling','Knowing'] },
+  L: { first: [
+    {name:'Lana',g:'f'},{name:'Laura',g:'f'},{name:'Lauren',g:'f'},{name:'Layla',g:'f'},{name:'Lexi',g:'f'},{name:'Lily',g:'f'},{name:'Luna',g:'f'},
+    {name:'Leo',g:'m'},{name:'Liam',g:'m'},{name:'Lucas',g:'m'},{name:'Luca',g:'m'},{name:'Lance',g:'m'},
+    {name:'Logan',g:'n'},{name:'Lennon',g:'n'},
+  ], trait: ['Lively','Loyal','Luminous','Loving','Likable','Lighthearted','Leading','Legendary','Limitless','Lifting'] },
+  M: { first: [
+    {name:'Makayla',g:'f'},{name:'Maria',g:'f'},{name:'Maya',g:'f'},{name:'Mia',g:'f'},{name:'Mikaela',g:'f'},{name:'Melody',g:'f'},
+    {name:'Maddox',g:'m'},{name:'Marcus',g:'m'},{name:'Mason',g:'m'},{name:'Miles',g:'m'},{name:'Myles',g:'m'},{name:'Miguel',g:'m'},
+    {name:'Morgan',g:'n'},{name:'Micah',g:'n'},
+  ], trait: ['Magnificent','Mindful','Motivated','Marvelous','Meaningful','Mighty','Masterful','Magnetic','Maturing','Mentoring'] },
+  N: { first: [
+    {name:'Nadia',g:'f'},{name:'Natalie',g:'f'},{name:'Nicole',g:'f'},{name:'Nora',g:'f'},{name:'Nova',g:'f'},{name:'Nyla',g:'f'},
+    {name:'Nathan',g:'m'},{name:'Noah',g:'m'},{name:'Nico',g:'m'},{name:'Noel',g:'m'},{name:'Niko',g:'m'},
+    {name:'Naveen',g:'n'},
+  ], trait: ['Natural','Nurturing','Noble','Notable','Nice','Nimble','Nifty','Noteworthy','Nourishing','Navigating'] },
+  O: { first: [
+    {name:'Olivia',g:'f'},{name:'Ona',g:'f'},{name:'Odessa',g:'f'},{name:'Opal',g:'f'},
+    {name:'Obi',g:'m'},{name:'Omar',g:'m'},{name:'Orlando',g:'m'},{name:'Oscar',g:'m'},{name:'Owen',g:'m'},{name:'Orion',g:'m'},
+    {name:'Ocean',g:'n'},
+  ], trait: ['Open','Optimistic','Original','Outstanding','Outgoing','Openhearted','Observant','Organic','Overcoming','Owning'] },
+  P: { first: [
+    {name:'Paige',g:'f'},{name:'Penelope',g:'f'},{name:'Phoebe',g:'f'},{name:'Priya',g:'f'},{name:'Paloma',g:'f'},{name:'Pia',g:'f'},
+    {name:'Patrick',g:'m'},{name:'Pierce',g:'m'},{name:'Pablo',g:'m'},{name:'Preston',g:'m'},
+    {name:'Parker',g:'n'},{name:'Peyton',g:'n'},{name:'Phoenix',g:'n'},
+  ], trait: ['Patient','Peaceful','Persistent','Playful','Positive','Powerful','Proactive','Proud','Purpose-driven','Promising'] },
+  Q: { first: [
+    {name:'Queen',g:'f'},{name:'Quinella',g:'f'},
+    {name:'Quincy',g:'m'},{name:'Quentin',g:'m'},{name:'Quest',g:'m'},
+    {name:'Quinn',g:'n'},
+  ], trait: ['Quick','Qualified','Quality','Quirky','Questioning','Quintessential','Questing','Quiet-strength'] },
+  R: { first: [
+    {name:'Rachel',g:'f'},{name:'Rosa',g:'f'},{name:'Rosalind',g:'f'},{name:'Ruby',g:'f'},
+    {name:'Rafael',g:'m'},{name:'Ramon',g:'m'},{name:'Ricardo',g:'m'},{name:'Roman',g:'m'},{name:'Ryder',g:'m'},
+    {name:'Reagan',g:'n'},{name:'Reese',g:'n'},{name:'Riley',g:'n'},{name:'River',g:'n'},{name:'Robin',g:'n'},{name:'Ryan',g:'n'},
+  ], trait: ['Radiant','Reliable','Resilient','Resourceful','Respectful','Remarkable','Righteous','Rising','Reaching','Rooted'] },
+  S: { first: [
+    {name:'Sadie',g:'f'},{name:'Sara',g:'f'},{name:'Savannah',g:'f'},{name:'Selena',g:'f'},{name:'Siena',g:'f'},{name:'Sofia',g:'f'},{name:'Summer',g:'f'},{name:'Stella',g:'f'},
+    {name:'Sebastian',g:'m'},{name:'Sergio',g:'m'},{name:'Simon',g:'m'},{name:'Sterling',g:'m'},
+    {name:'Sam',g:'n'},{name:'Skylar',g:'n'},{name:'Sage',g:'n'},
+  ], trait: ['Sincere','Smart','Spirited','Splendid','Stellar','Strong','Supportive','Steadfast','Shining','Soaring'] },
+  T: { first: [
+    {name:'Talia',g:'f'},{name:'Tia',g:'f'},{name:'Tori',g:'f'},{name:'Tyra',g:'f'},{name:'Thea',g:'f'},
+    {name:'Theodore',g:'m'},{name:'Tobias',g:'m'},{name:'Tommy',g:'m'},{name:'Tristan',g:'m'},{name:'Tyler',g:'m'},{name:'Tanner',g:'m'},
+    {name:'Taylor',g:'n'},{name:'Tatum',g:'n'},
+  ], trait: ['Talented','Thoughtful','Thriving','Tenacious','Trustworthy','Terrific','Transformative','True','Trailblazing','Touching'] },
+  U: { first: [
+    {name:'Uma',g:'f'},{name:'Ursula',g:'f'},{name:'Ulani',g:'f'},
+    {name:'Uri',g:'m'},{name:'Umberto',g:'m'},{name:'Upton',g:'m'},
+    {name:'Unique',g:'n'},
+  ], trait: ['Understanding','United','Upbeat','Uplifting','Unifying','Unstoppable','Unwavering','Upstanding'] },
+  V: { first: [
+    {name:'Valencia',g:'f'},{name:'Valentina',g:'f'},{name:'Victoria',g:'f'},{name:'Violet',g:'f'},{name:'Vivian',g:'f'},
+    {name:'Victor',g:'m'},{name:'Vincent',g:'m'},{name:'Vance',g:'m'},{name:'Vito',g:'m'},
+    {name:'Val',g:'n'},
+  ], trait: ['Vibrant','Victorious','Visionary','Vivid','Valuable','Versatile','Valiant','Virtuous','Venturing','Vital'] },
+  W: { first: [
+    {name:'Willow',g:'f'},{name:'Whitney',g:'f'},{name:'Willa',g:'f'},
+    {name:'Wade',g:'m'},{name:'Wesley',g:'m'},{name:'Wyatt',g:'m'},{name:'Warren',g:'m'},{name:'Winston',g:'m'},
+    {name:'Winter',g:'n'},{name:'Wren',g:'n'},
+  ], trait: ['Warm','Wise','Wonderful','Witty','Worthy','Welcoming','Wholesome','Winning','Willing','Wide-open'] },
+  X: { first: [
+    {name:'Xena',g:'f'},{name:'Xiomara',g:'f'},{name:'Xochi',g:'f'},
+    {name:'Xander',g:'m'},{name:'Xavier',g:'m'},{name:'Xavi',g:'m'},
+  ], trait: ['Xenial','Xtraordinary','Xceptional','Xcellent','Xpressive','Xploring'] },
+  Y: { first: [
+    {name:'Yasmine',g:'f'},{name:'Yolanda',g:'f'},{name:'Yvonne',g:'f'},{name:'Yara',g:'f'},
+    {name:'Yusuf',g:'m'},{name:'Yogi',g:'m'},
+    {name:'Yael',g:'n'},
+  ], trait: ['Youthful','Yearning','Yes-minded','Yielding','Yummy','Yielding'] },
+  Z: { first: [
+    {name:'Zara',g:'f'},{name:'Zelda',g:'f'},{name:'Zoey',g:'f'},{name:'Zola',g:'f'},{name:'Zuri',g:'f'},
+    {name:'Zach',g:'m'},{name:'Zeke',g:'m'},{name:'Zion',g:'m'},{name:'Zane',g:'m'},
+    {name:'Zen',g:'n'},
+  ], trait: ['Zealous','Zestful','Zenful','Zippy','Zappy','Zingy','Zoned-in','Zeal'] },
 };
 
 function djb2(str: string, seed = 5381): number {
@@ -77,11 +182,17 @@ function djb2(str: string, seed = 5381): number {
 }
 
 // contactId: stable per-student ID across forms (raw.contact_id from VideoAsk)
-// usedNames: pass the same Set for an entire import run to prevent repeats
+// usedFirstNames: first names already taken in this run + pre-seeded from DB
+// gender: 'Female' | 'Male' | '' | null — used to pick gender-appropriate first names
 function generateStudentName(
   contactId: string,
-  usedNames: Set<string>,
+  usedFirstNames: Set<string>,
+  gender: string | null,
 ): { firstName: string; lastName: string; email: string } {
+  const g = (gender ?? '').toLowerCase();
+  const isFemale = g.includes('female') || g === 'f';
+  const isMale   = !isFemale && (g.includes('male') || g === 'm');
+
   const letters = Object.keys(ALLITERATIVE_NAMES);
   const h1 = djb2(contactId);
   const h2 = djb2(contactId + '\x00');
@@ -89,19 +200,24 @@ function generateStudentName(
   for (let attempt = 0; attempt < 2000; attempt++) {
     const letter = letters[(h1 + attempt * 11) % letters.length];
     const { first, trait } = ALLITERATIVE_NAMES[letter];
-    const firstName = first[(h2 + attempt * 7) % first.length];
+
+    // Filter to gender-appropriate names; fall back to neutral, then all
+    let pool = first.filter(e => isFemale ? e.g === 'f' : isMale ? e.g === 'm' : true);
+    if (pool.length === 0) pool = first.filter(e => e.g === 'n');
+    if (pool.length === 0) pool = first;
+
+    const firstName = pool[(h2 + attempt * 7) % pool.length].name;
+    if (usedFirstNames.has(firstName)) continue; // first name already taken
+
     const lastName  = trait[(h1 + h2 + attempt * 13) % trait.length];
-    const key = `${firstName}|${lastName}`;
-    if (!usedNames.has(key)) {
-      usedNames.add(key);
-      return {
-        firstName,
-        lastName,
-        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@student.impacter.com`,
-      };
-    }
+    usedFirstNames.add(firstName);
+    return {
+      firstName,
+      lastName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@student.impacter.com`,
+    };
   }
-  // Extreme fallback (>2000 students with same hash — essentially impossible)
+  // Extreme fallback
   const fb = contactId.slice(0, 6);
   return { firstName: 'Student', lastName: fb, email: `student.${fb}@student.impacter.com` };
 }
@@ -166,13 +282,15 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   //    Use cursor-based pagination (id > lastId) instead of OFFSET to avoid
   //    statement timeouts — high-offset queries are O(offset) on large tables.
   const importedUuids = new Set<string>();
-  const uuidToId = new Map<string, number>(); // uuid → student_responses.id for fast PK updates
+  const uuidToId   = new Map<string, number>(); // uuid → student_responses.id for fast PK updates
+  const uuidToName = new Map<string, { firstName: string; lastName: string; email: string }>(); // existing names
+  const usedFirstNames = new Set<string>(); // first names already taken (pre-seeded from DB + this run)
   const SR_PAGE = 1000;
   let lastId = 0;
   while (true) {
     const { data: urlPage, error: urlErr } = await impacter
       .from('student_responses')
-      .select('id, url')
+      .select('id, url, first_name, last_name, student_email')
       .not('url', 'is', null)
       .gt('id', lastId)
       .order('id', { ascending: true })
@@ -180,12 +298,17 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
     if (urlErr) return { error: urlErr.message };
 
-    const rows = (urlPage ?? []) as { id: number; url: string }[];
+    const rows = (urlPage ?? []) as { id: number; url: string; first_name?: string; last_name?: string; student_email?: string }[];
     for (const row of rows) {
       const uuid = extractUuid(row.url ?? '');
       if (uuid) {
         importedUuids.add(uuid);
         uuidToId.set(uuid, row.id);
+        // Track existing names so we (a) reuse them for the same student and (b) don't re-assign them to others
+        if (row.first_name) {
+          usedFirstNames.add(row.first_name);
+          uuidToName.set(uuid, { firstName: row.first_name, lastName: row.last_name ?? '', email: row.student_email ?? '' });
+        }
       }
     }
 
@@ -196,7 +319,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   // 3. Build rows to insert (or update)
   const toInsert: Record<string, unknown>[] = [];
   let skipped = 0;
-  const usedNames = new Set<string>(); // ensures no name repeats within this import run
+  // contactIdToName: within a single run, ensures the same contact_id always gets the same name
+  // (relevant when a student has multiple response nodes — each is a separate row but same person)
+  const contactIdToName = new Map<string, { firstName: string; lastName: string; email: string }>();
 
   const hasNodeRoles = nodeRoles && Object.keys(nodeRoles).length > 0;
 
@@ -299,16 +424,23 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
           row.casel_attribute = nodeRole.caselAttribute;
         }
 
-        // Auto-generate alliterative name — seed from contact_id (stable across all forms for same student)
+        // Auto-generate alliterative name — gender-aware, globally unique first name
         if (!row.first_name && !row.last_name && !row.student_email) {
           const contactId = String(
             (interactionSteps[0]?.raw as Record<string, unknown> | undefined)?.contact_id
             ?? interactionId
           );
-          const { firstName, lastName, email } = generateStudentName(contactId, usedNames);
-          row.first_name = firstName;
-          row.last_name = lastName;
-          row.student_email = email;
+          // 1. Already imported under a different question node → reuse same name
+          const existingByUrl = uuid ? uuidToName.get(uuid) : undefined;
+          // 2. Same contact_id seen earlier in this run → reuse
+          const existingByContact = contactIdToName.get(contactId);
+          // 3. Generate fresh
+          const resolved = existingByUrl ?? existingByContact
+            ?? generateStudentName(contactId, usedFirstNames, String(row.gender ?? metadataValues.gender ?? ''));
+          if (!existingByContact) contactIdToName.set(contactId, resolved);
+          row.first_name    = resolved.firstName;
+          row.last_name     = resolved.lastName;
+          row.student_email = resolved.email;
         }
 
         toInsert.push(row);
@@ -355,7 +487,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       // Normalize VideoAsk media_type → human-readable response_type
       if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));
 
-      // Auto-generate alliterative name — seed from contact_id (stable across all forms for same student)
+      // Auto-generate alliterative name — gender-aware, globally unique first name
       if (!row.first_name && !row.last_name && !row.student_email) {
         const contactId = String(
           (step.raw as Record<string, unknown> | undefined)?.contact_id
@@ -363,10 +495,15 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
           ?? step.id
           ?? ''
         );
-        const { firstName, lastName, email } = generateStudentName(contactId, usedNames);
-        row.first_name = firstName;
-        row.last_name = lastName;
-        row.student_email = email;
+        const uuid = extractUuid(String(step.media_url ?? ''));
+        const existingByUrl     = uuid ? uuidToName.get(uuid) : undefined;
+        const existingByContact = contactIdToName.get(contactId);
+        const resolved = existingByUrl ?? existingByContact
+          ?? generateStudentName(contactId, usedFirstNames, String(row.gender ?? ''));
+        if (!existingByContact) contactIdToName.set(contactId, resolved);
+        row.first_name    = resolved.firstName;
+        row.last_name     = resolved.lastName;
+        row.student_email = resolved.email;
       }
 
       toInsert.push(row);
