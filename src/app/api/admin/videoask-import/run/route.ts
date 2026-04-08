@@ -166,6 +166,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   //    Use cursor-based pagination (id > lastId) instead of OFFSET to avoid
   //    statement timeouts — high-offset queries are O(offset) on large tables.
   const importedUuids = new Set<string>();
+  const uuidToId = new Map<string, number>(); // uuid → student_responses.id for fast PK updates
   const SR_PAGE = 1000;
   let lastId = 0;
   while (true) {
@@ -182,7 +183,10 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
     const rows = (urlPage ?? []) as { id: number; url: string }[];
     for (const row of rows) {
       const uuid = extractUuid(row.url ?? '');
-      if (uuid) importedUuids.add(uuid);
+      if (uuid) {
+        importedUuids.add(uuid);
+        uuidToId.set(uuid, row.id);
+      }
     }
 
     if (rows.length < SR_PAGE) break;
@@ -373,16 +377,17 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
     return { wouldInsert: toInsert.length, wouldSkip: skipped, totalStepsFetched: steps.length, sample: toInsert.slice(0, 3) };
   }
 
-  // 4a. UPDATE existing rows (patch by url)
+  // 4a. UPDATE existing rows — match by primary key (id) to avoid full-table scan on url
   if (updateExisting) {
     let updated = 0;
     const BATCH = 20;
     for (let i = 0; i < toInsert.length; i += BATCH) {
       const results = await Promise.all(
         toInsert.slice(i, i + BATCH).map(row => {
-          const url = String(row.url ?? '');
-          if (!url) return Promise.resolve({ error: null });
-          return impacter.from('student_responses').update(row).eq('url', url);
+          const uuid = extractUuid(String(row.url ?? ''));
+          const rowId = uuid ? uuidToId.get(uuid) : undefined;
+          if (!rowId) return Promise.resolve({ error: null });
+          return impacter.from('student_responses').update(row).eq('id', rowId);
         })
       );
       for (const { error } of results as { error: { message: string } | null }[]) {

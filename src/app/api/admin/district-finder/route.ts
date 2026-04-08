@@ -131,39 +131,44 @@ export async function GET(req: Request) {
 
   const NO_DISTRICT = '(No District)';
 
-  let q = db
-    .from('student_responses')
-    .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
-    .not('url', 'is', null);
-
-  if (districtName === NO_DISTRICT) {
-    q = q.is('district_name', null);
-  } else {
-    q = q.eq('district_name', districtName);
+  // Build a fresh query with all filters — called per page since Supabase builder is consumed on await
+  function buildQ(from: number, pageSize: number) {
+    let q = db
+      .from('student_responses')
+      .select('id, district_name, school_name, class_name, teacher_name, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date')
+      .not('url', 'is', null);
+    if (districtName === NO_DISTRICT) q = q.is('district_name', null);
+    else q = q.eq('district_name', districtName);
+    if (schoolName)   q = q.eq('school_name', schoolName);
+    if (grade)        q = q.eq('current_grade', Number(grade));
+    if (gender)       q = q.eq('gender', gender);
+    if (ethnicity)    q = q.eq('ethnicity', ethnicity);
+    if (homeLang)     q = q.eq('home_language', homeLang);
+    if (hispanic)     q = q.eq('hispanic', hispanic === 'true');
+    if (ell)          q = q.eq('ell', ell === 'true');
+    if (frl)          q = q.eq('frl', frl === 'true');
+    if (iep)          q = q.eq('iep', iep === 'true');
+    if (sessionName)  q = q.eq('session_name', sessionName);
+    if (courseId)     q = q.eq('course_id', courseId);
+    if (attribute)    q = q.or(`harvard_attribute.eq.${attribute},casel_attribute.eq.${attribute}`);
+    if (mediaType)    q = q.eq('response_type', mediaType);
+    if (minScore > 0) q = q.or(`harvard_score.gte.${minScore},casel_score.gte.${minScore}`);
+    if (search)       q = q.or(`question.ilike.%${search}%,answer.ilike.%${search}%`);
+    return q.order('answer_date', { ascending: false }).range(from, from + pageSize - 1);
   }
 
-  if (schoolName)  q = q.eq('school_name', schoolName);
-  if (grade)       q = q.eq('current_grade', Number(grade));
-  if (gender)      q = q.eq('gender', gender);
-  if (ethnicity)   q = q.eq('ethnicity', ethnicity);
-  if (homeLang)    q = q.eq('home_language', homeLang);
-  if (hispanic)    q = q.eq('hispanic', hispanic === 'true');
-  if (ell)         q = q.eq('ell', ell === 'true');
-  if (frl)         q = q.eq('frl', frl === 'true');
-  if (iep)         q = q.eq('iep', iep === 'true');
-  if (sessionName) q = q.eq('session_name', sessionName);
-  if (courseId)    q = q.eq('course_id', courseId);
-  if (attribute)   q = q.or(`harvard_attribute.eq.${attribute},casel_attribute.eq.${attribute}`);
-  if (mediaType)   q = q.eq('response_type', mediaType);
-  if (minScore > 0) q = q.or(`harvard_score.gte.${minScore},casel_score.gte.${minScore}`);
-  if (search)      q = q.or(`question.ilike.%${search}%,answer.ilike.%${search}%`);
-
-  const { data, error } = await q
-    .order('answer_date', { ascending: false })
-    .limit(5000);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
+  // Fetch all matching rows across pages (Supabase hard-caps single queries at 1,000)
+  const SR_PAGE = 1000;
+  const rawRows: SRRow[] = [];
+  let from = 0;
+  while (rawRows.length < 20000) { // safety cap
+    const { data, error } = await buildQ(from, SR_PAGE);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const page = (data ?? []) as SRRow[];
+    rawRows.push(...page);
+    if (page.length < SR_PAGE) break;
+    from += SR_PAGE;
+  }
   type SRRow = {
     id: number;
     district_name: string;
@@ -194,7 +199,7 @@ export async function GET(req: Request) {
     answer_date: string | null;
   };
 
-  let allRows = (data ?? []) as SRRow[];
+  let allRows = rawRows;
 
   // Word-count filter (done in JS since SQL can't easily count words)
   if (minWords > 0) {
