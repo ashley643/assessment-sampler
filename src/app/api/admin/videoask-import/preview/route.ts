@@ -5,6 +5,7 @@ import { getImpacterClient } from '@/lib/impacter-client';
 export type NodeInfo = {
   nodeId: string;
   nodeTitle: string;
+  nodeText: string | null;
   hasMedia: boolean;
   sampleTranscript: string | null;
   samplePollOption: string | null;
@@ -51,6 +52,7 @@ export async function GET(req: Request) {
       nodeMap.set(nodeId, {
         nodeId,
         nodeTitle: String(step.node_title ?? nodeId),
+        nodeText: step.node_text != null ? String(step.node_text) : null,
         hasMedia: step.media_url != null,
         sampleTranscript: step.transcript != null ? String(step.transcript) : null,
         samplePollOption: pollLabel ? String(pollLabel) : null,

@@ -67,6 +67,7 @@ type FormInfo = {
 type NodeInfo = {
   nodeId: string;
   nodeTitle: string;
+  nodeText: string | null;
   hasMedia: boolean;
   sampleTranscript: string | null;
   samplePollOption: string | null;
@@ -126,8 +127,11 @@ function NodeCard({
         <div className="min-w-0">
           <span className="text-sm font-medium text-gray-900">{mediaIcon} {node.nodeTitle}</span>
           <span className="ml-2 text-xs text-gray-400">{node.count} responses</span>
+          {node.nodeText && (
+            <p className="text-xs text-blue-600 mt-1 italic line-clamp-3 whitespace-pre-line">{node.nodeText}</p>
+          )}
           {preview && (
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{preview.slice(0, 120)}{preview.length > 120 ? '…' : ''}</p>
+            <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{preview.slice(0, 120)}{preview.length > 120 ? '…' : ''}</p>
           )}
         </div>
         <a href={rawUrl} target="_blank" rel="noreferrer"
@@ -595,6 +599,9 @@ export default function VideoAskImportPage() {
               {view === 'configure' && selectedForm && (
                 <>
                   {displayName(selectedForm)}
+                  {selectedForm.customLabel && selectedForm.formName && (
+                    <span className="ml-1 text-xs text-gray-400">({selectedForm.formName})</span>
+                  )}
                   {totalSteps !== null && !loadingPreview && (
                     <span className="ml-2 text-xs text-gray-400">{totalSteps} responses</span>
                   )}
