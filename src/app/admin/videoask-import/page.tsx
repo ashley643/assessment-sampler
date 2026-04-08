@@ -33,7 +33,7 @@ const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
 ];
 
 const HARVARD_ATTRIBUTES = [
-  '', 'curiosity', 'grit', 'perspective_taking', 'gratitude', 'purpose', 'self_control',
+  '', 'compassion', 'curiosity', 'grit', 'gratitude', 'growth_mindset', 'perspective_taking', 'purpose', 'self_control',
 ];
 
 const CASEL_ATTRIBUTES = [

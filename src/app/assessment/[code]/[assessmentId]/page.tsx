@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getProgress, markQuestionComplete } from '@/lib/progress';
 import { track } from '@/lib/track';
 import type { AccessCode, Assessment, Question } from '@/types/assessment';
+import { AudioAvatarPlayer } from '@/components/AudioAvatarPlayer';
 
 /* ─── Confetti piece ───────────────────────────────────────── */
 const CONFETTI_COLORS = ['#e8735a', '#4a6fa5', '#1D9E75', '#7B68C4', '#f59e0b', '#ec4899'];
@@ -334,9 +335,11 @@ export default function AssessmentPlayerPage() {
   const spanishSample = currentQ.samples?.find(s => s.language === 'spanish'); // first ES
   const sampleAvailable = !!englishSample;
   const hasSample = !!(showSample && sampleAvailable);
+  const activeSample = hasSample ? (spanishMode && spanishSample ? spanishSample : englishSample) : null;
   const embedSrc = hasSample
     ? (spanishMode && spanishSample ? spanishSample.embedUrl : englishSample!.embedUrl)
     : (spanishMode && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl);
+  const isAudioSample = activeSample?.mediaType === 'audio';
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
@@ -550,26 +553,39 @@ export default function AssessmentPlayerPage() {
                 </button>
               </Tooltip>
             </div>
-            <iframe
-              key={`${currentQ.id}-${spanishMode}-${hasSample}`}
-              src={embedSrc}
-              allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              className={`w-full ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
-              style={{
-                border: 'none',
-                borderRadius: 16,
-                display: 'block',
-                boxShadow: spanishMode && hasSample
-                  ? '0 0 0 4px #e8735a, 0 0 0 8px #1D9E7566'
-                  : spanishMode
-                  ? '0 0 0 4px #e8735a'
-                  : hasSample
-                  ? '0 0 0 4px #1D9E75'
-                  : undefined,
-                transition: 'box-shadow 0.3s ease',
-              }}
-              title={currentQ.title}
-            />
+            {isAudioSample && activeSample ? (
+              <AudioAvatarPlayer
+                key={`${currentQ.id}-${spanishMode}-${hasSample}`}
+                embedUrl={embedSrc}
+                gender={activeSample.gender}
+                grade={activeSample.grade}
+                sampleId={activeSample.id}
+                className={`w-full rounded-2xl ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-[4/5]'}`}
+                iframeClassName="w-full"
+                iframeStyle={{ border: 'none', borderRadius: 16, display: 'block' }}
+              />
+            ) : (
+              <iframe
+                key={`${currentQ.id}-${spanishMode}-${hasSample}`}
+                src={embedSrc}
+                allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
+                className={`w-full ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
+                style={{
+                  border: 'none',
+                  borderRadius: 16,
+                  display: 'block',
+                  boxShadow: spanishMode && hasSample
+                    ? '0 0 0 4px #e8735a, 0 0 0 8px #1D9E7566'
+                    : spanishMode
+                    ? '0 0 0 4px #e8735a'
+                    : hasSample
+                    ? '0 0 0 4px #1D9E75'
+                    : undefined,
+                  transition: 'box-shadow 0.3s ease',
+                }}
+                title={currentQ.title}
+              />
+            )}
           </div>
 
           {/* Text input panel */}

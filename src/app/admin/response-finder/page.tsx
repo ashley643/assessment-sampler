@@ -164,6 +164,7 @@ function SamplePlayer({ embedUrl, mediaType, title }: { embedUrl: string; mediaT
   );
 }
 
+
 export default function TranscriptFinderPage() {
   const [transcripts, setTranscripts]   = useState<Transcript[]>([]);
   const [needsSamples, setNeedsSamples] = useState<NeedsSample[]>([]);
