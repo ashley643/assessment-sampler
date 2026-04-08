@@ -357,8 +357,7 @@ export default function TranscriptFinderPage() {
       transcript: t,
       questionId: prefilledQuestionId ?? focusQuestion ?? needsSamples[0]?.questionId ?? '',
       language: 'english',
-      // For audio, store the direct MP3 URL so the feed can use <audio> instead of the VideoAsk iframe
-      embedUrl: (t.mediaType === 'audio' && t.mediaUrl) ? t.mediaUrl : (t.shareUrl ?? t.mediaUrl),
+      embedUrl: t.shareUrl ?? t.mediaUrl,
       excerpt: t.transcript,
       grade: t.grade ?? '',
       gender: t.gender ?? '',

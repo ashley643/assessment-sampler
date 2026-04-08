@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { AccessCode, Assessment, Question, QuestionSample } from '@/types/assessment';
 import { track } from '@/lib/track';
-import { AudioAvatarPlayer } from '@/components/AudioAvatarPlayer';
 
 interface FeedItem {
   question: Question;
@@ -728,27 +727,16 @@ export default function FeedPage() {
                         <p className="text-sm text-gray-600 italic leading-relaxed">&ldquo;{sample.excerpt}&rdquo;</p>
                       </div>
                     )}
-                    {(sample.mediaType ?? 'video') === 'audio' ? (
-                      <AudioAvatarPlayer
-                        embedUrl={sample.embedUrl}
-                        gender={sample.gender}
-                        grade={sample.grade}
-                        sampleId={sample.id}
-                        iframeClassName="w-full aspect-video"
-                        iframeStyle={{ border: 'none' }}
+                    <div className="aspect-video bg-gray-50">
+                      <iframe
+                        src={sample.embedUrl}
+                        allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
+                        loading="lazy"
+                        className="w-full h-full"
+                        style={{ border: 'none' }}
+                        title={`Sample response — ${question.title}`}
                       />
-                    ) : (
-                      <div className="aspect-video bg-gray-50">
-                        <iframe
-                          src={sample.embedUrl}
-                          allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-                          loading="lazy"
-                          className="w-full h-full"
-                          style={{ border: 'none' }}
-                          title={`Sample response — ${question.title}`}
-                        />
-                      </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
