@@ -734,8 +734,7 @@ export default function FeedPage() {
                         gender={sample.gender}
                         grade={sample.grade}
                         sampleId={sample.id}
-                        className="aspect-video w-full"
-                        iframeClassName="w-full h-full"
+                        iframeClassName="w-full aspect-video"
                         iframeStyle={{ border: 'none' }}
                       />
                     ) : (

@@ -560,8 +560,7 @@ export default function AssessmentPlayerPage() {
                 gender={activeSample.gender}
                 grade={activeSample.grade}
                 sampleId={activeSample.id}
-                className={`w-full rounded-2xl ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-[4/5]'}`}
-                iframeClassName="w-full"
+                iframeClassName={`w-full md:max-w-[720px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
                 iframeStyle={{ border: 'none', borderRadius: 16, display: 'block' }}
               />
             ) : (
