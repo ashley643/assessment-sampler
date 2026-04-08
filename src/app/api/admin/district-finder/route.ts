@@ -68,8 +68,7 @@ export async function GET(req: Request) {
 
     let q = db
       .from('student_responses')
-      .select('id, district_name, school_name, class_name, teacher_name, first_name, last_name, student_email, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date, source_id')
-      .not('url', 'is', null);
+      .select('id, district_name, school_name, class_name, teacher_name, first_name, last_name, student_email, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date, source_id');
 
     if (districtName === NO_DISTRICT_EXPORT) {
       q = q.is('district_name', null);
