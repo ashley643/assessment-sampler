@@ -239,6 +239,7 @@ type RunParams = {
   dryRun?: boolean;
   nodeRoles?: NodeRoles;
   updateExisting?: boolean;
+  regenNames?: boolean; // when true + updateExisting, ignore old DB names and regenerate fresh
 };
 
 export type RunResult =
@@ -249,7 +250,7 @@ export type RunResult =
 
 // Core import logic — called by both POST handler and update-all route
 export async function runImportCore(params: RunParams): Promise<RunResult> {
-  const { formId, staticValues, columnMappings, dryRun, nodeRoles, updateExisting } = params;
+  const { formId, staticValues, columnMappings, dryRun, nodeRoles, updateExisting, regenNames } = params;
   if (!formId) return { error: 'formId required' };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,8 +432,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
             ?? interactionId
           );
           // 1. Already imported under a different question node → reuse same name
-          const existingByUrl = uuid ? uuidToName.get(uuid) : undefined;
-          // 2. Same contact_id seen earlier in this run → reuse
+          //    (skipped when regenNames=true — forces fresh gender-aware generation)
+          const existingByUrl = (!regenNames && uuid) ? uuidToName.get(uuid) : undefined;
+          // 2. Same contact_id seen earlier in this run → reuse (always active, ensures same student = same name)
           const existingByContact = contactIdToName.get(contactId);
           // 3. Generate fresh
           const resolved = existingByUrl ?? existingByContact
@@ -496,7 +498,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
           ?? ''
         );
         const uuid = extractUuid(String(step.media_url ?? ''));
-        const existingByUrl     = uuid ? uuidToName.get(uuid) : undefined;
+        const existingByUrl     = (!regenNames && uuid) ? uuidToName.get(uuid) : undefined;
         const existingByContact = contactIdToName.get(contactId);
         const resolved = existingByUrl ?? existingByContact
           ?? generateStudentName(contactId, usedFirstNames, String(row.gender ?? ''));

@@ -463,7 +463,7 @@ export default function VideoAskImportPage() {
     }
   }
 
-  async function runUpdate() {
+  async function runUpdate(regenNames = false) {
     if (!selectedForm) return;
     setUpdating(true);
     setUpdateResult(null);
@@ -472,7 +472,7 @@ export default function VideoAskImportPage() {
       const res = await fetch('/api/admin/videoask-import/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles, updateExisting: true }),
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles, updateExisting: true, regenNames }),
       });
       setUpdateResult(await res.json());
     } finally {
@@ -821,11 +821,19 @@ export default function VideoAskImportPage() {
                     {dryRunning ? 'Previewing…' : 'Preview import'}
                   </button>
                   <button
-                    onClick={runUpdate}
+                    onClick={() => runUpdate(false)}
                     disabled={updating || loadingPreview}
                     className="px-3 py-1.5 border border-amber-300 text-sm text-amber-700 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
                   >
                     {updating ? 'Updating…' : 'Update existing'}
+                  </button>
+                  <button
+                    onClick={() => runUpdate(true)}
+                    disabled={updating || loadingPreview}
+                    className="px-3 py-1.5 border border-orange-400 text-sm text-orange-700 rounded-lg hover:bg-orange-50 disabled:opacity-50 transition-colors"
+                    title="Re-run name generation for existing rows — fixes gender mismatches and repeated first names"
+                  >
+                    {updating ? 'Fixing…' : 'Fix names'}
                   </button>
                 </div>
                 {updateResult && (
