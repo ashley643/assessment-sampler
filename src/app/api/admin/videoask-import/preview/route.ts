@@ -26,16 +26,27 @@ export async function GET(req: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
 
-  // Fetch all steps for this form to build the nodes list
-  const { data, error } = await impacter
-    .schema('videoask')
-    .from('steps')
-    .select('id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
-    .eq('form_id', formId);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const allSteps = (data ?? []) as Record<string, unknown>[];
+  // Fetch ALL steps for this form using cursor pagination (Supabase caps at 1,000 without it)
+  const allSteps: Record<string, unknown>[] = [];
+  {
+    const PAGE = 1000;
+    let lastId = '00000000-0000-0000-0000-000000000000';
+    while (true) {
+      const { data: page, error } = await impacter
+        .schema('videoask')
+        .from('steps')
+        .select('id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
+        .eq('form_id', formId)
+        .gt('id', lastId)
+        .order('id', { ascending: true })
+        .limit(PAGE);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      const rows = (page ?? []) as Record<string, unknown>[];
+      allSteps.push(...rows);
+      if (rows.length < PAGE) break;
+      lastId = String(rows[rows.length - 1].id);
+    }
+  }
 
   // Build node list
   const nodeMap = new Map<string, NodeInfo>();
