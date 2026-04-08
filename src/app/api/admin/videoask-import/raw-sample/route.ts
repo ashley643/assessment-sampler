@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   let query = impacter
     .schema('videoask')
     .from('steps')
-    .select('id, node_id, node_title, transcript, raw')
+    .select('id, interaction_id, node_id, node_title, transcript, raw')
     .eq('form_id', formId)
     .limit(5);
 
