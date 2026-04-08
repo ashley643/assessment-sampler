@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getProgress, markQuestionComplete } from '@/lib/progress';
 import { track } from '@/lib/track';
 import type { AccessCode, Assessment, Question } from '@/types/assessment';
+import { AudioAvatarPlayer } from '@/components/AudioAvatarPlayer';
 
 /* ─── Confetti piece ───────────────────────────────────────── */
 const CONFETTI_COLORS = ['#e8735a', '#4a6fa5', '#1D9E75', '#7B68C4', '#f59e0b', '#ec4899'];
@@ -325,9 +326,11 @@ export default function AssessmentPlayerPage() {
   const spanishSample = currentQ.samples?.find(s => s.language === 'spanish'); // first ES
   const sampleAvailable = !!englishSample;
   const hasSample = !!(showSample && sampleAvailable);
+  const activeSample = hasSample ? (spanishMode && spanishSample ? spanishSample : englishSample) : null;
   const embedSrc = hasSample
     ? (spanishMode && spanishSample ? spanishSample.embedUrl : englishSample!.embedUrl)
     : (spanishMode && currentQ.spanishEmbedUrl ? currentQ.spanishEmbedUrl : currentQ.embedUrl);
+  const isAudioSample = activeSample?.mediaType === 'audio';
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-white">
@@ -519,16 +522,29 @@ export default function AssessmentPlayerPage() {
             </p>
           )}
 
-          {/* iframe — fills height when no typing panel, scrolls with page when typing is open */}
+          {/* iframe (or audio avatar) — fills height when no typing panel */}
           <div className={`flex justify-center px-4 md:px-16 py-4 bg-gray-50 ${showTyping ? 'flex-shrink-0' : 'flex-1 overflow-hidden'}`}>
-            <iframe
-              key={`${currentQ.id}-${spanishMode}-${hasSample}`}
-              src={embedSrc}
-              allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
-              className={`w-full md:max-w-[720px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
-              style={{ border: 'none', borderRadius: 16, display: 'block' }}
-              title={currentQ.title}
-            />
+            {isAudioSample && activeSample ? (
+              <AudioAvatarPlayer
+                key={`${currentQ.id}-${spanishMode}-${hasSample}`}
+                embedUrl={embedSrc}
+                gender={activeSample.gender}
+                grade={activeSample.grade}
+                sampleId={activeSample.id}
+                className={`w-full md:max-w-[720px] rounded-2xl ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-[4/5]'}`}
+                iframeClassName={`w-full md:max-w-[720px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
+                iframeStyle={{ border: 'none', borderRadius: 16, display: 'block' }}
+              />
+            ) : (
+              <iframe
+                key={`${currentQ.id}-${spanishMode}-${hasSample}`}
+                src={embedSrc}
+                allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *;"
+                className={`w-full md:max-w-[720px] ${showTyping ? 'aspect-[3/4] md:aspect-[16/9]' : 'aspect-[3/4] md:aspect-auto md:h-full'}`}
+                style={{ border: 'none', borderRadius: 16, display: 'block' }}
+                title={currentQ.title}
+              />
+            )}
           </div>
 
           {/* Text input panel */}
