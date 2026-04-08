@@ -139,16 +139,28 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const impacter = getImpacterClient() as any;
 
-  // 1. Fetch all steps for this form (only columns we actually use)
-  const { data: stepsData, error: stepsErr } = await impacter
-    .schema('videoask')
-    .from('steps')
-    .select('id, interaction_id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
-    .eq('form_id', formId);
+  // 1. Fetch ALL steps for this form using cursor pagination (Supabase default cap = 1,000 rows)
+  const steps: Record<string, unknown>[] = [];
+  {
+    const STEP_PAGE = 1000;
+    let lastStepId = '00000000-0000-0000-0000-000000000000';
+    while (true) {
+      const { data: page, error: stepsErr } = await impacter
+        .schema('videoask')
+        .from('steps')
+        .select('id, interaction_id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
+        .eq('form_id', formId)
+        .gt('id', lastStepId)
+        .order('id', { ascending: true })
+        .limit(STEP_PAGE);
 
-  if (stepsErr) return { error: stepsErr.message };
-
-  const steps = (stepsData ?? []) as Record<string, unknown>[];
+      if (stepsErr) return { error: stepsErr.message };
+      const rows = (page ?? []) as Record<string, unknown>[];
+      steps.push(...rows);
+      if (rows.length < STEP_PAGE) break;
+      lastStepId = String(rows[rows.length - 1].id);
+    }
+  }
 
   // 2. Get existing URLs to skip already-imported rows.
   //    Use cursor-based pagination (id > lastId) instead of OFFSET to avoid
