@@ -128,7 +128,7 @@ type RunParams = {
 export type RunResult =
   | { inserted: number; skipped: number; error?: never }
   | { updated: number; error?: never }
-  | { wouldInsert: number; wouldSkip: number; sample: Record<string, unknown>[]; error?: never }
+  | { wouldInsert: number; wouldSkip: number; totalStepsFetched: number; sample: Record<string, unknown>[]; error?: never }
   | { error: string };
 
 // Core import logic — called by both POST handler and update-all route
