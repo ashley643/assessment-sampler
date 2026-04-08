@@ -82,23 +82,36 @@ export async function GET(req: Request) {
   }
 
   // 5. Sample 5 distinct form_ids from steps to cross-check with forms table
-  try {
-    const { data } = await impacter
-      .schema('videoask').from('steps')
-      .select('form_id')
-      .order('form_id')
-      .limit(50);
-    if (data) {
-      const ids = [...new Set((data as { form_id: string }[]).map(r => r.form_id))].slice(0, 5);
-      results.sample_step_form_ids = ids;
-      // Check which of these exist in forms table
-      const { data: found } = await impacter
-        .schema('videoask').from('forms')
-        .select('id, title')
-        .in('id', ids);
-      results.step_form_ids_in_forms_table = found ?? [];
-    }
-  } catch (e) { results.form_id_crosscheck = { error: String(e) }; }
+  if (formId) {
+    try {
+      // Get distinct node_ids for this form and check if any exist as forms.id
+      const { data: nodeRows } = await impacter
+        .schema('videoask').from('steps')
+        .select('node_id, node_title')
+        .eq('form_id', formId)
+        .limit(100);
+      if (nodeRows) {
+        const nodeIds = [...new Set((nodeRows as { node_id: string; node_title: string }[]).map(r => r.node_id))];
+        results.distinct_node_ids = nodeIds;
+        // Check if any node_id exists as a forms.id (i.e. each question is also a form entry)
+        const { data: nodesAsForms } = await impacter
+          .schema('videoask').from('forms')
+          .select('id, title, raw')
+          .in('id', nodeIds);
+        if (nodesAsForms && (nodesAsForms as unknown[]).length > 0) {
+          results.nodes_found_as_forms = (nodesAsForms as { id: string; title: string; raw: Record<string, unknown> }[]).map(f => ({
+            id: f.id,
+            title: f.title,
+            first_question_text: (f.raw?.first_question as Record<string, unknown> | undefined)?.metadata
+              ? ((f.raw.first_question as Record<string, unknown>).metadata as Record<string, unknown>).text
+              : null,
+          }));
+        } else {
+          results.nodes_found_as_forms = 'none — node_ids do not appear in forms table';
+        }
+      }
+    } catch (e) { results.node_as_form_check = { error: String(e) }; }
+  }
 
   return NextResponse.json(results, { status: 200 });
 }
