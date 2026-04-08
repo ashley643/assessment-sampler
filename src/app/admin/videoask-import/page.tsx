@@ -4,30 +4,42 @@ import { useState, useEffect, useCallback } from 'react';
 
 // The student_responses columns we can populate, with friendly labels
 const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
-  { col: 'district_name',     label: 'District Name' },
-  { col: 'school_name',       label: 'School Name' },
-  { col: 'class_name',        label: 'Class Name' },
-  { col: 'teacher_name',      label: 'Teacher Name' },
-  { col: 'current_grade',     label: 'Grade' },
-  { col: 'gender',            label: 'Gender' },
-  { col: 'hispanic',          label: 'Hispanic', hint: 'true/false' },
-  { col: 'ell',               label: 'ELL', hint: 'true/false' },
-  { col: 'frl',               label: 'FRL', hint: 'true/false' },
-  { col: 'iep',               label: 'IEP', hint: 'true/false' },
-  { col: 'ethnicity',         label: 'Ethnicity' },
-  { col: 'home_language',     label: 'Home Language' },
-  { col: 'session_name',      label: 'Session Name' },
-  { col: 'course_id',         label: 'Course ID' },
-  { col: 'response_type',     label: 'Response Type' },
-  { col: 'question',          label: 'Question' },
-  { col: 'answer',            label: 'Answer / Transcript' },
-  { col: 'harvard_attribute', label: 'Harvard Attribute' },
-  { col: 'harvard_score',     label: 'Harvard Score' },
-  { col: 'casel_attribute',   label: 'CASEL Attribute' },
-  { col: 'casel_score',       label: 'CASEL Score' },
-  { col: 'url',               label: 'Media URL' },
-  { col: 'answer_date',       label: 'Answer Date' },
-  { col: 'source_id',         label: 'Source ID' },
+  { col: 'first_name',      label: 'First Name',           hint: 'auto-generated' },
+  { col: 'last_name',       label: 'Last Name',            hint: 'auto-generated' },
+  { col: 'student_email',   label: 'Student Email',        hint: 'auto-generated' },
+  { col: 'district_name',   label: 'District Name' },
+  { col: 'school_name',     label: 'School Name' },
+  { col: 'class_name',      label: 'Class Name' },
+  { col: 'teacher_name',    label: 'Teacher Name' },
+  { col: 'current_grade',   label: 'Grade' },
+  { col: 'gender',          label: 'Gender' },
+  { col: 'hispanic',        label: 'Hispanic',             hint: 'true/false' },
+  { col: 'ell',             label: 'ELL',                  hint: 'true/false' },
+  { col: 'frl',             label: 'FRL',                  hint: 'true/false' },
+  { col: 'iep',             label: 'IEP',                  hint: 'true/false' },
+  { col: 'ethnicity',       label: 'Ethnicity' },
+  { col: 'home_language',   label: 'Home Language' },
+  { col: 'session_name',    label: 'Session Name' },
+  { col: 'course_id',       label: 'Course ID' },
+  { col: 'response_type',   label: 'Response Type' },
+  { col: 'question',        label: 'Question' },
+  { col: 'answer',          label: 'Answer / Transcript' },
+  { col: 'harvard_attribute', label: 'Harvard Attribute',  hint: 'per node' },
+  { col: 'harvard_score',   label: 'Harvard Score' },
+  { col: 'casel_attribute', label: 'CASEL Attribute',      hint: 'per node' },
+  { col: 'casel_score',     label: 'CASEL Score' },
+  { col: 'url',             label: 'Media URL' },
+  { col: 'answer_date',     label: 'Answer Date' },
+  { col: 'source_id',       label: 'Source ID' },
+];
+
+const HARVARD_ATTRIBUTES = [
+  '', 'compassion', 'curiosity', 'grit', 'gratitude', 'growth_mindset', 'perspective_taking', 'purpose', 'self_control',
+];
+
+const CASEL_ATTRIBUTES = [
+  '', 'self_awareness', 'self_management', 'social_awareness',
+  'relationship_skills', 'responsible_decision_making',
 ];
 
 // Smart default mappings: videoask.steps column → student_responses column

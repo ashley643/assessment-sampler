@@ -164,6 +164,148 @@ function SamplePlayer({ embedUrl, mediaType, title }: { embedUrl: string; mediaT
   );
 }
 
+// ── Demographic avatar helpers ─────────────────────────────────────────────
+function _avatarProps(gender: string | null, grade: string | null) {
+  const g = (gender ?? '').toLowerCase();
+  const gradeNum = grade ? parseInt(grade, 10) : null;
+  const isFemale = g.includes('female') || g === 'f' || g === 'girl' || g === 'woman';
+  const isMale   = !isFemale && (g.includes('male') || g === 'm' || g === 'boy' || g === 'man');
+  const gn = (gradeNum !== null && !isNaN(gradeNum)) ? gradeNum : null;
+  const isKid   = gn !== null && gn <= 5;
+  const isTween = gn !== null && gn >= 6 && gn <= 8;
+  const isTeen  = gn !== null && gn >= 9;
+  const isAdult = !isKid && !isTween && !isTeen;
+  const bg = isFemale
+    ? (isKid ? '#FFD6E7' : isTween ? '#DDD6FF' : isTeen ? '#FFD0EC' : '#FFBDD0')
+    : isMale
+    ? (isKid ? '#B8DAFF' : isTween ? '#C3F5D6' : isTeen ? '#B3F0FF' : '#FFD6B3')
+    : '#E5E5E5';
+  const hair = isFemale ? '#8B4513' : isMale ? '#2D1B0E' : '#666666';
+  const shirt = isFemale
+    ? (isKid ? '#FF69B4' : isTween ? '#9B59B6' : isTeen ? '#E91E8C' : '#C0392B')
+    : isMale
+    ? (isKid ? '#3498DB' : isTween ? '#27AE60' : isTeen ? '#2980B9' : '#E67E22')
+    : '#888888';
+  const blush = isKid || (isFemale && isTween);
+  const label = gn !== null
+    ? (isKid ? 'Elementary' : isTween ? 'Middle School' : 'High School')
+    : 'Parent / Adult';
+  return { isFemale, isMale, isKid, isTween, isTeen, isAdult, bg, hair, shirt, blush, label };
+}
+
+function DemoAvatar({ gender, grade, size = 72 }: { gender: string | null; grade: string | null; size?: number }) {
+  const { isFemale, isMale, isKid, isTween, isTeen, isAdult, bg, hair, shirt, blush } = _avatarProps(gender, grade);
+  const skin = '#F5C18A';
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* Background */}
+      <circle cx="40" cy="40" r="40" fill={bg} />
+      {/* Shirt / body (drawn first — behind neck & head) */}
+      <ellipse cx="40" cy="76" rx="24" ry="16" fill={shirt} />
+      <rect x="28" y="60" width="24" height="20" rx="3" fill={shirt} />
+      {/* Long hair strands behind head */}
+      {isFemale && isTeen && (
+        <>
+          <path d="M27 29 C19 39 17 54 22 66" stroke={hair} strokeWidth="11" strokeLinecap="round" fill="none" />
+          <path d="M53 29 C61 39 63 54 58 66" stroke={hair} strokeWidth="11" strokeLinecap="round" fill="none" />
+        </>
+      )}
+      {isFemale && isTween && (
+        <path d="M53 28 C65 33 69 45 64 56 C62 61 59 62 57 59" stroke={hair} strokeWidth="11" strokeLinecap="round" fill="none" />
+      )}
+      {/* Neck */}
+      <rect x="36" y="52" width="8" height="10" rx="2" fill={skin} />
+      {/* Ears */}
+      <ellipse cx="26" cy="38" rx="3" ry="4" fill={skin} />
+      <ellipse cx="54" cy="38" rx="3" ry="4" fill={skin} />
+      {/* Head */}
+      <ellipse cx="40" cy="36" rx="14" ry="17" fill={skin} />
+      {/* Hair cap (on top of head) */}
+      {isFemale && isKid && (
+        <>
+          <ellipse cx="40" cy="22" rx="14" ry="9" fill={hair} />
+          <circle cx="22" cy="32" r="7" fill={hair} />
+          <circle cx="58" cy="32" r="7" fill={hair} />
+          <path d="M15 25 Q22 20 21 28 Q22 36 15 31 Q18 28 15 25" fill="#FF1493" />
+          <path d="M29 25 Q22 20 23 28 Q22 36 29 31 Q26 28 29 25" fill="#FF1493" />
+          <circle cx="22" cy="28" r="2.5" fill="#FF1493" />
+          <path d="M51 25 Q58 20 57 28 Q58 36 51 31 Q54 28 51 25" fill="#FF1493" />
+          <path d="M65 25 Q58 20 59 28 Q58 36 65 31 Q62 28 65 25" fill="#FF1493" />
+          <circle cx="58" cy="28" r="2.5" fill="#FF1493" />
+        </>
+      )}
+      {isFemale && isTween && (
+        <>
+          <ellipse cx="40" cy="22" rx="14" ry="9" fill={hair} />
+          <circle cx="56" cy="28" r="3.5" fill="#CC66FF" />
+        </>
+      )}
+      {isFemale && isTeen && <ellipse cx="40" cy="22" rx="14" ry="9" fill={hair} />}
+      {isFemale && isAdult && (
+        <>
+          <ellipse cx="40" cy="23" rx="13" ry="8" fill={hair} />
+          <circle cx="40" cy="14" r="8" fill={hair} />
+          <path d="M34 12 Q40 9 46 12" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none" />
+        </>
+      )}
+      {isMale && isKid && (
+        <>
+          <ellipse cx="40" cy="22" rx="13" ry="9" fill={hair} />
+          <polygon points="28,22 30,11 33,22" fill={hair} />
+          <polygon points="36,21 39,9 42,21" fill={hair} />
+          <polygon points="47,22 50,11 52,22" fill={hair} />
+        </>
+      )}
+      {isMale && isTween && <ellipse cx="40" cy="22" rx="13" ry="8" fill={hair} />}
+      {isMale && isTeen && (
+        <>
+          <ellipse cx="40" cy="21" rx="13" ry="9" fill={hair} />
+          <path d="M30 22 Q42 15 52 22" stroke="rgba(255,255,255,0.2)" strokeWidth="2" fill="none" />
+        </>
+      )}
+      {isMale && isAdult && <ellipse cx="40" cy="23" rx="12" ry="7" fill={hair} />}
+      {!isFemale && !isMale && <ellipse cx="40" cy="22" rx="13" ry="8" fill={hair} />}
+      {/* Eyebrows */}
+      <path d="M30 30 Q33.5 28 37 30" stroke={hair} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M43 30 Q46.5 28 50 30" stroke={hair} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* Eyes */}
+      <ellipse cx="33.5" cy="36" rx="3.2" ry="3.5" fill="white" />
+      <ellipse cx="46.5" cy="36" rx="3.2" ry="3.5" fill="white" />
+      <circle cx="33.5" cy="36.5" r="2.3" fill="#2D1B0E" />
+      <circle cx="46.5" cy="36.5" r="2.3" fill="#2D1B0E" />
+      <circle cx="34.5" cy="35.2" r="0.9" fill="white" />
+      <circle cx="47.5" cy="35.2" r="0.9" fill="white" />
+      {/* Nose */}
+      <path d="M38.5 42 Q37 44 38.5 45 Q40 44 41.5 45 Q43 44 41.5 42" stroke="#D49060" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      {/* Smile */}
+      <path d="M35 49.5 Q40 54 45 49.5" stroke="#C06030" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      {/* Blush */}
+      {blush && (
+        <>
+          <ellipse cx="27.5" cy="42" rx="4" ry="2.5" fill="#FFB3C6" opacity="0.55" />
+          <ellipse cx="52.5" cy="42" rx="4" ry="2.5" fill="#FFB3C6" opacity="0.55" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function DemoAudioCard({ mediaUrl, gender, grade }: { mediaUrl: string; gender: string | null; grade: string | null }) {
+  const { bg, label } = _avatarProps(gender, grade);
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ background: bg + '66' }}>
+      <div className="flex flex-col items-center pt-4 pb-1">
+        <DemoAvatar gender={gender} grade={grade} size={80} />
+        <p className="text-[11px] text-gray-500 mt-1 font-medium tracking-wide uppercase">{label}</p>
+      </div>
+      <div className="px-4 pb-3 pt-2">
+        <audio controls preload="none" src={mediaUrl} className="w-full" style={{ height: '32px' }} />
+      </div>
+    </div>
+  );
+}
+
 export default function TranscriptFinderPage() {
   const [transcripts, setTranscripts]   = useState<Transcript[]>([]);
   const [needsSamples, setNeedsSamples] = useState<NeedsSample[]>([]);
@@ -947,7 +1089,7 @@ export default function TranscriptFinderPage() {
                       {/* Audio preview */}
                       {t.mediaType === 'audio' && t.mediaUrl && (
                         <div className="px-5 pt-3 pb-1">
-                          <audio controls preload="none" src={t.mediaUrl} className="w-full" style={{ height: '36px' }} />
+                          <DemoAudioCard mediaUrl={t.mediaUrl} gender={t.gender} grade={t.grade} />
                         </div>
                       )}
 
