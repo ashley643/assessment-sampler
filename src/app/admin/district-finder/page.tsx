@@ -510,7 +510,7 @@ export default function DistrictFinderPage() {
           <div>
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Demographics</p>
             <div className="flex items-end gap-3 flex-wrap">
-              <Dropdown label="School"        options={allOptions.schools}     value={selectedSchool} onChange={setSelectedSchool} />
+              {!selectedSchool && <Dropdown label="School" options={allOptions.schools} value={selectedSchool} onChange={setSelectedSchool} />}
               <Dropdown label="Grade"         options={allOptions.grades}      value={grade}          onChange={setGrade} />
               <Dropdown label="Gender"        options={allOptions.genders}     value={gender}         onChange={setGender} />
               <Dropdown label="Ethnicity"     options={allOptions.ethnicities} value={ethnicity}      onChange={setEthnicity} />
