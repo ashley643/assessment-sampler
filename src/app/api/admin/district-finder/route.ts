@@ -99,7 +99,7 @@ export async function GET(req: Request) {
     // lookup fails — VideoAsk doesn't always populate share_url on every response.
     const exportShareUrlMap: Record<string, string> = {};
     const exportUuids = rows.map(r => extractUuid(String(r.url ?? ''))).filter((u): u is string => u !== null);
-    const SHARE_BATCH = 100;
+    const SHARE_BATCH = 24;
     for (let i = 0; i < exportUuids.length; i += SHARE_BATCH) {
       const batch = exportUuids.slice(i, i + SHARE_BATCH);
       const orConds = batch.map(u => `media_url.ilike.%${u}%`).join(',');
