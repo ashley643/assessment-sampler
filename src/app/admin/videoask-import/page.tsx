@@ -331,6 +331,8 @@ export default function VideoAskImportPage() {
   const [editingFormId, setEditingFormId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState('');
 
+  const [hideImported, setHideImported] = useState(true);
+
   // Columns covered by metadata nodes: col → node title
   const metadataCoveredCols = useMemo(() => {
     const map = new Map<string, string>();
@@ -685,7 +687,7 @@ export default function VideoAskImportPage() {
 
             {forms.length > 0 && (
               <div className="space-y-2">
-                {forms.map(f => (
+                {forms.filter(f => !hideImported || !f.isImported).map(f => (
                   <div
                     key={f.formId}
                     className={`group w-full flex items-center justify-between px-4 py-3 bg-white border rounded-lg transition-colors text-left ${
@@ -754,6 +756,17 @@ export default function VideoAskImportPage() {
                   </div>
                 ))}
               </div>
+            )}
+
+            {forms.some(f => f.isImported) && (
+              <button
+                onClick={() => setHideImported(h => !h)}
+                className="mt-3 text-xs text-gray-400 hover:text-gray-500 transition-colors"
+              >
+                {hideImported
+                  ? `Show ${forms.filter(f => f.isImported).length} already-imported`
+                  : 'Hide already-imported'}
+              </button>
             )}
 
             {!loadingForms && forms.length === 0 && (
