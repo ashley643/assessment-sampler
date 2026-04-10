@@ -94,6 +94,35 @@ export async function GET(req: Request) {
       headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="export.csv"` },
     });
 
+    // Cross-reference videoask.steps to get share_url for each row, batched to avoid huge OR clauses
+    const exportShareUrlMap: Record<string, string> = {};
+    const exportUuids = rows.map(r => extractUuid(String(r.url ?? ''))).filter((u): u is string => u !== null);
+    const SHARE_BATCH = 200;
+    for (let i = 0; i < exportUuids.length; i += SHARE_BATCH) {
+      const batch = exportUuids.slice(i, i + SHARE_BATCH);
+      try {
+        const orConds = batch.map(u => `media_url.ilike.%${u}%`).join(',');
+        const { data: stepsData } = await db
+          .schema('videoask')
+          .from('steps')
+          .select('media_url, share_url')
+          .or(orConds)
+          .limit(batch.length * 2);
+        if (stepsData) {
+          for (const s of stepsData as { media_url: string | null; share_url: string | null }[]) {
+            const uuid = extractUuid(s.media_url ?? '');
+            if (uuid && s.share_url && !exportShareUrlMap[uuid]) exportShareUrlMap[uuid] = s.share_url;
+          }
+        }
+      } catch { /* share_url is best-effort */ }
+    }
+
+    // Attach share_url as the last column on each row
+    for (const row of rows) {
+      const uuid = extractUuid(String(row.url ?? ''));
+      row.share_url = (uuid && exportShareUrlMap[uuid]) ? exportShareUrlMap[uuid] : '';
+    }
+
     const cols = Object.keys(rows[0]);
     function csvEscape(v: unknown): string {
       if (v == null) return '';
