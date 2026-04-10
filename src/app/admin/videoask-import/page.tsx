@@ -46,7 +46,7 @@ const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
   answer:        'transcript',
   url:           'media_url',
   answer_date:   'created_at',
-  question:      'node_title',
+  question:      'node_text',
   response_type: 'media_type',
 };
 
