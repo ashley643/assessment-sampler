@@ -56,20 +56,30 @@ function activeCount(f: Filters) {
 
 const PAGE_SIZE = 12;
 
-// Videos first, then round-robin across bundles/assessments for diversity
-function sortForFeed(items: FeedItem[]): FeedItem[] {
+type SortMode = 'diverse' | 'question' | 'grade';
+
+function sortForFeed(items: FeedItem[], sortBy: SortMode): FeedItem[] {
+  if (sortBy === 'question') {
+    return [...items].sort((a, b) => {
+      if (a.question.order !== b.question.order) return a.question.order - b.question.order;
+      return a.sample.sortOrder - b.sample.sortOrder;
+    });
+  }
+  if (sortBy === 'grade') {
+    return [...items].sort((a, b) => {
+      const ga = GRADE_ORDER.indexOf(a.sample.grade ?? '');
+      const gb = GRADE_ORDER.indexOf(b.sample.grade ?? '');
+      const gradeA = ga === -1 ? 999 : ga;
+      const gradeB = gb === -1 ? 999 : gb;
+      if (gradeA !== gradeB) return gradeA - gradeB;
+      if (a.question.order !== b.question.order) return a.question.order - b.question.order;
+      return a.sample.sortOrder - b.sample.sortOrder;
+    });
+  }
+  // Default 'diverse': deterministic interleave, videos first
   const videos = items.filter(i => (i.sample.mediaType ?? 'video') === 'video');
   const audios  = items.filter(i => (i.sample.mediaType ?? 'video') === 'audio');
   return [...interleave(videos), ...interleave(audios)];
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 function interleave(items: FeedItem[]): FeedItem[] {
@@ -80,8 +90,9 @@ function interleave(items: FeedItem[]): FeedItem[] {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(item);
   }
-  // Shuffle within each group so the same response doesn't always lead, then round-robin across groups
-  const queues = shuffle([...groups.values()]).map(group => shuffle(group));
+  // Sort groups and items deterministically (by sortOrder) — stable across reloads
+  const sortedKeys = [...groups.keys()].sort();
+  const queues = sortedKeys.map(k => [...groups.get(k)!].sort((a, b) => a.sample.sortOrder - b.sample.sortOrder));
   const result: FeedItem[] = [];
   let i = 0;
   while (result.length < items.length) {
@@ -109,6 +120,7 @@ export default function FeedPage() {
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
   const [textSearch, setTextSearch] = useState('');
+  const [sortBy, setSortBy] = useState<SortMode>('diverse');
   const bookmarksLoaded = useRef(false);
   const pendingSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -214,8 +226,7 @@ export default function FeedPage() {
     return items;
   }, [codeData]);
 
-  // sortForFeed shuffles — memoize so bookmark toggles don't reshuffle the list
-  const sortedItems = useMemo(() => sortForFeed(applyFilters(allItems, filters)), [allItems, filters]);
+  const sortedItems = useMemo(() => sortForFeed(applyFilters(allItems, filters), sortBy), [allItems, filters, sortBy]);
 
   if (!codeData) return null;
 
@@ -662,6 +673,19 @@ export default function FeedPage() {
               )}
             </div>
           </>
+        )}
+
+        {/* ── Sort control (subtle, internal) ── */}
+        {allItems.length > 0 && (
+          <div className="flex items-center gap-3 mb-5 justify-end">
+            <span className="text-[10px] text-gray-300 uppercase tracking-wider">Sort</span>
+            {([['diverse', 'Diverse'], ['question', 'By question'], ['grade', 'By grade']] as [SortMode, string][]).map(([mode, label]) => (
+              <button key={mode} onClick={() => setSortBy(mode)}
+                className={`text-xs transition-colors ${sortBy === mode ? 'text-gray-500 font-medium' : 'text-gray-300 hover:text-gray-400'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
         )}
 
         {filtered.length === 0 ? (
