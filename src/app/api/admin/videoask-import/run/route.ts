@@ -481,6 +481,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         // Normalize VideoAsk media_type → human-readable response_type
         if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type), mediaUrl);
 
+        // Fallback: if question not set by mapping, use node_title
+        if (!row.question && step.node_title) row.question = step.node_title;
+
         // Overlay interaction metadata (only fills gaps — explicit mappings take precedence)
         for (const [col, val] of Object.entries(metadataValues)) {
           if (row[col] === undefined || row[col] === null || row[col] === '') {
