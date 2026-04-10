@@ -667,7 +667,7 @@ export default function VideoAskImportPage() {
                       ? `Updating ${updateAllProgress.done}/${updateAllProgress.total}…`
                       : 'Starting…'}
                   </>
-                ) : 'Update all'}
+                ) : 'Sync all'}
               </button>
             </div>
             {!updatingAll && updateAllProgress && (
