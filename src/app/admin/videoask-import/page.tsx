@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 
 const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
   { col: 'first_name',      label: 'First Name',           hint: 'auto-generated' },
@@ -578,6 +579,11 @@ export default function VideoAskImportPage() {
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+          <Link href="/admin/district-finder" className="hover:text-gray-600 transition-colors">District Finder</Link>
+          <span>/</span>
+          <span className="text-gray-500">VideoAsk Import</span>
+        </div>
         <div className="flex items-center gap-3">
           {view !== 'list' && (
             <button
