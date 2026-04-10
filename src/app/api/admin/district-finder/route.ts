@@ -78,27 +78,17 @@ export async function GET(req: Request) {
 
     if (schoolName) q = q.eq('school_name', schoolName);
 
-    // Paginate to bypass Supabase's 1,000-row single-query cap — fetch pages in parallel
+    // Paginate to bypass Supabase's 1,000-row single-query cap
     const EXPORT_PAGE = 1000;
-    const PARALLEL_PAGES = 10;
     const rows: Record<string, unknown>[] = [];
-    let pageOffset = 0;
-    let done = false;
-
-    while (!done && rows.length < 100000) {
-      const pageNums = Array.from({ length: PARALLEL_PAGES }, (_, i) => pageOffset + i);
-      const results = await Promise.all(
-        pageNums.map(p =>
-          q.order('answer_date', { ascending: false }).range(p * EXPORT_PAGE, (p + 1) * EXPORT_PAGE - 1)
-        )
-      );
-      for (const { data: pageData, error } of results) {
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-        const pageRows = (pageData ?? []) as Record<string, unknown>[];
-        rows.push(...pageRows);
-        if (pageRows.length < EXPORT_PAGE) { done = true; break; }
-      }
-      pageOffset += PARALLEL_PAGES;
+    let exportFrom = 0;
+    while (rows.length < 100000) {
+      const { data: page, error } = await q.order('answer_date', { ascending: false }).range(exportFrom, exportFrom + EXPORT_PAGE - 1);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      const pageRows = (page ?? []) as Record<string, unknown>[];
+      rows.push(...pageRows);
+      if (pageRows.length < EXPORT_PAGE) break;
+      exportFrom += EXPORT_PAGE;
     }
     if (rows.length === 0) return new Response('id\n', {
       headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="export.csv"` },
