@@ -54,8 +54,8 @@ export async function POST() {
           totalErrors++;
           send({ type: 'form_done', formId, error: result.error });
         } else if ('updated' in result) {
-          totalUpdated += result.updated;
-          send({ type: 'form_done', formId, updated: result.updated });
+          totalUpdated += result.updated + (result.inserted ?? 0);
+          send({ type: 'form_done', formId, updated: result.updated, inserted: result.inserted ?? 0 });
         }
       }
 

@@ -324,7 +324,7 @@ export default function VideoAskImportPage() {
 
   // Update-all state
   const [updatingAll, setUpdatingAll] = useState(false);
-  const [updateAllProgress, setUpdateAllProgress] = useState<{ done: number; total: number; totalUpdated: number; errors: number } | null>(null);
+  const [updateAllProgress, setUpdateAllProgress] = useState<{ done: number; total: number; totalUpdated: number; totalInserted: number; errors: number } | null>(null);
 
   // Rename / delete state
   const [editingFormId, setEditingFormId] = useState<string | null>(null);
@@ -534,7 +534,7 @@ export default function VideoAskImportPage() {
 
   async function updateAll() {
     setUpdatingAll(true);
-    setUpdateAllProgress({ done: 0, total: 0, totalUpdated: 0, errors: 0 });
+    setUpdateAllProgress({ done: 0, total: 0, totalUpdated: 0, totalInserted: 0, errors: 0 });
     try {
       const res = await fetch('/api/admin/videoask-import/update-all', { method: 'POST' });
       if (!res.body) return;
@@ -552,15 +552,16 @@ export default function VideoAskImportPage() {
           try {
             const msg = JSON.parse(line) as {
               type: string; total?: number; index?: number;
-              updated?: number; error?: string; totalUpdated?: number; totalErrors?: number;
+              updated?: number; inserted?: number; error?: string; totalUpdated?: number; totalErrors?: number;
             };
             if (msg.type === 'start') {
-              setUpdateAllProgress({ done: 0, total: msg.total ?? 0, totalUpdated: 0, errors: 0 });
+              setUpdateAllProgress({ done: 0, total: msg.total ?? 0, totalUpdated: 0, totalInserted: 0, errors: 0 });
             } else if (msg.type === 'form_done') {
               setUpdateAllProgress(prev => prev ? {
                 ...prev,
                 done: prev.done + 1,
                 totalUpdated: prev.totalUpdated + (msg.updated ?? 0),
+                totalInserted: prev.totalInserted + (msg.inserted ?? 0),
                 errors: prev.errors + (msg.error ? 1 : 0),
               } : prev);
             }
@@ -664,7 +665,7 @@ export default function VideoAskImportPage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>
                     {updateAllProgress
-                      ? `Updating ${updateAllProgress.done}/${updateAllProgress.total}…`
+                      ? `Syncing ${updateAllProgress.done}/${updateAllProgress.total}…`
                       : 'Starting…'}
                   </>
                 ) : 'Sync all'}
@@ -672,7 +673,7 @@ export default function VideoAskImportPage() {
             </div>
             {!updatingAll && updateAllProgress && (
               <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                Updated {updateAllProgress.totalUpdated} rows across {updateAllProgress.total} forms
+                Synced {updateAllProgress.total} forms · {updateAllProgress.totalUpdated} updated, {updateAllProgress.totalInserted} new
                 {updateAllProgress.errors > 0 && ` · ${updateAllProgress.errors} error${updateAllProgress.errors > 1 ? 's' : ''}`}
               </div>
             )}
