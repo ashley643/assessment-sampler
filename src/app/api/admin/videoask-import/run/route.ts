@@ -226,6 +226,17 @@ function djb2(str: string, seed = 5381): number {
   return h;
 }
 
+// Columns that must be integers in the DB — coerce or null out unparseable values
+const INT_COLUMNS = new Set(['current_grade', 'harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score']);
+
+function sanitizeRow(row: Record<string, unknown>): void {
+  for (const col of INT_COLUMNS) {
+    if (!(col in row) || row[col] == null) continue;
+    const n = Number(row[col]);
+    row[col] = Number.isFinite(n) ? n : null;
+  }
+}
+
 // contactId: stable per-student ID across forms (raw.contact_id from VideoAsk)
 // usedFirstNames: first names already taken in this run + pre-seeded from DB
 // gender: 'Female' | 'Male' | '' | null — used to pick gender-appropriate first names
@@ -499,6 +510,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
           row.student_email = resolved.email;
         }
 
+        sanitizeRow(row);
         toInsert.push(row);
       }
     }
@@ -558,6 +570,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         row.student_email = resolved.email;
       }
 
+      sanitizeRow(row);
       toInsert.push(row);
     }
   }
