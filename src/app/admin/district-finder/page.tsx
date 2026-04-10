@@ -217,6 +217,7 @@ export default function DistrictFinderPage() {
 
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedSchool, setSelectedSchool]     = useState('');
+  const [schoolFromSidebar, setSchoolFromSidebar] = useState(false);
 
   // Filters
   const [grade, setGrade]         = useState('');
@@ -339,7 +340,7 @@ export default function DistrictFinderPage() {
     setHispanic(''); setEll(''); setFrl(''); setIep('');
     setSession(''); setCourse(''); setAttribute(''); setQuestionTitle(''); setMediaType('');
     setMinScore(0); setMinWords(0); setSearch(''); setSearchInput('');
-    setSelectedSchool('');
+    setSelectedSchool(''); setSchoolFromSidebar(false);
   }
 
   function pickDistrict(name: string) {
@@ -347,7 +348,7 @@ export default function DistrictFinderPage() {
     setOpenDistricts(prev => { const n = new Set(prev); n.add(name); return n; });
   }
   function pickSchool(district: string, school: string) {
-    setSelectedDistrict(district); clearFilters(); setSelectedSchool(school);
+    setSelectedDistrict(district); clearFilters(); setSelectedSchool(school); setSchoolFromSidebar(true);
   }
 
   const activeFilterCount = [selectedSchool, grade, gender, ethnicity, homeLang, hispanic, ell, frl, iep, session, course, attribute, questionTitle, mediaType, search].filter(Boolean).length
@@ -510,7 +511,7 @@ export default function DistrictFinderPage() {
           <div>
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Demographics</p>
             <div className="flex items-end gap-3 flex-wrap">
-              {!selectedSchool && <Dropdown label="School" options={allOptions.schools} value={selectedSchool} onChange={setSelectedSchool} />}
+              {!schoolFromSidebar && <Dropdown label="School" options={allOptions.schools} value={selectedSchool} onChange={setSelectedSchool} />}
               <Dropdown label="Grade"         options={allOptions.grades}      value={grade}          onChange={setGrade} />
               <Dropdown label="Gender"        options={allOptions.genders}     value={gender}         onChange={setGender} />
               <Dropdown label="Ethnicity"     options={allOptions.ethnicities} value={ethnicity}      onChange={setEthnicity} />
