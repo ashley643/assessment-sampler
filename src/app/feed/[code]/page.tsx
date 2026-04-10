@@ -56,43 +56,41 @@ function activeCount(f: Filters) {
 
 const PAGE_SIZE = 12;
 
-type SortMode = 'diverse' | 'question' | 'grade';
+// Sorted: video before audio → question order → grade order → sample.sortOrder
+function sortedOrder(items: FeedItem[]): FeedItem[] {
+  return [...items].sort((a, b) => {
+    const aVideo = (a.sample.mediaType ?? 'video') === 'video' ? 0 : 1;
+    const bVideo = (b.sample.mediaType ?? 'video') === 'video' ? 0 : 1;
+    if (aVideo !== bVideo) return aVideo - bVideo;
+    if (a.question.order !== b.question.order) return a.question.order - b.question.order;
+    const ga = GRADE_ORDER.indexOf(a.sample.grade ?? '');
+    const gb = GRADE_ORDER.indexOf(b.sample.grade ?? '');
+    if (ga !== gb) return (ga === -1 ? 999 : ga) - (gb === -1 ? 999 : gb);
+    return a.sample.sortOrder - b.sample.sortOrder;
+  });
+}
 
-function sortForFeed(items: FeedItem[], sortBy: SortMode): FeedItem[] {
-  if (sortBy === 'question') {
-    return [...items].sort((a, b) => {
-      if (a.question.order !== b.question.order) return a.question.order - b.question.order;
-      return a.sample.sortOrder - b.sample.sortOrder;
-    });
-  }
-  if (sortBy === 'grade') {
-    return [...items].sort((a, b) => {
-      const ga = GRADE_ORDER.indexOf(a.sample.grade ?? '');
-      const gb = GRADE_ORDER.indexOf(b.sample.grade ?? '');
-      const gradeA = ga === -1 ? 999 : ga;
-      const gradeB = gb === -1 ? 999 : gb;
-      if (gradeA !== gradeB) return gradeA - gradeB;
-      if (a.question.order !== b.question.order) return a.question.order - b.question.order;
-      return a.sample.sortOrder - b.sample.sortOrder;
-    });
-  }
-  // Default 'diverse': deterministic interleave, videos first
+// Random: videos first, then round-robin across gender/grade groups for diversity
+function randomOrder(items: FeedItem[]): FeedItem[] {
   const videos = items.filter(i => (i.sample.mediaType ?? 'video') === 'video');
   const audios  = items.filter(i => (i.sample.mediaType ?? 'video') === 'audio');
   return [...interleave(videos), ...interleave(audios)];
 }
 
 function interleave(items: FeedItem[]): FeedItem[] {
-  // Group by gender+grade combo so the feed cycles through a diverse range of respondents
   const groups = new Map<string, FeedItem[]>();
   for (const item of items) {
     const key = `${item.sample.gender ?? 'unknown'}-${item.sample.grade ?? 'unknown'}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(item);
   }
-  // Sort groups and items deterministically (by sortOrder) — stable across reloads
-  const sortedKeys = [...groups.keys()].sort();
-  const queues = sortedKeys.map(k => [...groups.get(k)!].sort((a, b) => a.sample.sortOrder - b.sample.sortOrder));
+  const queues = [...groups.values()].map(g => {
+    const a = [...g];
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  });
+  // Shuffle the group order too
+  for (let i = queues.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [queues[i], queues[j]] = [queues[j], queues[i]]; }
   const result: FeedItem[] = [];
   let i = 0;
   while (result.length < items.length) {
@@ -120,7 +118,7 @@ export default function FeedPage() {
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
   const [textSearch, setTextSearch] = useState('');
-  const [sortBy, setSortBy] = useState<SortMode>('diverse');
+  const [sorted, setSorted] = useState(false);
   const bookmarksLoaded = useRef(false);
   const pendingSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -226,7 +224,10 @@ export default function FeedPage() {
     return items;
   }, [codeData]);
 
-  const sortedItems = useMemo(() => sortForFeed(applyFilters(allItems, filters), sortBy), [allItems, filters, sortBy]);
+  const sortedItems = useMemo(
+    () => sorted ? sortedOrder(applyFilters(allItems, filters)) : randomOrder(applyFilters(allItems, filters)),
+    [allItems, filters, sorted], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   if (!codeData) return null;
 
@@ -675,16 +676,13 @@ export default function FeedPage() {
           </>
         )}
 
-        {/* ── Sort control (subtle, internal) ── */}
+        {/* ── Sort toggle (subtle, internal) ── */}
         {allItems.length > 0 && (
-          <div className="flex items-center gap-3 mb-5 justify-end">
-            <span className="text-[10px] text-gray-300 uppercase tracking-wider">Sort</span>
-            {([['diverse', 'Diverse'], ['question', 'By question'], ['grade', 'By grade']] as [SortMode, string][]).map(([mode, label]) => (
-              <button key={mode} onClick={() => setSortBy(mode)}
-                className={`text-xs transition-colors ${sortBy === mode ? 'text-gray-500 font-medium' : 'text-gray-300 hover:text-gray-400'}`}>
-                {label}
-              </button>
-            ))}
+          <div className="flex justify-end mb-5">
+            <button onClick={() => setSorted(s => !s)}
+              className={`text-xs transition-colors ${sorted ? 'text-gray-500 font-medium' : 'text-gray-300 hover:text-gray-400'}`}>
+              {sorted ? '↕ Sorted' : '⟳ Random'}
+            </button>
           </div>
         )}
 
