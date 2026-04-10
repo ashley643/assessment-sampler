@@ -58,6 +58,34 @@ export async function GET(req: Request) {
     return NextResponse.json({ districts });
   }
 
+  // ── FACETS ────────────────────────────────────────────────────────────────
+  if (mode === 'facets') {
+    const districtName = searchParams.get('district') ?? '';
+    if (!districtName) return NextResponse.json({ facets: [] });
+
+    const NO_DISTRICT_FACETS = '(No District)';
+    const facets: Record<string, unknown>[] = [];
+    let facetsFrom = 0;
+
+    while (facets.length < 50000) {
+      let q = db
+        .from('student_responses')
+        .select('school_name, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question, harvard_attribute, casel_attribute')
+        .not('url', 'is', null);
+      if (districtName === NO_DISTRICT_FACETS) q = q.is('district_name', null);
+      else q = q.eq('district_name', districtName);
+
+      const { data: facetPage, error: facetErr } = await q.range(facetsFrom, facetsFrom + 999);
+      if (facetErr) return NextResponse.json({ error: facetErr.message }, { status: 500 });
+      const rows = (facetPage ?? []) as Record<string, unknown>[];
+      facets.push(...rows);
+      if (rows.length < 1000) break;
+      facetsFrom += 1000;
+    }
+
+    return NextResponse.json({ facets });
+  }
+
   // ── EXPORT CSV ────────────────────────────────────────────────────────────
   if (mode === 'export') {
     const districtName = searchParams.get('district') ?? '';

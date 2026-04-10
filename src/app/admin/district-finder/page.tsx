@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface District { name: string; schools: string[] }
@@ -18,6 +18,24 @@ interface FilterOptions {
   ellVaries: boolean;
   frlVaries: boolean;
   iepVaries: boolean;
+}
+
+interface FacetRow {
+  school_name: string | null;
+  current_grade: string | null;
+  gender: string | null;
+  ethnicity: string | null;
+  home_language: string | null;
+  hispanic: boolean | null;
+  ell: boolean | null;
+  frl: boolean | null;
+  iep: boolean | null;
+  session_name: string | null;
+  course_id: string | null;
+  response_type: string | null;
+  question: string | null;
+  harvard_attribute: string | null;
+  casel_attribute: string | null;
 }
 
 interface SRRow {
@@ -225,7 +243,7 @@ export default function DistrictFinderPage() {
   const [totalCount, setTotalCount]       = useState<number | null>(null);
   const [hasMore, setHasMore]             = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(EMPTY_OPTS);
-  const [baseFilterOptions, setBaseFilterOptions] = useState<FilterOptions>(EMPTY_OPTS);
+  const [facets, setFacets] = useState<FacetRow[]>([]);
   const [loading, setLoading]             = useState(false);
   const [loadingMore, setLoadingMore]     = useState(false);
   const [fetchError, setFetchError]       = useState('');
@@ -245,6 +263,14 @@ export default function DistrictFinderPage() {
   }
 
   useEffect(() => { loadSidebar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!selectedDistrict) { setFacets([]); return; }
+    fetch(`/api/admin/district-finder?${new URLSearchParams({ mode: 'facets', district: selectedDistrict })}`)
+      .then(r => r.json())
+      .then(d => setFacets(d.facets ?? []))
+      .catch(() => {});
+  }, [selectedDistrict]);
 
   async function runSync() {
     setSyncing(true);
@@ -293,12 +319,7 @@ export default function DistrictFinderPage() {
       setHasMore(data.hasMore ?? false);
       if (replace) {
         setTotalCount(data.totalCount ?? null);
-        const opts = data.filterOptions ?? EMPTY_OPTS;
-        setFilterOptions(opts);
-        // Cache as base whenever no filters are active — used to keep dropdown
-        // options stable when a filter is selected (so user can switch values)
-        const hasFilters = !!(grade || gender || ethnicity || homeLang || hispanic || ell || frl || iep || session || course || attribute || questionTitle || mediaType || search || minScore > 0 || minWords > 0);
-        if (!hasFilters) setBaseFilterOptions(opts);
+        setFilterOptions(data.filterOptions ?? EMPTY_OPTS);
       }
     } catch (e) { setFetchError(`Network error: ${e}`); }
     setLoading(false);
@@ -306,7 +327,7 @@ export default function DistrictFinderPage() {
   }, [selectedDistrict, selectedSchool, grade, gender, ethnicity, homeLang, hispanic, ell, frl, iep, session, course, attribute, questionTitle, mediaType, minScore, minWords, search]);
 
   useEffect(() => {
-    if (!selectedDistrict) { setRows([]); setTotalCount(null); setFilterOptions(EMPTY_OPTS); setBaseFilterOptions(EMPTY_OPTS); return; }
+    if (!selectedDistrict) { setRows([]); setTotalCount(null); setFilterOptions(EMPTY_OPTS); return; }
     setPage(1);
     fetchRows(1, true);
   }, [fetchRows, selectedDistrict]);
@@ -318,20 +339,95 @@ export default function DistrictFinderPage() {
     setHispanic(''); setEll(''); setFrl(''); setIep('');
     setSession(''); setCourse(''); setAttribute(''); setQuestionTitle(''); setMediaType('');
     setMinScore(0); setMinWords(0); setSearch(''); setSearchInput('');
+    setSelectedSchool('');
   }
 
   function pickDistrict(name: string) {
-    setSelectedDistrict(name); setSelectedSchool(''); clearFilters();
+    setSelectedDistrict(name); clearFilters();
     setOpenDistricts(prev => { const n = new Set(prev); n.add(name); return n; });
   }
   function pickSchool(district: string, school: string) {
-    setSelectedDistrict(district); setSelectedSchool(school); clearFilters();
+    setSelectedDistrict(district); clearFilters(); setSelectedSchool(school);
   }
 
-  const activeFilterCount = [grade, gender, ethnicity, homeLang, hispanic, ell, frl, iep, session, course, attribute, questionTitle, mediaType, search].filter(Boolean).length
+  const activeFilterCount = [selectedSchool, grade, gender, ethnicity, homeLang, hispanic, ell, frl, iep, session, course, attribute, questionTitle, mediaType, search].filter(Boolean).length
     + (minScore > 0 ? 1 : 0) + (minWords > 0 ? 1 : 0);
 
-  const showBoolFilters = filterOptions.hispanicVaries || filterOptions.ellVaries || filterOptions.frlVaries || filterOptions.iepVaries;
+  // ── Adaptive faceted filter options ────────────────────────────────────────
+  const allOptions = useMemo(() => {
+    function compute(exclude: string): FacetRow[] {
+      return facets.filter(r => {
+        if (exclude !== 'school'    && selectedSchool  && r.school_name       !== selectedSchool)              return false;
+        if (exclude !== 'grade'     && grade           && r.current_grade     !== grade)                       return false;
+        if (exclude !== 'gender'    && gender          && r.gender            !== gender)                      return false;
+        if (exclude !== 'ethnicity' && ethnicity       && r.ethnicity         !== ethnicity)                   return false;
+        if (exclude !== 'homeLang'  && homeLang        && r.home_language     !== homeLang)                    return false;
+        if (exclude !== 'hispanic'  && hispanic        && r.hispanic          !== (hispanic === 'true'))       return false;
+        if (exclude !== 'ell'       && ell             && r.ell               !== (ell === 'true'))            return false;
+        if (exclude !== 'frl'       && frl             && r.frl               !== (frl === 'true'))            return false;
+        if (exclude !== 'iep'       && iep             && r.iep               !== (iep === 'true'))            return false;
+        if (exclude !== 'session'   && session         && r.session_name      !== session)                     return false;
+        if (exclude !== 'course'    && course          && r.course_id         !== course)                      return false;
+        if (exclude !== 'attribute' && attribute       && r.harvard_attribute !== attribute && r.casel_attribute !== attribute) return false;
+        if (exclude !== 'question'  && questionTitle   && r.question          !== questionTitle)               return false;
+        if (exclude !== 'mediaType' && mediaType       && r.response_type     !== mediaType)                   return false;
+        return true;
+      });
+    }
+
+    function uniq(arr: (string | null | undefined)[], exclude?: string[]): string[] {
+      const s = new Set<string>();
+      arr.forEach(v => { if (v != null && v !== '' && (!exclude || !exclude.includes(v))) s.add(v); });
+      return Array.from(s).sort();
+    }
+
+    const forSchool     = compute('school');
+    const forGrade      = compute('grade');
+    const forGender     = compute('gender');
+    const forEthnicity  = compute('ethnicity');
+    const forHomeLang   = compute('homeLang');
+    const forSession    = compute('session');
+    const forCourse     = compute('course');
+    const forQuestion   = compute('question');
+    const forAttribute  = compute('attribute');
+    const forHispanic   = compute('hispanic');
+    const forEll        = compute('ell');
+    const forFrl        = compute('frl');
+    const forIep        = compute('iep');
+
+    const attributeSet = new Set<string>();
+    forAttribute.forEach(r => {
+      if (r.harvard_attribute) attributeSet.add(r.harvard_attribute);
+      if (r.casel_attribute)   attributeSet.add(r.casel_attribute);
+    });
+
+    const grades = uniq(forGrade.map(r => r.current_grade)).sort((a, b) => {
+      const na = Number(a), nb = Number(b);
+      const aNum = Number.isFinite(na), bNum = Number.isFinite(nb);
+      if (aNum && bNum) return na - nb;
+      if (aNum) return -1;
+      if (bNum) return 1;
+      return a.localeCompare(b);
+    });
+
+    return {
+      schools:        uniq(forSchool.map(r => r.school_name)),
+      grades,
+      genders:        uniq(forGender.map(r => r.gender)),
+      ethnicities:    uniq(forEthnicity.map(r => r.ethnicity), ['Unknown']),
+      homeLangs:      uniq(forHomeLang.map(r => r.home_language), ['NA']),
+      sessions:       uniq(forSession.map(r => r.session_name)),
+      courses:        uniq(forCourse.map(r => r.course_id)),
+      questions:      uniq(forQuestion.map(r => r.question)),
+      attributes:     Array.from(attributeSet).sort(),
+      hispanicVaries: forHispanic.some(r => r.hispanic === true) && forHispanic.some(r => r.hispanic === false),
+      ellVaries:      forEll.some(r => r.ell === true)           && forEll.some(r => r.ell === false),
+      frlVaries:      forFrl.some(r => r.frl === true)           && forFrl.some(r => r.frl === false),
+      iepVaries:      forIep.some(r => r.iep === true)           && forIep.some(r => r.iep === false),
+    };
+  }, [facets, selectedSchool, grade, gender, ethnicity, homeLang, hispanic, ell, frl, iep, session, course, attribute, questionTitle, mediaType]);
+
+  const showBoolFilters = allOptions.hispanicVaries || allOptions.ellVaries || allOptions.frlVaries || allOptions.iepVaries;
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -410,19 +506,20 @@ export default function DistrictFinderPage() {
       {showFilters && selectedDistrict && (
         <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-4 py-4 space-y-4">
 
-          {/* Row 1: Demographics */}
+          {/* Row 1: School & Demographics */}
           <div>
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Demographics</p>
             <div className="flex items-end gap-3 flex-wrap">
-              <Dropdown label="Grade"         options={grade      ? baseFilterOptions.grades      : filterOptions.grades}      value={grade}      onChange={setGrade} />
-              <Dropdown label="Gender"        options={gender     ? baseFilterOptions.genders     : filterOptions.genders}     value={gender}     onChange={setGender} />
-              <Dropdown label="Ethnicity"     options={ethnicity  ? baseFilterOptions.ethnicities : filterOptions.ethnicities} value={ethnicity}  onChange={setEthnicity} />
-              <Dropdown label="Home Language" options={homeLang   ? baseFilterOptions.homeLangs   : filterOptions.homeLangs}   value={homeLang}   onChange={setHomeLang} />
-              {filterOptions.hispanicVaries && <BoolFilter label="Hispanic" value={hispanic} onChange={setHispanic} />}
-              {filterOptions.ellVaries       && <BoolFilter label="ELL"      value={ell}      onChange={setEll} />}
-              {filterOptions.frlVaries       && <BoolFilter label="FRL"      value={frl}      onChange={setFrl} />}
-              {filterOptions.iepVaries       && <BoolFilter label="IEP"      value={iep}      onChange={setIep} />}
-              {!showBoolFilters && filterOptions.ethnicities.length === 0 && filterOptions.homeLangs.length === 0 && (
+              <Dropdown label="School"        options={allOptions.schools}     value={selectedSchool} onChange={setSelectedSchool} />
+              <Dropdown label="Grade"         options={allOptions.grades}      value={grade}          onChange={setGrade} />
+              <Dropdown label="Gender"        options={allOptions.genders}     value={gender}         onChange={setGender} />
+              <Dropdown label="Ethnicity"     options={allOptions.ethnicities} value={ethnicity}      onChange={setEthnicity} />
+              <Dropdown label="Home Language" options={allOptions.homeLangs}   value={homeLang}       onChange={setHomeLang} />
+              {allOptions.hispanicVaries && <BoolFilter label="Hispanic" value={hispanic} onChange={setHispanic} />}
+              {allOptions.ellVaries       && <BoolFilter label="ELL"      value={ell}      onChange={setEll} />}
+              {allOptions.frlVaries       && <BoolFilter label="FRL"      value={frl}      onChange={setFrl} />}
+              {allOptions.iepVaries       && <BoolFilter label="IEP"      value={iep}      onChange={setIep} />}
+              {!showBoolFilters && allOptions.ethnicities.length === 0 && allOptions.homeLangs.length === 0 && allOptions.schools.length === 0 && (
                 <span className="text-xs text-gray-400 italic">No additional demographic data available for this selection</span>
               )}
             </div>
@@ -432,10 +529,10 @@ export default function DistrictFinderPage() {
           <div>
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Content</p>
             <div className="flex items-end gap-3 flex-wrap">
-              <Dropdown label="Question"   options={questionTitle ? baseFilterOptions.questions  : filterOptions.questions}  value={questionTitle} onChange={setQuestionTitle} />
-              <Dropdown label="Competency" options={attribute     ? baseFilterOptions.attributes : filterOptions.attributes} value={attribute}     onChange={setAttribute} />
-              <Dropdown label="Course"     options={course        ? baseFilterOptions.courses    : filterOptions.courses}    value={course}        onChange={setCourse} />
-              <Dropdown label="Session"    options={session       ? baseFilterOptions.sessions   : filterOptions.sessions}   value={session}       onChange={setSession} />
+              <Dropdown label="Question"   options={allOptions.questions}  value={questionTitle} onChange={setQuestionTitle} />
+              <Dropdown label="Competency" options={allOptions.attributes} value={attribute}     onChange={setAttribute} />
+              <Dropdown label="Course"     options={allOptions.courses}    value={course}        onChange={setCourse} />
+              <Dropdown label="Session"    options={allOptions.sessions}   value={session}       onChange={setSession} />
             </div>
           </div>
 
