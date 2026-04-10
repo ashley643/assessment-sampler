@@ -225,6 +225,7 @@ export default function DistrictFinderPage() {
   const [totalCount, setTotalCount]       = useState<number | null>(null);
   const [hasMore, setHasMore]             = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(EMPTY_OPTS);
+  const [baseFilterOptions, setBaseFilterOptions] = useState<FilterOptions>(EMPTY_OPTS);
   const [loading, setLoading]             = useState(false);
   const [loadingMore, setLoadingMore]     = useState(false);
   const [fetchError, setFetchError]       = useState('');
@@ -292,7 +293,12 @@ export default function DistrictFinderPage() {
       setHasMore(data.hasMore ?? false);
       if (replace) {
         setTotalCount(data.totalCount ?? null);
-        setFilterOptions(data.filterOptions ?? EMPTY_OPTS);
+        const opts = data.filterOptions ?? EMPTY_OPTS;
+        setFilterOptions(opts);
+        // Cache as base whenever no filters are active — used to keep dropdown
+        // options stable when a filter is selected (so user can switch values)
+        const hasFilters = !!(grade || gender || ethnicity || homeLang || hispanic || ell || frl || iep || session || course || attribute || questionTitle || mediaType || search || minScore > 0 || minWords > 0);
+        if (!hasFilters) setBaseFilterOptions(opts);
       }
     } catch (e) { setFetchError(`Network error: ${e}`); }
     setLoading(false);
@@ -300,7 +306,7 @@ export default function DistrictFinderPage() {
   }, [selectedDistrict, selectedSchool, grade, gender, ethnicity, homeLang, hispanic, ell, frl, iep, session, course, attribute, questionTitle, mediaType, minScore, minWords, search]);
 
   useEffect(() => {
-    if (!selectedDistrict) { setRows([]); setTotalCount(null); setFilterOptions(EMPTY_OPTS); return; }
+    if (!selectedDistrict) { setRows([]); setTotalCount(null); setFilterOptions(EMPTY_OPTS); setBaseFilterOptions(EMPTY_OPTS); return; }
     setPage(1);
     fetchRows(1, true);
   }, [fetchRows, selectedDistrict]);
@@ -408,10 +414,10 @@ export default function DistrictFinderPage() {
           <div>
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Demographics</p>
             <div className="flex items-end gap-3 flex-wrap">
-              <Dropdown label="Grade"         options={filterOptions.grades}      value={grade}      onChange={setGrade} />
-              <Dropdown label="Gender"        options={filterOptions.genders}     value={gender}     onChange={setGender} />
-              <Dropdown label="Ethnicity"     options={filterOptions.ethnicities} value={ethnicity}  onChange={setEthnicity} />
-              <Dropdown label="Home Language" options={filterOptions.homeLangs}   value={homeLang}   onChange={setHomeLang} />
+              <Dropdown label="Grade"         options={grade      ? baseFilterOptions.grades      : filterOptions.grades}      value={grade}      onChange={setGrade} />
+              <Dropdown label="Gender"        options={gender     ? baseFilterOptions.genders     : filterOptions.genders}     value={gender}     onChange={setGender} />
+              <Dropdown label="Ethnicity"     options={ethnicity  ? baseFilterOptions.ethnicities : filterOptions.ethnicities} value={ethnicity}  onChange={setEthnicity} />
+              <Dropdown label="Home Language" options={homeLang   ? baseFilterOptions.homeLangs   : filterOptions.homeLangs}   value={homeLang}   onChange={setHomeLang} />
               {filterOptions.hispanicVaries && <BoolFilter label="Hispanic" value={hispanic} onChange={setHispanic} />}
               {filterOptions.ellVaries       && <BoolFilter label="ELL"      value={ell}      onChange={setEll} />}
               {filterOptions.frlVaries       && <BoolFilter label="FRL"      value={frl}      onChange={setFrl} />}
@@ -426,10 +432,10 @@ export default function DistrictFinderPage() {
           <div>
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Content</p>
             <div className="flex items-end gap-3 flex-wrap">
-              <Dropdown label="Question"   options={filterOptions.questions}  value={questionTitle} onChange={setQuestionTitle} />
-              <Dropdown label="Competency" options={filterOptions.attributes} value={attribute}     onChange={setAttribute} />
-              <Dropdown label="Course"     options={filterOptions.courses}    value={course}        onChange={setCourse} />
-              <Dropdown label="Session"    options={filterOptions.sessions}   value={session}       onChange={setSession} />
+              <Dropdown label="Question"   options={questionTitle ? baseFilterOptions.questions  : filterOptions.questions}  value={questionTitle} onChange={setQuestionTitle} />
+              <Dropdown label="Competency" options={attribute     ? baseFilterOptions.attributes : filterOptions.attributes} value={attribute}     onChange={setAttribute} />
+              <Dropdown label="Course"     options={course        ? baseFilterOptions.courses    : filterOptions.courses}    value={course}        onChange={setCourse} />
+              <Dropdown label="Session"    options={session       ? baseFilterOptions.sessions   : filterOptions.sessions}   value={session}       onChange={setSession} />
             </div>
           </div>
 
