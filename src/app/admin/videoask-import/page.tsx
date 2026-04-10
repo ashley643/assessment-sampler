@@ -582,7 +582,22 @@ export default function VideoAskImportPage() {
         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
           <Link href="/admin/district-finder" className="hover:text-gray-600 transition-colors">District Finder</Link>
           <span>/</span>
-          <span className="text-gray-500">VideoAsk Import</span>
+          {view === 'list' ? (
+            <span className="text-gray-500">VideoAsk Import</span>
+          ) : (
+            <>
+              <button
+                onClick={() => { setView('list'); setSelectedForm(null); }}
+                className="hover:text-gray-600 transition-colors"
+              >VideoAsk Import</button>
+              {selectedForm && (
+                <>
+                  <span>/</span>
+                  <span className="text-gray-500 truncate max-w-[200px]">{displayName(selectedForm)}</span>
+                </>
+              )}
+            </>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {view !== 'list' && (
