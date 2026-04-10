@@ -29,7 +29,6 @@ const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
   { col: 'casel_attribute', label: 'CASEL Attribute',      hint: 'per node' },
   { col: 'casel_score',     label: 'CASEL Score' },
   { col: 'url',             label: 'Media URL' },
-  { col: 'share_url',       label: 'Share URL' },
   { col: 'answer_date',     label: 'Answer Date' },
   { col: 'source_id',       label: 'Source ID' },
 ];
@@ -46,7 +45,6 @@ const CASEL_ATTRIBUTES = [
 const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
   answer:        'transcript',
   url:           'media_url',
-  share_url:     'share_url',
   answer_date:   'created_at',
   question:      'node_title',
   response_type: 'media_type',
