@@ -289,7 +289,7 @@ type RunParams = {
 
 export type RunResult =
   | { inserted: number; skipped: number; error?: never }
-  | { updated: number; error?: never }
+  | { updated: number; inserted: number; error?: never }
   | { wouldInsert: number; wouldSkip: number; totalStepsFetched: number; sample: Record<string, unknown>[]; error?: never }
   | { error: string };
 
@@ -433,11 +433,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         const mediaUrl = String(step.media_url ?? '');
         const uuid = extractUuid(mediaUrl);
         const alreadyImported = !!(uuid && importedUuids.has(uuid));
-        if (updateExisting) {
-          if (!alreadyImported || !mediaUrl) continue; // only rows that exist
-        } else {
-          if (alreadyImported) { skipped++; continue; } // skip already-imported
-        }
+        // In sync mode: process all rows (existing get updated, new get inserted)
+        // In fresh import mode: skip already-imported rows
+        if (!updateExisting && alreadyImported) { skipped++; continue; }
 
         const row: Record<string, unknown> = {};
 
@@ -510,11 +508,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       const mediaUrl = String(step.media_url ?? '');
       const uuid = extractUuid(mediaUrl);
       const alreadyImported = !!(uuid && importedUuids.has(uuid));
-      if (updateExisting) {
-        if (!alreadyImported || !mediaUrl) continue;
-      } else {
-        if (alreadyImported) { skipped++; continue; }
-      }
+      if (!updateExisting && alreadyImported) { skipped++; continue; }
 
       const row: Record<string, unknown> = {};
 
@@ -572,13 +566,17 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
     return { wouldInsert: toInsert.length, wouldSkip: skipped, totalStepsFetched: steps.length, sample: toInsert.slice(0, 3) };
   }
 
-  // 4a. UPDATE existing rows — match by primary key (id) to avoid full-table scan on url
+  // 4a. SYNC mode — update existing rows AND insert new ones
   if (updateExisting) {
+    const toUpdate   = toInsert.filter(row => { const u = extractUuid(String(row.url ?? '')); return u && uuidToId.has(u); });
+    const toInsertNew = toInsert.filter(row => { const u = extractUuid(String(row.url ?? '')); return !u || !uuidToId.has(u); });
+
+    // Update existing rows by primary key
     let updated = 0;
     const BATCH = 20;
-    for (let i = 0; i < toInsert.length; i += BATCH) {
+    for (let i = 0; i < toUpdate.length; i += BATCH) {
       const results = await Promise.all(
-        toInsert.slice(i, i + BATCH).map(row => {
+        toUpdate.slice(i, i + BATCH).map(row => {
           const uuid = extractUuid(String(row.url ?? ''));
           const rowId = uuid ? uuidToId.get(uuid) : undefined;
           if (!rowId) return Promise.resolve({ error: null });
@@ -588,9 +586,20 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       for (const { error } of results as { error: { message: string } | null }[]) {
         if (error) return { error: error.message };
       }
-      updated += Math.min(BATCH, toInsert.length - i);
+      updated += Math.min(BATCH, toUpdate.length - i);
     }
-    return { updated };
+
+    // Insert brand-new rows
+    let inserted = 0;
+    const CHUNK = 100;
+    for (let i = 0; i < toInsertNew.length; i += CHUNK) {
+      const chunk = toInsertNew.slice(i, i + CHUNK);
+      const { error: insertErr } = await impacter.from('student_responses').insert(chunk);
+      if (insertErr) return { error: insertErr.message };
+      inserted += chunk.length;
+    }
+
+    return { updated, inserted };
   }
 
   // 4b. INSERT new rows in chunks

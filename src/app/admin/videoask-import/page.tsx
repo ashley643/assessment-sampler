@@ -319,7 +319,7 @@ export default function VideoAskImportPage() {
   const [importing, setImporting] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [updating, setUpdating] = useState(false);
-  const [updateResult, setUpdateResult] = useState<{ updated?: number; error?: string } | null>(null);
+  const [updateResult, setUpdateResult] = useState<{ updated?: number; inserted?: number; error?: string } | null>(null);
 
   // Update-all state
   const [updatingAll, setUpdatingAll] = useState(false);
@@ -824,8 +824,9 @@ export default function VideoAskImportPage() {
                     onClick={() => runUpdate(false)}
                     disabled={updating || loadingPreview}
                     className="px-3 py-1.5 border border-amber-300 text-sm text-amber-700 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                    title="Update existing rows and add any new responses since last import"
                   >
-                    {updating ? 'Updating…' : 'Update existing'}
+                    {updating ? 'Syncing…' : 'Sync'}
                   </button>
                   <button
                     onClick={() => runUpdate(true)}
@@ -838,7 +839,13 @@ export default function VideoAskImportPage() {
                 </div>
                 {updateResult && (
                   <p className={`text-xs ${updateResult.error ? 'text-red-500' : 'text-amber-700'}`}>
-                    {updateResult.error ? `Update error: ${updateResult.error}` : `✓ Updated ${updateResult.updated} existing rows`}
+                    {updateResult.error
+                    ? `Sync error: ${updateResult.error}`
+                    : [
+                        updateResult.updated  ? `✓ Updated ${updateResult.updated} rows` : '',
+                        updateResult.inserted ? `+ Added ${updateResult.inserted} new rows` : '',
+                      ].filter(Boolean).join('  ') || '✓ Nothing to sync'
+                  }
                   </p>
                 )}
 
