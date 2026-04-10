@@ -156,6 +156,7 @@ export async function GET(req: Request) {
   const courseId     = searchParams.get('course')    ?? '';
   const attribute    = searchParams.get('attribute') ?? '';
   const mediaType    = searchParams.get('mediaType') ?? '';
+  const questionTitle = searchParams.get('questionTitle') ?? '';
   const minScore     = parseInt(searchParams.get('minScore') ?? '0');
   const minWords     = parseInt(searchParams.get('minWords') ?? '0');
   const search       = searchParams.get('search')    ?? '';
@@ -189,9 +190,10 @@ export async function GET(req: Request) {
     if (sessionName)  q = q.eq('session_name', sessionName);
     if (courseId)     q = q.eq('course_id', courseId);
     if (attribute)    q = q.or(`harvard_attribute.eq.${attribute},casel_attribute.eq.${attribute}`);
-    if (mediaType)    q = q.eq('response_type', mediaType);
-    if (minScore > 0) q = q.or(`harvard_score.gte.${minScore},casel_score.gte.${minScore}`);
-    if (search)       q = q.or(`question.ilike.%${search}%,answer.ilike.%${search}%`);
+    if (mediaType)     q = q.eq('response_type', mediaType);
+    if (questionTitle) q = q.eq('question', questionTitle);
+    if (minScore > 0)  q = q.or(`harvard_score.gte.${minScore},casel_score.gte.${minScore}`);
+    if (search)        q = q.or(`question.ilike.%${search}%,answer.ilike.%${search}%`);
     return q.order('answer_date', { ascending: false }).range(from, from + pageSize - 1);
   }
 
@@ -252,6 +254,7 @@ export async function GET(req: Request) {
   const sessionsSet  = new Set<string>();
   const coursesSet   = new Set<string>();
   const attribsSet   = new Set<string>();
+  const questionsSet = new Set<string>();
 
   // Track booleans — only show as filter if both T and F exist
   let hispanicHasTrue = false, hispanicHasFalse = false;
@@ -268,6 +271,7 @@ export async function GET(req: Request) {
     if (r.course_id)              coursesSet.add(r.course_id);
     if (r.harvard_attribute)      attribsSet.add(r.harvard_attribute);
     if (r.casel_attribute)        attribsSet.add(r.casel_attribute);
+    if (r.question)               questionsSet.add(r.question);
 
     if (r.hispanic === true)  hispanicHasTrue  = true;
     if (r.hispanic === false) hispanicHasFalse = true;
@@ -331,6 +335,7 @@ export async function GET(req: Request) {
       sessions:    Array.from(sessionsSet).sort(),
       courses:     Array.from(coursesSet).sort(),
       attributes:  Array.from(attribsSet).sort(),
+      questions:   Array.from(questionsSet).sort(),
       // boolean fields: only true if BOTH values present in result
       hispanicVaries: hispanicHasTrue && hispanicHasFalse,
       ellVaries:      ellHasTrue && ellHasFalse,
