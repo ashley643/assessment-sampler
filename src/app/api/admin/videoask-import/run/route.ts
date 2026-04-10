@@ -227,13 +227,19 @@ function djb2(str: string, seed = 5381): number {
 }
 
 // Columns that must be integers in the DB — coerce or null out unparseable values
-const INT_COLUMNS = new Set(['current_grade', 'harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score']);
+// Note: current_grade is TEXT in the DB (holds numbers, "Parent", "Staff", etc.) — not listed here
+const INT_COLUMNS = new Set(['harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score']);
 
 function sanitizeRow(row: Record<string, unknown>): void {
   for (const col of INT_COLUMNS) {
     if (!(col in row) || row[col] == null) continue;
     const n = Number(row[col]);
     row[col] = Number.isFinite(n) ? n : null;
+  }
+  // current_grade: store as string; blank/unrecognised values become null
+  if ('current_grade' in row && row.current_grade != null) {
+    const s = String(row.current_grade).trim();
+    row.current_grade = s.length > 0 ? s : null;
   }
 }
 

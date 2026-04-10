@@ -177,7 +177,7 @@ export async function GET(req: Request) {
     if (districtName === NO_DISTRICT) q = q.is('district_name', null);
     else q = q.eq('district_name', districtName);
     if (schoolName)   q = q.eq('school_name', schoolName);
-    if (grade)        q = q.eq('current_grade', Number(grade));
+    if (grade)        q = q.eq('current_grade', grade);
     if (gender)       q = q.eq('gender', gender);
     if (ethnicity)    q = q.eq('ethnicity', ethnicity);
     if (homeLang)     q = q.eq('home_language', homeLang);
@@ -212,7 +212,7 @@ export async function GET(req: Request) {
     school_name: string;
     class_name: string | null;
     teacher_name: string | null;
-    current_grade: number | null;
+    current_grade: string | null;
     gender: string | null;
     ethnicity: string | null;
     home_language: string | null;
@@ -316,7 +316,14 @@ export async function GET(req: Request) {
     hasMore,
     page,
     filterOptions: {
-      grades:      Array.from(gradesSet).sort((a, b) => Number(a) - Number(b)),
+      grades:      Array.from(gradesSet).sort((a, b) => {
+        const na = Number(a), nb = Number(b);
+        const aNum = Number.isFinite(na), bNum = Number.isFinite(nb);
+        if (aNum && bNum) return na - nb;       // both numeric: sort numerically
+        if (aNum) return -1;                    // numbers before text
+        if (bNum) return 1;
+        return a.localeCompare(b);              // both text: alphabetical
+      }),
       genders:     Array.from(gendersSet).sort(),
       ethnicities: Array.from(ethnicitiesSet).sort(),
       homeLangs:   Array.from(homeLangsSet).sort(),

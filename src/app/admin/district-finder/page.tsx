@@ -24,7 +24,7 @@ interface SRRow {
   district_name: string;
   school_name: string;
   class_name: string | null;
-  current_grade: number | null;
+  current_grade: string | null;
   gender: string | null;
   ethnicity: string | null;
   home_language: string | null;
@@ -69,7 +69,7 @@ function Dropdown({ label, options, value, onChange }: {
         <option value="">All</option>
         {options.map(o => (
           <option key={o} value={o}>
-            {label === 'Grade' ? `Grade ${o}` : label === 'Competency' ? attrLabel(o) : o}
+            {label === 'Grade' ? (Number.isFinite(Number(o)) ? `Grade ${o}` : o) : label === 'Competency' ? attrLabel(o) : o}
           </option>
         ))}
       </select>
@@ -117,7 +117,7 @@ function MediaCard({ row }: { row: SRRow }) {
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
           {row.current_grade != null && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-medium">
-              Grade {row.current_grade}
+              {Number.isFinite(Number(row.current_grade)) ? `Grade ${row.current_grade}` : row.current_grade}
             </span>
           )}
           {row.gender && (
