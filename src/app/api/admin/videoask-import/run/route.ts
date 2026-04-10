@@ -33,7 +33,7 @@ const SR_COLUMNS = new Set([
   'current_grade', 'gender', 'hispanic', 'ell', 'frl', 'iep',
   'ethnicity', 'home_language', 'session_name', 'course_id',
   'response_type', 'question', 'answer', 'harvard_attribute',
-  'harvard_score', 'casel_attribute', 'casel_score', 'url',
+  'harvard_score', 'casel_attribute', 'casel_score', 'url', 'share_url',
   'answer_date', 'source_id',
   'first_name', 'last_name', 'student_email',
 ]);
@@ -478,6 +478,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         // Always ensure url is populated from media_url
         if (!row.url && mediaUrl) row.url = mediaUrl;
 
+        // Always capture share_url directly from the step
+        if (!row.share_url && step.share_url) row.share_url = step.share_url;
+
         // Normalize VideoAsk media_type → human-readable response_type
         if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type), mediaUrl);
 
@@ -556,6 +559,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
       // Always ensure url is populated from media_url
       if (!row.url && mediaUrl) row.url = mediaUrl;
+
+      // Always capture share_url directly from the step
+      if (!row.share_url && step.share_url) row.share_url = step.share_url;
 
       // Normalize VideoAsk media_type → human-readable response_type
       if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));

@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 
     let q = db
       .from('student_responses')
-      .select('id, district_name, school_name, class_name, teacher_name, first_name, last_name, student_email, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date, source_id');
+      .select('id, district_name, school_name, class_name, teacher_name, first_name, last_name, student_email, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, share_url, answer_date, source_id');
 
     if (districtName === NO_DISTRICT_EXPORT) {
       q = q.is('district_name', null);
@@ -93,45 +93,6 @@ export async function GET(req: Request) {
     if (rows.length === 0) return new Response('id\n', {
       headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="export.csv"` },
     });
-
-    // Cross-reference videoask.steps to get share_url for each row, batched to avoid huge OR clauses.
-    // Falls back to the media url (already stored in the url column) if share_url is null or the
-    // lookup fails — VideoAsk doesn't always populate share_url on every response.
-    const exportShareUrlMap: Record<string, string> = {};
-    const exportUuids = rows.map(r => extractUuid(String(r.url ?? ''))).filter((u): u is string => u !== null);
-    const SHARE_BATCH = 24;
-    const SHARE_PARALLEL = 10;
-    const allShareBatches: string[][] = [];
-    for (let i = 0; i < exportUuids.length; i += SHARE_BATCH) {
-      allShareBatches.push(exportUuids.slice(i, i + SHARE_BATCH));
-    }
-    for (let i = 0; i < allShareBatches.length; i += SHARE_PARALLEL) {
-      const group = allShareBatches.slice(i, i + SHARE_PARALLEL);
-      const results = await Promise.all(
-        group.map(batch => {
-          const orConds = batch.map(u => `media_url.ilike.%${u}%`).join(',');
-          return db.schema('videoask').from('steps')
-            .select('media_url, share_url')
-            .or(orConds)
-            .limit(batch.length * 2);
-        })
-      );
-      for (const { data: stepsData, error: stepsErr } of results) {
-        if (stepsErr) { console.error('share_url lookup error:', stepsErr.message); continue; }
-        if (stepsData) {
-          for (const s of stepsData as { media_url: string | null; share_url: string | null }[]) {
-            const uuid = extractUuid(s.media_url ?? '');
-            if (uuid && s.share_url && !exportShareUrlMap[uuid]) exportShareUrlMap[uuid] = s.share_url;
-          }
-        }
-      }
-    }
-
-    // Attach share_url — prefer VideoAsk share URL, fall back to the media URL
-    for (const row of rows) {
-      const uuid = extractUuid(String(row.url ?? ''));
-      row.share_url = (uuid && exportShareUrlMap[uuid]) ? exportShareUrlMap[uuid] : (row.url ?? '');
-    }
 
     const cols = Object.keys(rows[0]);
     function csvEscape(v: unknown): string {
