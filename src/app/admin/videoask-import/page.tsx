@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 
 const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
@@ -331,6 +331,14 @@ export default function VideoAskImportPage() {
   const [editingLabel, setEditingLabel] = useState('');
 
   const [hideImported, setHideImported] = useState(true);
+
+  useEffect(() => {
+    const name = selectedForm ? (selectedForm.customLabel ?? selectedForm.formName ?? selectedForm.formId.slice(0, 8)) : null;
+    document.title = name
+      ? `${name} — VideoAsk Import`
+      : 'VideoAsk Import — Impacter Admin';
+    return () => { document.title = 'Impacter Pathway'; };
+  }, [selectedForm]);
 
   // Columns covered by metadata nodes: col → node title
   const metadataCoveredCols = useMemo(() => {

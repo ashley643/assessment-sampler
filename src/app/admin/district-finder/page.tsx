@@ -266,6 +266,13 @@ export default function DistrictFinderPage() {
   useEffect(() => { loadSidebar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    document.title = selectedDistrict
+      ? `${selectedDistrict}${selectedSchool ? ` · ${selectedSchool}` : ''} — District Finder`
+      : 'District Response Finder — Impacter Admin';
+    return () => { document.title = 'Impacter Pathway'; };
+  }, [selectedDistrict, selectedSchool]);
+
+  useEffect(() => {
     if (!selectedDistrict) { setFacets([]); return; }
     fetch(`/api/admin/district-finder?${new URLSearchParams({ mode: 'facets', district: selectedDistrict })}`)
       .then(r => r.json())

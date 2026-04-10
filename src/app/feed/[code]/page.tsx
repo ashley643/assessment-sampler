@@ -143,7 +143,7 @@ export default function FeedPage() {
   useEffect(() => {
     if (codeData) {
       track('feed_open', code);
-      document.title = `Sample Responses — Impacter Pathway`;
+      document.title = codeData.label ? `${codeData.label} — Sample Responses` : 'Sample Responses — Impacter Pathway';
     }
     return () => { document.title = 'Impacter Pathway'; };
   }, [codeData, code]);
