@@ -266,13 +266,6 @@ export default function DistrictFinderPage() {
   useEffect(() => { loadSidebar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    document.title = selectedDistrict
-      ? `${selectedDistrict}${selectedSchool ? ` · ${selectedSchool}` : ''} — District Finder`
-      : 'District Response Finder — Impacter Admin';
-    return () => { document.title = 'Impacter Pathway'; };
-  }, [selectedDistrict, selectedSchool]);
-
-  useEffect(() => {
     if (!selectedDistrict) { setFacets([]); return; }
     fetch(`/api/admin/district-finder?${new URLSearchParams({ mode: 'facets', district: selectedDistrict })}`)
       .then(r => r.json())
@@ -439,6 +432,11 @@ export default function DistrictFinderPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <title>
+        {selectedDistrict
+          ? `${selectedDistrict}${selectedSchool ? ` · ${selectedSchool}` : ''} — District Finder`
+          : 'District Response Finder — Impacter Admin'}
+      </title>
 
       {/* Top bar */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">

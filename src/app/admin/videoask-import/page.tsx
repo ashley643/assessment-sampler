@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 
 const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
@@ -332,14 +332,6 @@ export default function VideoAskImportPage() {
 
   const [hideImported, setHideImported] = useState(true);
 
-  useEffect(() => {
-    const name = selectedForm ? (selectedForm.customLabel ?? selectedForm.formName ?? selectedForm.formId.slice(0, 8)) : null;
-    document.title = name
-      ? `${name} — VideoAsk Import`
-      : 'VideoAsk Import — Impacter Admin';
-    return () => { document.title = 'Impacter Pathway'; };
-  }, [selectedForm]);
-
   // Columns covered by metadata nodes: col → node title
   const metadataCoveredCols = useMemo(() => {
     const map = new Map<string, string>();
@@ -588,6 +580,11 @@ export default function VideoAskImportPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <title>
+        {selectedForm
+          ? `${selectedForm.customLabel ?? selectedForm.formName ?? selectedForm.formId.slice(0, 8)} — VideoAsk Import`
+          : 'VideoAsk Import — Impacter Admin'}
+      </title>
       {/* Header */}
       <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
