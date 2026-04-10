@@ -560,6 +560,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       // Normalize VideoAsk media_type → human-readable response_type
       if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));
 
+      // Fallback: if question not set by mapping, use node_title
+      if (!row.question && step.node_title) row.question = step.node_title;
+
       // Auto-generate alliterative name — gender-aware, globally unique first name
       if (!row.first_name && !row.last_name && !row.student_email) {
         const contactId = String(
