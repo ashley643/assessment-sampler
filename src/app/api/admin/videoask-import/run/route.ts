@@ -350,39 +350,31 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   }
 
   // 2. Get existing rows to skip/update already-imported responses.
-  //    Keyed by media URL uuid (video responses) OR source_id (text/poll with no media_url).
-  //    Use cursor-based pagination to avoid statement timeouts on large tables.
-  const importedUuids     = new Set<string>();
-  const importedSourceIds = new Set<string>();
-  const uuidToId     = new Map<string, number>(); // uuid → student_responses.id
-  const sourceIdToId = new Map<string, number>(); // source_id → student_responses.id
-  const uuidToName   = new Map<string, { firstName: string; lastName: string; email: string }>();
+  //    Keyed by media URL uuid. Use cursor-based pagination to avoid timeouts.
+  const importedUuids = new Set<string>();
+  const uuidToId      = new Map<string, number>(); // uuid → student_responses.id
+  const uuidToName    = new Map<string, { firstName: string; lastName: string; email: string }>();
   const usedFirstNames = new Set<string>();
   const SR_PAGE = 1000;
   let lastId = 0;
   while (true) {
     const { data: urlPage, error: urlErr } = await impacter
       .from('student_responses')
-      .select('id, url, source_id, first_name, last_name, student_email')
+      .select('id, url, first_name, last_name, student_email')
+      .not('url', 'is', null)
       .gt('id', lastId)
       .order('id', { ascending: true })
       .limit(SR_PAGE);
 
     if (urlErr) return { error: urlErr.message };
 
-    const rows = (urlPage ?? []) as { id: number; url?: string; source_id?: string; first_name?: string; last_name?: string; student_email?: string }[];
+    const rows = (urlPage ?? []) as { id: number; url: string; first_name?: string; last_name?: string; student_email?: string }[];
     for (const row of rows) {
       const uuid = extractUuid(row.url ?? '');
       if (uuid) {
         importedUuids.add(uuid);
         uuidToId.set(uuid, row.id);
-      }
-      if (row.source_id) {
-        importedSourceIds.add(row.source_id);
-        sourceIdToId.set(row.source_id, row.id);
-      }
-      if (row.first_name) {
-        if (uuid) {
+        if (row.first_name) {
           uuidToName.set(uuid, { firstName: row.first_name, lastName: row.last_name ?? '', email: row.student_email ?? '' });
           if (formStepUuids.has(uuid)) usedFirstNames.add(row.first_name);
         }
@@ -449,11 +441,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         const nodeRole = nodeRoles[nodeId];
         if (!nodeRole || nodeRole.role !== 'response') continue;
 
-        // Dedup check — by media URL uuid (video) or source_id (text/poll)
         const mediaUrl = String(step.media_url ?? '');
         const uuid = extractUuid(mediaUrl);
-        const stepSourceId = String(step.id ?? '');
-        const alreadyImported = !!(uuid && importedUuids.has(uuid)) || !!(stepSourceId && importedSourceIds.has(stepSourceId));
+        const alreadyImported = !!(uuid && importedUuids.has(uuid));
         if (!updateExisting && alreadyImported) { skipped++; continue; }
 
         const row: Record<string, unknown> = {};
@@ -479,9 +469,6 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
         // Always ensure url is populated from media_url
         if (!row.url && mediaUrl) row.url = mediaUrl;
-
-        // Always capture source_id from VideoAsk step id (unique per step, used for dedup of text/poll rows)
-        if (!row.source_id && step.id) row.source_id = step.id;
 
         // Normalize VideoAsk media_type → human-readable response_type
         if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type), mediaUrl);
@@ -533,8 +520,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
     for (const step of steps) {
       const mediaUrl = String(step.media_url ?? '');
       const uuid = extractUuid(mediaUrl);
-      const stepSourceId = String(step.id ?? '');
-      const alreadyImported = !!(uuid && importedUuids.has(uuid)) || !!(stepSourceId && importedSourceIds.has(stepSourceId));
+      const alreadyImported = !!(uuid && importedUuids.has(uuid));
       if (!updateExisting && alreadyImported) { skipped++; continue; }
 
       const row: Record<string, unknown> = {};
@@ -602,16 +588,8 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
   // 4a. SYNC mode — update existing rows AND insert new ones
   if (updateExisting) {
-    // Resolve existing row ID by url uuid first, then source_id for text/poll rows
-    function resolveRowId(row: Record<string, unknown>): number | undefined {
-      const uuid = extractUuid(String(row.url ?? ''));
-      if (uuid && uuidToId.has(uuid)) return uuidToId.get(uuid);
-      const sid = String(row.source_id ?? '');
-      if (sid && sourceIdToId.has(sid)) return sourceIdToId.get(sid);
-      return undefined;
-    }
-    const toUpdate    = toInsert.filter(row => resolveRowId(row) !== undefined);
-    const toInsertNew = toInsert.filter(row => resolveRowId(row) === undefined);
+    const toUpdate    = toInsert.filter(row => { const u = extractUuid(String(row.url ?? '')); return u && uuidToId.has(u); });
+    const toInsertNew = toInsert.filter(row => { const u = extractUuid(String(row.url ?? '')); return !u || !uuidToId.has(u); });
 
     // Update existing rows by primary key
     let updated = 0;
@@ -619,7 +597,8 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
     for (let i = 0; i < toUpdate.length; i += BATCH) {
       const results = await Promise.all(
         toUpdate.slice(i, i + BATCH).map(row => {
-          const rowId = resolveRowId(row);
+          const uuid = extractUuid(String(row.url ?? ''));
+          const rowId = uuid ? uuidToId.get(uuid) : undefined;
           if (!rowId) return Promise.resolve({ error: null });
           return impacter.from('student_responses').update(row).eq('id', rowId);
         })
