@@ -141,7 +141,10 @@ export default function FeedPage() {
   }, [codeData, code, router]);
 
   useEffect(() => {
-    if (codeData) track('feed_open', code);
+    if (codeData) {
+      track('feed_open', code);
+      document.title = codeData.label ? `${codeData.label} — Sample Responses` : 'Sample Responses — Impacter Pathway';
+    }
   }, [codeData, code]);
 
   useEffect(() => { setPage(1); }, [filters]);
@@ -356,7 +359,6 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc' }}>
-      <title>{codeData.label ? `${codeData.label} — Sample Responses` : 'Sample Responses — Impacter Pathway'}</title>
       <nav className="flex items-center justify-between px-8 py-4 flex-shrink-0" style={{ background: '#1a2744' }}>
         <Image src="/Logo_Transparent_Background.png" alt="Impacter Pathway" width={130} height={39} className="object-contain" />
         <div className="flex items-center gap-3">
