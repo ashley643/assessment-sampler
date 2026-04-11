@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 // ── Sample CSV data ──────────────────────────────────────────────────────────
 const CSV_COLS = [
@@ -42,6 +42,66 @@ const CSV_ROWS = [
     'I didn\'t think I was smart enough for AP classes. My counselor pushed me. I\'m doing it now.', '2m 18s',
     'More counselors. There is only one for the whole grade and it\'s not enough.', '1m 22s',
     '601', 'Advocacy-oriented, resilient', 'High civic engagement; strong self-efficacy', 'System-level voice opportunity', 'Student voice program flag'],
+];
+
+// ── Score heatmap helper ─────────────────────────────────────────────────────
+function scoreColor(score: number): { bg: string; text: string } {
+  if (score >= 600) return { bg: '#d1fae5', text: '#065f46' };
+  if (score >= 500) return { bg: '#fef9c3', text: '#854d0e' };
+  if (score >= 400) return { bg: '#fed7aa', text: '#9a3412' };
+  return { bg: '#fee2e2', text: '#991b1b' };
+}
+
+// ── Report insight chart data ────────────────────────────────────────────────
+const BH_DOMAIN_DATA = [
+  { domain: 'Reflective Growth',     female: 72, male: 61 },
+  { domain: 'Relational Awareness',  female: 68, male: 54 },
+  { domain: 'Emotional Resilience',  female: 65, male: 58 },
+  { domain: 'Self-Insight',          female: 70, male: 63 },
+  { domain: 'Conflict Resolution',   female: 66, male: 55 },
+];
+
+const WELLNESS_DOTS = [
+  { x: 78, y: 82, size: 6, color: '#4a6fa5', label: 'Lincoln High' },
+  { x: 65, y: 74, size: 5, color: '#4a6fa5', label: 'Washington Middle' },
+  { x: 85, y: 88, size: 7, color: '#4a6fa5', label: 'Riverside Elem' },
+  { x: 55, y: 62, size: 5, color: '#e07b54', label: 'Valley MS' },
+  { x: 72, y: 79, size: 6, color: '#4a6fa5', label: 'Northgate Elem' },
+  { x: 48, y: 55, size: 4, color: '#e07b54', label: 'Desert Ridge HS' },
+  { x: 88, y: 91, size: 8, color: '#2d7a5f', label: 'Hillcrest K-8' },
+  { x: 60, y: 68, size: 5, color: '#4a6fa5', label: 'Sunrise Elem' },
+  { x: 42, y: 47, size: 4, color: '#c0392b', label: 'Eastside HS' },
+  { x: 79, y: 84, size: 6, color: '#4a6fa5', label: 'Oak Park Middle' },
+];
+
+const RISK_HEATMAP = [
+  { pattern: 'Hopelessness language',       low: 12, moderate: 28, high: 8,  count: 48 },
+  { pattern: 'Withdrawal / isolation cues', low: 18, moderate: 22, high: 5,  count: 45 },
+  { pattern: 'Avoidance behavior signals',  low: 24, moderate: 19, high: 3,  count: 46 },
+  { pattern: 'Self-doubt escalation',       low: 31, moderate: 14, high: 2,  count: 47 },
+  { pattern: 'Help-seeking absence',        low: 27, moderate: 17, high: 6,  count: 50 },
+];
+
+const PROTECTIVE_DATA = [
+  { factor: 'Family connection',       relational: 74, internal: 0 },
+  { factor: 'Trusted adult at school', relational: 68, internal: 0 },
+  { factor: 'Peer support',            relational: 62, internal: 0 },
+  { factor: 'Growth mindset',          relational: 0,  internal: 71 },
+  { factor: 'Emotional regulation',    relational: 0,  internal: 65 },
+  { factor: 'Help-seeking readiness',  relational: 0,  internal: 58 },
+];
+
+const PARTHENON_PILLARS = [
+  { label: 'Integrated Student Supports', height: 88, color: '#4a6fa5', score: '82%' },
+  { label: 'Family & Community Engagement', height: 72, color: '#2d7a5f', score: '67%' },
+  { label: 'Collaborative Leadership', height: 65, color: '#7c5cbf', score: '61%' },
+  { label: 'Expanded Learning Time', height: 78, color: '#e07b54', score: '73%' },
+];
+
+const STAKEHOLDER_DATA = [
+  { group: 'Families / Parents', score: 76, color: '#4a6fa5' },
+  { group: 'Students', score: 68, color: '#2d7a5f' },
+  { group: 'Staff', score: 61, color: '#7c5cbf' },
 ];
 
 // ── VideoAsk previews ────────────────────────────────────────────────────────
@@ -193,7 +253,7 @@ const BH_SCREENERS: BHScreener[] = [
   {
     id: 'bh-littles',
     name: 'Behavioral Health Screener for Littles',
-    grades: 'TK–2nd grade',
+    grades: 'Grades TK+ (Littles)',
     gradeBands: ['Lower Elementary (TK–2)'],
     previewUrl: 'https://flex.impacterpathway.com/fjzzdvxk8?preview',
     questions: [
@@ -205,7 +265,7 @@ const BH_SCREENERS: BHScreener[] = [
   {
     id: 'bh-elementary',
     name: 'Behavioral Health Screener for Elementary',
-    grades: '3rd–5th grade',
+    grades: 'Grades 3+ (Elementary)',
     gradeBands: ['Elementary (3rd–5th)'],
     previewUrl: 'https://flex.impacterpathway.com/fvtnb1z5e?preview',
     questions: [
@@ -220,7 +280,7 @@ const BH_SCREENERS: BHScreener[] = [
   {
     id: 'bh-secondary',
     name: 'Behavioral Health Screener for Secondary',
-    grades: '6th–12th grade',
+    grades: 'Grades 6+ (Secondary)',
     gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
     previewUrl: 'https://flex.impacterpathway.com/fiucp7xof?preview',
     questions: [
@@ -251,7 +311,7 @@ const LP_ASSESSMENTS: LPAssessment[] = [
   {
     id: 'lp-littles',
     name: 'Learner Portrait for Littles',
-    grades: 'TK–2nd grade',
+    grades: 'Grades TK+ (Littles)',
     gradeBands: ['Lower Elementary (TK–2)'],
     previewUrl: 'https://sdusd.impacterpathway.com/fp9r1r32y?preview',
     benchmarks: [
@@ -263,7 +323,7 @@ const LP_ASSESSMENTS: LPAssessment[] = [
   {
     id: 'lp-elementary',
     name: 'Learner Portrait for Elementary',
-    grades: '3rd–5th grade',
+    grades: 'Grades 3+ (Elementary)',
     gradeBands: ['Elementary (3rd–5th)'],
     previewUrl: 'https://flex.impacterpathway.com/fn0l89pl3?preview',
     benchmarks: [
@@ -280,7 +340,7 @@ const LP_ASSESSMENTS: LPAssessment[] = [
   {
     id: 'lp-secondary',
     name: 'Learner Portrait for Secondary',
-    grades: '6th–12th grade',
+    grades: 'Grades 6+ (Secondary)',
     gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
     previewUrl: 'https://flex.impacterpathway.com/fwxzy777r?preview',
     benchmarks: [
@@ -452,7 +512,13 @@ export default function PilotClient() {
   const [csPicks, setCsPicks] = useState<Record<string, Record<number, string>>>({});
   const [csPreviewLang, setCsPreviewLang] = useState<Record<string, 'en'|'es'>>({});
   const [csPreviewOpen, setCsPreviewOpen] = useState<Record<string, boolean>>({});
+  const [insightPanel, setInsightPanel] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setInterval(() => setInsightPanel(p => (p + 1) % 6), 5000);
+    return () => clearInterval(t);
+  }, []);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -619,38 +685,364 @@ export default function PilotClient() {
       {/* ── Sample data ──────────────────────────────────────────────────────── */}
       <section className="bg-gray-50 border-y border-gray-100 py-14">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="mb-6">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-1">Sample output</h2>
-            <p className="text-gray-700 font-medium">What the CSV looks like — anonymized example data</p>
+          <div className="mb-6 flex items-end justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-1">Sample output</h2>
+              <p className="text-gray-700 font-medium">What the CSV looks like — anonymized example data</p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-emerald-200 text-emerald-700 bg-emerald-50">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              AI-scored &amp; analyzed
+            </span>
           </div>
           <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-            <table className="text-xs whitespace-nowrap border-collapse">
+            <table className="text-xs whitespace-nowrap border-collapse w-full">
               <thead>
-                <tr className="bg-gray-100">
-                  {CSV_COLS.map(col => (
-                    <th key={col} className="px-3 py-2.5 text-left font-semibold text-gray-500 border-b border-gray-200 sticky top-0 bg-gray-100">
-                      {col}
+                <tr style={{ background: '#1a2744' }}>
+                  {CSV_COLS.map((col, ci) => (
+                    <th key={col} className="px-3 py-2.5 text-left font-semibold border-b border-white/10 text-white/80 sticky top-0" style={{ background: '#1a2744' }}>
+                      {ci === 11 ? (
+                        <span className="flex items-center gap-1">
+                          {col}
+                          <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        </span>
+                      ) : col}
                     </th>
                   ))}
+                  <th className="px-3 py-2.5 text-left font-semibold text-white/80 border-b border-white/10 sticky top-0" style={{ background: '#1a2744' }}>Response Links</th>
                 </tr>
               </thead>
               <tbody>
-                {CSV_ROWS.map((row, i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
-                    {row.map((cell, j) => (
-                      <td key={j} className={`px-3 py-2 border-b border-gray-100 text-gray-600 ${
-                        j === 11 ? 'font-semibold text-[#1a2744]' :
-                        j >= 12 ? 'text-gray-500' : ''
-                      }`}>
-                        <span className="block max-w-[220px] overflow-hidden text-ellipsis">{cell}</span>
+                {CSV_ROWS.map((row, i) => {
+                  const score = parseInt(row[11], 10);
+                  const { bg: scoreBg, text: scoreText } = scoreColor(score);
+                  return (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
+                      {row.map((cell, j) => {
+                        if (j === 11) {
+                          return (
+                            <td key={j} className="px-3 py-2 border-b border-gray-100 font-bold text-center" style={{ background: scoreBg, color: scoreText }}>
+                              <span className="inline-flex items-center gap-1">
+                                {cell}
+                                <span className="text-[10px] font-normal opacity-60">/800</span>
+                              </span>
+                            </td>
+                          );
+                        }
+                        if (j === 5 || j === 7 || j === 9) {
+                          return (
+                            <td key={j} className="px-3 py-2 border-b border-gray-100 text-gray-600 max-w-[200px]">
+                              <span className="block overflow-hidden text-ellipsis" style={{ maxWidth: 180 }}>{cell}</span>
+                              <a href="#" onClick={e => e.preventDefault()} className="text-[10px] font-medium mt-0.5 block" style={{ color: '#4a6fa5' }}>View response →</a>
+                            </td>
+                          );
+                        }
+                        if (j === 13) {
+                          const isHigh = cell.toLowerCase().includes('high') || cell.toLowerCase().includes('strong');
+                          return (
+                            <td key={j} className="px-3 py-2 border-b border-gray-100">
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${isHigh ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{cell}</span>
+                            </td>
+                          );
+                        }
+                        if (j === 14) {
+                          return (
+                            <td key={j} className="px-3 py-2 border-b border-gray-100">
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700">{cell}</span>
+                            </td>
+                          );
+                        }
+                        if (j === 15) {
+                          return (
+                            <td key={j} className="px-3 py-2 border-b border-gray-100">
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: '#f0f5fb', color: '#1a2744' }}>{cell}</span>
+                            </td>
+                          );
+                        }
+                        if (j === 12) {
+                          return (
+                            <td key={j} className="px-3 py-2 border-b border-gray-100 italic text-gray-500 text-[11px]">
+                              <span className="block max-w-[160px] overflow-hidden text-ellipsis">{cell}</span>
+                            </td>
+                          );
+                        }
+                        return (
+                          <td key={j} className="px-3 py-2 border-b border-gray-100 text-gray-600">
+                            <span className="block max-w-[120px] overflow-hidden text-ellipsis">{cell}</span>
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 border-b border-gray-100">
+                        <div className="flex flex-col gap-0.5">
+                          {[1,2,3].map(q => (
+                            <a key={q} href="#" onClick={e => e.preventDefault()} className="text-[10px] font-medium flex items-center gap-0.5" style={{ color: '#4a6fa5' }}>
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                              Q{q} audio
+                            </a>
+                          ))}
+                        </div>
                       </td>
-                    ))}
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-400 mt-3">All data above is synthetic. Real output is delivered as a downloadable CSV.</p>
+          <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
+            <p className="text-xs text-gray-400">All data above is synthetic. Real output is delivered as a downloadable CSV with embedded response links.</p>
+            <div className="flex items-center gap-3 text-[10px] text-gray-400">
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#d1fae5' }}></span>600+</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fef9c3' }}></span>500–599</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fed7aa' }}></span>400–499</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fee2e2' }}></span>&lt;400</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Sample Report Insights ───────────────────────────────────────────── */}
+      <section className="border-b border-gray-100 py-14" style={{ background: '#f7fafd' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-6 text-center">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-1">Sample report insights</h2>
+            <p className="text-gray-700 font-medium">The kind of analysis you get — from a single pilot window</p>
+          </div>
+          {/* Panel nav dots */}
+          <div className="flex justify-center gap-2 mb-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <button key={i} onClick={() => setInsightPanel(i)}
+                className="w-2 h-2 rounded-full transition-all"
+                style={{ background: insightPanel === i ? '#4a6fa5' : '#d1dce8', transform: insightPanel === i ? 'scale(1.4)' : 'scale(1)' }} />
+            ))}
+          </div>
+          {/* Panels */}
+          <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm bg-white" style={{ minHeight: 380 }}>
+            {/* Panel 0: BH Domains by Gender */}
+            {insightPanel === 0 && (
+              <div className="p-6 flex flex-col gap-4 h-full">
+                <div className="flex items-start justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Behavioral Health</p>
+                    <h3 className="text-base font-bold text-gray-900">Domain Scores by Gender</h3>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Female</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block bg-gray-300"></span>Male</span>
+                  </div>
+                </div>
+                <svg viewBox="0 0 500 240" className="w-full" style={{ maxHeight: 240 }}>
+                  {BH_DOMAIN_DATA.map((d, i) => {
+                    const yCenter = 24 + i * 44;
+                    const maxW = 310;
+                    const scale = (v: number) => (v / 100) * maxW;
+                    return (
+                      <g key={d.domain}>
+                        <text x="155" y={yCenter - 4} textAnchor="end" fontSize="11" fill="#6b7280">{d.domain}</text>
+                        <rect x="160" y={yCenter - 14} width={scale(d.female)} height={12} rx="3" fill="#4a6fa5" />
+                        <text x={163 + scale(d.female)} y={yCenter - 5} fontSize="10" fill="#4a6fa5" fontWeight="600">{d.female}%</text>
+                        <rect x="160" y={yCenter + 2} width={scale(d.male)} height={12} rx="3" fill="#94a3b8" />
+                        <text x={163 + scale(d.male)} y={yCenter + 11} fontSize="10" fill="#94a3b8" fontWeight="600">{d.male}%</text>
+                      </g>
+                    );
+                  })}
+                  <line x1="160" y1="0" x2="160" y2="240" stroke="#e5e7eb" strokeWidth="1" />
+                </svg>
+                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
+                  <span className="font-semibold">Insight: </span>Female students score 8–14 points higher across all domains. The widest gap appears in Relational Awareness (+14) and Conflict Resolution (+11), suggesting targeted programming for male students around social-emotional skill-building.
+                </div>
+              </div>
+            )}
+            {/* Panel 1: Student Wellness Matrix */}
+            {insightPanel === 1 && (
+              <div className="p-6 flex flex-col gap-4 h-full">
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Learner Portrait</p>
+                  <h3 className="text-base font-bold text-gray-900">Student Wellness Matrix</h3>
+                </div>
+                <svg viewBox="0 0 380 260" className="w-full" style={{ maxHeight: 260 }}>
+                  <defs>
+                    <linearGradient id="wellnessGrad" x1="0" y1="1" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#fde3c8" />
+                      <stop offset="50%" stopColor="#fef9c3" />
+                      <stop offset="100%" stopColor="#d1fae5" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="45" y="10" width="310" height="220" rx="6" fill="url(#wellnessGrad)" />
+                  {[25, 50, 75].map(v => (
+                    <g key={v}>
+                      <line x1="45" y1={10 + (1 - v/100) * 220} x2="355" y2={10 + (1 - v/100) * 220} stroke="white" strokeWidth="0.5" strokeDasharray="4 3" />
+                      <line x1={45 + (v/100) * 310} y1="10" x2={45 + (v/100) * 310} y2="230" stroke="white" strokeWidth="0.5" strokeDasharray="4 3" />
+                    </g>
+                  ))}
+                  {WELLNESS_DOTS.map((dot, i) => (
+                    <circle key={i} cx={45 + (dot.x/100) * 310} cy={230 - (dot.y/100) * 220} r={dot.size} fill={dot.color} fillOpacity="0.85" stroke="white" strokeWidth="1.5" />
+                  ))}
+                  <line x1="45" y1="230" x2="355" y2="230" stroke="#9ca3af" strokeWidth="1.5" />
+                  <line x1="45" y1="10" x2="45" y2="230" stroke="#9ca3af" strokeWidth="1.5" />
+                  <text x="200" y="250" textAnchor="middle" fontSize="10" fill="#6b7280">Sense of Safety →</text>
+                  <text x="14" y="120" textAnchor="middle" fontSize="10" fill="#6b7280" transform="rotate(-90 14 120)">Academic Confidence →</text>
+                  <text x="55" y="24" fontSize="9" fill="#9ca3af">Low safety</text>
+                  <text x="295" y="24" fontSize="9" fill="#2d7a5f">High wellness</text>
+                </svg>
+                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
+                  <span className="font-semibold">Insight: </span>Most sites cluster in the high-wellness quadrant. Two outlier sites show low safety scores — both are secondary campuses in the same feeder pattern, suggesting a systemic issue worth investigating at the district level.
+                </div>
+              </div>
+            )}
+            {/* Panel 2: Risk Language Patterns Heatmap */}
+            {insightPanel === 2 && (
+              <div className="p-6 flex flex-col gap-4 h-full">
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Behavioral Health</p>
+                  <h3 className="text-base font-bold text-gray-900">Risk Language Patterns</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="text-left py-2 pr-4 text-gray-500 font-semibold">Pattern Detected</th>
+                        <th className="text-center px-3 py-2 font-semibold" style={{ color: '#2d7a5f' }}>Low</th>
+                        <th className="text-center px-3 py-2 font-semibold" style={{ color: '#b45309' }}>Moderate</th>
+                        <th className="text-center px-3 py-2 font-semibold" style={{ color: '#991b1b' }}>High</th>
+                        <th className="text-center px-3 py-2 text-gray-500 font-semibold">n</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {RISK_HEATMAP.map((row, i) => {
+                        const total = row.low + row.moderate + row.high;
+                        const lowPct = (row.low / total) * 100;
+                        const modPct = (row.moderate / total) * 100;
+                        const highPct = (row.high / total) * 100;
+                        return (
+                          <tr key={i} className="border-t border-gray-100">
+                            <td className="py-2.5 pr-4 text-gray-700">{row.pattern}</td>
+                            <td className="px-3 py-2 text-center font-medium" style={{ background: `rgba(209, 250, 229, ${0.3 + lowPct/100})`, color: '#065f46' }}>{row.low}</td>
+                            <td className="px-3 py-2 text-center font-medium" style={{ background: `rgba(254, 243, 199, ${0.3 + modPct/100})`, color: '#92400e' }}>{row.moderate}</td>
+                            <td className="px-3 py-2 text-center font-bold" style={{ background: `rgba(254, 226, 226, ${0.4 + highPct/80})`, color: '#991b1b' }}>{row.high}</td>
+                            <td className="px-3 py-2 text-center text-gray-400">{row.count}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#fff7f7', color: '#7f1d1d' }}>
+                  <span className="font-semibold">Insight: </span>Hopelessness language has the highest proportion of High-severity flags (17%). Combined with help-seeking absence, 14 students (29% of the cohort) show overlapping indicators and are flagged for priority counselor outreach.
+                </div>
+              </div>
+            )}
+            {/* Panel 3: Protective Factors */}
+            {insightPanel === 3 && (
+              <div className="p-6 flex flex-col gap-4 h-full">
+                <div className="flex items-start justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Behavioral Health</p>
+                    <h3 className="text-base font-bold text-gray-900">Protective Factors Present</h3>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Relational</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#2d7a5f' }}></span>Internal</span>
+                  </div>
+                </div>
+                <svg viewBox="0 0 480 230" className="w-full" style={{ maxHeight: 230 }}>
+                  {PROTECTIVE_DATA.map((d, i) => {
+                    const y = 20 + i * 36;
+                    const maxW = 290;
+                    const isRelational = d.relational > 0;
+                    const val = isRelational ? d.relational : d.internal;
+                    const color = isRelational ? '#4a6fa5' : '#2d7a5f';
+                    const barW = (val / 100) * maxW;
+                    return (
+                      <g key={d.factor}>
+                        <text x="158" y={y + 11} textAnchor="end" fontSize="11" fill="#6b7280">{d.factor}</text>
+                        <rect x="163" y={y} width={barW} height={20} rx="3" fill={color} fillOpacity="0.85" />
+                        <text x={167 + barW} y={y + 14} fontSize="10" fill={color} fontWeight="600">{val}%</text>
+                      </g>
+                    );
+                  })}
+                  <line x1="163" y1="0" x2="163" y2="230" stroke="#e5e7eb" strokeWidth="1" />
+                </svg>
+                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0faf5', color: '#064e3b' }}>
+                  <span className="font-semibold">Insight: </span>Family connection and trusted adults are the strongest protective factors present (74% and 68%). Students who named an adult at school showed 2.1× higher resilience scores — a clear case for relationship-based interventions over programmatic ones.
+                </div>
+              </div>
+            )}
+            {/* Panel 4: Community Schools Parthenon */}
+            {insightPanel === 4 && (
+              <div className="p-6 flex flex-col gap-4 h-full">
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Community Schools</p>
+                  <h3 className="text-base font-bold text-gray-900">Community Schools Pillar Scores</h3>
+                </div>
+                <svg viewBox="0 0 460 280" className="w-full" style={{ maxHeight: 280 }}>
+                  <rect x="20" y="248" width="420" height="8" rx="3" fill="#e5e7eb" />
+                  {PARTHENON_PILLARS.map((p, i) => {
+                    const pillarW = 72;
+                    const gap = 22;
+                    const totalW = 4 * pillarW + 3 * gap;
+                    const startX = (460 - totalW) / 2;
+                    const x = startX + i * (pillarW + gap);
+                    const maxH = 200;
+                    const h = (p.height / 100) * maxH;
+                    const y = 248 - h;
+                    return (
+                      <g key={p.label}>
+                        <rect x={x} y={y} width={pillarW} height={h} rx="4" fill={p.color} fillOpacity="0.85" />
+                        <text x={x + pillarW / 2} y={y + h / 2 - 4} textAnchor="middle" fontSize="15" fontWeight="bold" fill="white">{p.score}</text>
+                        <text x={x + pillarW / 2} y={y + h / 2 + 13} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.75)">avg score</text>
+                        <rect x={x - 4} y={y - 8} width={pillarW + 8} height={8} rx="2" fill={p.color} />
+                        <text x={x + pillarW / 2} y={266} textAnchor="middle" fontSize="9" fill="#6b7280">{p.label.split(' ').slice(0, 2).join(' ')}</text>
+                        <text x={x + pillarW / 2} y={277} textAnchor="middle" fontSize="9" fill="#6b7280">{p.label.split(' ').slice(2).join(' ')}</text>
+                      </g>
+                    );
+                  })}
+                  <rect x="16" y="14" width="428" height="14" rx="3" fill="#d1dce8" />
+                  <rect x="24" y="6" width="412" height="10" rx="2" fill="#e8edf5" />
+                </svg>
+                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
+                  <span className="font-semibold">Insight: </span>Integrated Student Supports is the strongest pillar (82%). Collaborative Leadership scores lowest (61%), with staff responses pointing to inconsistent inclusion in site-level planning — a common leverage point for Community Schools coordinators.
+                </div>
+              </div>
+            )}
+            {/* Panel 5: CS by Stakeholder */}
+            {insightPanel === 5 && (
+              <div className="p-6 flex flex-col gap-4 h-full">
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Community Schools</p>
+                  <h3 className="text-base font-bold text-gray-900">Perceived School Responsiveness by Stakeholder</h3>
+                </div>
+                <svg viewBox="0 0 420 180" className="w-full" style={{ maxHeight: 180 }}>
+                  {STAKEHOLDER_DATA.map((d, i) => {
+                    const y = 20 + i * 52;
+                    const maxW = 260;
+                    const barW = (d.score / 100) * maxW;
+                    return (
+                      <g key={d.group}>
+                        <text x="125" y={y + 20} textAnchor="end" fontSize="12" fill="#374151" fontWeight="500">{d.group}</text>
+                        <rect x="130" y={y + 4} width={barW} height={30} rx="5" fill={d.color} fillOpacity="0.85" />
+                        <text x={135 + barW} y={y + 24} fontSize="13" fontWeight="bold" fill={d.color}>{d.score}%</text>
+                      </g>
+                    );
+                  })}
+                  <line x1="130" y1="0" x2="130" y2="180" stroke="#e5e7eb" strokeWidth="1" />
+                </svg>
+                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
+                  <span className="font-semibold">Insight: </span>Families rate the school 15 points higher than staff on perceived responsiveness. This gap often reflects families&apos; limited visibility into internal challenges. Staff responses cluster around communication gaps and workload — areas where Community Schools coordinators can make immediate structural improvements.
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Panel navigation arrows */}
+          <div className="flex justify-center gap-3 mt-4">
+            <button onClick={() => setInsightPanel(p => (p + 5) % 6)}
+              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors bg-white">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button onClick={() => setInsightPanel(p => (p + 1) % 6)}
+              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors bg-white">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
         </div>
       </section>
 
