@@ -621,46 +621,48 @@ export default function PilotClient() {
   }
 
   return (
-    <div className="min-h-screen font-sans" style={{ background: '#0b1629' }}>
+    <div className="min-h-screen font-sans" style={{ background: 'white' }}>
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="px-6 py-3 flex items-center justify-between" style={{ background: 'rgba(11,22,41,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'sticky', top: 0, zIndex: 30 }}>
-        <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 36 }} />
-        <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: 'rgba(224,123,84,0.15)', color: '#e07b54', border: '1px solid rgba(224,123,84,0.3)' }}>
+      <nav className="px-6 py-3 flex items-center justify-between bg-white" style={{ borderBottom: '1px solid #e8edf5', position: 'sticky', top: 0, zIndex: 30 }}>
+        <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 34, filter: 'brightness(0) saturate(100%) invert(17%) sepia(26%) saturate(1200%) hue-rotate(195deg) brightness(85%)' }} />
+        <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#f0f5fb', color: '#4a6fa5', border: '1px solid #d0dff0' }}>
           Pilot Program
         </span>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0b1629 0%, #1a2744 55%, #1b3052 100%)' }}>
-        {/* Decorative radial glows */}
-        <div style={{ position: 'absolute', top: -100, left: -80, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(224,123,84,0.11) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle, rgba(74,111,165,0.18) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div className="max-w-3xl mx-auto px-6 pt-20 pb-20 text-center relative">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase" style={{ background: 'rgba(224,123,84,0.12)', color: '#e07b54', border: '1px solid rgba(224,123,84,0.28)' }}>
+      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #4a52b0 22%, #7a4aaa 44%, #aa5070 64%, #cc6648 82%, #bf5c3c 100%)', minHeight: '72vh', display: 'flex', alignItems: 'center' }}>
+        {/* Soft radial overlay for depth */}
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 60%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
+        {/* SVG circular watermark */}
+        <svg style={{ position: 'absolute', right: '5%', top: '10%', width: 340, height: 340, opacity: 0.07, pointerEvents: 'none' }} viewBox="0 0 340 340">
+          {[0,1,2,3].map(i => <circle key={i} cx="170" cy="170" r={60 + i * 40} fill="none" stroke="white" strokeWidth="1" />)}
+          {Array.from({length: 16}).map((_,i) => {
+            const a = (i/16)*Math.PI*2; const r = 170;
+            return <line key={i} x1="170" y1="170" x2={170+Math.cos(a)*r} y2={170+Math.sin(a)*r} stroke="white" strokeWidth="0.5" />;
+          })}
+        </svg>
+        <div className="max-w-3xl mx-auto px-6 py-24 text-center relative w-full">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse inline-block"></span>
             Pilot Program
           </div>
           <h1 className="font-bold leading-tight mb-6 text-white" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)' }}>
             Hear every voice.<br />
-            <span style={{ color: '#e07b54' }}>Know what it means.</span>
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>Know what it means.</span>
           </h1>
-          <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
+          <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
             A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
           </p>
+          {/* Frosted stat chips */}
           <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              <svg className="w-4 h-4" style={{ color: '#2d7a5f' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-              No app download
-            </div>
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              <svg className="w-4 h-4" style={{ color: '#2d7a5f' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-              Results in days
-            </div>
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              <svg className="w-4 h-4" style={{ color: '#2d7a5f' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-              English &amp; Spanish
-            </div>
+            {[['No app download', true], ['Results in days', true], ['English & Spanish', true]].map(([label]) => (
+              <div key={label as string} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                {label}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -698,30 +700,42 @@ export default function PilotClient() {
       </section>
 
       {/* ── What makes this different ────────────────────────────────────────── */}
-      <section className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f1c35 0%, #1a2744 45%, #0e2d4e 100%)' }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(224,123,84,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div className="max-w-3xl mx-auto px-6 text-center relative">
-          <h2 className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: 'rgba(255,255,255,0.35)' }}>What makes this different</h2>
-          <p className="font-bold leading-snug mb-6 text-white" style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)' }}>
-            Surveys tell you what students select.<br />
-            <span style={{ color: '#e07b54' }}>We measure what they actually say.</span>
-          </p>
-          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how your students, families, and staff are actually experiencing your schools and demonstrating future-ready competencies.
-          </p>
-          <div className="mt-10 grid grid-cols-3 gap-4 max-w-lg mx-auto">
-            {[['200–800', 'rubric-aligned score'], ['< 1 week', 'time to first insight'], ['6 domains', 'analyzed per student']].map(([val, label]) => (
-              <div key={label} className="rounded-xl py-4 px-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
-                <p className="text-xl font-bold text-white mb-0.5">{val}</p>
-                <p className="text-xs leading-tight" style={{ color: 'rgba(255,255,255,0.4)' }}>{label}</p>
-              </div>
-            ))}
+      <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-10 text-center" style={{ color: '#4a6fa5' }}>What makes this different</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            {/* Left: Pull quote */}
+            <div>
+              <p className="font-bold leading-snug text-gray-900 mb-4" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
+                Surveys tell you what students select.
+              </p>
+              <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
+                We measure what they actually say.
+              </p>
+              <p className="text-base leading-relaxed text-gray-500">
+                IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how your students, families, and staff are actually experiencing your schools.
+              </p>
+            </div>
+            {/* Right: Stats 2×2 */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                ['200–800', 'rubric-aligned score per respondent'],
+                ['< 1 week', 'from launch to first insights'],
+                ['6 domains', 'of competency analyzed per student'],
+                ['3 languages', 'supported — English, Spanish, and more'],
+              ].map(([val, label]) => (
+                <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
+                  <p className="text-2xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
+                  <p className="text-xs leading-tight text-gray-400">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── Sample data ──────────────────────────────────────────────────────── */}
-      <section className="py-16" style={{ background: 'linear-gradient(180deg, #eef3fb 0%, #e5eef8 100%)' }}>
+      <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="mb-6 flex items-end justify-between flex-wrap gap-3">
             <div>
@@ -834,12 +848,12 @@ export default function PilotClient() {
       </section>
 
       {/* ── Sample Report Insights ───────────────────────────────────────────── */}
-      <section className="border-b border-gray-100 py-14" style={{ background: '#0f1c35' }}>
+      <section className="border-b border-gray-100 py-14" style={{ background: '#f4f7fc' }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Sample report insights</p>
-              <h2 className="text-xl font-bold text-white">What you can&apos;t get from a survey.</h2>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Sample report insights</p>
+              <h2 className="text-xl font-bold text-gray-900">What you can&apos;t get from a survey.</h2>
             </div>
             {/* Panel nav dots */}
             <div className="flex items-center gap-2">
@@ -849,7 +863,7 @@ export default function PilotClient() {
                   style={{
                     width: insightPanel === i ? 20 : 8,
                     height: 8,
-                    background: insightPanel === i ? '#4a6fa5' : 'rgba(255,255,255,0.2)',
+                    background: insightPanel === i ? '#4a6fa5' : '#c8d9ef',
                   }} />
               ))}
             </div>
@@ -1143,12 +1157,12 @@ export default function PilotClient() {
           <div className="flex justify-center gap-3 mt-5">
             <button onClick={() => setInsightPanel(p => (p + 5) % 6)}
               className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)' }}>
+              style={{ background: 'white', color: '#4a6fa5', border: '1px solid #d0dff0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
             </button>
             <button onClick={() => setInsightPanel(p => (p + 1) % 6)}
               className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)' }}>
+              style={{ background: 'white', color: '#4a6fa5', border: '1px solid #d0dff0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
             </button>
           </div>
@@ -1156,20 +1170,19 @@ export default function PilotClient() {
       </section>
 
       {/* ── See it in action ─────────────────────────────────────────────────── */}
-      <section className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a2744 0%, #0f1c35 100%)' }}>
-        <div style={{ position: 'absolute', top: -60, right: -60, width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle, rgba(74,111,165,0.14) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div className="max-w-5xl mx-auto px-6 relative">
+      <section className="py-20" style={{ background: '#f4f7fc' }}>
+        <div className="max-w-5xl mx-auto px-6">
           <div className="mb-10 text-center">
             <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
-            <p className="text-lg font-semibold text-white">Real assessments from Impacter Pathway partners</p>
+            <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {PREVIEWS.map(({ label, org, url }) => (
-              <div key={url} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div key={url} className="rounded-2xl overflow-hidden flex flex-col bg-white shadow-sm" style={{ border: '1px solid #e8edf5' }}>
                 <VideoAskEmbed url={url} label={label} onOpen={() => setPreviewModal({ label, url })} height={220} />
                 <div className="px-5 py-4">
-                  <p className="text-sm font-semibold text-white mb-0.5">{label}</p>
-                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{org}</p>
+                  <p className="text-sm font-semibold text-gray-900 mb-0.5">{label}</p>
+                  <p className="text-xs text-gray-400">{org}</p>
                 </div>
               </div>
             ))}
@@ -1203,8 +1216,8 @@ export default function PilotClient() {
 
       {/* ── CTA ──────────────────────────────────────────────────────────────── */}
       {!formOpen && (
-        <section className="py-20 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #b85530 0%, #e07b54 50%, #c96840 100%)' }}>
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 65%)', pointerEvents: 'none' }} />
+        <section className="py-24 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #4a52b0 22%, #7a4aaa 44%, #aa5070 64%, #cc6648 82%, #bf5c3c 100%)' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 70% 40%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
           <div className="relative">
             <h2 className="text-3xl font-bold text-white mb-3">Ready to run a pilot?</h2>
             <p className="mb-8 text-base max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.75)' }}>
@@ -1213,7 +1226,7 @@ export default function PilotClient() {
             <button
               onClick={openForm}
               className="font-semibold px-8 py-3 rounded-xl text-sm hover:opacity-90 transition-opacity shadow-lg"
-              style={{ background: 'white', color: '#b85530' }}
+              style={{ background: 'white', color: '#1a2744' }}
             >
               Begin
             </button>
