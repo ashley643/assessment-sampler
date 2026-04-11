@@ -96,6 +96,9 @@ interface FormData {
   gradeLevels: string[];
   expectedCount: string;
   launchTimeline: string;
+  languages: string[];
+  otherLanguage: string;
+  modalities: string[];
   // Community Schools specific
   communityModel: string;
   primaryGoal: string;
@@ -122,6 +125,9 @@ const EMPTY_FORM: FormData = {
   gradeLevels: [],
   expectedCount: '',
   launchTimeline: '',
+  languages: ['English'],
+  otherLanguage: '',
+  modalities: [],
   communityModel: '',
   primaryGoal: '',
   competencyFocus: '',
@@ -230,7 +236,10 @@ export default function PilotClient() {
   const canAdvanceStep3 = form.respondents.length > 0
     && (!studentsSelected || form.gradeLevels.length > 0)
     && !!form.expectedCount
-    && !!form.launchTimeline;
+    && !!form.launchTimeline
+    && form.languages.length > 0
+    && (!form.languages.includes('Other') || !!form.otherLanguage)
+    && form.modalities.length > 0;
   const canAdvanceStep4 = !!form.name && !!form.email && !!form.organization;
 
   return (
@@ -667,6 +676,81 @@ export default function PilotClient() {
                     </select>
                   </Field>
                 )}
+
+                {/* Languages */}
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Which languages do you want to enable? *</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['English', 'Spanish', 'Other'].map(lang => {
+                      const checked = form.languages.includes(lang);
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => {
+                            const next = checked
+                              ? form.languages.filter(l => l !== lang)
+                              : [...form.languages, lang];
+                            set('languages', next);
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                            checked ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          {lang}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {form.languages.includes('Other') && (
+                    <input
+                      className={INPUT_CLS + ' mt-2'}
+                      placeholder="Which language?"
+                      value={form.otherLanguage}
+                      onChange={e => set('otherLanguage', e.target.value)}
+                    />
+                  )}
+                </div>
+
+                {/* Modalities */}
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Which response modalities do you want to enable? *</p>
+                  <div className="space-y-2">
+                    {[
+                      { id: 'Video',  note: null },
+                      { id: 'Audio',  note: null },
+                      { id: 'Text',   note: 'Text can improve completion rates — especially with adults — but voice responses tend to produce richer, more authentic data. We recommend starting with video and audio.' },
+                    ].map(({ id, note }) => {
+                      const checked = form.modalities.includes(id);
+                      return (
+                        <div key={id}>
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                const next = checked
+                                  ? form.modalities.filter(m => m !== id)
+                                  : [...form.modalities, id];
+                                set('modalities', next);
+                              }}
+                              className="accent-indigo-600 w-4 h-4"
+                            />
+                            <span className="text-sm text-gray-700 font-medium">{id}</span>
+                          </label>
+                          {note && checked && (
+                            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-1">{note}</p>
+                          )}
+                          {note && !checked && (
+                            <p className="text-xs text-gray-400 px-3 mt-0.5">{note}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
