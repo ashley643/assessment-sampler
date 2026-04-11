@@ -197,7 +197,9 @@ const BH_SCREENERS: BHScreener[] = [
     gradeBands: ['Lower Elementary (TK–2)'],
     previewUrl: 'https://flex.impacterpathway.com/fjzzdvxk8?preview',
     questions: [
-      { pillar: 'Relational Awareness', text: 'Tell me about a time you saw someone who was really upset. What did you notice? What did you do?' },
+      { pillar: 'Relational Awareness',  text: 'Tell me about a time you saw someone who was really upset. What did you notice? What did you do?' },
+      { pillar: 'Emotional Resilience',  text: 'Tell me about a time you kept trying something hard even when you felt like quitting. What happened?' },
+      { pillar: 'Effective Help-Seeking', text: 'Tell me about a time you asked someone to help you learn something. Who helped you and how did it go?' },
     ],
   },
   {
