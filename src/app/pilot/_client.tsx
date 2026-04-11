@@ -86,7 +86,12 @@ type AssessmentId = 'community-schools' | 'learner-portrait' | 'behavioral-healt
 
 interface FormData {
   assessmentType: AssessmentId | '';
-  // Contextual
+  // Step 2: Dates
+  startDate: string;
+  endDate: string;
+  dateNotes: string;
+  onsiteSupport: 'yes' | 'no' | 'unsure' | null;
+  // Step 3: Contextual
   respondents: string[];
   gradeLevels: string[];
   expectedCount: string;
@@ -109,6 +114,10 @@ interface FormData {
 
 const EMPTY_FORM: FormData = {
   assessmentType: '',
+  startDate: '',
+  endDate: '',
+  dateNotes: '',
+  onsiteSupport: null,
   respondents: [],
   gradeLevels: [],
   expectedCount: '',
@@ -175,7 +184,7 @@ const SELECT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm f
 
 export default function PilotClient() {
   const [formOpen, setFormOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -207,7 +216,7 @@ export default function PilotClient() {
         setSubmitting(false);
         return;
       }
-      setStep(4);
+      setStep(5);
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -216,12 +225,13 @@ export default function PilotClient() {
   }
 
   const canAdvanceStep1 = !!form.assessmentType;
+  const canAdvanceStep2 = !!form.startDate && form.onsiteSupport !== null;
   const studentsSelected = form.respondents.includes('Students');
-  const canAdvanceStep2 = form.respondents.length > 0
+  const canAdvanceStep3 = form.respondents.length > 0
     && (!studentsSelected || form.gradeLevels.length > 0)
     && !!form.expectedCount
     && !!form.launchTimeline;
-  const canAdvanceStep3 = !!form.name && !!form.email && !!form.organization;
+  const canAdvanceStep4 = !!form.name && !!form.email && !!form.organization;
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -411,20 +421,23 @@ export default function PilotClient() {
           <div className="max-w-xl mx-auto px-6 py-10">
 
             {/* Step indicator */}
-            {step < 4 && (
-              <div className="flex items-center gap-2 mb-8">
-                {([1, 2, 3] as const).map(s => (
-                  <div key={s} className="flex items-center gap-2">
+            {step < 5 && (
+              <div className="flex items-center gap-1.5 mb-8">
+                {([
+                  { n: 1, label: 'Assessment' },
+                  { n: 2, label: 'Dates' },
+                  { n: 3, label: 'Participants' },
+                  { n: 4, label: 'Contact' },
+                ] as const).map(({ n, label }) => (
+                  <div key={n} className="flex items-center gap-1.5">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-                      step === s ? 'bg-indigo-600 text-white' :
-                      step > s ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-400'
-                    }`}>{s}</div>
-                    {s < 3 && <div className={`h-px w-8 transition-colors ${step > s ? 'bg-indigo-300' : 'bg-gray-200'}`} />}
+                      step === n ? 'bg-indigo-600 text-white' :
+                      step > n  ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-400'
+                    }`}>{n}</div>
+                    <span className={`text-xs hidden sm:inline ${step === n ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>{label}</span>
+                    {n < 4 && <div className={`h-px w-5 mx-1 transition-colors ${step > n ? 'bg-indigo-300' : 'bg-gray-200'}`} />}
                   </div>
                 ))}
-                <span className="ml-2 text-xs text-gray-400">
-                  {step === 1 ? 'Assessment type' : step === 2 ? 'Your context' : 'Contact details'}
-                </span>
               </div>
             )}
 
@@ -466,8 +479,91 @@ export default function PilotClient() {
               </div>
             )}
 
-            {/* ── Step 2: Contextual questions ──────────────────── */}
+            {/* ── Step 2: Dates ─────────────────────────────────── */}
             {step === 2 && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">When are you thinking?</h3>
+                  <p className="text-sm text-gray-500 mb-1">
+                    Give us your best guess — this is just to get a sense of your window.
+                    An Impacter team member will follow up to confirm the final dates.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Start date" required>
+                    <input
+                      type="date"
+                      value={form.startDate}
+                      onChange={e => set('startDate', e.target.value)}
+                      className={INPUT_CLS}
+                    />
+                  </Field>
+                  <Field label="End date">
+                    <input
+                      type="date"
+                      value={form.endDate}
+                      min={form.startDate || undefined}
+                      onChange={e => set('endDate', e.target.value)}
+                      className={INPUT_CLS}
+                    />
+                  </Field>
+                </div>
+
+                <Field label="Any important dates or constraints we should know about?">
+                  <textarea
+                    value={form.dateNotes}
+                    onChange={e => set('dateNotes', e.target.value)}
+                    placeholder="e.g. Avoid testing windows, spring break Mar 24–28, prefer mornings…"
+                    rows={3}
+                    className={INPUT_CLS + ' resize-none'}
+                  />
+                </Field>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-3">
+                    Would you like an Impacter team member to support on-site during implementation? *
+                  </p>
+                  <div className="space-y-2">
+                    {([
+                      { value: 'yes',    label: 'Yes please — on-site support would be helpful' },
+                      { value: 'no',     label: 'No, we will handle implementation independently' },
+                      { value: 'unsure', label: 'Not sure yet' },
+                    ] as const).map(({ value, label }) => (
+                      <label key={value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        form.onsiteSupport === value
+                          ? 'border-indigo-400 bg-indigo-50'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="onsiteSupport"
+                          value={value}
+                          checked={form.onsiteSupport === value}
+                          onChange={() => set('onsiteSupport', value)}
+                          className="accent-indigo-600"
+                        />
+                        <span className="text-sm text-gray-700">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between pt-2">
+                  <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                  <button
+                    disabled={!canAdvanceStep2}
+                    onClick={() => setStep(3)}
+                    className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 3: Contextual questions ──────────────────── */}
+            {step === 3 && (
               <div className="space-y-5">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Tell us about your context</h3>
@@ -573,10 +669,10 @@ export default function PilotClient() {
                 )}
 
                 <div className="flex justify-between pt-2">
-                  <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                  <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
-                    disabled={!canAdvanceStep2}
-                    onClick={() => setStep(3)}
+                    disabled={!canAdvanceStep3}
+                    onClick={() => setStep(4)}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
                     Continue
@@ -585,8 +681,8 @@ export default function PilotClient() {
               </div>
             )}
 
-            {/* ── Step 3: Contact details ────────────────────────── */}
-            {step === 3 && (
+            {/* ── Step 4: Contact details ────────────────────────── */}
+            {step === 4 && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Your contact details</h3>
@@ -628,9 +724,9 @@ export default function PilotClient() {
                 {error && <p className="text-sm text-red-500">{error}</p>}
 
                 <div className="flex justify-between pt-2">
-                  <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                  <button onClick={() => setStep(3)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
-                    disabled={!canAdvanceStep3 || submitting}
+                    disabled={!canAdvanceStep4 || submitting}
                     onClick={submit}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
@@ -640,8 +736,8 @@ export default function PilotClient() {
               </div>
             )}
 
-            {/* ── Step 4: Confirmation ───────────────────────────── */}
-            {step === 4 && (
+            {/* ── Step 5: Confirmation ───────────────────────────── */}
+            {step === 5 && (
               <div className="text-center py-8">
                 <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-5">
                   <svg className="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
