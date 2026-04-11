@@ -54,11 +54,11 @@ function scoreColor(score: number): { bg: string; text: string } {
 
 // ── Report insight chart data ────────────────────────────────────────────────
 const BH_DOMAIN_DATA = [
-  { domain: 'Reflective Growth',     female: 72, male: 61 },
-  { domain: 'Relational Awareness',  female: 68, male: 54 },
-  { domain: 'Emotional Resilience',  female: 65, male: 58 },
-  { domain: 'Self-Insight',          female: 70, male: 63 },
-  { domain: 'Conflict Resolution',   female: 66, male: 55 },
+  { domain: 'Reflective Growth',     female: 624, male: 548 },
+  { domain: 'Relational Awareness',  female: 591, male: 469 },
+  { domain: 'Emotional Resilience',  female: 558, male: 501 },
+  { domain: 'Self-Insight',          female: 607, male: 542 },
+  { domain: 'Conflict Resolution',   female: 572, male: 473 },
 ];
 
 // 22 dots, all same color/size, x/y as 0.70–1.00 scale values * 100
@@ -90,10 +90,10 @@ const PROTECTIVE_DATA = [
 ];
 
 const PARTHENON_PILLARS = [
-  { label: 'Integrated Student Supports',    height: 88, color: '#4a6fa5', score: '0.82' },
-  { label: 'Family & Community Engagement',  height: 72, color: '#2d7a5f', score: '0.74' },
-  { label: 'Collaborative Leadership',       height: 65, color: '#7c5cbf', score: '0.71' },
-  { label: 'Expanded Learning Time',         height: 78, color: '#e07b54', score: '0.77' },
+  { label: 'Integrated Student Supports',    height: 92, color: '#4a6fa5', score: '0.97' },
+  { label: 'Family & Community Engagement',  height: 76, color: '#2d7a5f', score: '0.88' },
+  { label: 'Collaborative Leadership',       height: 68, color: '#7c5cbf', score: '0.82' },
+  { label: 'Expanded Learning Time',         height: 83, color: '#e07b54', score: '0.93' },
 ];
 
 // Linguistic tone divergence by stakeholder
@@ -830,41 +830,54 @@ export default function PilotClient() {
                 <div className="flex items-start justify-between flex-wrap gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Domain Analysis</p>
-                    <h3 className="text-lg font-bold text-white leading-snug">Girls outscore boys by up to 14 pts —<br/>the gap widest in relational skills.</h3>
+                    <h3 className="text-lg font-bold text-white leading-snug">Girls outscore boys by up to 122 pts —<br/>the gap widest in relational skills.</h3>
                   </div>
                   <div className="flex items-center gap-4 text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
                     <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Female</span>
                     <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: 'rgba(255,255,255,0.25)' }}></span>Male</span>
                   </div>
                 </div>
-                <svg viewBox="0 0 560 260" className="w-full" style={{ maxHeight: 260 }}>
-                  {BH_DOMAIN_DATA.map((d, i) => {
-                    const yCenter = 26 + i * 46;
-                    const maxW = 340;
-                    const scaleW = (v: number) => (v / 100) * maxW;
-                    const gap = d.female - d.male;
+                <svg viewBox="0 0 620 260" className="w-full" style={{ maxHeight: 260 }}>
+                  {/* X-axis tick marks at 200, 400, 600, 800 */}
+                  {[200, 400, 600, 800].map(v => {
+                    const px = 173 + ((v - 0) / 800) * 400;
                     return (
-                      <g key={d.domain}>
-                        <text x="168" y={yCenter - 2} textAnchor="end" fontSize="11.5" fill="rgba(255,255,255,0.6)">{d.domain}</text>
-                        {/* Male bar (background) */}
-                        <rect x="173" y={yCenter - 16} width={scaleW(d.male)} height={28} rx="4" fill="rgba(255,255,255,0.12)" />
-                        {/* Female bar */}
-                        <rect x="173" y={yCenter - 16} width={scaleW(d.female)} height={14} rx="4" fill="#4a6fa5" />
-                        <text x={177 + scaleW(d.female)} y={yCenter - 5} fontSize="11" fill="#7aa3cc" fontWeight="700">{d.female}</text>
-                        <text x={177 + scaleW(d.male)} y={yCenter + 10} fontSize="11" fill="rgba(255,255,255,0.35)" fontWeight="600">{d.male}</text>
-                        {/* Gap annotation on widest gap */}
-                        {gap === 14 && (
-                          <g>
-                            <line x1={173 + scaleW(d.male)} y1={yCenter - 20} x2={173 + scaleW(d.female)} y2={yCenter - 20} stroke="#f59e0b" strokeWidth="1.5" />
-                            <line x1={173 + scaleW(d.male)} y1={yCenter - 23} x2={173 + scaleW(d.male)} y2={yCenter - 17} stroke="#f59e0b" strokeWidth="1.5" />
-                            <line x1={173 + scaleW(d.female)} y1={yCenter - 23} x2={173 + scaleW(d.female)} y2={yCenter - 17} stroke="#f59e0b" strokeWidth="1.5" />
-                            <text x={173 + scaleW(d.male) + (scaleW(gap)/2)} y={yCenter - 26} textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="700">+{gap} pts</text>
-                          </g>
-                        )}
+                      <g key={v}>
+                        <line x1={px} y1="0" x2={px} y2="250" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                        <text x={px} y="258" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.25)">{v}</text>
                       </g>
                     );
                   })}
-                  <line x1="173" y1="0" x2="173" y2="260" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                  {(() => {
+                    const maxGap = Math.max(...BH_DOMAIN_DATA.map(d => d.female - d.male));
+                    return BH_DOMAIN_DATA.map((d, i) => {
+                      const yCenter = 26 + i * 44;
+                      const maxW = 400;
+                      const scaleW = (v: number) => (v / 800) * maxW;
+                      const gap = d.female - d.male;
+                      return (
+                        <g key={d.domain}>
+                          <text x="168" y={yCenter - 2} textAnchor="end" fontSize="11.5" fill="rgba(255,255,255,0.6)">{d.domain}</text>
+                          {/* Male bar (background) */}
+                          <rect x="173" y={yCenter - 16} width={scaleW(d.male)} height={28} rx="4" fill="rgba(255,255,255,0.12)" />
+                          {/* Female bar */}
+                          <rect x="173" y={yCenter - 16} width={scaleW(d.female)} height={14} rx="4" fill="#4a6fa5" />
+                          <text x={177 + scaleW(d.female)} y={yCenter - 5} fontSize="11" fill="#7aa3cc" fontWeight="700">{d.female}</text>
+                          <text x={177 + scaleW(d.male)} y={yCenter + 10} fontSize="11" fill="rgba(255,255,255,0.35)" fontWeight="600">{d.male}</text>
+                          {/* Gap annotation on widest gap row */}
+                          {gap === maxGap && (
+                            <g>
+                              <line x1={173 + scaleW(d.male)} y1={yCenter - 21} x2={173 + scaleW(d.female)} y2={yCenter - 21} stroke="#f59e0b" strokeWidth="1.5" />
+                              <line x1={173 + scaleW(d.male)} y1={yCenter - 24} x2={173 + scaleW(d.male)} y2={yCenter - 18} stroke="#f59e0b" strokeWidth="1.5" />
+                              <line x1={173 + scaleW(d.female)} y1={yCenter - 24} x2={173 + scaleW(d.female)} y2={yCenter - 18} stroke="#f59e0b" strokeWidth="1.5" />
+                              <text x={173 + scaleW(d.male) + scaleW(gap) / 2} y={yCenter - 27} textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="700">+{gap} pts</text>
+                            </g>
+                          )}
+                        </g>
+                      );
+                    });
+                  })()}
+                  <line x1="173" y1="0" x2="173" y2="250" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
                 </svg>
               </div>
             )}
