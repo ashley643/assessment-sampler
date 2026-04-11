@@ -829,7 +829,7 @@ export default function PilotClient() {
                 </div>
                 <div className="flex justify-end pt-2">
                   <button
-                    disabled={!canAdvanceStep1}
+                    disabled={false}
                     onClick={() => setStep(2)}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
@@ -912,7 +912,7 @@ export default function PilotClient() {
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
-                    disabled={!canAdvanceStep2}
+                    disabled={false}
                     onClick={() => setStep(3)}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
@@ -1106,7 +1106,7 @@ export default function PilotClient() {
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
-                    disabled={!canAdvanceStep3}
+                    disabled={false}
                     onClick={() => setStep(nextStep(3))}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
@@ -1220,7 +1220,7 @@ export default function PilotClient() {
                   <div className="flex justify-between pt-2">
                     <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
-                      disabled={!canAdvanceCS()}
+                      disabled={false}
                       onClick={() => setStep(nextStep(4))}
                       className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                     >
@@ -1312,7 +1312,7 @@ export default function PilotClient() {
                   <div className="flex justify-between pt-2">
                     <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
-                      disabled={!canAdvanceBH()}
+                      disabled={false}
                       onClick={() => setStep(nextStep(4))}
                       className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                     >
@@ -1422,7 +1422,7 @@ export default function PilotClient() {
                   <div className="flex justify-between pt-2">
                     <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
-                      disabled={!canAdvanceLP()}
+                      disabled={false}
                       onClick={() => setStep(nextStep(4))}
                       className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                     >
@@ -1478,7 +1478,7 @@ export default function PilotClient() {
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(prevStep(5))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
-                    disabled={!canAdvanceContact || submitting}
+                    disabled={submitting}
                     onClick={submit}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
