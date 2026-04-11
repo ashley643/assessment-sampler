@@ -179,6 +179,7 @@ export default function PilotClient() {
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [previewModal, setPreviewModal] = useState<{ label: string; url: string } | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
@@ -189,7 +190,6 @@ export default function PilotClient() {
     setFormOpen(true);
     setStep(1);
     setForm(EMPTY_FORM);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
   async function submit() {
@@ -323,25 +323,52 @@ export default function PilotClient() {
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-1">See it in action</h2>
           <p className="text-gray-700 font-medium">Real assessments from Impacter Pathway partners</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {PREVIEWS.map(({ label, org, url }) => (
-            <div key={url} className="flex flex-col gap-3">
-              <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50" style={{ height: 480 }}>
-                <iframe
-                  src={url}
-                  className="w-full h-full border-0"
-                  allow="camera; microphone; autoplay"
-                  title={label}
-                />
+            <div key={url} className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 10l4.553-2.276A1 1 0 0121 8.624v6.752a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                </svg>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">{label}</p>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900 mb-0.5">{label}</p>
                 <p className="text-xs text-gray-400">{org}</p>
               </div>
+              <button
+                onClick={() => setPreviewModal({ label, url })}
+                className="w-full text-center text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg py-2 hover:bg-indigo-50 transition-colors"
+              >
+                View Assessment
+              </button>
             </div>
           ))}
         </div>
       </section>
+
+      {/* ── Preview modal ────────────────────────────────────────────────────── */}
+      {previewModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setPreviewModal(null)}>
+          <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col w-full max-w-4xl" style={{ height: '90vh' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{previewModal.label}</p>
+              </div>
+              <button onClick={() => setPreviewModal(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <iframe
+              src={previewModal.url}
+              className="flex-1 w-full border-0"
+              allow="camera; microphone; autoplay"
+              title={previewModal.label}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── CTA ──────────────────────────────────────────────────────────────── */}
       {!formOpen && (
@@ -359,10 +386,25 @@ export default function PilotClient() {
         </section>
       )}
 
-      {/* ── Intake Form ──────────────────────────────────────────────────────── */}
+      {/* ── Intake Form (full-screen overlay) ────────────────────────────────── */}
       {formOpen && (
-        <div ref={formRef} className="border-t border-gray-100 bg-gray-50 py-16">
-          <div className="max-w-xl mx-auto px-6">
+        <div ref={formRef} className="fixed inset-0 z-40 bg-white flex flex-col overflow-hidden">
+          {/* Form header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-indigo-600">Impacter Pathway</span>
+              <span className="text-gray-200">·</span>
+              <span className="text-sm text-gray-400">Pilot Intake</span>
+            </div>
+            <button onClick={() => setFormOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {/* Scrollable form body */}
+          <div className="flex-1 overflow-y-auto">
+          <div className="max-w-xl mx-auto px-6 py-10">
 
             {/* Step indicator */}
             {step < 4 && (
@@ -607,6 +649,7 @@ export default function PilotClient() {
               </div>
             )}
           </div>
+          </div>{/* end scrollable body */}
         </div>
       )}
 
