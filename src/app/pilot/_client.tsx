@@ -298,16 +298,15 @@ const LP_ASSESSMENTS: LPAssessment[] = [
 
 interface FormData {
   assessmentType: AssessmentId | '';
-  // Step 2: Dates
-  startDate: string;
-  endDate: string;
+  // Step 2: Timing
+  launchTimeline: string;
   dateNotes: string;
   onsiteSupport: 'yes' | 'no' | 'unsure' | null;
+  wantsCustomIntro: 'yes' | 'no' | 'unsure' | null;
   // Step 3: Contextual
   respondents: string[];
   gradeLevels: string[];
   expectedCount: string;
-  launchTimeline: string;
   languages: string[];
   otherLanguage: string;
   modalities: string[];
@@ -334,14 +333,13 @@ interface FormData {
 
 const EMPTY_FORM: FormData = {
   assessmentType: '',
-  startDate: '',
-  endDate: '',
+  launchTimeline: '',
   dateNotes: '',
   onsiteSupport: null,
+  wantsCustomIntro: null,
   respondents: [],
   gradeLevels: [],
   expectedCount: '',
-  launchTimeline: '',
   languages: ['English'],
   otherLanguage: '',
   modalities: [],
@@ -383,9 +381,10 @@ function MultiCheck({ label, options, value, onChange }: {
             onClick={() => toggle(opt)}
             className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
               value.includes(opt)
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                ? 'text-white border-[#4a6fa5]'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-[#4a6fa5]/40'
             }`}
+            style={value.includes(opt) ? { background: '#4a6fa5' } : undefined}
           >
             {opt}
           </button>
@@ -406,8 +405,8 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
-const INPUT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white';
-const SELECT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-700';
+const INPUT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4a6fa5]/40 bg-white';
+const SELECT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4a6fa5]/40 bg-white text-gray-700';
 
 function VideoAskEmbed({ url, label, onOpen, height = 200 }: { url: string; label: string; onOpen: () => void; height?: number }) {
   return (
@@ -479,7 +478,7 @@ export default function PilotClient() {
   }
 
   const canAdvanceStep1 = !!form.assessmentType;
-  const canAdvanceStep2 = !!form.startDate && form.onsiteSupport !== null;
+  const canAdvanceStep2 = !!form.launchTimeline;
   const studentsSelected = form.respondents.includes('Students');
   const canAdvanceStep3 = form.respondents.length > 0
     && (!studentsSelected || form.gradeLevels.length > 0)
@@ -548,20 +547,21 @@ export default function PilotClient() {
     <div className="min-h-screen bg-white font-sans">
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="border-b border-gray-100 px-6 py-4 flex items-center gap-3">
-        <span className="text-sm font-semibold text-indigo-600 tracking-tight">Impacter Pathway</span>
-        <span className="text-gray-200">·</span>
-        <span className="text-sm text-gray-500">Pilot Program</span>
+      <nav className="px-6 py-3 flex items-center justify-between" style={{ background: '#1a2744' }}>
+        <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 36 }} />
+        <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}>
+          Pilot Program
+        </span>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section className="max-w-3xl mx-auto px-6 pt-16 pb-12 text-center">
-        <div className="inline-block bg-indigo-50 text-indigo-700 text-xs font-semibold px-3 py-1 rounded-full mb-5 tracking-wide uppercase">
+        <div className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-5 tracking-wide uppercase" style={{ background: '#e8f1f8', color: '#1a2744' }}>
           Pilot Program
         </div>
         <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
           Hear every student voice.<br />
-          <span className="text-indigo-600">Before the school year gets away from you.</span>
+          <span style={{ color: '#4a6fa5' }}>Before the school year gets away from you.</span>
         </h1>
         <p className="text-lg text-gray-500 max-w-xl mx-auto">
           A structured pilot gives you real student, family, and staff voice — scored, organized, and ready for action — in about a week.
@@ -577,7 +577,7 @@ export default function PilotClient() {
               n: '1',
               title: 'Share a link',
               body: 'We configure a custom assessment for your school or district. Respondents click a link and answer 3–5 voice questions — no app download, no login.',
-              accent: 'bg-indigo-50 text-indigo-700',
+              accent: 'bg-[#f0f5fb] text-[#1a2744]',
             },
             {
               n: '2',
@@ -627,7 +627,7 @@ export default function PilotClient() {
                   <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
                     {row.map((cell, j) => (
                       <td key={j} className={`px-3 py-2 border-b border-gray-100 text-gray-600 ${
-                        j === 11 ? 'font-semibold text-indigo-700' :
+                        j === 11 ? 'font-semibold text-[#1a2744]' :
                         j >= 12 ? 'text-gray-500' : ''
                       }`}>
                         <span className="block max-w-[220px] overflow-hidden text-ellipsis">{cell}</span>
@@ -687,14 +687,15 @@ export default function PilotClient() {
 
       {/* ── CTA ──────────────────────────────────────────────────────────────── */}
       {!formOpen && (
-        <section className="border-t border-gray-100 bg-indigo-600 py-16 text-center">
+        <section className="border-t border-gray-100 py-16 text-center" style={{ background: '#1a2744' }}>
           <h2 className="text-2xl font-bold text-white mb-3">Ready to run a pilot?</h2>
-          <p className="text-indigo-200 mb-8 text-sm max-w-md mx-auto">
+          <p className="mb-8 text-sm max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
             Tell us a bit about your school or district and we will set everything up — typically within a few days.
           </p>
           <button
             onClick={openForm}
-            className="bg-white text-indigo-700 font-semibold px-8 py-3 rounded-xl text-sm hover:bg-indigo-50 transition-colors shadow"
+            className="bg-white font-semibold px-8 py-3 rounded-xl text-sm hover:opacity-90 transition-opacity shadow"
+            style={{ color: '#1a2744' }}
           >
             Begin
           </button>
@@ -705,13 +706,11 @@ export default function PilotClient() {
       {formOpen && (
         <div ref={formRef} className="fixed inset-0 z-40 bg-white flex flex-col overflow-hidden">
           {/* Form header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-indigo-600">Impacter Pathway</span>
-              <span className="text-gray-200">·</span>
-              <span className="text-sm text-gray-400">Pilot Intake</span>
-            </div>
-            <button onClick={() => setFormOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+          <div className="flex items-center justify-between px-6 py-3 shrink-0" style={{ background: '#1a2744' }}>
+            <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 32 }} />
+            <button onClick={() => setFormOpen(false)} className="p-1 rounded-lg transition-colors" style={{ color: 'rgba(255,255,255,0.6)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -732,11 +731,11 @@ export default function PilotClient() {
                   {steps.map(({ n, l }, i) => (
                     <div key={n} className="flex items-center gap-1.5">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-                        step === n ? 'bg-indigo-600 text-white' :
-                        step > n  ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-400'
-                      }`}>{displayStep(n)}</div>
+                        step === n ? 'text-white' :
+                        step > n  ? '' : 'bg-gray-200 text-gray-400'
+                      }`} style={step === n ? { background: '#4a6fa5' } : step > n ? { background: '#dce8f5', color: '#4a6fa5' } : {}}>{displayStep(n)}</div>
                       <span className={`text-xs hidden sm:inline ${step === n ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>{l}</span>
-                      {i < steps.length - 1 && <div className={`h-px w-5 mx-1 transition-colors ${step > n ? 'bg-indigo-300' : 'bg-gray-200'}`} />}
+                      {i < steps.length - 1 && <div className={`h-px w-5 mx-1 transition-colors ${step > n ? '' : 'bg-gray-200'}`} style={step > n ? { background: '#a8c2e0' } : {}} />}
                     </div>
                   ))}
                 </div>
@@ -758,11 +757,11 @@ export default function PilotClient() {
                       onClick={() => set('assessmentType', id)}
                       className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${
                         form.assessmentType === id
-                          ? 'border-indigo-500 bg-indigo-50'
+                          ? 'border-[#4a6fa5] bg-[#f0f5fb]'
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <p className={`text-sm font-semibold mb-0.5 ${form.assessmentType === id ? 'text-indigo-700' : 'text-gray-800'}`}>
+                      <p className={`text-sm font-semibold mb-0.5 ${form.assessmentType === id ? 'text-[#1a2744]' : 'text-gray-800'}`}>
                         {label}
                       </p>
                       <p className="text-xs text-gray-500">{description}</p>
@@ -773,7 +772,7 @@ export default function PilotClient() {
                   <button
                     disabled={false}
                     onClick={() => setStep(2)}
-                    className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                   >
                     Continue
                   </button>
@@ -786,31 +785,21 @@ export default function PilotClient() {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">When are you thinking?</h3>
-                  <p className="text-sm text-gray-500 mb-1">
-                    Give us your best guess — this is just to get a sense of your window.
-                    An Impacter team member will follow up to confirm the final dates.
+                  <p className="text-sm text-gray-500">
+                    Give us your best guess — we will follow up to confirm the final window.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Start date" required>
-                    <input
-                      type="date"
-                      value={form.startDate}
-                      onChange={e => set('startDate', e.target.value)}
-                      className={INPUT_CLS}
-                    />
-                  </Field>
-                  <Field label="End date">
-                    <input
-                      type="date"
-                      value={form.endDate}
-                      min={form.startDate || undefined}
-                      onChange={e => set('endDate', e.target.value)}
-                      className={INPUT_CLS}
-                    />
-                  </Field>
-                </div>
+                <Field label="When would you like to launch?">
+                  <select value={form.launchTimeline} onChange={e => set('launchTimeline', e.target.value)} className={SELECT_CLS}>
+                    <option value="">Select a timeline…</option>
+                    <option>Within 2 weeks</option>
+                    <option>Within a month</option>
+                    <option>Next quarter</option>
+                    <option>Next school year</option>
+                    <option>Just exploring for now</option>
+                  </select>
+                </Field>
 
                 <Field label="Any important dates or constraints we should know about?">
                   <textarea
@@ -824,7 +813,7 @@ export default function PilotClient() {
 
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-3">
-                    Would you like an Impacter team member to support on-site during implementation? *
+                    Would you like an Impacter team member to support on-site during implementation?
                   </p>
                   <div className="space-y-2">
                     {([
@@ -834,17 +823,13 @@ export default function PilotClient() {
                     ] as const).map(({ value, label }) => (
                       <label key={value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                         form.onsiteSupport === value
-                          ? 'border-indigo-400 bg-indigo-50'
+                          ? 'border-[#4a6fa5] bg-[#f0f5fb]'
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}>
-                        <input
-                          type="radio"
-                          name="onsiteSupport"
-                          value={value}
+                        <input type="radio" name="onsiteSupport" value={value}
                           checked={form.onsiteSupport === value}
                           onChange={() => set('onsiteSupport', value)}
-                          className="accent-indigo-600"
-                        />
+                          className="accent-[#4a6fa5]" />
                         <span className="text-sm text-gray-700">{label}</span>
                       </label>
                     ))}
@@ -853,11 +838,8 @@ export default function PilotClient() {
 
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                  <button
-                    disabled={false}
-                    onClick={() => setStep(3)}
-                    className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
-                  >
+                  <button disabled={false} onClick={() => setStep(3)}
+                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
                     Continue
                   </button>
                 </div>
@@ -903,16 +885,7 @@ export default function PilotClient() {
                   </select>
                 </Field>
 
-                <Field label="When would you like to launch?" required>
-                  <select value={form.launchTimeline} onChange={e => set('launchTimeline', e.target.value)} className={SELECT_CLS}>
-                    <option value="">Select a timeline…</option>
-                    <option>Within 2 weeks</option>
-                    <option>Within a month</option>
-                    <option>Next quarter</option>
-                    <option>Next school year</option>
-                    <option>Just exploring for now</option>
-                  </select>
-                </Field>
+
 
                 {/* Community Schools: extra fields */}
                 {form.assessmentType === 'community-schools' && (
@@ -983,8 +956,9 @@ export default function PilotClient() {
                             set('languages', next);
                           }}
                           className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                            checked ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                            checked ? 'text-white border-[#4a6fa5]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4a6fa5]/40'
                           }`}
+                          style={checked ? { background: '#4a6fa5' } : undefined}
                         >
                           {lang}
                         </button>
@@ -1014,7 +988,7 @@ export default function PilotClient() {
                       return (
                         <div key={id}>
                           <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                            checked ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                           }`}>
                             <input
                               type="checkbox"
@@ -1025,7 +999,7 @@ export default function PilotClient() {
                                   : [...form.modalities, id];
                                 set('modalities', next);
                               }}
-                              className="accent-indigo-600 w-4 h-4"
+                              className="accent-[#4a6fa5] w-4 h-4"
                             />
                             <span className="text-sm text-gray-700 font-medium">{id}</span>
                           </label>
@@ -1041,13 +1015,45 @@ export default function PilotClient() {
                   </div>
                 </div>
 
+                {/* Custom intro question */}
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Would you like to record a custom intro for your assessment?
+                  </p>
+                  <p className="text-xs text-gray-400 mb-3">
+                    A short video from a familiar face — a principal, counselor, or teacher — can put students at ease before they respond. Here's an example from Western Placer USD:
+                  </p>
+                  <VideoAskEmbed
+                    url="https://wpusd.impacterpathway.com/f78d5omaf?preview"
+                    label="Custom intro example — Western Placer USD"
+                    onOpen={() => setPreviewModal({ label: 'Custom intro example — Western Placer USD', url: 'https://wpusd.impacterpathway.com/f78d5omaf?preview' })}
+                    height={200}
+                  />
+                  <div className="space-y-2 mt-3">
+                    {([
+                      { value: 'yes',    label: 'Yes — I\'d love to record a custom intro' },
+                      { value: 'no',     label: 'No thanks, the standard intro is fine' },
+                      { value: 'unsure', label: 'Not sure yet' },
+                    ] as const).map(({ value, label }) => (
+                      <label key={value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        form.wantsCustomIntro === value
+                          ? 'border-[#4a6fa5] bg-[#f0f5fb]'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}>
+                        <input type="radio" name="wantsCustomIntro" value={value}
+                          checked={form.wantsCustomIntro === value}
+                          onChange={() => set('wantsCustomIntro', value)}
+                          className="accent-[#4a6fa5]" />
+                        <span className="text-sm text-gray-700">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                  <button
-                    disabled={false}
-                    onClick={() => setStep(nextStep(3))}
-                    className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
-                  >
+                  <button disabled={false} onClick={() => setStep(nextStep(3))}
+                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
                     Continue
                   </button>
                 </div>
@@ -1109,11 +1115,11 @@ export default function PilotClient() {
                               { v: 'write-own' as const, l: 'I\'d like to write custom questions' },
                             ]).map(({ v, l }) => (
                               <label key={v} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                                mode === v ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                                mode === v ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                               }`}>
                                 <input type="radio" name={`mode-${key}`} value={v} checked={mode === v}
                                   onChange={() => setCsMode(m => ({ ...m, [key]: v }))}
-                                  className="accent-indigo-600" />
+                                  className="accent-[#4a6fa5]" />
                                 <span className="text-sm text-gray-700">{l}</span>
                               </label>
                             ))}
@@ -1131,7 +1137,7 @@ export default function PilotClient() {
                                 <div className="space-y-2">
                                   {qs.map(q => (
                                     <label key={q.id} className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                                      selected === q.id ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                                      selected === q.id ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                                     }`}>
                                       <input type="radio" name={`${key}-p${pillar}`} value={q.id}
                                         checked={selected === q.id}
@@ -1139,10 +1145,10 @@ export default function PilotClient() {
                                           ...p,
                                           [key]: { ...(p[key] ?? {}), [pillar]: q.id }
                                         }))}
-                                        className="accent-indigo-600 mt-0.5 shrink-0" />
+                                        className="accent-[#4a6fa5] mt-0.5 shrink-0" />
                                       <span className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
                                         {q.text}
-                                        {q.def && <span className="ml-2 text-[10px] font-medium text-indigo-500 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-full">standard</span>}
+                                        {q.def && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
                                       </span>
                                     </label>
                                   ))}
@@ -1160,7 +1166,7 @@ export default function PilotClient() {
                     <button
                       disabled={false}
                       onClick={() => setStep(nextStep(4))}
-                      className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                      className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                     >
                       Continue
                     </button>
@@ -1203,7 +1209,7 @@ export default function PilotClient() {
                         <div className="space-y-3">
                           {s.questions.map((q, i) => (
                             <div key={i} className="flex gap-3">
-                              <span className="shrink-0 mt-0.5 text-xs font-medium text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full h-fit">
+                              <span className="shrink-0 mt-0.5 text-xs font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-2 py-0.5 rounded-full h-fit" style={{ color: '#4a6fa5' }}>
                                 {q.pillar}
                               </span>
                               <p className="text-sm text-gray-700 leading-relaxed">{q.text}</p>
@@ -1222,7 +1228,7 @@ export default function PilotClient() {
                         const checked = form.bhSelectedAssessments.includes(s.id);
                         return (
                           <label key={s.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                            checked ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                           }`}>
                             <input type="checkbox" checked={checked}
                               onChange={() => {
@@ -1231,17 +1237,17 @@ export default function PilotClient() {
                                   : [...form.bhSelectedAssessments, s.id];
                                 set('bhSelectedAssessments', next);
                               }}
-                              className="accent-indigo-600 w-4 h-4" />
+                              className="accent-[#4a6fa5] w-4 h-4" />
                             <span className="text-sm text-gray-700">{s.name}</span>
                           </label>
                         );
                       })}
                       <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        form.bhWantsCustom ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        form.bhWantsCustom ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}>
                         <input type="checkbox" checked={form.bhWantsCustom}
                           onChange={() => set('bhWantsCustom', !form.bhWantsCustom)}
-                          className="accent-indigo-600 w-4 h-4" />
+                          className="accent-[#4a6fa5] w-4 h-4" />
                         <span className="text-sm text-gray-700">I'm interested in building something custom</span>
                       </label>
                     </div>
@@ -1252,7 +1258,7 @@ export default function PilotClient() {
                     <button
                       disabled={false}
                       onClick={() => setStep(nextStep(4))}
-                      className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                      className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                     >
                       Continue
                     </button>
@@ -1314,7 +1320,7 @@ export default function PilotClient() {
                         const checked = form.lpSelectedAssessments.includes(a.id);
                         return (
                           <label key={a.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                            checked ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                           }`}>
                             <input type="checkbox" checked={checked}
                               onChange={() => {
@@ -1323,17 +1329,17 @@ export default function PilotClient() {
                                   : [...form.lpSelectedAssessments, a.id];
                                 set('lpSelectedAssessments', next);
                               }}
-                              className="accent-indigo-600 w-4 h-4" />
+                              className="accent-[#4a6fa5] w-4 h-4" />
                             <span className="text-sm text-gray-700">{a.name}</span>
                           </label>
                         );
                       })}
                       <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        form.lpWantsCustom ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        form.lpWantsCustom ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}>
                         <input type="checkbox" checked={form.lpWantsCustom}
                           onChange={() => set('lpWantsCustom', !form.lpWantsCustom)}
-                          className="accent-indigo-600 w-4 h-4" />
+                          className="accent-[#4a6fa5] w-4 h-4" />
                         <span className="text-sm text-gray-700">I&apos;m looking for something custom</span>
                       </label>
                     </div>
@@ -1344,7 +1350,7 @@ export default function PilotClient() {
                     <button
                       disabled={false}
                       onClick={() => setStep(nextStep(4))}
-                      className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                      className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                     >
                       Continue
                     </button>
@@ -1400,7 +1406,7 @@ export default function PilotClient() {
                   <button
                     disabled={submitting}
                     onClick={submit}
-                    className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                   >
                     {submitting ? 'Submitting…' : 'Submit'}
                   </button>
@@ -1411,8 +1417,8 @@ export default function PilotClient() {
             {/* ── Step 7: Confirmation ───────────────────────────── */}
             {step === 7 && (
               <div className="text-center py-8">
-                <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-5">
-                  <svg className="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: '#dce8f5' }}>
+                  <svg className="w-7 h-7 text-[#4a6fa5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
@@ -1422,7 +1428,7 @@ export default function PilotClient() {
                 </p>
                 <p className="text-xs text-gray-400 mt-6">
                   Questions in the meantime? Reply to the confirmation email or reach us at{' '}
-                  <span className="text-indigo-500">hello@impacterpathway.com</span>.
+                  <span className="text-[#4a6fa5]">hello@impacterpathway.com</span>.
                 </p>
               </div>
             )}
