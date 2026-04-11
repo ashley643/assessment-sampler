@@ -179,6 +179,61 @@ const CS_PREVIEWS: Record<string, { en: string; es: string | null }> = {
   'Staff':             { en:'https://flex.impacterpathway.com/fad677c4k', es:null },
 };
 
+// ── Behavioral Health screeners ───────────────────────────────────────────────
+interface BHScreener {
+  id: string;
+  name: string;
+  grades: string;
+  gradeBands: string[];
+  previewUrl: string; // append ?preview — actual form IDs to be confirmed
+  questions: Array<{ pillar: string; text: string }>;
+}
+
+const BH_SCREENERS: BHScreener[] = [
+  {
+    id: 'bh-littles',
+    name: 'Behavioral Health Screener for Littles',
+    grades: 'TK–2nd grade',
+    gradeBands: ['Lower Elementary (TK–2)'],
+    previewUrl: 'https://flex.impacterpathway.com/LITTLES_FORM_ID?preview',
+    questions: [
+      { pillar: 'Relational Awareness', text: 'Tell me about a time you saw someone who was really upset. What did you notice? What did you do?' },
+    ],
+  },
+  {
+    id: 'bh-elementary',
+    name: 'Behavioral Health Screener for Elementary',
+    grades: '3rd–5th grade',
+    gradeBands: ['Elementary (3rd–5th)'],
+    previewUrl: 'https://flex.impacterpathway.com/ELEMENTARY_FORM_ID?preview',
+    questions: [
+      { pillar: 'Reflective Growth',    text: 'Think about a time when you needed help at school — like with homework or during a tough day. Who helped you? And what did they do to make you feel better?' },
+      { pillar: 'Relational Awareness', text: 'Imagine a student at your school is struggling with something big. Where could they go for help? How would they know those supports exist?' },
+      { pillar: 'Emotional Resilience', text: 'Imagine a student at your school is having a really bad day. Who should they go to for help? What makes that person good at helping students?' },
+      { pillar: 'Self-Insight',         text: 'Think about your HOME — from the food you eat to the things your family likes. What are some things we could do at school that would make it feel more like home?' },
+      { pillar: 'Conflict Resolution',  text: 'Imagine your family came to school for an event. What would make them feel welcome right away? What might make it harder for families to feel comfortable?' },
+      { pillar: 'Effective Help-Seeking', text: 'Sometimes families and schools work together to help students. What are some ways your school connects with your family? What could make those connections stronger?' },
+    ],
+  },
+  {
+    id: 'bh-secondary',
+    name: 'Behavioral Health Screener for Secondary',
+    grades: '6th–12th grade',
+    gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
+    previewUrl: 'https://flex.impacterpathway.com/SECONDARY_FORM_ID?preview',
+    questions: [
+      { pillar: 'Reflective Growth',    text: 'Tell me about a time when a student idea helped improve something at school or in your classroom. What happened after they shared the idea?' },
+      { pillar: 'Relational Awareness', text: 'Think about a teacher or adult who really listens to students. What do they do that shows they care about student ideas? How does that make students feel?' },
+      { pillar: 'Emotional Resilience', text: "Sometimes students have ideas but don't share them. What might stop students from speaking up? What would help them feel more confident sharing ideas?" },
+      { pillar: 'Self-Insight',         text: 'Think about a time at school when learning felt really fun or exciting. What were you doing? What made that experience special?' },
+      { pillar: 'Conflict Resolution',  text: 'Imagine you could start a brand-new club or activity at school. What would it be? Why do you think students would enjoy it?' },
+      { pillar: 'Effective Help-Seeking', text: 'Think about something you really love at school — like a fun lesson or a field trip. What else can we do at school to make you more excited to be here?' },
+      { pillar: 'Emotional Resilience', text: 'Tell me about a time you kept trying something hard even when you felt like quitting. What happened?' },
+      { pillar: 'Effective Help-Seeking', text: 'Tell me about a time you asked someone to help you learn something. Who helped you and how did it go?' },
+    ],
+  },
+];
+
 interface FormData {
   assessmentType: AssessmentId | '';
   // Step 2: Dates
@@ -201,6 +256,8 @@ interface FormData {
   competencyFocus: string;
   // Behavioral Health specific
   screeningScope: string;
+  bhSelectedAssessments: string[];
+  bhWantsCustom: boolean;
   // Contact
   name: string;
   email: string;
@@ -227,6 +284,8 @@ const EMPTY_FORM: FormData = {
   primaryGoal: '',
   competencyFocus: '',
   screeningScope: '',
+  bhSelectedAssessments: [],
+  bhWantsCustom: false,
   name: '',
   email: '',
   role: '',
@@ -342,8 +401,9 @@ export default function PilotClient() {
     && form.modalities.length > 0;
   const canAdvanceContact = !!form.name && !!form.email && !!form.organization;
 
-  // CS helpers
+  // Assessment type helpers
   const isCS = form.assessmentType === 'community-schools';
+  const isBH = form.assessmentType === 'behavioral-health';
 
   function getCsSections(): Array<{ key: AgeGroup; label: string }> {
     const out: Array<{ key: AgeGroup; label: string }> = [];
@@ -365,15 +425,23 @@ export default function PilotClient() {
     });
   }
 
-  // Step navigation (CS has an extra questions step at 4)
+  function getBHScreeners(): BHScreener[] {
+    return BH_SCREENERS.filter(s => s.gradeBands.some(gb => form.gradeLevels.includes(gb)));
+  }
+
+  function canAdvanceBH(): boolean {
+    return form.bhSelectedAssessments.length > 0 || form.bhWantsCustom;
+  }
+
+  // Step navigation — CS and BH both use step 4 (questions); LP skips it
   type S = 1|2|3|4|5|6|7;
   function nextStep(cur: number): S {
-    if (cur === 3) return (isCS ? 4 : 5) as S;
+    if (cur === 3) return ((isCS || isBH) ? 4 : 5) as S;
     if (cur === 4) return 5;
     return (cur + 1) as S;
   }
   function prevStep(cur: number): S {
-    if (cur === 5) return (isCS ? 4 : 3) as S;
+    if (cur === 5) return ((isCS || isBH) ? 4 : 3) as S;
     if (cur === 4) return 3;
     return (cur - 1) as S;
   }
@@ -567,7 +635,7 @@ export default function PilotClient() {
 
             {/* Step indicator */}
             {step < 7 && (() => {
-              const steps = isCS
+              const steps = (isCS || isBH)
                 ? [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:4,l:'Questions'},{n:5,l:'Contact'}]
                 : [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:5,l:'Contact'}];
               const displayStep = (s: number) => isCS ? s : s > 3 ? s - 1 : s;
@@ -1018,6 +1086,102 @@ export default function PilotClient() {
                     <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
                       disabled={!canAdvanceCS()}
+                      onClick={() => setStep(nextStep(4))}
+                      className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Step 4: BH screener display ───────────────────── */}
+            {step === 4 && isBH && (() => {
+              const screeners = getBHScreeners();
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Behavioral Health Screeners</h3>
+                    <p className="text-sm text-gray-500">
+                      Based on your selected grade levels, here are the available screeners. Review the questions, then choose which assessments you'd like to include.
+                    </p>
+                  </div>
+
+                  {screeners.length === 0 && (
+                    <p className="text-sm text-gray-400 bg-gray-50 rounded-xl p-4">
+                      No screeners match your selected grade levels. Go back and select at least one student grade band.
+                    </p>
+                  )}
+
+                  {screeners.map(s => (
+                    <div key={s.id} className="border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{s.name}</p>
+                          <p className="text-xs text-gray-400">{s.grades}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewModal({ label: s.name, url: s.previewUrl })}
+                          className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition-colors"
+                        >
+                          Preview
+                        </button>
+                      </div>
+                      <div className="p-5">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Questions</p>
+                        <div className="space-y-3">
+                          {s.questions.map((q, i) => (
+                            <div key={i} className="flex gap-3">
+                              <span className="shrink-0 mt-0.5 text-xs font-medium text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full h-fit">
+                                {q.pillar}
+                              </span>
+                              <p className="text-sm text-gray-700 leading-relaxed">{q.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Selection */}
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-3">Which assessments would you like to include in your pilot? *</p>
+                    <div className="space-y-2">
+                      {screeners.map(s => {
+                        const checked = form.bhSelectedAssessments.includes(s.id);
+                        return (
+                          <label key={s.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}>
+                            <input type="checkbox" checked={checked}
+                              onChange={() => {
+                                const next = checked
+                                  ? form.bhSelectedAssessments.filter(id => id !== s.id)
+                                  : [...form.bhSelectedAssessments, s.id];
+                                set('bhSelectedAssessments', next);
+                              }}
+                              className="accent-indigo-600 w-4 h-4" />
+                            <span className="text-sm text-gray-700">{s.name}</span>
+                          </label>
+                        );
+                      })}
+                      <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        form.bhWantsCustom ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}>
+                        <input type="checkbox" checked={form.bhWantsCustom}
+                          onChange={() => set('bhWantsCustom', !form.bhWantsCustom)}
+                          className="accent-indigo-600 w-4 h-4" />
+                        <span className="text-sm text-gray-700">I'm interested in building something custom</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-2">
+                    <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                    <button
+                      disabled={!canAdvanceBH()}
                       onClick={() => setStep(nextStep(4))}
                       className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                     >
