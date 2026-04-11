@@ -361,13 +361,14 @@ const EMPTY_FORM: FormData = {
 
 const GRADES = ['TK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
-const GRADE_TO_BAND: Record<string, string> = {
-  'TK': 'Lower Elementary (TK–2)', 'K': 'Lower Elementary (TK–2)',
-  '1':  'Lower Elementary (TK–2)', '2': 'Lower Elementary (TK–2)',
-  '3':  'Elementary (3rd–5th)',     '4': 'Elementary (3rd–5th)',    '5': 'Elementary (3rd–5th)',
-  '6':  'Middle School (6th–8th)',  '7': 'Middle School (6th–8th)', '8': 'Middle School (6th–8th)',
-  '9':  'High School (9th–12th)',   '10': 'High School (9th–12th)',
-  '11': 'High School (9th–12th)',   '12': 'High School (9th–12th)',
+const GRADE_TO_BANDS: Record<string, string[]> = {
+  'TK': ['Lower Elementary (TK–2)'], 'K': ['Lower Elementary (TK–2)'],
+  '1':  ['Lower Elementary (TK–2)'], '2': ['Lower Elementary (TK–2)'],
+  '3':  ['Elementary (3rd–5th)'],    '4': ['Elementary (3rd–5th)'],   '5': ['Elementary (3rd–5th)'],
+  '6':  ['Elementary (3rd–5th)', 'Middle School (6th–8th)'], // 6th grade spans both
+  '7':  ['Middle School (6th–8th)'], '8': ['Middle School (6th–8th)'],
+  '9':  ['High School (9th–12th)'],  '10': ['High School (9th–12th)'],
+  '11': ['High School (9th–12th)'],  '12': ['High School (9th–12th)'],
 };
 
 function MultiCheck({ label, options, value, onChange }: {
@@ -505,7 +506,7 @@ export default function PilotClient() {
 
   function getCsSections(): Array<{ key: AgeGroup; label: string }> {
     const out: Array<{ key: AgeGroup; label: string }> = [];
-    const bands = new Set(form.gradeLevels.map(g => GRADE_TO_BAND[g]).filter(Boolean));
+    const bands = new Set(form.gradeLevels.flatMap(g => GRADE_TO_BANDS[g] ?? []));
     if (bands.has('Lower Elementary (TK–2)') || bands.has('Elementary (3rd–5th)'))
       out.push({ key: 'Elementary School', label: 'Elementary School' });
     if (bands.has('Middle School (6th–8th)'))  out.push({ key: 'Middle School',   label: 'Middle School' });
@@ -524,7 +525,7 @@ export default function PilotClient() {
   }
 
   function getBHScreeners(): BHScreener[] {
-    const bands = new Set(form.gradeLevels.map(g => GRADE_TO_BAND[g]).filter(Boolean));
+    const bands = new Set(form.gradeLevels.flatMap(g => GRADE_TO_BANDS[g] ?? []));
     return BH_SCREENERS.filter(s => s.gradeBands.some(gb => bands.has(gb)));
   }
 
@@ -533,7 +534,7 @@ export default function PilotClient() {
   }
 
   function getLPAssessments(): LPAssessment[] {
-    const bands = new Set(form.gradeLevels.map(g => GRADE_TO_BAND[g]).filter(Boolean));
+    const bands = new Set(form.gradeLevels.flatMap(g => GRADE_TO_BANDS[g] ?? []));
     return LP_ASSESSMENTS.filter(a => a.gradeBands.some(gb => bands.has(gb)));
   }
 
