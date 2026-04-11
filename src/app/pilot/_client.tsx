@@ -874,20 +874,16 @@ export default function PilotClient() {
                   </p>
                 </div>
 
-                <MultiCheck
-                  label="Who will be responding? *"
-                  options={
-                    form.assessmentType === 'learner-portrait'
-                      ? ['Students']
-                      : form.assessmentType === 'behavioral-health'
-                      ? ['Students', 'Staff']
-                      : ['Students', 'Families / Parents', 'Staff', 'Community Members']
-                  }
-                  value={form.respondents}
-                  onChange={v => set('respondents', v)}
-                />
+                {isCS && (
+                  <MultiCheck
+                    label="Who will be responding? *"
+                    options={['Students', 'Families / Parents', 'Staff', 'Community Members']}
+                    value={form.respondents}
+                    onChange={v => set('respondents', v)}
+                  />
+                )}
 
-                {studentsSelected && (
+                {(isLP || isBH || studentsSelected) && (
                   <MultiCheck
                     label="Which grade levels? *"
                     options={GRADE_BANDS}
