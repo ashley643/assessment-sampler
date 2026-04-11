@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 
 // ── Sample CSV data ──────────────────────────────────────────────────────────
 const CSV_COLS = [
-  'Timestamp', 'School', 'Grade', 'Gender', 'Ethnicity',
+  'Timestamp', 'School', 'Grade', 'Gender',
   'Q1 Response', 'Q1 Time',
   'Q2 Response', 'Q2 Time',
   'Q3 Response', 'Q3 Time',
@@ -12,32 +12,32 @@ const CSV_COLS = [
 ];
 
 const CSV_ROWS = [
-  ['10/3/2024 9:14', 'Riverside Elem.', '5th', 'Female', 'Latinx',
+  ['10/3/2024 9:14', 'Riverside Elem.', '5th', 'Female',
     'I care most about my family. My mom works two jobs and I want to make her proud one day…', '1m 42s',
     'It was hard when I switched schools. I cried a lot but I kept going even when I wanted to quit…', '2m 05s',
     'I need more time to ask questions. I always feel like I\'m behind and rushing to keep up.', '1m 18s',
     '512', 'Reflective, future-oriented', 'Strong family connection; high belonging', 'Academic pacing support', 'Teacher check-in'],
-  ['10/3/2024 9:22', 'Riverside Elem.', '5th', 'Male', 'Black or African American',
+  ['10/3/2024 9:22', 'Riverside Elem.', '5th', 'Male',
     'I care about being a good friend. I want people to know they can count on me when things get hard…', '1m 29s',
     'My grandpa passed away. I was really sad but I started talking to my teacher and that helped a lot…', '1m 55s',
     'I need more time to just breathe. I feel stressed about tests a lot of the time.', '0m 58s',
     '478', 'Grounded, interpersonal', 'Peer support-seeking; relational awareness', 'Emotional regulation support', 'Counselor check-in'],
-  ['10/3/2024 10:01', 'Washington Middle', '7th', 'Female', 'White',
+  ['10/3/2024 10:01', 'Washington Middle', '7th', 'Female',
     'I care about the environment. I\'ve been learning about climate change and it worries me…', '2m 11s',
     'Math was really hard for me. I got tutoring and worked at it, and now I actually enjoy it.', '1m 47s',
     'I\'d love more hands-on projects. I learn so much better when I\'m doing something, not just reading.', '1m 32s',
     '634', 'Analytical, solution-focused', 'High academic confidence; growth mindset', 'Enrichment opportunity', 'Leadership program referral'],
-  ['10/3/2024 10:08', 'Washington Middle', '8th', 'Non-binary', 'Latinx',
+  ['10/3/2024 10:08', 'Washington Middle', '8th', 'Non-binary',
     'I care about art. I paint and draw. It\'s the only place where I feel like I can say anything.', '2m 33s',
     'People have made fun of the way I look. I still show up every day. I try not to let it stop me.', '1m 59s',
     'I need people to just not judge me. I want to feel safe being myself at school.', '1m 44s',
     '389', 'Expressive, vulnerable', 'Low sense of safety; identity stress', 'Belonging and safety support', 'Immediate counselor outreach'],
-  ['10/3/2024 11:15', 'Lincoln High', '10th', 'Male', 'Asian or Pacific Islander',
+  ['10/3/2024 11:15', 'Lincoln High', '10th', 'Male',
     'I care about my future and making my parents proud. There is a lot of pressure but also a lot of love…', '1m 38s',
     'Balancing school, sports, and expectations has been really hard. I had to learn to say no sometimes.', '2m 20s',
     'More mental health resources at school would help. Sometimes it\'s hard to find someone to talk to.', '1m 51s',
     '558', 'Accomplished, pressured', 'High drive; potential burnout risk', 'Wellbeing check-in', 'Peer mentorship pairing'],
-  ['10/3/2024 11:29', 'Lincoln High', '11th', 'Female', 'Multiracial',
+  ['10/3/2024 11:29', 'Lincoln High', '11th', 'Female',
     'I care about justice. I\'ve seen unfair things in my community and I want to be someone who changes it.', '2m 44s',
     'I didn\'t think I was smart enough for AP classes. My counselor pushed me. I\'m doing it now.', '2m 18s',
     'More counselors. There is only one for the whole grade and it\'s not enough.', '1m 22s',
@@ -637,35 +637,35 @@ export default function PilotClient() {
           Pilot Program
         </div>
         <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-4">
-          Hear every student voice.<br />
-          <span style={{ color: '#4a6fa5' }}>Before the school year gets away from you.</span>
+          Hear every voice.<br />
+          <span style={{ color: '#4a6fa5' }}>Know what it means.</span>
         </h1>
-        <p className="text-lg text-gray-500 max-w-xl mx-auto">
-          A structured pilot gives you real student, family, and staff voice — scored, organized, and ready for action — in about a week.
+        <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+          A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
         </p>
       </section>
 
       {/* ── How it works ─────────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-6 pb-16">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-8 text-center">How a pilot works</h2>
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-8 text-center">How it works</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
               n: '1',
               title: 'Share a link',
-              body: 'We configure a custom assessment for your school or district. Respondents click a link and answer 3–5 voice questions — no app download, no login.',
+              body: 'We configure a custom assessment for your school or district. Respondents click a link and answer 3–6 voice-based questions. No app download. No login.',
               accent: 'bg-[#f0f5fb] text-[#1a2744]',
             },
             {
               n: '2',
               title: 'Get your data',
-              body: 'Within days you receive a structured CSV with every response, an AI-generated score, language analysis, and a recommended next step for each respondent.',
+              body: 'Within days, you receive a structured dataset with every response, a rubric-aligned score (200–800), language analysis, and a recommended next step for each respondent.',
               accent: 'bg-emerald-50 text-emerald-700',
             },
             {
               n: '3',
               title: 'Receive your report',
-              body: 'About a week after the window closes, we deliver a synthesized report with cross-school analytics, theme clusters, and equity breakdowns.',
+              body: 'About a week after the window closes, we deliver a synthesized report — cross-campus analytics, theme clusters, equity breakdowns, voice highlights, and the insights you\'d never get from a checkbox.',
               accent: 'bg-amber-50 text-amber-700',
             },
           ].map(({ n, title, body, accent }) => (
@@ -679,6 +679,20 @@ export default function PilotClient() {
         <p className="text-center text-sm text-gray-400 mt-6">
           Assessments are available in English and Spanish. Custom and non-custom options available.
         </p>
+      </section>
+
+      {/* ── What makes this different ────────────────────────────────────────── */}
+      <section className="border-t border-gray-100 py-16" style={{ background: '#1a2744' }}>
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>What makes this different</h2>
+          <p className="text-2xl font-bold text-white leading-snug mb-6">
+            Surveys tell you what students select.<br />
+            <span style={{ color: '#7aa3cc' }}>We measure what they actually say.</span>
+          </p>
+          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: 'rgba(255,255,255,0.6)' }}>
+            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how your students, families, and staff are actually experiencing your schools and demonstrating future-ready competencies.
+          </p>
+        </div>
       </section>
 
       {/* ── Sample data ──────────────────────────────────────────────────────── */}
@@ -700,7 +714,7 @@ export default function PilotClient() {
                 <tr style={{ background: '#1a2744' }}>
                   {CSV_COLS.map((col, ci) => (
                     <th key={col} className="px-3 py-2.5 text-left font-semibold border-b border-white/10 text-white/80 sticky top-0" style={{ background: '#1a2744' }}>
-                      {ci === 11 ? (
+                      {ci === 10 ? (
                         <span className="flex items-center gap-1">
                           {col}
                           <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
@@ -708,17 +722,17 @@ export default function PilotClient() {
                       ) : col}
                     </th>
                   ))}
-                  <th className="px-3 py-2.5 text-left font-semibold text-white/80 border-b border-white/10 sticky top-0" style={{ background: '#1a2744' }}>Response Links</th>
                 </tr>
               </thead>
               <tbody>
                 {CSV_ROWS.map((row, i) => {
-                  const score = parseInt(row[11], 10);
+                  const score = parseInt(row[10], 10);
                   const { bg: scoreBg, text: scoreText } = scoreColor(score);
                   return (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
                       {row.map((cell, j) => {
-                        if (j === 11) {
+                        // Score column (index 10 after removing Ethnicity)
+                        if (j === 10) {
                           return (
                             <td key={j} className="px-3 py-2 border-b border-gray-100 font-bold text-center" style={{ background: scoreBg, color: scoreText }}>
                               <span className="inline-flex items-center gap-1">
@@ -728,7 +742,8 @@ export default function PilotClient() {
                             </td>
                           );
                         }
-                        if (j === 5 || j === 7 || j === 9) {
+                        // Q response columns (4, 6, 8)
+                        if (j === 4 || j === 6 || j === 8) {
                           return (
                             <td key={j} className="px-3 py-2 border-b border-gray-100 text-gray-600 max-w-[200px]">
                               <span className="block overflow-hidden text-ellipsis" style={{ maxWidth: 180 }}>{cell}</span>
@@ -736,7 +751,8 @@ export default function PilotClient() {
                             </td>
                           );
                         }
-                        if (j === 13) {
+                        // Community Signal (index 12)
+                        if (j === 12) {
                           const isHigh = cell.toLowerCase().includes('high') || cell.toLowerCase().includes('strong');
                           return (
                             <td key={j} className="px-3 py-2 border-b border-gray-100">
@@ -744,21 +760,24 @@ export default function PilotClient() {
                             </td>
                           );
                         }
-                        if (j === 14) {
+                        // Unmet Need (index 13)
+                        if (j === 13) {
                           return (
                             <td key={j} className="px-3 py-2 border-b border-gray-100">
                               <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700">{cell}</span>
                             </td>
                           );
                         }
-                        if (j === 15) {
+                        // Next Step (index 14)
+                        if (j === 14) {
                           return (
                             <td key={j} className="px-3 py-2 border-b border-gray-100">
                               <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: '#f0f5fb', color: '#1a2744' }}>{cell}</span>
                             </td>
                           );
                         }
-                        if (j === 12) {
+                        // Language Style (index 11)
+                        if (j === 11) {
                           return (
                             <td key={j} className="px-3 py-2 border-b border-gray-100 italic text-gray-500 text-[11px]">
                               <span className="block max-w-[160px] overflow-hidden text-ellipsis">{cell}</span>
@@ -771,16 +790,6 @@ export default function PilotClient() {
                           </td>
                         );
                       })}
-                      <td className="px-3 py-2 border-b border-gray-100">
-                        <div className="flex flex-col gap-0.5">
-                          {[1,2,3].map(q => (
-                            <a key={q} href="#" onClick={e => e.preventDefault()} className="text-[10px] font-medium flex items-center gap-0.5" style={{ color: '#4a6fa5' }}>
-                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                              Q{q} audio
-                            </a>
-                          ))}
-                        </div>
-                      </td>
                     </tr>
                   );
                 })}
@@ -1126,6 +1135,7 @@ export default function PilotClient() {
         <div className="mb-8 text-center">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-1">See it in action</h2>
           <p className="text-gray-700 font-medium">Real assessments from Impacter Pathway partners</p>
+
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {PREVIEWS.map(({ label, org, url }) => (
@@ -1169,7 +1179,7 @@ export default function PilotClient() {
         <section className="border-t border-gray-100 py-16 text-center" style={{ background: '#1a2744' }}>
           <h2 className="text-2xl font-bold text-white mb-3">Ready to run a pilot?</h2>
           <p className="mb-8 text-sm max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            Tell us a bit about your school or district and we will set everything up — typically within a few days.
+            Tell us about what you&apos;re looking for and we&apos;ll have everything configured in a few days.
           </p>
           <button
             onClick={openForm}
