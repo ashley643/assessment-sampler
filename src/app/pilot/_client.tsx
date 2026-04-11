@@ -83,6 +83,101 @@ const ASSESSMENT_TYPES = [
 ];
 
 type AssessmentId = 'community-schools' | 'learner-portrait' | 'behavioral-health';
+type AgeGroup = 'Elementary School' | 'Middle School' | 'High School' | 'Parent' | 'Staff';
+
+// ── CS question bank ─────────────────────────────────────────────────────────
+const PILLARS: Record<number, string> = {
+  1: 'Integrated Student Supports',
+  2: 'Active Family & Community Engagement',
+  3: 'Collaborative Leadership',
+  4: 'Expanded Learning Time',
+};
+
+interface CSQ { id: string; def: boolean; age: AgeGroup; p: 1|2|3|4; text: string }
+const CS_QUESTIONS: CSQ[] = [
+  // Elementary
+  {id:'el-1a',def:true, age:'Elementary School',p:1,text:'Think about a time when you needed help at school — like with homework or during a tough day. Who helped you? And what did they do to make you feel better?'},
+  {id:'el-1b',def:false,age:'Elementary School',p:1,text:'Imagine a student at your school is struggling with something big. Where could they go for help? How would they know those supports exist?'},
+  {id:'el-1c',def:false,age:'Elementary School',p:1,text:'Imagine a student at your school is having a really bad day. Who should they go to for help? What makes that person good at helping students?'},
+  {id:'el-2a',def:true, age:'Elementary School',p:2,text:'Think about your HOME — from the food you eat to the things your family likes. What are some things we could do at school that would make it feel more like home?'},
+  {id:'el-2b',def:false,age:'Elementary School',p:2,text:'Imagine your family came to school for an event. What would make them feel welcome right away? What might make it harder for families to feel comfortable?'},
+  {id:'el-2c',def:false,age:'Elementary School',p:2,text:'Sometimes families and schools work together to help students. What are some ways your school connects with your family? What could make those connections stronger?'},
+  {id:'el-3a',def:false,age:'Elementary School',p:3,text:'Tell me about a time when a student idea helped improve something at school or in your classroom. What happened after they shared the idea?'},
+  {id:'el-3b',def:true, age:'Elementary School',p:3,text:'Think about a teacher or adult who really listens to students. What do they do that shows they care about student ideas? How does that make students feel?'},
+  {id:'el-3c',def:false,age:'Elementary School',p:3,text:"Sometimes students have ideas but don't share them. What might stop students from speaking up? What would help them feel more confident sharing ideas?"},
+  {id:'el-4a',def:true, age:'Elementary School',p:4,text:'Think about a time at school when learning felt really fun or exciting. What were you doing? What made that experience special?'},
+  {id:'el-4b',def:false,age:'Elementary School',p:4,text:'Imagine you could start a brand-new club or activity at school. What would it be? Why do you think students would enjoy it?'},
+  {id:'el-4c',def:false,age:'Elementary School',p:4,text:'Think about something you really love at school — like a fun lesson or a field trip. What else can we do at school to make you more excited to be here?'},
+  // Middle School
+  {id:'ms-1a',def:false,age:'Middle School',p:1,text:'Think about the different supports at your school, like counselors, teachers, or programs. Which supports actually help students the most? What makes them effective?'},
+  {id:'ms-1b',def:false,age:'Middle School',p:1,text:'Tell me about a time when a student needed help at school. Was it easy or hard to get support? What made it that way?'},
+  {id:'ms-1c',def:true, age:'Middle School',p:1,text:'Imagine your school could create one new support for students. What should it be? Why would it help students succeed?'},
+  {id:'ms-2a',def:false,age:'Middle School',p:2,text:'Think about your family or community outside of school. What is something great about it? How could school connect more with that strength?'},
+  {id:'ms-2b',def:true, age:'Middle School',p:2,text:'Sometimes schools invite families to events or activities. What makes those events meaningful for families? What could schools improve?'},
+  {id:'ms-2c',def:false,age:'Middle School',p:2,text:'Imagine schools worked more closely with the community. What kinds of partnerships could help students the most? Why?'},
+  {id:'ms-3a',def:false,age:'Middle School',p:3,text:'Think about how decisions are made at your school. How can students share their ideas with school leaders? Does it work well?'},
+  {id:'ms-3b',def:true, age:'Middle School',p:3,text:'Tell me about a time when students and adults worked together to solve a problem at school. What happened?'},
+  {id:'ms-3c',def:false,age:'Middle School',p:3,text:"Sometimes students feel their voices aren't heard. What makes students feel comfortable sharing ideas with adults? What could make it better?"},
+  {id:'ms-4a',def:true, age:'Middle School',p:4,text:'Think about an activity, club, or class that helped you discover a new interest. What was it? What made it meaningful?'},
+  {id:'ms-4b',def:false,age:'Middle School',p:4,text:'Imagine your school added new opportunities outside regular classes. What kinds of experiences would students care about? Why?'},
+  {id:'ms-4c',def:false,age:'Middle School',p:4,text:'Sometimes experiences outside class shape who we become. Tell me about a school activity that helped you grow. What did you learn?'},
+  // High School
+  {id:'hs-1a',def:true, age:'High School',p:1,text:'Think about the ways your school supports students when life gets difficult. Which supports actually help students the most? Why?'},
+  {id:'hs-1b',def:false,age:'High School',p:1,text:"Sometimes students need help but don't ask for it. What barriers might stop students from seeking support? What could schools change?"},
+  {id:'hs-1c',def:false,age:'High School',p:1,text:'Imagine you could redesign how schools support student well-being. What would you add or change? Why would it matter?'},
+  {id:'hs-2a',def:false,age:'High School',p:2,text:'Think about the role families play in your school community. In what ways are families included in school life? What could make those connections stronger?'},
+  {id:'hs-2b',def:true, age:'High School',p:2,text:'Sometimes schools partner with community organizations. What partnerships help students the most? Why?'},
+  {id:'hs-2c',def:false,age:'High School',p:2,text:'Imagine schools asked families and communities for more input. What kinds of decisions should families help shape? Why?'},
+  {id:'hs-3a',def:false,age:'High School',p:3,text:'Think about a decision at your school that affects students. Should students have more voice in that decision? Why?'},
+  {id:'hs-3b',def:false,age:'High School',p:3,text:'Tell me about a time when student feedback led to a real change at school. What made that process work?'},
+  {id:'hs-3c',def:true, age:'High School',p:3,text:'Imagine students were true partners in leading your school. What decisions should they help make? What impact would that have?'},
+  {id:'hs-4a',def:true, age:'High School',p:4,text:'Think about an experience at school that helped you explore your interests or future goals. What made it meaningful?'},
+  {id:'hs-4b',def:false,age:'High School',p:4,text:'Tell me about a program, club, or opportunity that helped you grow the most in school. What did you gain from it?'},
+  {id:'hs-4c',def:false,age:'High School',p:4,text:'Imagine your school created new opportunities for students beyond regular classes. What experiences would prepare students best for the future? Why?'},
+  // Parent
+  {id:'pa-1a',def:true, age:'Parent',p:1,text:'In your experience, when does your child feel most supported, welcomed, or "seen" at school?\n\nWhat do staff or the school do that helps your child feel safe and connected?'},
+  {id:'pa-1b',def:false,age:'Parent',p:1,text:'Think about a time when your child needed extra support at school. What support helped the most? What could schools do to make support easier to access?'},
+  {id:'pa-1c',def:false,age:'Parent',p:1,text:'Sometimes families need help navigating school resources. What makes it easier for families to find support? What could improve that process?'},
+  {id:'pa-1d',def:false,age:'Parent',p:1,text:'Imagine a family whose child is struggling at school. What kinds of school supports would make the biggest difference? Why?'},
+  {id:'pa-2a',def:true, age:'Parent',p:2,text:'What is one thing the school does well to partner with families — and one thing the school could do to strengthen communication or connection with you?\n\nThis could include language access, events, updates, relationships, or opportunities to be involved.'},
+  {id:'pa-2b',def:false,age:'Parent',p:2,text:"Think about a time when your child's school made you feel welcome. What did they do? What else could schools do to strengthen family involvement?"},
+  {id:'pa-2c',def:false,age:'Parent',p:2,text:'Sometimes schools try to build stronger connections with families. What kinds of events or opportunities help families feel included? Why?'},
+  {id:'pa-2d',def:false,age:'Parent',p:2,text:'Imagine schools asked families for more input. What kinds of decisions should families help shape?'},
+  {id:'pa-3a',def:true, age:'Parent',p:3,text:'If your child is struggling (academically, socially, or emotionally), how confident are you that the school will notice and support them?\n\nWhat helps you feel confident — or what would improve that support?'},
+  {id:'pa-3b',def:false,age:'Parent',p:3,text:'Think about how schools gather family feedback. What methods work best? What could make families feel more heard?'},
+  {id:'pa-3c',def:false,age:'Parent',p:3,text:'Sometimes families have ideas for improving schools. What makes it easier for families to share those ideas?'},
+  {id:'pa-3d',def:false,age:'Parent',p:3,text:'Imagine stronger collaboration between families and school leaders. What would that look like?'},
+  {id:'pa-4a',def:true, age:'Parent',p:4,text:'What opportunities (clubs, activities, programs, or experiences) have helped your child feel excited about school — and what opportunities would you like to see more of?'},
+  {id:'pa-4b',def:false,age:'Parent',p:4,text:'Think about programs or activities outside regular classes that helped your child grow. What made them meaningful?'},
+  {id:'pa-4c',def:false,age:'Parent',p:4,text:'Imagine schools offered more learning opportunities beyond the classroom. What experiences would benefit students most?'},
+  {id:'pa-4d',def:false,age:'Parent',p:4,text:'Sometimes enrichment programs shape student interests and future goals. What kinds of opportunities should schools expand?'},
+  // Staff
+  {id:'st-1a',def:true, age:'Staff',p:1,text:'When a student is struggling (academically, socially, emotionally, or behaviorally), what supports at your site are working well right now — and where do you see gaps or unmet needs?\n\nFeel free to reference systems, referrals, staffing, or day-to-day practices.'},
+  {id:'st-1b',def:false,age:'Staff',p:1,text:'Think about a time when a student needed significant support. What systems helped that student most? What gaps still exist?'},
+  {id:'st-1c',def:false,age:'Staff',p:1,text:'Sometimes staff coordinate multiple supports for students. What practices make collaboration around student support most effective?'},
+  {id:'st-1d',def:false,age:'Staff',p:1,text:'Imagine your school could strengthen one support system for students. What should it be? Why?'},
+  {id:'st-2a',def:true, age:'Staff',p:2,text:'How effectively is your school partnering with families right now, and what is one change that would make family engagement more accessible, consistent, or impactful?\n\nExamples: communication, trust-building, language access, events, community partnerships.'},
+  {id:'st-2b',def:false,age:'Staff',p:2,text:'Think about a time when families were deeply engaged in school activities. What made that engagement successful?'},
+  {id:'st-2c',def:false,age:'Staff',p:2,text:'Sometimes schools struggle to connect with families. What barriers do you see most often? What might help address them?'},
+  {id:'st-2d',def:false,age:'Staff',p:2,text:'Imagine stronger partnerships between schools and community organizations. What partnerships would benefit students most?'},
+  {id:'st-3a',def:true, age:'Staff',p:3,text:'In what ways do you feel site leadership and staff are aligned around a shared vision for belonging and student wellness — and where could collaboration or shared decision-making be strengthened?'},
+  {id:'st-3b',def:false,age:'Staff',p:3,text:'Think about a time when staff input influenced an important decision at your school. What allowed staff voices to shape that decision? What could make that process stronger?'},
+  {id:'st-3c',def:false,age:'Staff',p:3,text:'Sometimes staff have ideas for improving school practices or policies. How do staff currently share those ideas with leadership? What helps those ideas actually lead to change?'},
+  {id:'st-3d',def:true, age:'Staff',p:3,text:'Imagine a school where staff were true partners in leadership and decision-making. What structures or practices would make staff feel meaningfully included? Where might student voice also fit into that process?'},
+  {id:'st-4a',def:false,age:'Staff',p:4,text:'What programs, routines, or learning experiences are most engaging for students at your site — and what enrichment opportunities do you wish students had more access to?'},
+  {id:'st-4b',def:false,age:'Staff',p:4,text:'Think about enrichment or extended learning opportunities at your school. Which have the strongest impact on students?'},
+  {id:'st-4c',def:false,age:'Staff',p:4,text:'Sometimes schools want to expand learning beyond the classroom. What opportunities would benefit students most?'},
+  {id:'st-4d',def:false,age:'Staff',p:4,text:'Imagine you could design one new program that extends learning time for students. What would it be? Why?'},
+];
+
+// Non-custom preview URLs per section
+const CS_PREVIEWS: Record<string, { en: string; es: string | null }> = {
+  'Elementary School': { en:'https://flex.impacterpathway.com/f5cn3e7bq#contact_email=X%2540XXXX.com&unit_id=XXXX', es:'https://flex.impacterpathway.com/fjoewj96b#contact_email=X%2540XXXX.com&unit_id=XXXX' },
+  'Middle School':     { en:'https://flex.impacterpathway.com/fe2p81t9k#contact_email=X%2540XXXX.com&unit_id=XXXX', es:'https://flex.impacterpathway.com/fyzb1fx9j#contact_email=X%2540XXXX.com&unit_id=XXXX' },
+  'High School':       { en:'https://flex.impacterpathway.com/fiwwhvwwa#contact_email=X%2540XXXX.com&unit_id=XXXX', es:'https://flex.impacterpathway.com/ftgvxd65q#contact_email=X%2540XXXX.com&unit_id=XXXX' },
+  'Parent':            { en:'https://flex.impacterpathway.com/fe2byes29', es:'https://flex.impacterpathway.com/fhd7evhlp' },
+  'Staff':             { en:'https://flex.impacterpathway.com/fad677c4k', es:null },
+};
 
 interface FormData {
   assessmentType: AssessmentId | '';
@@ -190,11 +285,16 @@ const SELECT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm f
 
 export default function PilotClient() {
   const [formOpen, setFormOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [step, setStep] = useState<1|2|3|4|5|6|7>(1);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [previewModal, setPreviewModal] = useState<{ label: string; url: string } | null>(null);
+  // CS question selector state
+  const [csMode, setCsMode] = useState<Record<string, 'standard'|'custom'|'write-own'>>({});
+  const [csPicks, setCsPicks] = useState<Record<string, Record<number, string>>>({});
+  const [csPreviewLang, setCsPreviewLang] = useState<Record<string, 'en'|'es'>>({});
+  const [csPreviewOpen, setCsPreviewOpen] = useState<Record<string, boolean>>({});
   const formRef = useRef<HTMLDivElement>(null);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
@@ -222,7 +322,7 @@ export default function PilotClient() {
         setSubmitting(false);
         return;
       }
-      setStep(5);
+      setStep(7);
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -240,7 +340,43 @@ export default function PilotClient() {
     && form.languages.length > 0
     && (!form.languages.includes('Other') || !!form.otherLanguage)
     && form.modalities.length > 0;
-  const canAdvanceStep4 = !!form.name && !!form.email && !!form.organization;
+  const canAdvanceContact = !!form.name && !!form.email && !!form.organization;
+
+  // CS helpers
+  const isCS = form.assessmentType === 'community-schools';
+
+  function getCsSections(): Array<{ key: AgeGroup; label: string }> {
+    const out: Array<{ key: AgeGroup; label: string }> = [];
+    const gl = form.gradeLevels;
+    if (gl.includes('Lower Elementary (TK–2)') || gl.includes('Elementary (3rd–5th)'))
+      out.push({ key: 'Elementary School', label: 'Elementary School' });
+    if (gl.includes('Middle School (6th–8th)'))  out.push({ key: 'Middle School',    label: 'Middle School' });
+    if (gl.includes('High School (9th–12th)'))   out.push({ key: 'High School',      label: 'High School' });
+    if (form.respondents.includes('Families / Parents')) out.push({ key: 'Parent', label: 'Parent / Family' });
+    if (form.respondents.includes('Staff'))              out.push({ key: 'Staff',  label: 'Staff' });
+    return out;
+  }
+
+  function canAdvanceCS(): boolean {
+    return getCsSections().every(({ key }) => {
+      const mode = csMode[key] ?? 'standard';
+      if (mode !== 'custom') return true;
+      return ([1,2,3,4] as const).every(p => !!csPicks[key]?.[p]);
+    });
+  }
+
+  // Step navigation (CS has an extra questions step at 4)
+  type S = 1|2|3|4|5|6|7;
+  function nextStep(cur: number): S {
+    if (cur === 3) return (isCS ? 4 : 5) as S;
+    if (cur === 4) return 5;
+    return (cur + 1) as S;
+  }
+  function prevStep(cur: number): S {
+    if (cur === 5) return (isCS ? 4 : 3) as S;
+    if (cur === 4) return 3;
+    return (cur - 1) as S;
+  }
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -430,25 +566,26 @@ export default function PilotClient() {
           <div className="max-w-xl mx-auto px-6 py-10">
 
             {/* Step indicator */}
-            {step < 5 && (
-              <div className="flex items-center gap-1.5 mb-8">
-                {([
-                  { n: 1, label: 'Assessment' },
-                  { n: 2, label: 'Dates' },
-                  { n: 3, label: 'Participants' },
-                  { n: 4, label: 'Contact' },
-                ] as const).map(({ n, label }) => (
-                  <div key={n} className="flex items-center gap-1.5">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-                      step === n ? 'bg-indigo-600 text-white' :
-                      step > n  ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-400'
-                    }`}>{n}</div>
-                    <span className={`text-xs hidden sm:inline ${step === n ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>{label}</span>
-                    {n < 4 && <div className={`h-px w-5 mx-1 transition-colors ${step > n ? 'bg-indigo-300' : 'bg-gray-200'}`} />}
-                  </div>
-                ))}
-              </div>
-            )}
+            {step < 7 && (() => {
+              const steps = isCS
+                ? [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:4,l:'Questions'},{n:5,l:'Contact'}]
+                : [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:5,l:'Contact'}];
+              const displayStep = (s: number) => isCS ? s : s > 3 ? s - 1 : s;
+              return (
+                <div className="flex items-center gap-1.5 mb-8">
+                  {steps.map(({ n, l }, i) => (
+                    <div key={n} className="flex items-center gap-1.5">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+                        step === n ? 'bg-indigo-600 text-white' :
+                        step > n  ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-400'
+                      }`}>{displayStep(n)}</div>
+                      <span className={`text-xs hidden sm:inline ${step === n ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>{l}</span>
+                      {i < steps.length - 1 && <div className={`h-px w-5 mx-1 transition-colors ${step > n ? 'bg-indigo-300' : 'bg-gray-200'}`} />}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* ── Step 1: Assessment type ────────────────────────── */}
             {step === 1 && (
@@ -756,7 +893,7 @@ export default function PilotClient() {
                   <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
                     disabled={!canAdvanceStep3}
-                    onClick={() => setStep(4)}
+                    onClick={() => setStep(nextStep(3))}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
                     Continue
@@ -765,8 +902,134 @@ export default function PilotClient() {
               </div>
             )}
 
-            {/* ── Step 4: Contact details ────────────────────────── */}
-            {step === 4 && (
+            {/* ── Step 4: CS Question selector ──────────────────── */}
+            {step === 4 && isCS && (() => {
+              const sections = getCsSections();
+              return (
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Build your assessment</h3>
+                    <p className="text-sm text-gray-500">
+                      For each respondent group, choose one question per pillar — or use the standard pre-built assessment.
+                    </p>
+                  </div>
+
+                  {sections.map(({ key, label }) => {
+                    const mode = csMode[key] ?? 'standard';
+                    const preview = CS_PREVIEWS[key];
+                    const lang = csPreviewLang[key] ?? 'en';
+                    const open = !!csPreviewOpen[key];
+
+                    return (
+                      <div key={key} className="border border-gray-200 rounded-2xl overflow-hidden">
+                        {/* Section header */}
+                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                          <p className="text-sm font-semibold text-gray-800">{label}</p>
+                        </div>
+
+                        <div className="p-5 space-y-5">
+                          {/* Preview toggle */}
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setCsPreviewOpen(p => ({ ...p, [key]: !open }))}
+                                className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition-colors"
+                              >
+                                {open ? 'Hide preview' : 'Preview standard assessment'}
+                              </button>
+                              {preview.es && open && (
+                                <button
+                                  type="button"
+                                  onClick={() => setCsPreviewLang(p => ({ ...p, [key]: lang === 'en' ? 'es' : 'en' }))}
+                                  className="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+                                >
+                                  {lang === 'en' ? 'Ver en español' : 'View in English'}
+                                </button>
+                              )}
+                            </div>
+                            {open && (
+                              <div className="mt-3 rounded-xl overflow-hidden border border-gray-200" style={{ height: 420 }}>
+                                <iframe
+                                  src={lang === 'es' && preview.es ? preview.es : preview.en}
+                                  className="w-full h-full border-0"
+                                  allow="camera; microphone; autoplay"
+                                  title={`${label} preview`}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Mode selector */}
+                          <div className="space-y-2">
+                            {([
+                              { v: 'standard'  as const, l: 'Use the standard assessment' },
+                              { v: 'custom'    as const, l: 'Customize — select one question per pillar' },
+                              { v: 'write-own' as const, l: 'I\'d like to write custom questions' },
+                            ]).map(({ v, l }) => (
+                              <label key={v} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                mode === v ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                              }`}>
+                                <input type="radio" name={`mode-${key}`} value={v} checked={mode === v}
+                                  onChange={() => setCsMode(m => ({ ...m, [key]: v }))}
+                                  className="accent-indigo-600" />
+                                <span className="text-sm text-gray-700">{l}</span>
+                              </label>
+                            ))}
+                          </div>
+
+                          {/* Custom question selector */}
+                          {mode === 'custom' && ([1,2,3,4] as const).map(pillar => {
+                            const qs = CS_QUESTIONS.filter(q => q.age === key && q.p === pillar);
+                            const selected = csPicks[key]?.[pillar];
+                            return (
+                              <div key={pillar} className="border-t border-gray-100 pt-4">
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                                  Pillar {pillar} — {PILLARS[pillar]}
+                                </p>
+                                <div className="space-y-2">
+                                  {qs.map(q => (
+                                    <label key={q.id} className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                      selected === q.id ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                                    }`}>
+                                      <input type="radio" name={`${key}-p${pillar}`} value={q.id}
+                                        checked={selected === q.id}
+                                        onChange={() => setCsPicks(p => ({
+                                          ...p,
+                                          [key]: { ...(p[key] ?? {}), [pillar]: q.id }
+                                        }))}
+                                        className="accent-indigo-600 mt-0.5 shrink-0" />
+                                      <span className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                                        {q.text}
+                                        {q.def && <span className="ml-2 text-[10px] font-medium text-indigo-500 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-full">standard</span>}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div className="flex justify-between pt-2">
+                    <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                    <button
+                      disabled={!canAdvanceCS()}
+                      onClick={() => setStep(nextStep(4))}
+                      className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Step 5: Contact details ────────────────────────── */}
+            {step === 5 && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Your contact details</h3>
@@ -808,9 +1071,9 @@ export default function PilotClient() {
                 {error && <p className="text-sm text-red-500">{error}</p>}
 
                 <div className="flex justify-between pt-2">
-                  <button onClick={() => setStep(3)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                  <button onClick={() => setStep(prevStep(5))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
-                    disabled={!canAdvanceStep4 || submitting}
+                    disabled={!canAdvanceContact || submitting}
                     onClick={submit}
                     className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                   >
@@ -820,8 +1083,8 @@ export default function PilotClient() {
               </div>
             )}
 
-            {/* ── Step 5: Confirmation ───────────────────────────── */}
-            {step === 5 && (
+            {/* ── Step 7: Confirmation ───────────────────────────── */}
+            {step === 7 && (
               <div className="text-center py-8">
                 <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-5">
                   <svg className="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
