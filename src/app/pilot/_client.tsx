@@ -125,7 +125,7 @@ const EMPTY_FORM: FormData = {
   notes: '',
 };
 
-const GRADE_OPTIONS = ['TK/K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+const GRADE_BANDS = ['Lower Elementary (TK–2)', 'Elementary (3rd–5th)', 'Middle School (6th–8th)', 'High School (9th–12th)'];
 
 function MultiCheck({ label, options, value, onChange }: {
   label: string;
@@ -216,7 +216,11 @@ export default function PilotClient() {
   }
 
   const canAdvanceStep1 = !!form.assessmentType;
-  const canAdvanceStep2 = form.respondents.length > 0 && form.gradeLevels.length > 0 && !!form.expectedCount && !!form.launchTimeline;
+  const studentsSelected = form.respondents.includes('Students');
+  const canAdvanceStep2 = form.respondents.length > 0
+    && (!studentsSelected || form.gradeLevels.length > 0)
+    && !!form.expectedCount
+    && !!form.launchTimeline;
   const canAdvanceStep3 = !!form.name && !!form.email && !!form.organization;
 
   return (
@@ -474,19 +478,25 @@ export default function PilotClient() {
 
                 <MultiCheck
                   label="Who will be responding? *"
-                  options={form.assessmentType === 'learner-portrait'
-                    ? ['Students']
-                    : ['Students', 'Families', 'Staff', 'Community Members']}
+                  options={
+                    form.assessmentType === 'learner-portrait'
+                      ? ['Students']
+                      : form.assessmentType === 'behavioral-health'
+                      ? ['Students', 'Staff']
+                      : ['Students', 'Families / Parents', 'Staff', 'Community Members']
+                  }
                   value={form.respondents}
                   onChange={v => set('respondents', v)}
                 />
 
-                <MultiCheck
-                  label="Which grade levels? *"
-                  options={GRADE_OPTIONS}
-                  value={form.gradeLevels}
-                  onChange={v => set('gradeLevels', v)}
-                />
+                {studentsSelected && (
+                  <MultiCheck
+                    label="Which grade levels? *"
+                    options={GRADE_BANDS}
+                    value={form.gradeLevels}
+                    onChange={v => set('gradeLevels', v)}
+                  />
+                )}
 
                 <Field label="How many respondents do you anticipate?" required>
                   <select value={form.expectedCount} onChange={e => set('expectedCount', e.target.value)} className={SELECT_CLS}>
