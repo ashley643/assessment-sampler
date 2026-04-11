@@ -359,7 +359,16 @@ const EMPTY_FORM: FormData = {
   notes: '',
 };
 
-const GRADE_BANDS = ['Lower Elementary (TK–2)', 'Elementary (3rd–5th)', 'Middle School (6th–8th)', 'High School (9th–12th)'];
+const GRADES = ['TK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+
+const GRADE_TO_BAND: Record<string, string> = {
+  'TK': 'Lower Elementary (TK–2)', 'K': 'Lower Elementary (TK–2)',
+  '1':  'Lower Elementary (TK–2)', '2': 'Lower Elementary (TK–2)',
+  '3':  'Elementary (3rd–5th)',     '4': 'Elementary (3rd–5th)',    '5': 'Elementary (3rd–5th)',
+  '6':  'Middle School (6th–8th)',  '7': 'Middle School (6th–8th)', '8': 'Middle School (6th–8th)',
+  '9':  'High School (9th–12th)',   '10': 'High School (9th–12th)',
+  '11': 'High School (9th–12th)',   '12': 'High School (9th–12th)',
+};
 
 function MultiCheck({ label, options, value, onChange }: {
   label: string;
@@ -496,11 +505,11 @@ export default function PilotClient() {
 
   function getCsSections(): Array<{ key: AgeGroup; label: string }> {
     const out: Array<{ key: AgeGroup; label: string }> = [];
-    const gl = form.gradeLevels;
-    if (gl.includes('Lower Elementary (TK–2)') || gl.includes('Elementary (3rd–5th)'))
+    const bands = new Set(form.gradeLevels.map(g => GRADE_TO_BAND[g]).filter(Boolean));
+    if (bands.has('Lower Elementary (TK–2)') || bands.has('Elementary (3rd–5th)'))
       out.push({ key: 'Elementary School', label: 'Elementary School' });
-    if (gl.includes('Middle School (6th–8th)'))  out.push({ key: 'Middle School',    label: 'Middle School' });
-    if (gl.includes('High School (9th–12th)'))   out.push({ key: 'High School',      label: 'High School' });
+    if (bands.has('Middle School (6th–8th)'))  out.push({ key: 'Middle School',   label: 'Middle School' });
+    if (bands.has('High School (9th–12th)'))   out.push({ key: 'High School',     label: 'High School' });
     if (form.respondents.includes('Families / Parents')) out.push({ key: 'Parent', label: 'Parent / Family' });
     if (form.respondents.includes('Staff'))              out.push({ key: 'Staff',  label: 'Staff' });
     return out;
@@ -515,7 +524,8 @@ export default function PilotClient() {
   }
 
   function getBHScreeners(): BHScreener[] {
-    return BH_SCREENERS.filter(s => s.gradeBands.some(gb => form.gradeLevels.includes(gb)));
+    const bands = new Set(form.gradeLevels.map(g => GRADE_TO_BAND[g]).filter(Boolean));
+    return BH_SCREENERS.filter(s => s.gradeBands.some(gb => bands.has(gb)));
   }
 
   function canAdvanceBH(): boolean {
@@ -523,7 +533,8 @@ export default function PilotClient() {
   }
 
   function getLPAssessments(): LPAssessment[] {
-    return LP_ASSESSMENTS.filter(a => a.gradeBands.some(gb => form.gradeLevels.includes(gb)));
+    const bands = new Set(form.gradeLevels.map(g => GRADE_TO_BAND[g]).filter(Boolean));
+    return LP_ASSESSMENTS.filter(a => a.gradeBands.some(gb => bands.has(gb)));
   }
 
   function canAdvanceLP(): boolean {
@@ -664,7 +675,7 @@ export default function PilotClient() {
       {/* ── Preview modal ────────────────────────────────────────────────────── */}
       {previewModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setPreviewModal(null)}>
-          <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col w-full max-w-4xl" style={{ height: '90vh' }} onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col w-full" style={{ maxWidth: '92vw', height: '88vh' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
               <div>
                 <p className="text-sm font-semibold text-gray-900">{previewModal.label}</p>
@@ -868,7 +879,7 @@ export default function PilotClient() {
                 {(isLP || isBH || studentsSelected) && (
                   <MultiCheck
                     label="Which grade levels? *"
-                    options={GRADE_BANDS}
+                    options={GRADES}
                     value={form.gradeLevels}
                     onChange={v => set('gradeLevels', v)}
                   />
