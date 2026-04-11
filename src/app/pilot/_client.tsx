@@ -61,47 +61,46 @@ const BH_DOMAIN_DATA = [
   { domain: 'Conflict Resolution',   female: 66, male: 55 },
 ];
 
+// 22 dots, all same color/size, x/y as 0.70–1.00 scale values * 100
 const WELLNESS_DOTS = [
-  { x: 78, y: 82, size: 6, color: '#4a6fa5', label: 'Lincoln High' },
-  { x: 65, y: 74, size: 5, color: '#4a6fa5', label: 'Washington Middle' },
-  { x: 85, y: 88, size: 7, color: '#4a6fa5', label: 'Riverside Elem' },
-  { x: 55, y: 62, size: 5, color: '#e07b54', label: 'Valley MS' },
-  { x: 72, y: 79, size: 6, color: '#4a6fa5', label: 'Northgate Elem' },
-  { x: 48, y: 55, size: 4, color: '#e07b54', label: 'Desert Ridge HS' },
-  { x: 88, y: 91, size: 8, color: '#2d7a5f', label: 'Hillcrest K-8' },
-  { x: 60, y: 68, size: 5, color: '#4a6fa5', label: 'Sunrise Elem' },
-  { x: 42, y: 47, size: 4, color: '#c0392b', label: 'Eastside HS' },
-  { x: 79, y: 84, size: 6, color: '#4a6fa5', label: 'Oak Park Middle' },
+  { x: 82, y: 87 }, { x: 79, y: 91 }, { x: 88, y: 93 }, { x: 91, y: 89 },
+  { x: 85, y: 84 }, { x: 76, y: 81 }, { x: 93, y: 96 }, { x: 71, y: 78 },
+  { x: 84, y: 88 }, { x: 89, y: 94 }, { x: 77, y: 83 }, { x: 95, y: 92 },
+  { x: 73, y: 76 }, { x: 87, y: 90 }, { x: 82, y: 85 }, { x: 78, y: 80 },
+  { x: 90, y: 87 }, { x: 86, y: 95 }, { x: 74, y: 79 }, { x: 92, y: 91 },
+  { x: 80, y: 86 }, { x: 83, y: 89 },
 ];
 
-const RISK_HEATMAP = [
-  { pattern: 'Hopelessness language',       low: 12, moderate: 28, high: 8,  count: 48 },
-  { pattern: 'Withdrawal / isolation cues', low: 18, moderate: 22, high: 5,  count: 45 },
-  { pattern: 'Avoidance behavior signals',  low: 24, moderate: 19, high: 3,  count: 46 },
-  { pattern: 'Self-doubt escalation',       low: 31, moderate: 14, high: 2,  count: 47 },
-  { pattern: 'Help-seeking absence',        low: 27, moderate: 17, high: 6,  count: 50 },
+// Risk heatmap: rows × grade columns (6th, 7th, 8th) — % frequency 0.00–7.25
+const RISK_ROWS = [
+  { pattern: 'Hopelessness',         g6: 6.43, g7: 4.21, g8: 5.87 },
+  { pattern: 'Withdrawal cues',      g6: 3.18, g7: 5.62, g8: 4.09 },
+  { pattern: 'Avoidance signals',    g6: 2.74, g7: 3.91, g8: 5.33 },
+  { pattern: 'Self-doubt language',  g6: 4.56, g7: 6.88, g8: 7.12 },
+  { pattern: 'Help-seeking absence', g6: 1.93, g7: 2.47, g8: 3.85 },
 ];
 
 const PROTECTIVE_DATA = [
-  { factor: 'Family connection',       relational: 74, internal: 0 },
-  { factor: 'Trusted adult at school', relational: 68, internal: 0 },
-  { factor: 'Peer support',            relational: 62, internal: 0 },
-  { factor: 'Growth mindset',          relational: 0,  internal: 71 },
-  { factor: 'Emotional regulation',    relational: 0,  internal: 65 },
-  { factor: 'Help-seeking readiness',  relational: 0,  internal: 58 },
+  { factor: 'Family connection',       val: 74, type: 'relational' },
+  { factor: 'Trusted adult at school', val: 68, type: 'relational' },
+  { factor: 'Peer support',            val: 62, type: 'relational' },
+  { factor: 'Growth mindset',          val: 71, type: 'internal' },
+  { factor: 'Emotional regulation',    val: 65, type: 'internal' },
+  { factor: 'Help-seeking readiness',  val: 58, type: 'internal' },
 ];
 
 const PARTHENON_PILLARS = [
-  { label: 'Integrated Student Supports', height: 88, color: '#4a6fa5', score: '82%' },
-  { label: 'Family & Community Engagement', height: 72, color: '#2d7a5f', score: '67%' },
-  { label: 'Collaborative Leadership', height: 65, color: '#7c5cbf', score: '61%' },
-  { label: 'Expanded Learning Time', height: 78, color: '#e07b54', score: '73%' },
+  { label: 'Integrated Student Supports',    height: 88, color: '#4a6fa5', score: '0.82' },
+  { label: 'Family & Community Engagement',  height: 72, color: '#2d7a5f', score: '0.74' },
+  { label: 'Collaborative Leadership',       height: 65, color: '#7c5cbf', score: '0.71' },
+  { label: 'Expanded Learning Time',         height: 78, color: '#e07b54', score: '0.77' },
 ];
 
-const STAKEHOLDER_DATA = [
-  { group: 'Families / Parents', score: 76, color: '#4a6fa5' },
-  { group: 'Students', score: 68, color: '#2d7a5f' },
-  { group: 'Staff', score: 61, color: '#7c5cbf' },
+// Linguistic tone divergence by stakeholder
+const VOICE_TONE = [
+  { group: 'Families',  affirming: 68, concern: 22, neutral: 10, signal: 'belonging & partnership' },
+  { group: 'Students',  affirming: 54, concern: 31, neutral: 15, signal: 'safety & being seen' },
+  { group: 'Staff',     affirming: 41, concern: 44, neutral: 15, signal: 'workload & systemic gaps' },
 ];
 
 // ── VideoAsk previews ────────────────────────────────────────────────────────
@@ -516,7 +515,7 @@ export default function PilotClient() {
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const t = setInterval(() => setInsightPanel(p => (p + 1) % 6), 5000);
+    const t = setInterval(() => setInsightPanel(p => (p + 1) % 6), 8000);
     return () => clearInterval(t);
   }, []);
 
@@ -801,245 +800,308 @@ export default function PilotClient() {
       </section>
 
       {/* ── Sample Report Insights ───────────────────────────────────────────── */}
-      <section className="border-b border-gray-100 py-14" style={{ background: '#f7fafd' }}>
+      <section className="border-b border-gray-100 py-14" style={{ background: '#0f1c35' }}>
         <div className="max-w-6xl mx-auto px-6">
-          <div className="mb-6 text-center">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-1">Sample report insights</h2>
-            <p className="text-gray-700 font-medium">The kind of analysis you get — from a single pilot window</p>
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Sample report insights</p>
+              <h2 className="text-xl font-bold text-white">What you can&apos;t get from a survey.</h2>
+            </div>
+            {/* Panel nav dots */}
+            <div className="flex items-center gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <button key={i} onClick={() => setInsightPanel(i)}
+                  className="rounded-full transition-all"
+                  style={{
+                    width: insightPanel === i ? 20 : 8,
+                    height: 8,
+                    background: insightPanel === i ? '#4a6fa5' : 'rgba(255,255,255,0.2)',
+                  }} />
+              ))}
+            </div>
           </div>
-          {/* Panel nav dots */}
-          <div className="flex justify-center gap-2 mb-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <button key={i} onClick={() => setInsightPanel(i)}
-                className="w-2 h-2 rounded-full transition-all"
-                style={{ background: insightPanel === i ? '#4a6fa5' : '#d1dce8', transform: insightPanel === i ? 'scale(1.4)' : 'scale(1)' }} />
-            ))}
-          </div>
+
           {/* Panels */}
-          <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm bg-white" style={{ minHeight: 380 }}>
-            {/* Panel 0: BH Domains by Gender */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#1a2744', minHeight: 420 }}>
+
+            {/* ── Panel 0: BH Domains by Gender ── */}
             {insightPanel === 0 && (
-              <div className="p-6 flex flex-col gap-4 h-full">
-                <div className="flex items-start justify-between flex-wrap gap-2">
+              <div className="p-8 flex flex-col gap-5">
+                <div className="flex items-start justify-between flex-wrap gap-3">
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Behavioral Health</p>
-                    <h3 className="text-base font-bold text-gray-900">Domain Scores by Gender</h3>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Domain Analysis</p>
+                    <h3 className="text-lg font-bold text-white leading-snug">Girls outscore boys by up to 14 pts —<br/>the gap widest in relational skills.</h3>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Female</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block bg-gray-300"></span>Male</span>
+                  <div className="flex items-center gap-4 text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Female</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: 'rgba(255,255,255,0.25)' }}></span>Male</span>
                   </div>
                 </div>
-                <svg viewBox="0 0 500 240" className="w-full" style={{ maxHeight: 240 }}>
+                <svg viewBox="0 0 560 260" className="w-full" style={{ maxHeight: 260 }}>
                   {BH_DOMAIN_DATA.map((d, i) => {
-                    const yCenter = 24 + i * 44;
-                    const maxW = 310;
-                    const scale = (v: number) => (v / 100) * maxW;
+                    const yCenter = 26 + i * 46;
+                    const maxW = 340;
+                    const scaleW = (v: number) => (v / 100) * maxW;
+                    const gap = d.female - d.male;
                     return (
                       <g key={d.domain}>
-                        <text x="155" y={yCenter - 4} textAnchor="end" fontSize="11" fill="#6b7280">{d.domain}</text>
-                        <rect x="160" y={yCenter - 14} width={scale(d.female)} height={12} rx="3" fill="#4a6fa5" />
-                        <text x={163 + scale(d.female)} y={yCenter - 5} fontSize="10" fill="#4a6fa5" fontWeight="600">{d.female}%</text>
-                        <rect x="160" y={yCenter + 2} width={scale(d.male)} height={12} rx="3" fill="#94a3b8" />
-                        <text x={163 + scale(d.male)} y={yCenter + 11} fontSize="10" fill="#94a3b8" fontWeight="600">{d.male}%</text>
+                        <text x="168" y={yCenter - 2} textAnchor="end" fontSize="11.5" fill="rgba(255,255,255,0.6)">{d.domain}</text>
+                        {/* Male bar (background) */}
+                        <rect x="173" y={yCenter - 16} width={scaleW(d.male)} height={28} rx="4" fill="rgba(255,255,255,0.12)" />
+                        {/* Female bar */}
+                        <rect x="173" y={yCenter - 16} width={scaleW(d.female)} height={14} rx="4" fill="#4a6fa5" />
+                        <text x={177 + scaleW(d.female)} y={yCenter - 5} fontSize="11" fill="#7aa3cc" fontWeight="700">{d.female}</text>
+                        <text x={177 + scaleW(d.male)} y={yCenter + 10} fontSize="11" fill="rgba(255,255,255,0.35)" fontWeight="600">{d.male}</text>
+                        {/* Gap annotation on widest gap */}
+                        {gap === 14 && (
+                          <g>
+                            <line x1={173 + scaleW(d.male)} y1={yCenter - 20} x2={173 + scaleW(d.female)} y2={yCenter - 20} stroke="#f59e0b" strokeWidth="1.5" />
+                            <line x1={173 + scaleW(d.male)} y1={yCenter - 23} x2={173 + scaleW(d.male)} y2={yCenter - 17} stroke="#f59e0b" strokeWidth="1.5" />
+                            <line x1={173 + scaleW(d.female)} y1={yCenter - 23} x2={173 + scaleW(d.female)} y2={yCenter - 17} stroke="#f59e0b" strokeWidth="1.5" />
+                            <text x={173 + scaleW(d.male) + (scaleW(gap)/2)} y={yCenter - 26} textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="700">+{gap} pts</text>
+                          </g>
+                        )}
                       </g>
                     );
                   })}
-                  <line x1="160" y1="0" x2="160" y2="240" stroke="#e5e7eb" strokeWidth="1" />
+                  <line x1="173" y1="0" x2="173" y2="260" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
                 </svg>
-                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
-                  <span className="font-semibold">Insight: </span>Female students score 8–14 points higher across all domains. The widest gap appears in Relational Awareness (+14) and Conflict Resolution (+11), suggesting targeted programming for male students around social-emotional skill-building.
-                </div>
               </div>
             )}
-            {/* Panel 1: Student Wellness Matrix */}
+
+            {/* ── Panel 1: Student Wellness Matrix ── */}
             {insightPanel === 1 && (
-              <div className="p-6 flex flex-col gap-4 h-full">
+              <div className="p-8 flex flex-col gap-5">
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Learner Portrait</p>
-                  <h3 className="text-base font-bold text-gray-900">Student Wellness Matrix</h3>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Learner Portrait · Wellness Matrix</p>
+                  <h3 className="text-lg font-bold text-white leading-snug">87% of students score above 0.80<br/>on both safety and confidence.</h3>
                 </div>
-                <svg viewBox="0 0 380 260" className="w-full" style={{ maxHeight: 260 }}>
+                <svg viewBox="0 0 520 290" className="w-full" style={{ maxHeight: 290 }}>
                   <defs>
-                    <linearGradient id="wellnessGrad" x1="0" y1="1" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#fde3c8" />
-                      <stop offset="50%" stopColor="#fef9c3" />
-                      <stop offset="100%" stopColor="#d1fae5" />
+                    <linearGradient id="wGrad" x1="0" y1="1" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#1e3a5f" />
+                      <stop offset="60%" stopColor="#1e4d6b" />
+                      <stop offset="100%" stopColor="#1a5c4a" />
                     </linearGradient>
                   </defs>
-                  <rect x="45" y="10" width="310" height="220" rx="6" fill="url(#wellnessGrad)" />
-                  {[25, 50, 75].map(v => (
-                    <g key={v}>
-                      <line x1="45" y1={10 + (1 - v/100) * 220} x2="355" y2={10 + (1 - v/100) * 220} stroke="white" strokeWidth="0.5" strokeDasharray="4 3" />
-                      <line x1={45 + (v/100) * 310} y1="10" x2={45 + (v/100) * 310} y2="230" stroke="white" strokeWidth="0.5" strokeDasharray="4 3" />
-                    </g>
-                  ))}
+                  {/* Chart area: x 55–505, y 10–240 → width 450, height 230 */}
+                  <rect x="55" y="10" width="450" height="230" rx="6" fill="url(#wGrad)" />
+                  {/* Grid lines at 0.75, 0.80, 0.85, 0.90, 0.95 */}
+                  {[75, 80, 85, 90, 95].map(v => {
+                    const px = 55 + ((v - 70) / 30) * 450;
+                    const py = 240 - ((v - 70) / 30) * 230;
+                    return (
+                      <g key={v}>
+                        <line x1={px} y1="10" x2={px} y2="240" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+                        <line x1="55" y1={py} x2="505" y2={py} stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+                        <text x={px} y="255" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">{(v/100).toFixed(2)}</text>
+                        <text x="44" y={py + 3} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">{(v/100).toFixed(2)}</text>
+                      </g>
+                    );
+                  })}
+                  {/* Axis end labels */}
+                  <text x="55" y="255" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">0.70</text>
+                  <text x="505" y="255" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">1.00</text>
+                  <text x="44" y="243" textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">0.70</text>
+                  <text x="44" y="13" textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">1.00</text>
+                  {/* Dots */}
                   {WELLNESS_DOTS.map((dot, i) => (
-                    <circle key={i} cx={45 + (dot.x/100) * 310} cy={230 - (dot.y/100) * 220} r={dot.size} fill={dot.color} fillOpacity="0.85" stroke="white" strokeWidth="1.5" />
+                    <circle key={i}
+                      cx={55 + ((dot.x - 70) / 30) * 450}
+                      cy={240 - ((dot.y - 70) / 30) * 230}
+                      r="5.5" fill="#7aa3cc" fillOpacity="0.85" stroke="#4a6fa5" strokeWidth="1.5"
+                    />
                   ))}
-                  <line x1="45" y1="230" x2="355" y2="230" stroke="#9ca3af" strokeWidth="1.5" />
-                  <line x1="45" y1="10" x2="45" y2="230" stroke="#9ca3af" strokeWidth="1.5" />
-                  <text x="200" y="250" textAnchor="middle" fontSize="10" fill="#6b7280">Sense of Safety →</text>
-                  <text x="14" y="120" textAnchor="middle" fontSize="10" fill="#6b7280" transform="rotate(-90 14 120)">Academic Confidence →</text>
-                  <text x="55" y="24" fontSize="9" fill="#9ca3af">Low safety</text>
-                  <text x="295" y="24" fontSize="9" fill="#2d7a5f">High wellness</text>
+                  {/* Axis labels */}
+                  <text x="280" y="272" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)">Sense of Safety</text>
+                  <text x="14" y="125" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)" transform="rotate(-90 14 125)">Academic Confidence</text>
+                  {/* Annotation */}
+                  <rect x="360" y="16" width="138" height="30" rx="5" fill="rgba(74,111,165,0.35)" />
+                  <text x="429" y="30" textAnchor="middle" fontSize="10" fill="#a8c5e0" fontWeight="600">87% above 0.80</text>
+                  <text x="429" y="42" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.4)">on both dimensions</text>
                 </svg>
-                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
-                  <span className="font-semibold">Insight: </span>Most sites cluster in the high-wellness quadrant. Two outlier sites show low safety scores — both are secondary campuses in the same feeder pattern, suggesting a systemic issue worth investigating at the district level.
-                </div>
               </div>
             )}
-            {/* Panel 2: Risk Language Patterns Heatmap */}
+
+            {/* ── Panel 2: Risk Language Heatmap ── */}
             {insightPanel === 2 && (
-              <div className="p-6 flex flex-col gap-4 h-full">
+              <div className="p-8 flex flex-col gap-5">
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Behavioral Health</p>
-                  <h3 className="text-base font-bold text-gray-900">Risk Language Patterns</h3>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Language Frequency</p>
+                  <h3 className="text-lg font-bold text-white leading-snug">8th grade self-doubt language peaks at 7.12% —<br/>the highest signal in the cohort.</h3>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs border-collapse">
+                  <table className="w-full border-collapse" style={{ fontSize: 13 }}>
                     <thead>
                       <tr>
-                        <th className="text-left py-2 pr-4 text-gray-500 font-semibold">Pattern Detected</th>
-                        <th className="text-center px-3 py-2 font-semibold" style={{ color: '#2d7a5f' }}>Low</th>
-                        <th className="text-center px-3 py-2 font-semibold" style={{ color: '#b45309' }}>Moderate</th>
-                        <th className="text-center px-3 py-2 font-semibold" style={{ color: '#991b1b' }}>High</th>
-                        <th className="text-center px-3 py-2 text-gray-500 font-semibold">n</th>
+                        <th className="text-left pb-3 pr-6 font-medium" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>PATTERN DETECTED</th>
+                        {['6th Grade', '7th Grade', '8th Grade'].map(g => (
+                          <th key={g} className="text-center pb-3 px-2 font-semibold" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{g}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {RISK_HEATMAP.map((row, i) => {
-                        const total = row.low + row.moderate + row.high;
-                        const lowPct = (row.low / total) * 100;
-                        const modPct = (row.moderate / total) * 100;
-                        const highPct = (row.high / total) * 100;
+                      {RISK_ROWS.map((row, i) => {
+                        const vals = [row.g6, row.g7, row.g8];
+                        const maxVal = 7.25;
                         return (
-                          <tr key={i} className="border-t border-gray-100">
-                            <td className="py-2.5 pr-4 text-gray-700">{row.pattern}</td>
-                            <td className="px-3 py-2 text-center font-medium" style={{ background: `rgba(209, 250, 229, ${0.3 + lowPct/100})`, color: '#065f46' }}>{row.low}</td>
-                            <td className="px-3 py-2 text-center font-medium" style={{ background: `rgba(254, 243, 199, ${0.3 + modPct/100})`, color: '#92400e' }}>{row.moderate}</td>
-                            <td className="px-3 py-2 text-center font-bold" style={{ background: `rgba(254, 226, 226, ${0.4 + highPct/80})`, color: '#991b1b' }}>{row.high}</td>
-                            <td className="px-3 py-2 text-center text-gray-400">{row.count}</td>
+                          <tr key={i}>
+                            <td className="py-1.5 pr-6 font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>{row.pattern}</td>
+                            {vals.map((v, j) => {
+                              const intensity = v / maxVal;
+                              const bg = `rgba(74, 111, 165, ${0.12 + intensity * 0.78})`;
+                              const textColor = intensity > 0.55 ? '#ffffff' : 'rgba(255,255,255,0.6)';
+                              return (
+                                <td key={j} className="px-2 py-1.5 text-center font-bold rounded-sm"
+                                  style={{ background: bg, color: textColor, fontSize: 13 }}>
+                                  {v.toFixed(2)}%
+                                </td>
+                              );
+                            })}
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
-                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#fff7f7', color: '#7f1d1d' }}>
-                  <span className="font-semibold">Insight: </span>Hopelessness language has the highest proportion of High-severity flags (17%). Combined with help-seeking absence, 14 students (29% of the cohort) show overlapping indicators and are flagged for priority counselor outreach.
-                </div>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Frequency = % of total spoken words flagged per pattern per grade. Darker = higher frequency.</p>
               </div>
             )}
-            {/* Panel 3: Protective Factors */}
+
+            {/* ── Panel 3: Protective Factors ── */}
             {insightPanel === 3 && (
-              <div className="p-6 flex flex-col gap-4 h-full">
-                <div className="flex items-start justify-between flex-wrap gap-2">
+              <div className="p-8 flex flex-col gap-5">
+                <div className="flex items-start justify-between flex-wrap gap-3">
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Behavioral Health</p>
-                    <h3 className="text-base font-bold text-gray-900">Protective Factors Present</h3>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Protective Signals</p>
+                    <h3 className="text-lg font-bold text-white leading-snug">Students who named a trusted adult<br/>scored 2.1× higher on resilience.</h3>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Relational</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#2d7a5f' }}></span>Internal</span>
+                  <div className="flex items-center gap-4 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Relational</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: '#2d7a5f' }}></span>Internal</span>
                   </div>
                 </div>
-                <svg viewBox="0 0 480 230" className="w-full" style={{ maxHeight: 230 }}>
+                <svg viewBox="0 0 520 240" className="w-full" style={{ maxHeight: 240 }}>
                   {PROTECTIVE_DATA.map((d, i) => {
-                    const y = 20 + i * 36;
-                    const maxW = 290;
-                    const isRelational = d.relational > 0;
-                    const val = isRelational ? d.relational : d.internal;
-                    const color = isRelational ? '#4a6fa5' : '#2d7a5f';
-                    const barW = (val / 100) * maxW;
+                    const y = 18 + i * 37;
+                    const maxW = 320;
+                    const color = d.type === 'relational' ? '#4a6fa5' : '#2d7a5f';
+                    const barW = (d.val / 100) * maxW;
                     return (
                       <g key={d.factor}>
-                        <text x="158" y={y + 11} textAnchor="end" fontSize="11" fill="#6b7280">{d.factor}</text>
-                        <rect x="163" y={y} width={barW} height={20} rx="3" fill={color} fillOpacity="0.85" />
-                        <text x={167 + barW} y={y + 14} fontSize="10" fill={color} fontWeight="600">{val}%</text>
+                        {/* Track */}
+                        <rect x="170" y={y + 3} width={maxW} height={22} rx="4" fill="rgba(255,255,255,0.05)" />
+                        {/* Bar */}
+                        <rect x="170" y={y + 3} width={barW} height={22} rx="4" fill={color} fillOpacity="0.8" />
+                        {/* Circle endpoint */}
+                        <circle cx={170 + barW} cy={y + 14} r="8" fill={color} />
+                        <text x={170 + barW} y={y + 18} textAnchor="middle" fontSize="9" fill="white" fontWeight="700">{d.val}</text>
+                        {/* Label */}
+                        <text x="165" y={y + 18} textAnchor="end" fontSize="11" fill="rgba(255,255,255,0.6)">{d.factor}</text>
                       </g>
                     );
                   })}
-                  <line x1="163" y1="0" x2="163" y2="230" stroke="#e5e7eb" strokeWidth="1" />
                 </svg>
-                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0faf5', color: '#064e3b' }}>
-                  <span className="font-semibold">Insight: </span>Family connection and trusted adults are the strongest protective factors present (74% and 68%). Students who named an adult at school showed 2.1× higher resilience scores — a clear case for relationship-based interventions over programmatic ones.
-                </div>
               </div>
             )}
-            {/* Panel 4: Community Schools Parthenon */}
+
+            {/* ── Panel 4: CS Parthenon ── */}
             {insightPanel === 4 && (
-              <div className="p-6 flex flex-col gap-4 h-full">
+              <div className="p-8 flex flex-col gap-5">
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Community Schools</p>
-                  <h3 className="text-base font-bold text-gray-900">Community Schools Pillar Scores</h3>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Community Schools · Pillar Scores</p>
+                  <h3 className="text-lg font-bold text-white leading-snug">Student supports lead. Collaborative leadership<br/>is the gap — and the lever.</h3>
                 </div>
-                <svg viewBox="0 0 460 280" className="w-full" style={{ maxHeight: 280 }}>
-                  <rect x="20" y="248" width="420" height="8" rx="3" fill="#e5e7eb" />
+                <svg viewBox="0 0 520 300" className="w-full" style={{ maxHeight: 300 }}>
+                  {/* Ground line */}
+                  <rect x="20" y="262" width="480" height="6" rx="3" fill="rgba(255,255,255,0.08)" />
                   {PARTHENON_PILLARS.map((p, i) => {
-                    const pillarW = 72;
-                    const gap = 22;
+                    const pillarW = 84;
+                    const gap = 20;
                     const totalW = 4 * pillarW + 3 * gap;
-                    const startX = (460 - totalW) / 2;
+                    const startX = (520 - totalW) / 2;
                     const x = startX + i * (pillarW + gap);
-                    const maxH = 200;
+                    const maxH = 210;
                     const h = (p.height / 100) * maxH;
-                    const y = 248 - h;
+                    const y = 262 - h;
                     return (
                       <g key={p.label}>
-                        <rect x={x} y={y} width={pillarW} height={h} rx="4" fill={p.color} fillOpacity="0.85" />
-                        <text x={x + pillarW / 2} y={y + h / 2 - 4} textAnchor="middle" fontSize="15" fontWeight="bold" fill="white">{p.score}</text>
-                        <text x={x + pillarW / 2} y={y + h / 2 + 13} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.75)">avg score</text>
-                        <rect x={x - 4} y={y - 8} width={pillarW + 8} height={8} rx="2" fill={p.color} />
-                        <text x={x + pillarW / 2} y={266} textAnchor="middle" fontSize="9" fill="#6b7280">{p.label.split(' ').slice(0, 2).join(' ')}</text>
-                        <text x={x + pillarW / 2} y={277} textAnchor="middle" fontSize="9" fill="#6b7280">{p.label.split(' ').slice(2).join(' ')}</text>
+                        {/* Subtle height guide lines */}
+                        <line x1={x} y1={y} x2={x - 6} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                        {/* Pillar */}
+                        <rect x={x} y={y} width={pillarW} height={h} rx="5" fill={p.color} fillOpacity="0.75" />
+                        {/* Score */}
+                        <text x={x + pillarW / 2} y={y + h / 2 - 6} textAnchor="middle" fontSize="20" fontWeight="800" fill="white">{p.score}</text>
+                        <text x={x + pillarW / 2} y={y + h / 2 + 12} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.55)">avg score</text>
+                        {/* Cap */}
+                        <rect x={x - 5} y={y - 9} width={pillarW + 10} height={9} rx="2" fill={p.color} fillOpacity="0.9" />
+                        {/* Label */}
+                        <text x={x + pillarW / 2} y={278} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.5)">{p.label.split(' ').slice(0, 2).join(' ')}</text>
+                        <text x={x + pillarW / 2} y={290} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.5)">{p.label.split(' ').slice(2).join(' ')}</text>
                       </g>
                     );
                   })}
-                  <rect x="16" y="14" width="428" height="14" rx="3" fill="#d1dce8" />
-                  <rect x="24" y="6" width="412" height="10" rx="2" fill="#e8edf5" />
+                  {/* Entablature */}
+                  <rect x="14" y="16" width="492" height="12" rx="3" fill="rgba(255,255,255,0.07)" />
+                  <rect x="22" y="8" width="476" height="9" rx="2" fill="rgba(255,255,255,0.04)" />
                 </svg>
-                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
-                  <span className="font-semibold">Insight: </span>Integrated Student Supports is the strongest pillar (82%). Collaborative Leadership scores lowest (61%), with staff responses pointing to inconsistent inclusion in site-level planning — a common leverage point for Community Schools coordinators.
-                </div>
               </div>
             )}
-            {/* Panel 5: CS by Stakeholder */}
+
+            {/* ── Panel 5: Linguistic Tone Divergence ── */}
             {insightPanel === 5 && (
-              <div className="p-6 flex flex-col gap-4 h-full">
+              <div className="p-8 flex flex-col gap-5">
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Community Schools</p>
-                  <h3 className="text-base font-bold text-gray-900">Perceived School Responsiveness by Stakeholder</h3>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Community Schools · Voice Tone Analysis</p>
+                  <h3 className="text-lg font-bold text-white leading-snug">Staff voice carries the most concern language —<br/>44% flagged, vs. 22% from families.</h3>
                 </div>
-                <svg viewBox="0 0 420 180" className="w-full" style={{ maxHeight: 180 }}>
-                  {STAKEHOLDER_DATA.map((d, i) => {
-                    const y = 20 + i * 52;
-                    const maxW = 260;
-                    const barW = (d.score / 100) * maxW;
+                <svg viewBox="0 0 580 230" className="w-full" style={{ maxHeight: 230 }}>
+                  {/* Center axis */}
+                  <line x1="290" y1="0" x2="290" y2="230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" strokeDasharray="4 3" />
+                  <text x="130" y="14" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.3)" fontWeight="600">← CONCERN LANGUAGE</text>
+                  <text x="440" y="14" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.3)" fontWeight="600">AFFIRMING LANGUAGE →</text>
+
+                  {VOICE_TONE.map((d, i) => {
+                    const rowY = 38 + i * 64;
+                    const maxHalf = 250; // each half = 250px wide
+                    const affW = (d.affirming / 100) * maxHalf;
+                    const conW = (d.concern / 100) * maxHalf;
+                    const neuW = (d.neutral / 100) * maxHalf;
                     return (
                       <g key={d.group}>
-                        <text x="125" y={y + 20} textAnchor="end" fontSize="12" fill="#374151" fontWeight="500">{d.group}</text>
-                        <rect x="130" y={y + 4} width={barW} height={30} rx="5" fill={d.color} fillOpacity="0.85" />
-                        <text x={135 + barW} y={y + 24} fontSize="13" fontWeight="bold" fill={d.color}>{d.score}%</text>
+                        {/* Group label */}
+                        <text x="290" y={rowY - 4} textAnchor="middle" fontSize="12" fill="white" fontWeight="700">{d.group}</text>
+                        {/* Concern bar (goes left from center) */}
+                        <rect x={290 - conW} y={rowY + 2} width={conW} height={28} rx="4" fill="#e07b54" fillOpacity="0.75" />
+                        <text x={290 - conW - 6} y={rowY + 20} textAnchor="end" fontSize="11" fill="#e07b54" fontWeight="600">{d.concern}%</text>
+                        {/* Neutral (attached left of center) */}
+                        <rect x={290 - conW - neuW} y={rowY + 2} width={neuW} height={28} rx="0" fill="rgba(255,255,255,0.1)" />
+                        {/* Affirming bar (goes right from center) */}
+                        <rect x="290" y={rowY + 2} width={affW} height={28} rx="4" fill="#2d7a5f" fillOpacity="0.75" />
+                        <text x={290 + affW + 6} y={rowY + 20} textAnchor="start" fontSize="11" fill="#4aad8a" fontWeight="600">{d.affirming}%</text>
+                        {/* Signal chip */}
+                        <rect x={290 + affW + 46} y={rowY + 5} width={140} height={20} rx="4" fill="rgba(74,111,165,0.25)" />
+                        <text x={290 + affW + 116} y={rowY + 19} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.5)">↑ {d.signal}</text>
                       </g>
                     );
                   })}
-                  <line x1="130" y1="0" x2="130" y2="180" stroke="#e5e7eb" strokeWidth="1" />
                 </svg>
-                <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#f0f5fb', color: '#1a2744' }}>
-                  <span className="font-semibold">Insight: </span>Families rate the school 15 points higher than staff on perceived responsiveness. This gap often reflects families&apos; limited visibility into internal challenges. Staff responses cluster around communication gaps and workload — areas where Community Schools coordinators can make immediate structural improvements.
-                </div>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Affirming and concern language classified via semantic analysis of open-ended voice responses. This signal is invisible in traditional survey data.</p>
               </div>
             )}
+
           </div>
+
           {/* Panel navigation arrows */}
-          <div className="flex justify-center gap-3 mt-4">
+          <div className="flex justify-center gap-3 mt-5">
             <button onClick={() => setInsightPanel(p => (p + 5) % 6)}
-              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors bg-white">
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
             </button>
             <button onClick={() => setInsightPanel(p => (p + 1) % 6)}
-              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors bg-white">
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
             </button>
           </div>
