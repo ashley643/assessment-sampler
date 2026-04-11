@@ -195,7 +195,7 @@ const BH_SCREENERS: BHScreener[] = [
     name: 'Behavioral Health Screener for Littles',
     grades: 'TK–2nd grade',
     gradeBands: ['Lower Elementary (TK–2)'],
-    previewUrl: 'https://flex.impacterpathway.com/LITTLES_FORM_ID?preview',
+    previewUrl: 'https://flex.impacterpathway.com/fjzzdvxk8?preview',
     questions: [
       { pillar: 'Relational Awareness', text: 'Tell me about a time you saw someone who was really upset. What did you notice? What did you do?' },
     ],
@@ -205,7 +205,7 @@ const BH_SCREENERS: BHScreener[] = [
     name: 'Behavioral Health Screener for Elementary',
     grades: '3rd–5th grade',
     gradeBands: ['Elementary (3rd–5th)'],
-    previewUrl: 'https://flex.impacterpathway.com/ELEMENTARY_FORM_ID?preview',
+    previewUrl: 'https://flex.impacterpathway.com/fvtnb1z5e?preview',
     questions: [
       { pillar: 'Reflective Growth',    text: 'Think about a time when you needed help at school — like with homework or during a tough day. Who helped you? And what did they do to make you feel better?' },
       { pillar: 'Relational Awareness', text: 'Imagine a student at your school is struggling with something big. Where could they go for help? How would they know those supports exist?' },
@@ -220,7 +220,7 @@ const BH_SCREENERS: BHScreener[] = [
     name: 'Behavioral Health Screener for Secondary',
     grades: '6th–12th grade',
     gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
-    previewUrl: 'https://flex.impacterpathway.com/SECONDARY_FORM_ID?preview',
+    previewUrl: 'https://flex.impacterpathway.com/fiucp7xof?preview',
     questions: [
       { pillar: 'Reflective Growth',    text: 'Tell me about a time when a student idea helped improve something at school or in your classroom. What happened after they shared the idea?' },
       { pillar: 'Relational Awareness', text: 'Think about a teacher or adult who really listens to students. What do they do that shows they care about student ideas? How does that make students feel?' },
@@ -252,7 +252,7 @@ const LP_ASSESSMENTS: LPAssessment[] = [
     name: 'Learner Portrait for Littles',
     grades: 'TK–2nd grade',
     gradeBands: ['Lower Elementary (TK–2)'],
-    previewUrl: 'https://flex.impacterpathway.com/LP_LITTLES_ID?preview',
+    previewUrl: 'https://sdusd.impacterpathway.com/fp9r1r32y?preview',
     rounds: [
       {
         round: 1,
@@ -279,7 +279,7 @@ const LP_ASSESSMENTS: LPAssessment[] = [
     name: 'Learner Portrait for Elementary',
     grades: '3rd–5th grade',
     gradeBands: ['Elementary (3rd–5th)'],
-    previewUrl: 'https://flex.impacterpathway.com/LP_ELEMENTARY_ID?preview',
+    previewUrl: 'https://flex.impacterpathway.com/fn0l89pl3?preview',
     rounds: [
       {
         round: 1,
@@ -316,7 +316,7 @@ const LP_ASSESSMENTS: LPAssessment[] = [
     name: 'Learner Portrait for Secondary',
     grades: '6th–12th grade',
     gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
-    previewUrl: 'https://flex.impacterpathway.com/LP_SECONDARY_ID?preview',
+    previewUrl: 'https://flex.impacterpathway.com/fwxzy777r?preview',
     rounds: [
       {
         round: 1,
@@ -462,6 +462,28 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 const INPUT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white';
 const SELECT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-700';
+
+function VideoAskEmbed({ url, label, onOpen, height = 200 }: { url: string; label: string; onOpen: () => void; height?: number }) {
+  return (
+    <div
+      className="relative cursor-pointer group rounded-xl overflow-hidden border border-gray-200"
+      onClick={onOpen}
+      style={{ height }}
+    >
+      <iframe
+        src={url}
+        className="w-full h-full pointer-events-none"
+        allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *"
+        title={label}
+      />
+      <div className="absolute inset-0 flex items-end justify-center pb-3 bg-transparent group-hover:bg-black/5 transition-colors">
+        <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm text-xs font-medium text-gray-700 px-3 py-1 rounded-full shadow-sm">
+          Click to expand
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function PilotClient() {
   const [formOpen, setFormOpen] = useState(false);
@@ -686,22 +708,12 @@ export default function PilotClient() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {PREVIEWS.map(({ label, org, url }) => (
-            <div key={url} className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 10l4.553-2.276A1 1 0 0121 8.624v6.752a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-                </svg>
-              </div>
-              <div className="flex-1">
+            <div key={url} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+              <VideoAskEmbed url={url} label={label} onOpen={() => setPreviewModal({ label, url })} height={220} />
+              <div className="px-5 py-4">
                 <p className="text-sm font-semibold text-gray-900 mb-0.5">{label}</p>
                 <p className="text-xs text-gray-400">{org}</p>
               </div>
-              <button
-                onClick={() => setPreviewModal({ label, url })}
-                className="w-full text-center text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg py-2 hover:bg-indigo-50 transition-colors"
-              >
-                View Assessment
-              </button>
             </div>
           ))}
         </div>
@@ -1130,17 +1142,16 @@ export default function PilotClient() {
                         </div>
 
                         <div className="p-5 space-y-5">
-                          {/* Preview toggle */}
-                          <div>
-                            <div className="flex items-center gap-3">
-                              <button
-                                type="button"
-                                onClick={() => setCsPreviewOpen(p => ({ ...p, [key]: !open }))}
-                                className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition-colors"
-                              >
-                                {open ? 'Hide preview' : 'Preview standard assessment'}
-                              </button>
-                              {preview.es && open && (
+                          {/* Embedded preview */}
+                          <div className="space-y-2">
+                            <VideoAskEmbed
+                              url={lang === 'es' && preview.es ? preview.es : preview.en}
+                              label={`${label} — ${lang === 'en' ? 'English' : 'Español'}`}
+                              onOpen={() => setPreviewModal({ label: `${label} — ${lang === 'en' ? 'English' : 'Español'}`, url: lang === 'es' && preview.es ? preview.es : preview.en })}
+                              height={260}
+                            />
+                            {preview.es && (
+                              <div className="flex justify-end">
                                 <button
                                   type="button"
                                   onClick={() => setCsPreviewLang(p => ({ ...p, [key]: lang === 'en' ? 'es' : 'en' }))}
@@ -1148,16 +1159,6 @@ export default function PilotClient() {
                                 >
                                   {lang === 'en' ? 'Ver en español' : 'View in English'}
                                 </button>
-                              )}
-                            </div>
-                            {open && (
-                              <div className="mt-3 rounded-xl overflow-hidden border border-gray-200" style={{ height: 420 }}>
-                                <iframe
-                                  src={lang === 'es' && preview.es ? preview.es : preview.en}
-                                  className="w-full h-full border-0"
-                                  allow="camera; microphone; autoplay"
-                                  title={`${label} preview`}
-                                />
                               </div>
                             )}
                           </div>
@@ -1250,21 +1251,17 @@ export default function PilotClient() {
 
                   {screeners.map(s => (
                     <div key={s.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">{s.name}</p>
-                          <p className="text-xs text-gray-400">{s.grades}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setPreviewModal({ label: s.name, url: s.previewUrl })}
-                          className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition-colors"
-                        >
-                          Preview
-                        </button>
+                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                        <p className="text-sm font-semibold text-gray-800">{s.name}</p>
+                        <p className="text-xs text-gray-400">{s.grades}</p>
                       </div>
-                      <div className="p-5">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Questions</p>
+                      <div className="p-5 space-y-4">
+                        <VideoAskEmbed
+                          url={s.previewUrl}
+                          label={s.name}
+                          onOpen={() => setPreviewModal({ label: s.name, url: s.previewUrl })}
+                        />
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Questions</p>
                         <div className="space-y-3">
                           {s.questions.map((q, i) => (
                             <div key={i} className="flex gap-3">
@@ -1346,20 +1343,16 @@ export default function PilotClient() {
 
                   {assessments.map(a => (
                     <div key={a.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">{a.name}</p>
-                          <p className="text-xs text-gray-400">{a.grades}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setPreviewModal({ label: a.name, url: a.previewUrl })}
-                          className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition-colors"
-                        >
-                          Preview
-                        </button>
+                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                        <p className="text-sm font-semibold text-gray-800">{a.name}</p>
+                        <p className="text-xs text-gray-400">{a.grades}</p>
                       </div>
                       <div className="p-5 space-y-5">
+                        <VideoAskEmbed
+                          url={a.previewUrl}
+                          label={a.name}
+                          onOpen={() => setPreviewModal({ label: a.name, url: a.previewUrl })}
+                        />
                         {a.rounds.map(r => (
                           <div key={r.round}>
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{r.label}</p>
