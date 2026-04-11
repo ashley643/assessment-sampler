@@ -234,6 +234,122 @@ const BH_SCREENERS: BHScreener[] = [
   },
 ];
 
+// ── Learner Portrait assessments ─────────────────────────────────────────────
+interface LPBenchmark { num: number; attribute: string; prompt: string }
+interface LPRound { round: 1|2; label: string; benchmarks: LPBenchmark[] }
+interface LPAssessment {
+  id: string;
+  name: string;
+  grades: string;
+  gradeBands: string[];
+  previewUrl: string;
+  rounds: LPRound[];
+}
+
+const LP_ASSESSMENTS: LPAssessment[] = [
+  {
+    id: 'lp-littles',
+    name: 'Learner Portrait for Littles',
+    grades: 'TK–2nd grade',
+    gradeBands: ['Lower Elementary (TK–2)'],
+    previewUrl: 'https://flex.impacterpathway.com/LP_LITTLES_ID?preview',
+    rounds: [
+      {
+        round: 1,
+        label: 'Round 1 (B1–B3)',
+        benchmarks: [
+          { num: 1, attribute: 'Self-Esteem',  prompt: 'What do you like about yourself and your life?' },
+          { num: 2, attribute: 'Belonging',    prompt: 'Do your friends make you feel good when you get the right answers in class? What do they say or do?' },
+          { num: 3, attribute: 'Empathy',      prompt: 'Share about a time when you helped someone who was feeling sad, scared, or upset. What did you do to help them?' },
+        ],
+      },
+      {
+        round: 2,
+        label: 'Round 2 (B4–B6)',
+        benchmarks: [
+          { num: 4, attribute: 'Curiosity',    prompt: 'Share about a time you had a question you wanted to ask in front of other people. Did you ask it? Why or why not?' },
+          { num: 5, attribute: 'Resilience',   prompt: 'Share about a time when you kept trying to do something even though it was hard. Why did you keep trying?' },
+          { num: 6, attribute: 'Self-Control', prompt: "What would you do if you were left with a pile of M&M's and you were told not to eat any of them?" },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'lp-elementary',
+    name: 'Learner Portrait for Elementary',
+    grades: '3rd–5th grade',
+    gradeBands: ['Elementary (3rd–5th)'],
+    previewUrl: 'https://flex.impacterpathway.com/LP_ELEMENTARY_ID?preview',
+    rounds: [
+      {
+        round: 1,
+        label: 'Round 1 (B1–B8)',
+        benchmarks: [
+          { num: 1, attribute: 'Curiosity',          prompt: 'What have you noticed that made you curious? What did it make you wonder?' },
+          { num: 2, attribute: 'Perspective-Taking', prompt: "Tell us about a moment when seeing things from someone else's point of view changed your mind about something." },
+          { num: 3, attribute: 'Purpose',            prompt: 'Share something you love doing that just feels exactly right for you.' },
+          { num: 4, attribute: 'Self-Control',       prompt: 'Describe a time when you were nervous and had to calm yourself down.' },
+          { num: 5, attribute: 'Grit',               prompt: 'Describe a time when you tried to learn something challenging.' },
+          { num: 6, attribute: 'Growth Mindset',     prompt: 'Share a time when believing you could improve helped you get better at something.' },
+          { num: 7, attribute: 'Compassion',         prompt: "Share a time when you showed compassion to someone who couldn't ask for help." },
+          { num: 8, attribute: 'Gratitude',          prompt: 'Tell us who inspires you and why you want to thank them.' },
+        ],
+      },
+      {
+        round: 2,
+        label: 'Round 2 (B2–B9)',
+        benchmarks: [
+          { num: 2, attribute: 'Curiosity',          prompt: 'What would you like to try doing differently? What makes you curious about trying it that way?' },
+          { num: 3, attribute: 'Perspective-Taking', prompt: 'If you could show others the world through your eyes, what would you want them to see?' },
+          { num: 4, attribute: 'Purpose',            prompt: 'Share something you spend hours on because it matters that much to you.' },
+          { num: 5, attribute: 'Self-Control',       prompt: 'Tell us about a time when you had to be patient even though you were really excited.' },
+          { num: 6, attribute: 'Grit',               prompt: 'Describe something you would love to get really good at through lots of practice.' },
+          { num: 7, attribute: 'Growth Mindset',     prompt: 'Share a time when believing in each other helped your group or team grow and improve.' },
+          { num: 8, attribute: 'Compassion',         prompt: 'Tell us about a time when you saw something wrong and decided whether or not to step in.' },
+          { num: 9, attribute: 'Gratitude',          prompt: 'Tell us about a time when you joined others to show someone they were appreciated.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'lp-secondary',
+    name: 'Learner Portrait for Secondary',
+    grades: '6th–12th grade',
+    gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
+    previewUrl: 'https://flex.impacterpathway.com/LP_SECONDARY_ID?preview',
+    rounds: [
+      {
+        round: 1,
+        label: 'Round 1 (B1–B8)',
+        benchmarks: [
+          { num: 1, attribute: 'Curiosity',          prompt: 'Tell us about a problem you tried to solve. What did you try? Did it work?' },
+          { num: 2, attribute: 'Perspective-Taking', prompt: 'Tell us about a time when you were super annoyed with someone... until you learned their side of the story.' },
+          { num: 3, attribute: 'Purpose',            prompt: 'Share a time when doing something important helped you become more confident in who you are.' },
+          { num: 4, attribute: 'Self-Control',       prompt: 'Tell us about a time when you kept your cool even though someone was trying to upset you.' },
+          { num: 5, attribute: 'Grit',               prompt: 'Tell us about a time when failing made you try even harder.' },
+          { num: 6, attribute: 'Growth Mindset',     prompt: "Share one specific way you could help change something people say \"can't change.\"" },
+          { num: 7, attribute: 'Compassion',         prompt: 'Share one specific way you showed (or could have shown) compassion to someone who was struggling in your group.' },
+          { num: 8, attribute: 'Gratitude',          prompt: 'Tell us about a way you could show gratitude without using words.' },
+        ],
+      },
+      {
+        round: 2,
+        label: 'Round 2 (B2–B9)',
+        benchmarks: [
+          { num: 2, attribute: 'Curiosity',          prompt: 'What simple task would you like to make more interesting? How would you do it?' },
+          { num: 3, attribute: 'Perspective-Taking', prompt: "Share a time when you kept your cool and considered another person's perspective." },
+          { num: 4, attribute: 'Purpose',            prompt: 'Share a time when you played an important part in something bigger than yourself.' },
+          { num: 5, attribute: 'Self-Control',       prompt: "Tell us about a time when you were tempted to do something you knew wasn't right. How did you handle it?" },
+          { num: 6, attribute: 'Grit',               prompt: 'Tell us about a big project you refused to give up on.' },
+          { num: 7, attribute: 'Growth Mindset',     prompt: 'Share how you transformed something ordinary into something special.' },
+          { num: 8, attribute: 'Compassion',         prompt: 'Share a time when you showed kindness to someone from "another group."' },
+          { num: 9, attribute: 'Gratitude',          prompt: 'Tell us about a time when gratitude made you feel more emotion than you expected to feel.' },
+        ],
+      },
+    ],
+  },
+];
+
 interface FormData {
   assessmentType: AssessmentId | '';
   // Step 2: Dates
@@ -258,6 +374,9 @@ interface FormData {
   screeningScope: string;
   bhSelectedAssessments: string[];
   bhWantsCustom: boolean;
+  // Learner Portrait specific
+  lpSelectedAssessments: string[];
+  lpWantsCustom: boolean;
   // Contact
   name: string;
   email: string;
@@ -286,6 +405,8 @@ const EMPTY_FORM: FormData = {
   screeningScope: '',
   bhSelectedAssessments: [],
   bhWantsCustom: false,
+  lpSelectedAssessments: [],
+  lpWantsCustom: false,
   name: '',
   email: '',
   role: '',
@@ -354,6 +475,7 @@ export default function PilotClient() {
   const [csPicks, setCsPicks] = useState<Record<string, Record<number, string>>>({});
   const [csPreviewLang, setCsPreviewLang] = useState<Record<string, 'en'|'es'>>({});
   const [csPreviewOpen, setCsPreviewOpen] = useState<Record<string, boolean>>({});
+  const [lpRounds, setLpRounds] = useState<Record<string, '1'|'2'>>({});
   const formRef = useRef<HTMLDivElement>(null);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
@@ -404,6 +526,7 @@ export default function PilotClient() {
   // Assessment type helpers
   const isCS = form.assessmentType === 'community-schools';
   const isBH = form.assessmentType === 'behavioral-health';
+  const isLP = form.assessmentType === 'learner-portrait';
 
   function getCsSections(): Array<{ key: AgeGroup; label: string }> {
     const out: Array<{ key: AgeGroup; label: string }> = [];
@@ -433,15 +556,26 @@ export default function PilotClient() {
     return form.bhSelectedAssessments.length > 0 || form.bhWantsCustom;
   }
 
-  // Step navigation — CS and BH both use step 4 (questions); LP skips it
+  function getLPAssessments(): LPAssessment[] {
+    return LP_ASSESSMENTS.filter(a => a.gradeBands.some(gb => form.gradeLevels.includes(gb)));
+  }
+
+  function canAdvanceLP(): boolean {
+    if (form.lpWantsCustom) return true;
+    const assessments = getLPAssessments();
+    return assessments.length > 0
+      && assessments.every(a => form.lpSelectedAssessments.includes(a.id) && !!lpRounds[a.id]);
+  }
+
+  // Step navigation — CS, BH, and LP all use step 4 (questions)
   type S = 1|2|3|4|5|6|7;
   function nextStep(cur: number): S {
-    if (cur === 3) return ((isCS || isBH) ? 4 : 5) as S;
+    if (cur === 3) return ((isCS || isBH || isLP) ? 4 : 5) as S;
     if (cur === 4) return 5;
     return (cur + 1) as S;
   }
   function prevStep(cur: number): S {
-    if (cur === 5) return ((isCS || isBH) ? 4 : 3) as S;
+    if (cur === 5) return ((isCS || isBH || isLP) ? 4 : 3) as S;
     if (cur === 4) return 3;
     return (cur - 1) as S;
   }
@@ -635,10 +769,10 @@ export default function PilotClient() {
 
             {/* Step indicator */}
             {step < 7 && (() => {
-              const steps = (isCS || isBH)
-                ? [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:4,l:'Questions'},{n:5,l:'Contact'}]
+              const steps = (isCS || isBH || isLP)
+                ? [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:4,l:'Offerings'},{n:5,l:'Contact'}]
                 : [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:5,l:'Contact'}];
-              const displayStep = (s: number) => isCS ? s : s > 3 ? s - 1 : s;
+              const displayStep = (s: number) => (isCS || isBH || isLP) ? s : s > 3 ? s - 1 : s;
               return (
                 <div className="flex items-center gap-1.5 mb-8">
                   {steps.map(({ n, l }, i) => (
@@ -1182,6 +1316,120 @@ export default function PilotClient() {
                     <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
                       disabled={!canAdvanceBH()}
+                      onClick={() => setStep(nextStep(4))}
+                      className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Step 4: LP offerings ──────────────────────────── */}
+            {step === 4 && isLP && (() => {
+              const assessments = getLPAssessments();
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Learner Portrait Offerings</h3>
+                    <p className="text-sm text-gray-500">
+                      Based on your grade levels, here are the available assessments. Review the prompts, then select which to include and which benchmark round you plan to run.
+                    </p>
+                  </div>
+
+                  {assessments.length === 0 && (
+                    <p className="text-sm text-gray-400 bg-gray-50 rounded-xl p-4">
+                      No assessments match your selected grade levels. Go back and select at least one grade band.
+                    </p>
+                  )}
+
+                  {assessments.map(a => (
+                    <div key={a.id} className="border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{a.name}</p>
+                          <p className="text-xs text-gray-400">{a.grades}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewModal({ label: a.name, url: a.previewUrl })}
+                          className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition-colors"
+                        >
+                          Preview
+                        </button>
+                      </div>
+                      <div className="p-5 space-y-5">
+                        {a.rounds.map(r => (
+                          <div key={r.round}>
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{r.label}</p>
+                            <div className="space-y-2">
+                              {r.benchmarks.map(b => (
+                                <div key={`${b.num}-${b.attribute}`} className="flex gap-3">
+                                  <span className="shrink-0 mt-0.5 text-xs font-medium text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full h-fit">
+                                    {b.attribute}
+                                  </span>
+                                  <p className="text-sm text-gray-700 leading-relaxed">{b.prompt}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Selection */}
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-3">Which assessments would you like to include in your pilot? *</p>
+                    <div className="space-y-2">
+                      {assessments.map(a => {
+                        const checked = form.lpSelectedAssessments.includes(a.id);
+                        return (
+                          <div key={a.id} className={`rounded-lg border transition-colors ${checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
+                            <label className="flex items-center gap-3 p-3 cursor-pointer">
+                              <input type="checkbox" checked={checked}
+                                onChange={() => {
+                                  const next = checked
+                                    ? form.lpSelectedAssessments.filter(id => id !== a.id)
+                                    : [...form.lpSelectedAssessments, a.id];
+                                  set('lpSelectedAssessments', next);
+                                }}
+                                className="accent-indigo-600 w-4 h-4" />
+                              <span className="text-sm font-medium text-gray-700">{a.name}</span>
+                            </label>
+                            {checked && (
+                              <div className="pb-3 px-10 flex gap-6">
+                                {(['1','2'] as const).map(r => (
+                                  <label key={r} className="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio"
+                                      name={`lp-round-${a.id}`}
+                                      checked={lpRounds[a.id] === r}
+                                      onChange={() => setLpRounds(prev => ({ ...prev, [a.id]: r }))}
+                                      className="accent-indigo-600" />
+                                    <span className="text-sm text-gray-600">Round {r}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        form.lpWantsCustom ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}>
+                        <input type="checkbox" checked={form.lpWantsCustom}
+                          onChange={() => set('lpWantsCustom', !form.lpWantsCustom)}
+                          className="accent-indigo-600 w-4 h-4" />
+                        <span className="text-sm text-gray-700">I&apos;m looking for something custom</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-2">
+                    <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                    <button
+                      disabled={!canAdvanceLP()}
                       onClick={() => setStep(nextStep(4))}
                       className="bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                     >
