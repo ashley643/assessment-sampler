@@ -378,7 +378,7 @@ const LP_ATTRIBUTES: LPAttribute[] = [
   { id: 'pog-problem',       name: 'Problem-Solving',                      group: 'portrait', questionIds: ['sec-1','sec-2','el-9','sec-10','sec-11'] },
   { id: 'pog-communication', name: 'Communication',                         group: 'portrait', questionIds: ['el-4','sec-4','el-13','sec-13'] },
   { id: 'pog-character',     name: 'Character',                             group: 'portrait', questionIds: ['sec-8','el-13','el-14','sec-13','sec-14','el-15','el-16','sec-15','sec-16','sec-5','sec-6'] },
-  { id: 'pog-perseverance',  name: 'Perseverance and Adaptability',         group: 'portrait', questionIds: ['el-9','sec-9','sec-10','el-7','el-8','el-11'] },
+  { id: 'pog-perseverance',  name: 'Perseverance/Adaptability',             group: 'portrait', questionIds: ['el-9','sec-9','sec-10','el-7','el-8','el-11'] },
   { id: 'pog-collaboration', name: 'Collaboration',                         group: 'portrait', questionIds: ['el-12','sec-13','sec-14','el-16','sec-6'] },
   { id: 'pog-global',        name: 'Global Citizenship',                    group: 'portrait', questionIds: ['el-3','el-4','sec-14','sec-6'] },
   { id: 'pog-creativity',    name: 'Creativity',                            group: 'portrait', questionIds: ['el-2','sec-2','sec-12'] },
