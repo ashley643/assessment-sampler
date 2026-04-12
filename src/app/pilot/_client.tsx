@@ -1548,57 +1548,8 @@ export default function PilotClient() {
                   <p className="text-xs text-gray-400 mb-3 leading-relaxed">
                     FERPA and COPPA compliant. Pilot assessments don&apos;t require student enrollment or integration with systems like Clever or ClassLink — no PII is collected unless you opt in below. Any fields you enable are voluntary for respondents and let you disaggregate results by group.
                   </p>
-                  <div className="space-y-2">
-                    {['School', 'Grade', 'Gender'].map(opt => {
-                      const checked = form.demographics.includes(opt);
-                      return (
-                        <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          checked ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
-                        }`}>
-                          <input type="checkbox" checked={checked}
-                            onChange={() => {
-                              const next = checked
-                                ? form.demographics.filter(d => d !== opt)
-                                : [...form.demographics.filter(d => d !== 'None'), opt];
-                              set('demographics', next);
-                            }}
-                            className="accent-[#4a6fa5] w-4 h-4" />
-                          <span className="text-sm text-gray-700">{opt}</span>
-                        </label>
-                      );
-                    })}
-                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      form.demographics.includes('Other') ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}>
-                      <input type="checkbox" checked={form.demographics.includes('Other')}
-                        onChange={() => {
-                          const c = form.demographics.includes('Other');
-                          set('demographics', c
-                            ? form.demographics.filter(d => d !== 'Other')
-                            : [...form.demographics.filter(d => d !== 'None'), 'Other']);
-                        }}
-                        className="accent-[#4a6fa5] w-4 h-4" />
-                      <span className="text-sm text-gray-700">Other</span>
-                    </label>
-                    {form.demographics.includes('Other') && (
-                      <input className={INPUT_CLS + ' mt-1'} placeholder="Which demographic field?"
-                        value={form.demographicsOther} onChange={e => set('demographicsOther', e.target.value)} />
-                    )}
-                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      form.demographics.includes('None') ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}>
-                      <input type="checkbox" checked={form.demographics.includes('None')}
-                        onChange={() => {
-                          set('demographics', form.demographics.includes('None') ? [] : ['None']);
-                          set('demographicsOther', '');
-                        }}
-                        className="accent-gray-400 w-4 h-4" />
-                      <span className="text-sm text-gray-500">No thanks</span>
-                    </label>
-                  </div>
-
                   {/* Rotating report preview — matches home-page insight panel style */}
-                  <div className="mt-4">
+                  <div className="mb-4">
                     <div className="mb-2 flex items-center justify-between">
                       <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample disaggregated report insights</p>
                       <div className="flex items-center gap-1.5">
@@ -1768,6 +1719,54 @@ export default function PilotClient() {
                         );
                       })()}
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    {['School', 'Grade', 'Gender'].map(opt => {
+                      const checked = form.demographics.includes(opt);
+                      return (
+                        <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          checked ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input type="checkbox" checked={checked}
+                            onChange={() => {
+                              const next = checked
+                                ? form.demographics.filter(d => d !== opt)
+                                : [...form.demographics.filter(d => d !== 'None'), opt];
+                              set('demographics', next);
+                            }}
+                            className="accent-[#4a6fa5] w-4 h-4" />
+                          <span className="text-sm text-gray-700">{opt}</span>
+                        </label>
+                      );
+                    })}
+                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      form.demographics.includes('Other') ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input type="checkbox" checked={form.demographics.includes('Other')}
+                        onChange={() => {
+                          const c = form.demographics.includes('Other');
+                          set('demographics', c
+                            ? form.demographics.filter(d => d !== 'Other')
+                            : [...form.demographics.filter(d => d !== 'None'), 'Other']);
+                        }}
+                        className="accent-[#4a6fa5] w-4 h-4" />
+                      <span className="text-sm text-gray-700">Other</span>
+                    </label>
+                    {form.demographics.includes('Other') && (
+                      <input className={INPUT_CLS + ' mt-1'} placeholder="Which demographic field?"
+                        value={form.demographicsOther} onChange={e => set('demographicsOther', e.target.value)} />
+                    )}
+                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      form.demographics.includes('None') ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input type="checkbox" checked={form.demographics.includes('None')}
+                        onChange={() => {
+                          set('demographics', form.demographics.includes('None') ? [] : ['None']);
+                          set('demographicsOther', '');
+                        }}
+                        className="accent-gray-400 w-4 h-4" />
+                      <span className="text-sm text-gray-500">No thanks</span>
+                    </label>
                   </div>
                 </div>
 
