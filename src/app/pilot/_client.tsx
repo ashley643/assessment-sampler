@@ -61,14 +61,23 @@ const BH_DOMAIN_DATA = [
   { domain: 'Conflict Resolution',   female: 572, male: 473 },
 ];
 
-// 22 dots, all same color/size, x/y as 0.70–1.00 scale values * 100
+// 42 dots — smaller radius, heavy concentration in the high-high (Purpose/Self-Control) zone
 const WELLNESS_DOTS = [
-  { x: 82, y: 87 }, { x: 79, y: 91 }, { x: 88, y: 93 }, { x: 91, y: 89 },
-  { x: 85, y: 84 }, { x: 76, y: 81 }, { x: 93, y: 96 }, { x: 71, y: 78 },
-  { x: 84, y: 88 }, { x: 89, y: 94 }, { x: 77, y: 83 }, { x: 95, y: 92 },
-  { x: 73, y: 76 }, { x: 87, y: 90 }, { x: 82, y: 85 }, { x: 78, y: 80 },
-  { x: 90, y: 87 }, { x: 86, y: 95 }, { x: 74, y: 79 }, { x: 92, y: 91 },
-  { x: 80, y: 86 }, { x: 83, y: 89 },
+  // High-high cluster (x 88–99, y 88–99) — 22 dots
+  { x: 91, y: 93 }, { x: 94, y: 96 }, { x: 89, y: 91 }, { x: 96, y: 94 },
+  { x: 92, y: 97 }, { x: 88, y: 95 }, { x: 95, y: 91 }, { x: 90, y: 98 },
+  { x: 97, y: 95 }, { x: 93, y: 92 }, { x: 99, y: 97 }, { x: 91, y: 90 },
+  { x: 96, y: 99 }, { x: 88, y: 92 }, { x: 94, y: 90 }, { x: 98, y: 93 },
+  { x: 92, y: 95 }, { x: 90, y: 94 }, { x: 95, y: 98 }, { x: 89, y: 96 },
+  { x: 93, y: 99 }, { x: 97, y: 91 },
+  // Mid zone (x 80–87, y 80–87) — 10 dots
+  { x: 83, y: 86 }, { x: 86, y: 83 }, { x: 81, y: 85 }, { x: 85, y: 82 },
+  { x: 84, y: 87 }, { x: 82, y: 84 }, { x: 87, y: 86 }, { x: 80, y: 83 },
+  { x: 86, y: 85 }, { x: 83, y: 81 },
+  // Lower-mid scatter — 10 dots
+  { x: 76, y: 82 }, { x: 80, y: 78 }, { x: 74, y: 79 }, { x: 78, y: 85 },
+  { x: 82, y: 75 }, { x: 71, y: 77 }, { x: 79, y: 80 }, { x: 85, y: 76 },
+  { x: 73, y: 83 }, { x: 77, y: 76 },
 ];
 
 // Risk heatmap: rows × grade columns (6th, 7th, 8th) — % frequency 0.00–7.25
@@ -924,12 +933,12 @@ export default function PilotClient() {
               </div>
             )}
 
-            {/* ── Panel 1: Student Wellness Matrix ── */}
+            {/* ── Panel 1: Self-Management Matrix ── */}
             {insightPanel === 1 && (
               <div className="p-8 flex flex-col gap-5">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Learner Portrait · Wellness Matrix</p>
-                  <h3 className="text-lg font-bold text-white leading-snug">87% of students score above 0.80<br/>on both safety and confidence.</h3>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Learner Portrait · Self-Management Matrix</p>
+                  <h3 className="text-lg font-bold text-white leading-snug">Students who score high in Purpose are 3.4× more likely<br/>to score high in Self-Control.</h3>
                 </div>
                 <svg viewBox="0 0 520 290" className="w-full" style={{ maxHeight: 290 }}>
                   <defs>
@@ -964,16 +973,16 @@ export default function PilotClient() {
                     <circle key={i}
                       cx={55 + ((dot.x - 70) / 30) * 450}
                       cy={240 - ((dot.y - 70) / 30) * 230}
-                      r="5.5" fill="#7aa3cc" fillOpacity="0.85" stroke="#4a6fa5" strokeWidth="1.5"
+                      r="3.5" fill="#7aa3cc" fillOpacity="0.8" stroke="#4a6fa5" strokeWidth="1"
                     />
                   ))}
                   {/* Axis labels */}
-                  <text x="280" y="272" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)">Sense of Safety</text>
-                  <text x="14" y="125" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)" transform="rotate(-90 14 125)">Academic Confidence</text>
+                  <text x="280" y="272" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)">Purpose</text>
+                  <text x="14" y="125" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)" transform="rotate(-90 14 125)">Self-Control</text>
                   {/* Annotation */}
-                  <rect x="360" y="16" width="138" height="30" rx="5" fill="rgba(74,111,165,0.35)" />
-                  <text x="429" y="30" textAnchor="middle" fontSize="10" fill="#a8c5e0" fontWeight="600">87% above 0.80</text>
-                  <text x="429" y="42" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.4)">on both dimensions</text>
+                  <rect x="340" y="16" width="158" height="30" rx="5" fill="rgba(74,111,165,0.35)" />
+                  <text x="419" y="30" textAnchor="middle" fontSize="10" fill="#a8c5e0" fontWeight="600">3.4× more likely</text>
+                  <text x="419" y="42" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.4)">high Purpose → high Self-Control</text>
                 </svg>
               </div>
             )}
