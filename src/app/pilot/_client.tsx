@@ -1975,7 +1975,7 @@ export default function PilotClient() {
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <footer className="border-t border-gray-100 py-8 text-center">
-        <p className="text-xs text-gray-400">© {new Date().getFullYear()} Impacter Pathway · Student Voice, Powered by Machine Learning</p>
+        <p className="text-xs text-gray-400">© {new Date().getFullYear()} Impacter Pathway · Schools measure hard skills. We measure the rest.</p>
       </footer>
     </div>
   );
