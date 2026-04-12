@@ -482,14 +482,15 @@ const GRADE_TO_BANDS: Record<string, string[]> = {
  *   - 7+ also selected   → Middle School only
  */
 function getGradeBands(gradeLevels: string[]): Set<string> {
-  const has7plus = gradeLevels.some(g => ['7','8','9','10','11','12'].includes(g));
-  const only6    = gradeLevels.length === 1 && gradeLevels[0] === '6';
-  const bands    = new Set<string>();
+  const has7plus  = gradeLevels.some(g => ['7','8','9','10','11','12'].includes(g));
+  const has5minus = gradeLevels.some(g => ['TK','K','1','2','3','4','5'].includes(g));
+  const only6     = gradeLevels.length === 1 && gradeLevels[0] === '6';
+  const bands     = new Set<string>();
   for (const g of gradeLevels) {
     if (g === '6') {
-      if (only6)        { bands.add('Elementary (3rd–5th)'); bands.add('Middle School (6th–8th)'); }
-      else if (has7plus){ bands.add('Middle School (6th–8th)'); }
-      else              { bands.add('Elementary (3rd–5th)'); }
+      if (only6)                    { bands.add('Elementary (3rd–5th)'); bands.add('Middle School (6th–8th)'); }
+      else if (has7plus && !has5minus){ bands.add('Middle School (6th–8th)'); }
+      else                           { bands.add('Elementary (3rd–5th)'); }
     } else {
       for (const b of GRADE_TO_BANDS[g] ?? []) bands.add(b);
     }
