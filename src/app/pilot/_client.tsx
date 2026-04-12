@@ -1510,7 +1510,9 @@ export default function PilotClient() {
                         }`}>
                           <input type="checkbox" checked={checked}
                             onChange={() => {
-                              const next = checked ? form.demographics.filter(d => d !== opt) : [...form.demographics, opt];
+                              const next = checked
+                                ? form.demographics.filter(d => d !== opt)
+                                : [...form.demographics.filter(d => d !== 'None'), opt];
                               set('demographics', next);
                             }}
                             className="accent-[#4a6fa5] w-4 h-4" />
@@ -1524,7 +1526,9 @@ export default function PilotClient() {
                       <input type="checkbox" checked={form.demographics.includes('Other')}
                         onChange={() => {
                           const c = form.demographics.includes('Other');
-                          set('demographics', c ? form.demographics.filter(d => d !== 'Other') : [...form.demographics, 'Other']);
+                          set('demographics', c
+                            ? form.demographics.filter(d => d !== 'Other')
+                            : [...form.demographics.filter(d => d !== 'None'), 'Other']);
                         }}
                         className="accent-[#4a6fa5] w-4 h-4" />
                       <span className="text-sm text-gray-700">Other</span>
@@ -1533,6 +1537,17 @@ export default function PilotClient() {
                       <input className={INPUT_CLS + ' mt-1'} placeholder="Which demographic field?"
                         value={form.demographicsOther} onChange={e => set('demographicsOther', e.target.value)} />
                     )}
+                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      form.demographics.includes('None') ? 'border-gray-300 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input type="checkbox" checked={form.demographics.includes('None')}
+                        onChange={() => {
+                          set('demographics', form.demographics.includes('None') ? [] : ['None']);
+                          set('demographicsOther', '');
+                        }}
+                        className="accent-gray-400 w-4 h-4" />
+                      <span className="text-sm text-gray-500">No thanks</span>
+                    </label>
                   </div>
 
                   {/* Mini chart previews */}
