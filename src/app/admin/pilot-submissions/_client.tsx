@@ -27,6 +27,21 @@ interface Context {
   bhWantsCustom?: boolean | null;
   lpSelectedAssessments?: string[] | null;
   lpWantsCustom?: boolean | null;
+  // Resolved offerings selections
+  csSelections?: Record<string, {
+    mode: string;
+    questions?: Array<{ pillar: number; pillarName: string; questionId: string; text: string }>;
+  }> | null;
+  bhSelections?: {
+    assessments: Array<{ id: string; name: string; grades: string }>;
+    wantsCustom: boolean;
+  } | null;
+  lpSelections?: Record<string, {
+    mode: string;
+    assessmentName: string;
+    attributes?: string[];
+    questions?: Array<{ attribute: string; questionId: string; text: string }>;
+  }> | null;
   stage?: Stage;
 }
 
@@ -76,6 +91,96 @@ function DetailRow({ label, value }: { label: string; value?: string | string[] 
     <div className="flex gap-2 text-sm">
       <dt className="text-gray-400 w-36 shrink-0">{label}</dt>
       <dd className="text-gray-700">{display}</dd>
+    </div>
+  );
+}
+
+const MODE_LABEL: Record<string, string> = {
+  standard: 'Standard (pre-built)',
+  custom: 'Customized',
+  'write-own': 'Build Your Own (custom)',
+};
+
+function OfferingsCard({ ctx }: { ctx: Submission['context'] }) {
+  const hasCS = !!ctx.csSelections;
+  const hasBH = !!ctx.bhSelections;
+  const hasLP = !!ctx.lpSelections;
+  if (!hasCS && !hasBH && !hasLP) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-5">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Offering Selections</p>
+
+      {/* ── Community Schools ── */}
+      {hasCS && Object.entries(ctx.csSelections!).map(([group, sel]) => (
+        <div key={group}>
+          <p className="text-sm font-semibold text-gray-800 mb-1">{group}</p>
+          <p className="text-xs text-indigo-600 font-medium mb-2">{MODE_LABEL[sel.mode] ?? sel.mode}</p>
+          {sel.questions && sel.questions.length > 0 && (
+            <div className="space-y-2">
+              {sel.questions.map(q => (
+                <div key={q.questionId} className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500 mb-0.5">
+                    Pillar {q.pillar} — {q.pillarName}
+                  </p>
+                  <p className="text-xs text-gray-700 leading-relaxed">{q.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* ── Behavioral Health ── */}
+      {hasBH && (
+        <div>
+          <p className="text-sm font-semibold text-gray-800 mb-2">Behavioral Health Screener</p>
+          {ctx.bhSelections!.assessments.length > 0 ? (
+            <div className="space-y-1.5 mb-2">
+              {ctx.bhSelections!.assessments.map(a => (
+                <div key={a.id} className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+                  <p className="text-xs font-medium text-gray-800">{a.name}</p>
+                  <p className="text-[10px] text-gray-400">{a.grades}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 mb-2">No specific screeners selected.</p>
+          )}
+          {ctx.bhSelections!.wantsCustom && (
+            <p className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+              Interested in building something custom
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Learner Portrait ── */}
+      {hasLP && Object.entries(ctx.lpSelections!).map(([aId, sel]) => (
+        <div key={aId}>
+          <p className="text-sm font-semibold text-gray-800 mb-1">{sel.assessmentName}</p>
+          <p className="text-xs text-indigo-600 font-medium mb-2">{MODE_LABEL[sel.mode] ?? sel.mode}</p>
+          {sel.attributes && sel.attributes.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {sel.attributes.map(attr => (
+                <span key={attr} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  {attr}
+                </span>
+              ))}
+            </div>
+          )}
+          {sel.questions && sel.questions.length > 0 && (
+            <div className="space-y-2">
+              {sel.questions.map(q => (
+                <div key={q.questionId} className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500 mb-0.5">{q.attribute}</p>
+                  <p className="text-xs text-gray-700 leading-relaxed">{q.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -319,6 +424,9 @@ export default function PilotFormsClient() {
                     </button>
                   </div>
                 </div>
+
+                {/* Offering selections */}
+                <OfferingsCard ctx={selectedSub.context} />
 
                 {/* Notes */}
                 {selectedSub.notes && (

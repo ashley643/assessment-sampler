@@ -600,6 +600,74 @@ export default function PilotClient() {
     setForm(EMPTY_FORM);
   }
 
+  function buildOfferings() {
+    if (form.assessmentType === 'community-schools') {
+      const sections = getCsSections();
+      const csSelections: Record<string, unknown> = {};
+      for (const { key } of sections) {
+        const mode = csMode[key] ?? 'standard';
+        if (mode === 'write-own') {
+          csSelections[key] = { mode };
+        } else {
+          const questions = ([1, 2, 3, 4] as const).map(p => {
+            const qId = mode === 'custom' ? csPicks[key]?.[p] : undefined;
+            const q = qId
+              ? CS_QUESTIONS.find(q => q.id === qId)
+              : CS_QUESTIONS.find(q => q.age === key && q.p === p && q.def);
+            return q ? { pillar: p, pillarName: PILLARS[p], questionId: q.id, text: q.text } : null;
+          }).filter(Boolean);
+          csSelections[key] = { mode, questions };
+        }
+      }
+      return { csSelections };
+    }
+
+    if (form.assessmentType === 'behavioral-health') {
+      const screeners = getBHScreeners();
+      return {
+        bhSelections: {
+          assessments: screeners
+            .filter(s => form.bhSelectedAssessments.includes(s.id))
+            .map(s => ({ id: s.id, name: s.name, grades: s.grades })),
+          wantsCustom: form.bhWantsCustom,
+        },
+      };
+    }
+
+    if (form.assessmentType === 'learner-portrait') {
+      const assessments = getLPAssessments();
+      const lpSelections: Record<string, unknown> = {};
+      for (const a of assessments) {
+        const mode = lpMode[a.id] ?? 'standard';
+        if (mode === 'write-own') {
+          lpSelections[a.id] = { mode, assessmentName: a.name };
+        } else if (a.id === 'lp-littles') {
+          const picks = mode === 'custom' ? (lpPicks[a.id] ?? []) : [];
+          const qs = mode === 'custom'
+            ? picks.map(qId => { const q = LP_QUESTIONS.find(q => q.id === qId); return q ? { attribute: q.attribute, questionId: qId, text: q.prompt } : null; }).filter(Boolean)
+            : LP_QUESTIONS.filter(q => q.band === a.id && q.def).map(q => ({ attribute: q.attribute, questionId: q.id, text: q.prompt }));
+          lpSelections[a.id] = { mode, assessmentName: a.name, questions: qs };
+        } else {
+          const attrPicks = mode === 'custom' ? (lpAttrPicks[a.id] ?? []) : [];
+          const qPicks   = mode === 'custom' ? (lpQPicks[a.id] ?? [])   : [];
+          const attributes = attrPicks.map(attrId => LP_ATTRIBUTES.find(la => la.id === attrId)?.name ?? attrId);
+          const questions = mode === 'custom'
+            ? qPicks.map(qId => {
+                const q = LP_QUESTIONS.find(q => q.id === qId);
+                if (!q) return null;
+                const attrName = attrPicks.map(aid => LP_ATTRIBUTES.find(la => la.id === aid)).find(la => la?.questionIds.includes(qId))?.name ?? q.attribute;
+                return { attribute: attrName, questionId: qId, text: q.prompt };
+              }).filter(Boolean)
+            : LP_QUESTIONS.filter(q => q.band === a.id && q.def).map(q => ({ attribute: q.attribute, questionId: q.id, text: q.prompt }));
+          lpSelections[a.id] = { mode, assessmentName: a.name, attributes, questions };
+        }
+      }
+      return { lpSelections };
+    }
+
+    return {};
+  }
+
   async function submit() {
     setSubmitting(true);
     setError('');
@@ -607,7 +675,7 @@ export default function PilotClient() {
       const res = await fetch('/api/pilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ...buildOfferings() }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
