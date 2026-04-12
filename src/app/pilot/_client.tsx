@@ -2097,8 +2097,9 @@ export default function PilotClient() {
 
                             // group questions by selected chip (no dedup — questions may appear in multiple chips)
                             const qGroups: Array<{ chipName: string; qs: LPQuestion[] }> = [];
-                            // build a map: questionId → chip names that include it (among selected, filtered by band)
+                            // For each question, track all chip names that include it AND the primary chip (first in LP_ATTRIBUTES order)
                             const qChipNames = new Map<string, string[]>();
+                            const primaryChipForQ = new Map<string, string>();
                             for (const la of LP_ATTRIBUTES) {
                               if (!attrPicks.includes(la.id)) continue;
                               for (const qid of la.questionIds) {
@@ -2106,6 +2107,7 @@ export default function PilotClient() {
                                 if (!q || q.band !== a.id) continue;
                                 if (!qChipNames.has(qid)) qChipNames.set(qid, []);
                                 qChipNames.get(qid)!.push(la.name);
+                                if (!primaryChipForQ.has(qid)) primaryChipForQ.set(qid, la.name);
                               }
                             }
                             for (const la of LP_ATTRIBUTES) {
@@ -2167,13 +2169,19 @@ export default function PilotClient() {
                                         <div className="space-y-2">
                                           {qs.map(q => {
                                             const checked = qPicks.includes(q.id);
-                                            const otherChips = (qChipNames.get(q.id) ?? []).filter(n => n !== chipName);
+                                            const primaryChip = primaryChipForQ.get(q.id) ?? chipName;
+                                            const isClaimedByOther = checked && primaryChip !== chipName;
                                             return (
-                                              <label key={q.id} className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                                                checked ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                                              <label key={q.id} className={`flex gap-3 p-3 rounded-lg border transition-colors ${
+                                                isClaimedByOther
+                                                  ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                                                  : checked
+                                                    ? 'border-[#4a6fa5] bg-[#f0f5fb] cursor-pointer'
+                                                    : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
                                               }`}>
-                                                <input type="checkbox" checked={checked}
+                                                <input type="checkbox" checked={checked} disabled={isClaimedByOther}
                                                   onChange={() => {
+                                                    if (isClaimedByOther) return;
                                                     const next = checked ? qPicks.filter(id => id !== q.id) : [...qPicks, q.id];
                                                     setLpQPicks(p => ({ ...p, [a.id]: next }));
                                                   }}
@@ -2182,11 +2190,11 @@ export default function PilotClient() {
                                                   <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
                                                   <div className="mt-1 flex flex-wrap gap-1">
                                                     {q.def && <span className="inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
-                                                    {checked && otherChips.map(n => (
-                                                      <span key={n} className="inline-block text-[10px] font-medium bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full text-amber-700">
-                                                        already selected for {n}
+                                                    {isClaimedByOther && (
+                                                      <span className="inline-block text-[10px] font-medium bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full text-amber-700">
+                                                        already selected for {primaryChip}
                                                       </span>
-                                                    ))}
+                                                    )}
                                                   </div>
                                                 </div>
                                               </label>
