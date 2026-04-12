@@ -1269,7 +1269,10 @@ export default function PilotClient() {
         <section className="py-24 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #3a62aa 18%, #4a6ab8 36%, #6a5ab0 54%, #9a4a80 68%, #cc6648 84%, #bf5c3c 100%)' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 70% 40%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
           <div className="relative">
-            <h2 className="text-3xl font-bold text-white mb-8">Interested in piloting?</h2>
+            <h2 className="text-3xl font-bold text-white mb-3">Interested in piloting?</h2>
+            <p className="mb-8 text-base max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              Tell us about what you&apos;re looking for and we&apos;ll have everything configured in a few days.
+            </p>
             <button
               onClick={openForm}
               className="font-semibold px-8 py-3 rounded-xl text-sm hover:opacity-90 transition-opacity shadow-lg"
