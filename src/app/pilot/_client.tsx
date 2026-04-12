@@ -696,15 +696,15 @@ export default function PilotClient() {
     <div className="min-h-screen font-sans" style={{ background: 'white' }}>
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="px-6 py-1.5 flex items-center justify-between bg-white" style={{ borderBottom: '1px solid #e8edf5', position: 'sticky', top: 0, zIndex: 30 }}>
+      <nav className="px-6 py-1.5 flex items-center justify-between" style={{ background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
         <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54 }} />
         </a>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: '#f0f5fb', color: '#4a6fa5', border: '1px solid #d0dff0' }}>
+          <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
             Pilot Program
           </span>
-          <button onClick={openForm} className="text-white text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
+          <button onClick={openForm} className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90" style={{ background: 'white', color: '#1a2744' }}>
             Start a Pilot
           </button>
         </div>
@@ -2448,8 +2448,8 @@ export default function PilotClient() {
       )}
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-gray-100 py-8 text-center">
-        <p className="text-xs text-gray-400">© {new Date().getFullYear()} Impacter Pathway · Schools measure hard skills. We measure the rest.</p>
+      <footer className="py-8 text-center" style={{ background: '#1a2744', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>© {new Date().getFullYear()} Impacter Pathway · Schools measure hard skills. We measure the rest.</p>
       </footer>
     </div>
   );
