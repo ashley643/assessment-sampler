@@ -707,7 +707,7 @@ export default function PilotClient() {
           className="text-sm font-bold px-6 py-2 rounded-xl transition-all hover:opacity-90 hover:scale-[1.03] shadow-lg"
           style={{ background: 'linear-gradient(135deg, #e07b54 0%, #cc6648 40%, #9a4a80 100%)', color: 'white', letterSpacing: '0.01em', boxShadow: '0 2px 12px rgba(224,123,84,0.45)' }}
         >
-          Start a Pilot
+          Build a Custom Pilot
         </button>
         {/* Right: badge */}
         <div className="justify-self-end">
