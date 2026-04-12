@@ -370,18 +370,17 @@ const LP_ATTRIBUTES: LPAttribute[] = [
   { id: 'anc-purpose',       name: 'Purpose',              group: 'anchor',   questionIds: ['el-5','el-6','sec-5','sec-6'] },
   { id: 'anc-self-control',  name: 'Self-Control',         group: 'anchor',   questionIds: ['el-7','el-8','sec-7','sec-8'] },
   { id: 'anc-grit',          name: 'Grit',                 group: 'anchor',   questionIds: ['el-9','el-10','sec-9','sec-10'] },
+  { id: 'anc-growth',        name: 'Growth Mindset',       group: 'anchor',   questionIds: ['el-11','el-12','sec-11','sec-12'] },
   { id: 'anc-compassion',    name: 'Compassion',           group: 'anchor',   questionIds: ['el-13','el-14','sec-13','sec-14'] },
   { id: 'anc-gratitude',     name: 'Gratitude',            group: 'anchor',   questionIds: ['el-15','el-16','sec-15','sec-16'] },
-  // ── Portrait of a Graduate ───────────────────────────────────────────────────
+  // ── Other Common Portrait Competencies ──────────────────────────────────────
   { id: 'pog-critical',      name: 'Critical Thinking',                    group: 'portrait', questionIds: ['el-1','sec-1','sec-2','sec-11','sec-12'] },
   { id: 'pog-problem',       name: 'Problem-Solving',                      group: 'portrait', questionIds: ['sec-1','sec-2','el-9','sec-10','sec-11'] },
   { id: 'pog-communication', name: 'Communication',                         group: 'portrait', questionIds: ['el-4','sec-4','el-13','sec-13'] },
   { id: 'pog-character',     name: 'Character',                             group: 'portrait', questionIds: ['sec-8','el-13','el-14','sec-13','sec-14','el-15','el-16','sec-15','sec-16','sec-5','sec-6'] },
   { id: 'pog-perseverance',  name: 'Perseverance and Adaptability',         group: 'portrait', questionIds: ['el-9','sec-9','sec-10','el-7','el-8','el-11'] },
   { id: 'pog-collaboration', name: 'Collaboration',                         group: 'portrait', questionIds: ['el-12','sec-13','sec-14','el-16','sec-6'] },
-  { id: 'pog-growth',        name: 'Growth Mindset',                        group: 'portrait', questionIds: ['el-11','el-12','sec-11','sec-12','el-9','sec-9'] },
   { id: 'pog-global',        name: 'Global Citizenship',                    group: 'portrait', questionIds: ['el-3','el-4','sec-14','sec-6'] },
-  { id: 'pog-varied-persp',  name: 'Ability to Value Varied Perspectives',  group: 'portrait', questionIds: ['el-3','el-4','sec-3','sec-4','sec-14'] },
   { id: 'pog-creativity',    name: 'Creativity',                            group: 'portrait', questionIds: ['el-2','sec-2','sec-12'] },
   { id: 'pog-health',        name: 'Health and Wellness',                   group: 'portrait', questionIds: ['el-7','el-8','sec-16','el-5'] },
   { id: 'pog-self-aware',    name: 'Self-Awareness',                        group: 'portrait', questionIds: ['el-5','el-6','sec-5','el-7','el-11','sec-16'] },
@@ -2097,17 +2096,16 @@ export default function PilotClient() {
                               setLpAttrPicks(p => ({ ...p, [a.id]: next }));
                             }
 
-                            // collect unique question IDs for selected attributes, filtered to this band
-                            const availableQIds = [...new Set(
-                              attrPicks.flatMap(aid => LP_ATTRIBUTES.find(la => la.id === aid)?.questionIds ?? [])
-                            )].filter(qid => LP_QUESTIONS.find(q => q.id === qid)?.band === a.id);
-
-                            // group available questions by their LP attribute name
-                            const qGroupMap = new Map<string, LPQuestion[]>();
-                            for (const qid of availableQIds) {
-                              const q = LP_QUESTIONS.find(lq => lq.id === qid)!;
-                              if (!qGroupMap.has(q.attribute)) qGroupMap.set(q.attribute, []);
-                              qGroupMap.get(q.attribute)!.push(q);
+                            // group questions by selected chip name (de-duplicated, first chip wins)
+                            const seenQIds = new Set<string>();
+                            const qGroups: Array<{ chipName: string; qs: LPQuestion[] }> = [];
+                            for (const la of LP_ATTRIBUTES) {
+                              if (!attrPicks.includes(la.id)) continue;
+                              const qs = la.questionIds
+                                .map(qid => LP_QUESTIONS.find(q => q.id === qid))
+                                .filter((q): q is LPQuestion => !!q && q.band === a.id && !seenQIds.has(q.id));
+                              qs.forEach(q => seenQIds.add(q.id));
+                              if (qs.length > 0) qGroups.push({ chipName: la.name, qs });
                             }
 
                             function AttrChip({ attr }: { attr: LPAttribute }) {
@@ -2141,7 +2139,7 @@ export default function PilotClient() {
                                     </div>
                                   </div>
                                   <div>
-                                    <p className="text-[11px] font-medium text-gray-500 mb-2">Portrait of a Graduate</p>
+                                    <p className="text-[11px] font-medium text-gray-500 mb-2">Other Common Portrait Competencies</p>
                                     <div className="flex flex-wrap gap-2">
                                       {portraitAttrs.map(attr => <AttrChip key={attr.id} attr={attr} />)}
                                     </div>
@@ -2152,12 +2150,12 @@ export default function PilotClient() {
                                 {attrPicks.length > 0 && (
                                   <div className="space-y-4 border-t border-gray-100 pt-4">
                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Step 2 — Choose your prompts</p>
-                                    {qGroupMap.size === 0 && (
+                                    {qGroups.length === 0 && (
                                       <p className="text-xs text-gray-400">No prompts available for these attributes at this grade level.</p>
                                     )}
-                                    {[...qGroupMap.entries()].map(([attrName, qs]) => (
-                                      <div key={attrName}>
-                                        <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a6fa5' }}>{attrName}</p>
+                                    {qGroups.map(({ chipName, qs }) => (
+                                      <div key={chipName}>
+                                        <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a6fa5' }}>{chipName}</p>
                                         <div className="space-y-2">
                                           {qs.map(q => {
                                             const checked = qPicks.includes(q.id);
