@@ -2096,15 +2096,24 @@ export default function PilotClient() {
                               setLpAttrPicks(p => ({ ...p, [a.id]: next }));
                             }
 
-                            // group questions by selected chip name (de-duplicated, first chip wins)
-                            const seenQIds = new Set<string>();
+                            // group questions by selected chip (no dedup — questions may appear in multiple chips)
                             const qGroups: Array<{ chipName: string; qs: LPQuestion[] }> = [];
+                            // build a map: questionId → chip names that include it (among selected, filtered by band)
+                            const qChipNames = new Map<string, string[]>();
+                            for (const la of LP_ATTRIBUTES) {
+                              if (!attrPicks.includes(la.id)) continue;
+                              for (const qid of la.questionIds) {
+                                const q = LP_QUESTIONS.find(lq => lq.id === qid);
+                                if (!q || q.band !== a.id) continue;
+                                if (!qChipNames.has(qid)) qChipNames.set(qid, []);
+                                qChipNames.get(qid)!.push(la.name);
+                              }
+                            }
                             for (const la of LP_ATTRIBUTES) {
                               if (!attrPicks.includes(la.id)) continue;
                               const qs = la.questionIds
                                 .map(qid => LP_QUESTIONS.find(q => q.id === qid))
-                                .filter((q): q is LPQuestion => !!q && q.band === a.id && !seenQIds.has(q.id));
-                              qs.forEach(q => seenQIds.add(q.id));
+                                .filter((q): q is LPQuestion => !!q && q.band === a.id);
                               if (qs.length > 0) qGroups.push({ chipName: la.name, qs });
                             }
 
@@ -2159,6 +2168,7 @@ export default function PilotClient() {
                                         <div className="space-y-2">
                                           {qs.map(q => {
                                             const checked = qPicks.includes(q.id);
+                                            const otherChips = (qChipNames.get(q.id) ?? []).filter(n => n !== chipName);
                                             return (
                                               <label key={q.id} className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                                                 checked ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
@@ -2171,7 +2181,14 @@ export default function PilotClient() {
                                                   className="accent-[#4a6fa5] mt-0.5 shrink-0" />
                                                 <div>
                                                   <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
-                                                  {q.def && <span className="mt-1 inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
+                                                  <div className="mt-1 flex flex-wrap gap-1">
+                                                    {q.def && <span className="inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
+                                                    {checked && otherChips.map(n => (
+                                                      <span key={n} className="inline-block text-[10px] font-medium bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full text-amber-700">
+                                                        already selected for {n}
+                                                      </span>
+                                                    ))}
+                                                  </div>
                                                 </div>
                                               </label>
                                             );
