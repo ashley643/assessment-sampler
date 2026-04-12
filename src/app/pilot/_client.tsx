@@ -298,8 +298,6 @@ const BH_SCREENERS: BHScreener[] = [
       { pillar: 'Self-Insight',          text: 'Tell me about a time when that voice inside your head showed up before you acted. What was happening in that moment, what was that voice telling you, and what did you decide to do next?' },
       { pillar: 'Conflict Resolution',   text: 'Tell me about a time when you tried to improve or repair a difficult situation with someone. What did you do to make things better, and what did that experience help you understand about relationships?' },
       { pillar: 'Effective Help-Seeking', text: 'Tell me about a time when you wanted to understand something better or solve a problem. What steps did you take to figure it out? Who or what did you turn to for help or guidance? And what did that experience teach you about how you learn?' },
-      { pillar: 'Emotional Resilience',  text: 'Tell me about a time you kept trying something hard even when you felt like quitting. What happened?' },
-      { pillar: 'Effective Help-Seeking', text: 'Tell me about a time you asked someone to help you learn something. Who helped you and how did it go?' },
     ],
   },
 ];
@@ -362,6 +360,38 @@ const LP_QUESTIONS: LPQuestion[] = [
   { id: 'sec-14', band: 'lp-secondary', attribute: 'Compassion',         prompt: 'Share a time when you showed kindness to someone from "another group."', def: true },
   { id: 'sec-15', band: 'lp-secondary', attribute: 'Gratitude',          prompt: 'Tell us about a way you could show gratitude without using words.', def: false },
   { id: 'sec-16', band: 'lp-secondary', attribute: 'Gratitude',          prompt: 'Tell us about a time when gratitude made you feel more emotion than you expected to feel.', def: true },
+];
+
+interface LPAttribute { id: string; name: string; group: 'anchor' | 'portrait'; questionIds: string[] }
+const LP_ATTRIBUTES: LPAttribute[] = [
+  // ── Impacter Anchor Attributes ───────────────────────────────────────────────
+  { id: 'anc-curiosity',     name: 'Curiosity',            group: 'anchor',   questionIds: ['el-1','el-2','sec-1','sec-2'] },
+  { id: 'anc-perspective',   name: 'Perspective-Taking',   group: 'anchor',   questionIds: ['el-3','el-4','sec-3','sec-4'] },
+  { id: 'anc-purpose',       name: 'Purpose',              group: 'anchor',   questionIds: ['el-5','el-6','sec-5','sec-6'] },
+  { id: 'anc-self-control',  name: 'Self-Control',         group: 'anchor',   questionIds: ['el-7','el-8','sec-7','sec-8'] },
+  { id: 'anc-grit',          name: 'Grit',                 group: 'anchor',   questionIds: ['el-9','el-10','sec-9','sec-10'] },
+  { id: 'anc-compassion',    name: 'Compassion',           group: 'anchor',   questionIds: ['el-13','el-14','sec-13','sec-14'] },
+  { id: 'anc-gratitude',     name: 'Gratitude',            group: 'anchor',   questionIds: ['el-15','el-16','sec-15','sec-16'] },
+  // ── Portrait of a Graduate ───────────────────────────────────────────────────
+  { id: 'pog-critical',      name: 'Critical Thinking',                    group: 'portrait', questionIds: ['el-1','sec-1','sec-2','sec-11','sec-12'] },
+  { id: 'pog-problem',       name: 'Problem-Solving',                      group: 'portrait', questionIds: ['sec-1','sec-2','el-9','sec-10','sec-11'] },
+  { id: 'pog-communication', name: 'Communication',                         group: 'portrait', questionIds: ['el-4','sec-4','el-13','sec-13'] },
+  { id: 'pog-character',     name: 'Character',                             group: 'portrait', questionIds: ['sec-8','el-13','el-14','sec-13','sec-14','el-15','el-16','sec-15','sec-16','sec-5','sec-6'] },
+  { id: 'pog-perseverance',  name: 'Perseverance and Adaptability',         group: 'portrait', questionIds: ['el-9','sec-9','sec-10','el-7','el-8','el-11'] },
+  { id: 'pog-collaboration', name: 'Collaboration',                         group: 'portrait', questionIds: ['el-12','sec-13','sec-14','el-16','sec-6'] },
+  { id: 'pog-growth',        name: 'Growth Mindset',                        group: 'portrait', questionIds: ['el-11','el-12','sec-11','sec-12','el-9','sec-9'] },
+  { id: 'pog-global',        name: 'Global Citizenship',                    group: 'portrait', questionIds: ['el-3','el-4','sec-14','sec-6'] },
+  { id: 'pog-varied-persp',  name: 'Ability to Value Varied Perspectives',  group: 'portrait', questionIds: ['el-3','el-4','sec-3','sec-4','sec-14'] },
+  { id: 'pog-creativity',    name: 'Creativity',                            group: 'portrait', questionIds: ['el-2','sec-2','sec-12'] },
+  { id: 'pog-health',        name: 'Health and Wellness',                   group: 'portrait', questionIds: ['el-7','el-8','sec-16','el-5'] },
+  { id: 'pog-self-aware',    name: 'Self-Awareness',                        group: 'portrait', questionIds: ['el-5','el-6','sec-5','el-7','el-11','sec-16'] },
+  { id: 'pog-academic',      name: 'Academic Proficiency',                  group: 'portrait', questionIds: ['el-9','el-10'] },
+  { id: 'pog-self-dir',      name: 'Self-Direction',                        group: 'portrait', questionIds: ['el-5','el-6','sec-5','el-10','sec-10','sec-8','el-2'] },
+  { id: 'pog-college',       name: 'College and Career Navigation',         group: 'portrait', questionIds: ['el-5','el-6','sec-5','sec-6','el-10'] },
+  { id: 'pog-leadership',    name: 'Leadership',                            group: 'portrait', questionIds: ['el-12','sec-11','el-14','sec-6'] },
+  { id: 'pog-interpersonal', name: 'Interpersonal Understanding',           group: 'portrait', questionIds: ['el-3','sec-3','sec-4','el-13','sec-13','sec-14','el-15','el-16'] },
+  { id: 'pog-organization',  name: 'Organization',                          group: 'portrait', questionIds: ['el-8','sec-10'] },
+  { id: 'pog-independent',   name: 'Ability to Work Independently',         group: 'portrait', questionIds: ['el-9','el-10','sec-9','sec-10','el-7','sec-8','sec-5'] },
 ];
 
 interface FormData {
@@ -529,7 +559,9 @@ export default function PilotClient() {
   const [csPreviewOpen, setCsPreviewOpen] = useState<Record<string, boolean>>({});
   // LP question selector state
   const [lpMode, setLpMode] = useState<Record<string, 'standard'|'custom'|'write-own'>>({});
-  const [lpPicks, setLpPicks] = useState<Record<string, string[]>>({});
+  const [lpPicks, setLpPicks] = useState<Record<string, string[]>>({});       // littles question picks
+  const [lpAttrPicks, setLpAttrPicks] = useState<Record<string, string[]>>({}); // el/sec attribute picks
+  const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
   const [insightPanel, setInsightPanel] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -625,8 +657,13 @@ export default function PilotClient() {
     return assessments.every(a => {
       const mode = lpMode[a.id] ?? 'standard';
       if (mode === 'standard' || mode === 'write-own') return true;
-      const picks = lpPicks[a.id] ?? [];
-      return picks.length >= 1 && picks.length <= 6;
+      if (a.id === 'lp-littles') {
+        const picks = lpPicks[a.id] ?? [];
+        return picks.length >= 1 && picks.length <= 3;
+      }
+      const attrPicks = lpAttrPicks[a.id] ?? [];
+      const qPicks = lpQPicks[a.id] ?? [];
+      return attrPicks.length >= 1 && qPicks.length >= 1;
     });
   }
 
@@ -1971,7 +2008,7 @@ export default function PilotClient() {
                           <div className="space-y-2">
                             {([
                               { v: 'standard'  as const, l: 'Standard',       sub: 'Our recommended prompts, ready to go.' },
-                              { v: 'custom'    as const, l: 'Customize',       sub: isLittles ? 'Pick from the full question library.' : 'Pick up to 6 prompts from the full library.' },
+                              { v: 'custom'    as const, l: 'Customize',       sub: isLittles ? 'Pick 3 prompts from the full library.' : 'Choose up to 6 attributes, then pick your prompts.' },
                               { v: 'write-own' as const, l: 'Build your own',  sub: "We'll design custom questions with you." },
                             ]).map(({ v, l, sub }) => (
                               <label key={v} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -2001,46 +2038,154 @@ export default function PilotClient() {
                             </div>
                           )}
 
-                          {/* Custom: pick up to 6 */}
-                          {mode === 'custom' && (
-                            <div className="border-t border-gray-100 pt-4 space-y-3">
-                              <div className="flex justify-between items-center">
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Choose your questions</p>
-                                {!isLittles && (
-                                  <span className="text-xs text-gray-400">{picks.length}/6 selected</span>
+                          {/* Custom: Littles — pick up to 3 */}
+                          {mode === 'custom' && isLittles && (() => {
+                            const picks = lpPicks[a.id] ?? [];
+                            return (
+                              <div className="border-t border-gray-100 pt-4 space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Choose your questions</p>
+                                  <span className="text-xs text-gray-400">{picks.length}/3 selected</span>
+                                </div>
+                                {allQs.map(q => {
+                                  const checked = picks.includes(q.id);
+                                  const atMax = picks.length >= 3 && !checked;
+                                  return (
+                                    <label key={q.id} className={`flex gap-3 p-3 rounded-lg border transition-colors ${
+                                      checked ? 'border-[#4a6fa5] bg-[#f0f5fb] cursor-pointer'
+                                        : atMax ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                                        : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
+                                    }`}>
+                                      <input type="checkbox" checked={checked} disabled={atMax}
+                                        onChange={() => {
+                                          const next = checked ? picks.filter(id => id !== q.id) : [...picks, q.id];
+                                          setLpPicks(p => ({ ...p, [a.id]: next }));
+                                        }}
+                                        className="accent-[#4a6fa5] mt-0.5 shrink-0" />
+                                      <div>
+                                        <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: '#4a6fa5' }}>{q.attribute}</p>
+                                        <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
+                                        {q.def && <span className="mt-1 inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
+                                      </div>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Custom: Elementary / Secondary — two-layer: attributes → questions */}
+                          {mode === 'custom' && !isLittles && (() => {
+                            const attrPicks = lpAttrPicks[a.id] ?? [];
+                            const qPicks = lpQPicks[a.id] ?? [];
+                            const anchorAttrs   = LP_ATTRIBUTES.filter(la => la.group === 'anchor');
+                            const portraitAttrs = LP_ATTRIBUTES.filter(la => la.group === 'portrait');
+
+                            function toggleAttr(attrId: string) {
+                              const selected = attrPicks.includes(attrId);
+                              const next = selected
+                                ? attrPicks.filter(id => id !== attrId)
+                                : [...attrPicks, attrId];
+                              // remove any question picks that no longer belong to a selected attribute
+                              if (selected) {
+                                const attr = LP_ATTRIBUTES.find(la => la.id === attrId)!;
+                                const stillValid = new Set(
+                                  next.flatMap(aid => LP_ATTRIBUTES.find(la => la.id === aid)?.questionIds ?? [])
+                                );
+                                setLpQPicks(p => ({ ...p, [a.id]: (p[a.id] ?? []).filter(qid => stillValid.has(qid)) }));
+                              }
+                              setLpAttrPicks(p => ({ ...p, [a.id]: next }));
+                            }
+
+                            // collect unique question IDs for selected attributes, filtered to this band
+                            const availableQIds = [...new Set(
+                              attrPicks.flatMap(aid => LP_ATTRIBUTES.find(la => la.id === aid)?.questionIds ?? [])
+                            )].filter(qid => LP_QUESTIONS.find(q => q.id === qid)?.band === a.id);
+
+                            // group available questions by their LP attribute name
+                            const qGroupMap = new Map<string, LPQuestion[]>();
+                            for (const qid of availableQIds) {
+                              const q = LP_QUESTIONS.find(lq => lq.id === qid)!;
+                              if (!qGroupMap.has(q.attribute)) qGroupMap.set(q.attribute, []);
+                              qGroupMap.get(q.attribute)!.push(q);
+                            }
+
+                            function AttrChip({ attr }: { attr: LPAttribute }) {
+                              const sel = attrPicks.includes(attr.id);
+                              const atMax = attrPicks.length >= 6 && !sel;
+                              return (
+                                <button type="button" disabled={atMax} onClick={() => toggleAttr(attr.id)}
+                                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                                    sel ? 'text-white border-[#4a6fa5]'
+                                      : atMax ? 'border-gray-100 text-gray-300 cursor-not-allowed bg-white'
+                                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#4a6fa5]/40'
+                                  }`}
+                                  style={sel ? { background: '#4a6fa5' } : undefined}>
+                                  {attr.name}
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <div className="border-t border-gray-100 pt-4 space-y-5">
+                                {/* Layer 1: attribute selection */}
+                                <div className="space-y-3">
+                                  <div className="flex justify-between items-center">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Step 1 — Select up to 6 attributes</p>
+                                    <span className="text-xs text-gray-400">{attrPicks.length}/6</span>
+                                  </div>
+                                  <div>
+                                    <p className="text-[11px] font-medium text-gray-500 mb-2">Impacter Attributes</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {anchorAttrs.map(attr => <AttrChip key={attr.id} attr={attr} />)}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-[11px] font-medium text-gray-500 mb-2">Portrait of a Graduate</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {portraitAttrs.map(attr => <AttrChip key={attr.id} attr={attr} />)}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Layer 2: question selection (shown once ≥1 attribute selected) */}
+                                {attrPicks.length > 0 && (
+                                  <div className="space-y-4 border-t border-gray-100 pt-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Step 2 — Choose your prompts</p>
+                                    {qGroupMap.size === 0 && (
+                                      <p className="text-xs text-gray-400">No prompts available for these attributes at this grade level.</p>
+                                    )}
+                                    {[...qGroupMap.entries()].map(([attrName, qs]) => (
+                                      <div key={attrName}>
+                                        <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a6fa5' }}>{attrName}</p>
+                                        <div className="space-y-2">
+                                          {qs.map(q => {
+                                            const checked = qPicks.includes(q.id);
+                                            return (
+                                              <label key={q.id} className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                                checked ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                                              }`}>
+                                                <input type="checkbox" checked={checked}
+                                                  onChange={() => {
+                                                    const next = checked ? qPicks.filter(id => id !== q.id) : [...qPicks, q.id];
+                                                    setLpQPicks(p => ({ ...p, [a.id]: next }));
+                                                  }}
+                                                  className="accent-[#4a6fa5] mt-0.5 shrink-0" />
+                                                <div>
+                                                  <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
+                                                  {q.def && <span className="mt-1 inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
+                                                </div>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                 )}
                               </div>
-                              {allQs.map(q => {
-                                const checked = picks.includes(q.id);
-                                const atMax = !isLittles && picks.length >= 6 && !checked;
-                                return (
-                                  <label key={q.id} className={`flex gap-3 p-3 rounded-lg border transition-colors ${
-                                    checked
-                                      ? 'border-[#4a6fa5] bg-[#f0f5fb] cursor-pointer'
-                                      : atMax
-                                        ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                                        : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
-                                  }`}>
-                                    <input type="checkbox" checked={checked} disabled={atMax}
-                                      onChange={() => {
-                                        const next = checked
-                                          ? picks.filter(id => id !== q.id)
-                                          : [...picks, q.id];
-                                        setLpPicks(p => ({ ...p, [a.id]: next }));
-                                      }}
-                                      className="accent-[#4a6fa5] mt-0.5 shrink-0" />
-                                    <div>
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: '#4a6fa5' }}>{q.attribute}</p>
-                                      <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
-                                      {q.def && (
-                                        <span className="mt-1 inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>
-                                      )}
-                                    </div>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       </div>
                     );
