@@ -305,63 +305,63 @@ const BH_SCREENERS: BHScreener[] = [
 ];
 
 // ── Learner Portrait assessments ─────────────────────────────────────────────
-interface LPBenchmark { num: number; attribute: string; prompt: string }
 interface LPAssessment {
   id: string;
   name: string;
   grades: string;
   gradeBands: string[];
   previewUrl: string;
-  benchmarks: LPBenchmark[];
 }
 
 const LP_ASSESSMENTS: LPAssessment[] = [
-  {
-    id: 'lp-littles',
-    name: 'Learner Portrait for Littles',
-    grades: 'Grades TK+ (Littles)',
-    gradeBands: ['Lower Elementary (TK–2)'],
-    previewUrl: 'https://sdusd.impacterpathway.com/fp9r1r32y?preview',
-    benchmarks: [
-      { num: 1, attribute: 'Self-Esteem',  prompt: 'What do you like about yourself and your life?' },
-      { num: 2, attribute: 'Belonging',    prompt: 'Do your friends make you feel good when you get the right answers in class? What do they say or do?' },
-      { num: 3, attribute: 'Empathy',      prompt: 'Share about a time when you helped someone who was feeling sad, scared, or upset. What did you do to help them?' },
-    ],
-  },
-  {
-    id: 'lp-elementary',
-    name: 'Learner Portrait for Elementary',
-    grades: 'Grades 3+ (Elementary)',
-    gradeBands: ['Elementary (3rd–5th)'],
-    previewUrl: 'https://flex.impacterpathway.com/fn0l89pl3?preview',
-    benchmarks: [
-      { num: 1, attribute: 'Curiosity',          prompt: 'What have you noticed that made you curious? What did it make you wonder?' },
-      { num: 2, attribute: 'Perspective-Taking', prompt: "Tell us about a moment when seeing things from someone else's point of view changed your mind about something." },
-      { num: 3, attribute: 'Purpose',            prompt: 'Share something you love doing that just feels exactly right for you.' },
-      { num: 4, attribute: 'Self-Control',       prompt: 'Describe a time when you were nervous and had to calm yourself down.' },
-      { num: 5, attribute: 'Grit',               prompt: 'Describe a time when you tried to learn something challenging.' },
-      { num: 6, attribute: 'Growth Mindset',     prompt: 'Share a time when believing you could improve helped you get better at something.' },
-      { num: 7, attribute: 'Compassion',         prompt: "Share a time when you showed compassion to someone who couldn't ask for help." },
-      { num: 8, attribute: 'Gratitude',          prompt: 'Tell us who inspires you and why you want to thank them.' },
-    ],
-  },
-  {
-    id: 'lp-secondary',
-    name: 'Learner Portrait for Secondary',
-    grades: 'Grades 6+ (Secondary)',
-    gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
-    previewUrl: 'https://flex.impacterpathway.com/fwxzy777r?preview',
-    benchmarks: [
-      { num: 1, attribute: 'Curiosity',          prompt: 'Tell us about a problem you tried to solve. What did you try? Did it work?' },
-      { num: 2, attribute: 'Perspective-Taking', prompt: 'Tell us about a time when you were super annoyed with someone... until you learned their side of the story.' },
-      { num: 3, attribute: 'Purpose',            prompt: 'Share a time when doing something important helped you become more confident in who you are.' },
-      { num: 4, attribute: 'Self-Control',       prompt: 'Tell us about a time when you kept your cool even though someone was trying to upset you.' },
-      { num: 5, attribute: 'Grit',               prompt: 'Tell us about a time when failing made you try even harder.' },
-      { num: 6, attribute: 'Growth Mindset',     prompt: "Share one specific way you could help change something people say \"can't change.\"" },
-      { num: 7, attribute: 'Compassion',         prompt: 'Share one specific way you showed (or could have shown) compassion to someone who was struggling in your group.' },
-      { num: 8, attribute: 'Gratitude',          prompt: 'Tell us about a way you could show gratitude without using words.' },
-    ],
-  },
+  { id: 'lp-littles',    name: 'Learner Portrait for Littles',    grades: 'Grades TK–2 (Littles)',     gradeBands: ['Lower Elementary (TK–2)'],                               previewUrl: 'https://sdusd.impacterpathway.com/fp9r1r32y?preview' },
+  { id: 'lp-elementary', name: 'Learner Portrait for Elementary', grades: 'Grades 3–5 (Elementary)',   gradeBands: ['Elementary (3rd–5th)'],                                  previewUrl: 'https://flex.impacterpathway.com/fn0l89pl3?preview' },
+  { id: 'lp-secondary',  name: 'Learner Portrait for Secondary',  grades: 'Grades 6–12 (Secondary)',   gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],    previewUrl: 'https://flex.impacterpathway.com/fwxzy777r?preview' },
+];
+
+interface LPQuestion { id: string; band: string; attribute: string; prompt: string; def: boolean }
+const LP_QUESTIONS: LPQuestion[] = [
+  // ── Lower Elementary ────────────────────────────────────────────────────────
+  { id: 'le-1', band: 'lp-littles', attribute: 'Self-Esteem',  prompt: 'What do you like about yourself and your life?', def: true },
+  { id: 'le-2', band: 'lp-littles', attribute: 'Belonging',    prompt: 'Do your friends make you feel good when you get the right answers in class? What do they say or do?', def: true },
+  { id: 'le-3', band: 'lp-littles', attribute: 'Empathy',      prompt: 'Share about a time when you helped someone who was feeling sad, scared, or upset. What did you do to help them?', def: true },
+  { id: 'le-4', band: 'lp-littles', attribute: 'Curiosity',    prompt: 'Share about a time you had a question you wanted to ask in front of other people. Did you ask it? Why or why not?', def: false },
+  { id: 'le-5', band: 'lp-littles', attribute: 'Resilience',   prompt: 'Share about a time when you kept trying to do something even though it was hard. Why did you keep trying?', def: false },
+  { id: 'le-6', band: 'lp-littles', attribute: 'Self-Control', prompt: "What would you do if you were left with a pile of M&M's and you were told not to eat any of them?", def: false },
+  // ── Elementary ──────────────────────────────────────────────────────────────
+  { id: 'el-1',  band: 'lp-elementary', attribute: 'Curiosity',          prompt: 'What have you noticed that made you curious? What did it make you wonder?', def: true },
+  { id: 'el-2',  band: 'lp-elementary', attribute: 'Curiosity',          prompt: 'What would you like to try doing differently? What makes you curious about trying it that way?', def: false },
+  { id: 'el-3',  band: 'lp-elementary', attribute: 'Perspective-Taking', prompt: "Tell us about a moment when seeing things from someone else's point of view changed your mind about something.", def: true },
+  { id: 'el-4',  band: 'lp-elementary', attribute: 'Perspective-Taking', prompt: 'If you could show others the world through your eyes, what would you want them to see?', def: false },
+  { id: 'el-5',  band: 'lp-elementary', attribute: 'Purpose',            prompt: 'Share something you love doing that just feels exactly right for you.', def: false },
+  { id: 'el-6',  band: 'lp-elementary', attribute: 'Purpose',            prompt: 'Share something you spend hours on because it matters that much to you.', def: false },
+  { id: 'el-7',  band: 'lp-elementary', attribute: 'Self-Control',       prompt: 'Describe a time when you were nervous and had to calm yourself down.', def: true },
+  { id: 'el-8',  band: 'lp-elementary', attribute: 'Self-Control',       prompt: 'Tell us about a time when you had to be patient even though you were really excited.', def: false },
+  { id: 'el-9',  band: 'lp-elementary', attribute: 'Grit',               prompt: 'Describe a time when you tried to learn something challenging.', def: false },
+  { id: 'el-10', band: 'lp-elementary', attribute: 'Grit',               prompt: 'Describe something you would love to get really good at through lots of practice.', def: false },
+  { id: 'el-11', band: 'lp-elementary', attribute: 'Growth Mindset',     prompt: 'Share a time when believing you could improve helped you get better at something.', def: true },
+  { id: 'el-12', band: 'lp-elementary', attribute: 'Growth Mindset',     prompt: 'Share a time when believing in each other helped your group or team grow and improve.', def: false },
+  { id: 'el-13', band: 'lp-elementary', attribute: 'Compassion',         prompt: "Share a time when you showed compassion to someone who couldn't ask for help.", def: false },
+  { id: 'el-14', band: 'lp-elementary', attribute: 'Compassion',         prompt: 'Tell us about a time when you saw something wrong and decided whether or not to step in.', def: true },
+  { id: 'el-15', band: 'lp-elementary', attribute: 'Gratitude',          prompt: 'Tell us who inspires you and why you want to thank them.', def: true },
+  { id: 'el-16', band: 'lp-elementary', attribute: 'Gratitude',          prompt: 'Tell us about a time when you joined others to show someone they were appreciated.', def: false },
+  // ── Secondary ───────────────────────────────────────────────────────────────
+  { id: 'sec-1',  band: 'lp-secondary', attribute: 'Curiosity',          prompt: 'Tell us about a problem you tried to solve. What did you try? Did it work?', def: true },
+  { id: 'sec-2',  band: 'lp-secondary', attribute: 'Curiosity',          prompt: 'What simple task would you like to make more interesting? How would you do it?', def: false },
+  { id: 'sec-3',  band: 'lp-secondary', attribute: 'Perspective-Taking', prompt: 'Tell us about a time when you were super annoyed with someone... until you learned their side of the story.', def: true },
+  { id: 'sec-4',  band: 'lp-secondary', attribute: 'Perspective-Taking', prompt: "Share a time when you kept your cool and considered another person's perspective.", def: false },
+  { id: 'sec-5',  band: 'lp-secondary', attribute: 'Purpose',            prompt: 'Share a time when doing something important helped you become more confident in who you are.', def: false },
+  { id: 'sec-6',  band: 'lp-secondary', attribute: 'Purpose',            prompt: 'Share a time when you played an important part in something bigger than yourself.', def: false },
+  { id: 'sec-7',  band: 'lp-secondary', attribute: 'Self-Control',       prompt: 'Tell us about a time when you kept your cool even though someone was trying to upset you.', def: false },
+  { id: 'sec-8',  band: 'lp-secondary', attribute: 'Self-Control',       prompt: "Tell us about a time when you were tempted to do something you knew wasn't right. How did you handle it?", def: true },
+  { id: 'sec-9',  band: 'lp-secondary', attribute: 'Grit',               prompt: 'Tell us about a time when failing made you try even harder.', def: false },
+  { id: 'sec-10', band: 'lp-secondary', attribute: 'Grit',               prompt: 'Tell us about a big project you refused to give up on.', def: true },
+  { id: 'sec-11', band: 'lp-secondary', attribute: 'Growth Mindset',     prompt: "Share one specific way you could help change something people say \"can't change.\"", def: false },
+  { id: 'sec-12', band: 'lp-secondary', attribute: 'Growth Mindset',     prompt: 'Share how you transformed something ordinary into something special.', def: false },
+  { id: 'sec-13', band: 'lp-secondary', attribute: 'Compassion',         prompt: 'Share one specific way you showed (or could have shown) compassion to someone who was struggling in your group.', def: false },
+  { id: 'sec-14', band: 'lp-secondary', attribute: 'Compassion',         prompt: 'Share a time when you showed kindness to someone from "another group."', def: true },
+  { id: 'sec-15', band: 'lp-secondary', attribute: 'Gratitude',          prompt: 'Tell us about a way you could show gratitude without using words.', def: false },
+  { id: 'sec-16', band: 'lp-secondary', attribute: 'Gratitude',          prompt: 'Tell us about a time when gratitude made you feel more emotion than you expected to feel.', def: true },
 ];
 
 interface FormData {
@@ -527,6 +527,9 @@ export default function PilotClient() {
   const [csPicks, setCsPicks] = useState<Record<string, Record<number, string>>>({});
   const [csPreviewLang, setCsPreviewLang] = useState<Record<string, 'en'|'es'>>({});
   const [csPreviewOpen, setCsPreviewOpen] = useState<Record<string, boolean>>({});
+  // LP question selector state
+  const [lpMode, setLpMode] = useState<Record<string, 'standard'|'custom'|'write-own'>>({});
+  const [lpPicks, setLpPicks] = useState<Record<string, string[]>>({});
   const [insightPanel, setInsightPanel] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -618,7 +621,13 @@ export default function PilotClient() {
   }
 
   function canAdvanceLP(): boolean {
-    return form.lpSelectedAssessments.length > 0 || form.lpWantsCustom;
+    const assessments = getLPAssessments();
+    return assessments.every(a => {
+      const mode = lpMode[a.id] ?? 'standard';
+      if (mode === 'standard' || mode === 'write-own') return true;
+      const picks = lpPicks[a.id] ?? [];
+      return picks.length >= 1 && picks.length <= 6;
+    });
   }
 
   // Step navigation — linear 1→2→3→4→5→7
@@ -1913,7 +1922,7 @@ export default function PilotClient() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Learner Portrait Offerings</h3>
                     <p className="text-sm text-gray-500">
-                      Based on your grade levels, here are the available assessments. Review the prompts, then select which to include in your pilot.
+                      For each assessment, choose how you'd like to set up the questions.
                     </p>
                   </div>
 
@@ -1923,65 +1932,104 @@ export default function PilotClient() {
                     </p>
                   )}
 
-                  {assessments.map(a => (
-                    <div key={a.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
-                        <p className="text-sm font-semibold text-gray-800">{a.name}</p>
-                        <p className="text-xs text-gray-400">{a.grades}</p>
-                      </div>
-                      <div className="p-5 space-y-5">
-                        <VideoAskEmbed
-                          url={a.previewUrl}
-                          label={a.name}
-                          onOpen={() => setPreviewModal({ label: a.name, url: a.previewUrl })}
-                        />
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Prompts</p>
-                        <div className="space-y-3">
-                          {a.benchmarks.map(b => (
-                            <div key={`${b.num}-${b.attribute}`} className="rounded-lg border border-[#4a6fa5]/20 bg-[#f8fafd] px-4 py-3">
-                              <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#4a6fa5' }}>
-                                {b.attribute}
-                              </p>
-                              <p className="text-sm text-gray-700 leading-relaxed">{b.prompt}</p>
+                  {assessments.map(a => {
+                    const mode = lpMode[a.id] ?? 'standard';
+                    const allQs = LP_QUESTIONS.filter(q => q.band === a.id);
+                    const standardQs = allQs.filter(q => q.def);
+                    const picks = lpPicks[a.id] ?? [];
+                    const isLittles = a.id === 'lp-littles';
+
+                    return (
+                      <div key={a.id} className="border border-gray-200 rounded-2xl overflow-hidden">
+                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                          <p className="text-sm font-semibold text-gray-800">{a.name}</p>
+                          <p className="text-xs text-gray-400">{a.grades}</p>
+                        </div>
+                        <div className="px-5 py-4 space-y-4">
+                          <VideoAskEmbed
+                            url={a.previewUrl}
+                            label={a.name}
+                            onOpen={() => setPreviewModal({ label: a.name, url: a.previewUrl })}
+                          />
+
+                          {/* Mode selector */}
+                          <div className="space-y-2">
+                            {([
+                              { v: 'standard'  as const, l: 'Standard',       sub: 'Our recommended prompts, ready to go.' },
+                              { v: 'custom'    as const, l: 'Customize',       sub: isLittles ? 'Pick from the full question library.' : 'Pick up to 6 prompts from the full library.' },
+                              { v: 'write-own' as const, l: 'Build your own',  sub: "We'll design custom questions with you." },
+                            ]).map(({ v, l, sub }) => (
+                              <label key={v} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                mode === v ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                              }`}>
+                                <input type="radio" name={`lp-mode-${a.id}`} value={v} checked={mode === v}
+                                  onChange={() => setLpMode(m => ({ ...m, [a.id]: v }))}
+                                  className="accent-[#4a6fa5] mt-0.5" />
+                                <span>
+                                  <span className="text-sm font-medium text-gray-800">{l}</span>
+                                  <span className="text-xs text-gray-500 block">{sub}</span>
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+
+                          {/* Standard: show standard questions */}
+                          {mode === 'standard' && (
+                            <div className="border-t border-gray-100 pt-4 space-y-3">
+                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Standard questions</p>
+                              {standardQs.map(q => (
+                                <div key={q.id} className="rounded-lg border border-[#4a6fa5]/20 bg-[#f8fafd] px-4 py-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#4a6fa5' }}>{q.attribute}</p>
+                                  <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
+
+                          {/* Custom: pick up to 6 */}
+                          {mode === 'custom' && (
+                            <div className="border-t border-gray-100 pt-4 space-y-3">
+                              <div className="flex justify-between items-center">
+                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Choose your questions</p>
+                                {!isLittles && (
+                                  <span className="text-xs text-gray-400">{picks.length}/6 selected</span>
+                                )}
+                              </div>
+                              {allQs.map(q => {
+                                const checked = picks.includes(q.id);
+                                const atMax = !isLittles && picks.length >= 6 && !checked;
+                                return (
+                                  <label key={q.id} className={`flex gap-3 p-3 rounded-lg border transition-colors ${
+                                    checked
+                                      ? 'border-[#4a6fa5] bg-[#f0f5fb] cursor-pointer'
+                                      : atMax
+                                        ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                                        : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
+                                  }`}>
+                                    <input type="checkbox" checked={checked} disabled={atMax}
+                                      onChange={() => {
+                                        const next = checked
+                                          ? picks.filter(id => id !== q.id)
+                                          : [...picks, q.id];
+                                        setLpPicks(p => ({ ...p, [a.id]: next }));
+                                      }}
+                                      className="accent-[#4a6fa5] mt-0.5 shrink-0" />
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: '#4a6fa5' }}>{q.attribute}</p>
+                                      <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
+                                      {q.def && (
+                                        <span className="mt-1 inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>
+                                      )}
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-
-                  {/* Selection */}
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-3">Which assessments would you like to include in your pilot? *</p>
-                    <div className="space-y-2">
-                      {assessments.map(a => {
-                        const checked = form.lpSelectedAssessments.includes(a.id);
-                        return (
-                          <label key={a.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            checked ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}>
-                            <input type="checkbox" checked={checked}
-                              onChange={() => {
-                                const next = checked
-                                  ? form.lpSelectedAssessments.filter(id => id !== a.id)
-                                  : [...form.lpSelectedAssessments, a.id];
-                                set('lpSelectedAssessments', next);
-                              }}
-                              className="accent-[#4a6fa5] w-4 h-4" />
-                            <span className="text-sm text-gray-700">{a.name}</span>
-                          </label>
-                        );
-                      })}
-                      <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        form.lpWantsCustom ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}>
-                        <input type="checkbox" checked={form.lpWantsCustom}
-                          onChange={() => set('lpWantsCustom', !form.lpWantsCustom)}
-                          className="accent-[#4a6fa5] w-4 h-4" />
-                        <span className="text-sm text-gray-700">I&apos;m looking for something custom</span>
-                      </label>
-                    </div>
-                  </div>
+                    );
+                  })}
 
                   <div className="flex justify-between pt-2">
                     <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
