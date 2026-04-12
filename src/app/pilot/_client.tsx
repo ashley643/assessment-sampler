@@ -813,6 +813,27 @@ export default function PilotClient() {
         </div>
       </section>
 
+      {/* ── See it in action ─────────────────────────────────────────────────── */}
+      <section className="py-20" style={{ background: '#f4f7fc' }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="mb-10 text-center">
+            <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
+            <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {PREVIEWS.map(({ label, org, url }) => (
+              <div key={url} className="rounded-2xl overflow-hidden flex flex-col bg-white shadow-sm" style={{ border: '1px solid #e8edf5' }}>
+                <VideoAskEmbed url={url} label={label} onOpen={() => setPreviewModal({ label, url })} height={220} />
+                <div className="px-5 py-4">
+                  <p className="text-sm font-semibold text-gray-900 mb-0.5">{label}</p>
+                  <p className="text-xs text-gray-400">{org}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Sample data ──────────────────────────────────────────────────────── */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-6">
@@ -1245,27 +1266,6 @@ export default function PilotClient() {
               style={{ background: 'white', color: '#4a6fa5', border: '1px solid #d0dff0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
             </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── See it in action ─────────────────────────────────────────────────── */}
-      <section className="py-20" style={{ background: '#f4f7fc' }}>
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="mb-10 text-center">
-            <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
-            <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PREVIEWS.map(({ label, org, url }) => (
-              <div key={url} className="rounded-2xl overflow-hidden flex flex-col bg-white shadow-sm" style={{ border: '1px solid #e8edf5' }}>
-                <VideoAskEmbed url={url} label={label} onOpen={() => setPreviewModal({ label, url })} height={220} />
-                <div className="px-5 py-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-0.5">{label}</p>
-                  <p className="text-xs text-gray-400">{org}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
