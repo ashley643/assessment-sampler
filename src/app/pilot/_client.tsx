@@ -700,9 +700,14 @@ export default function PilotClient() {
         <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54 }} />
         </a>
-        <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#f0f5fb', color: '#4a6fa5', border: '1px solid #d0dff0' }}>
-          Pilot Program
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: '#f0f5fb', color: '#4a6fa5', border: '1px solid #d0dff0' }}>
+            Pilot Program
+          </span>
+          <button onClick={openForm} className="text-white text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
+            Start a Pilot
+          </button>
+        </div>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
@@ -1353,68 +1358,70 @@ export default function PilotClient() {
                   <p className="text-sm text-gray-500 mb-5">Pick the one that matches what you&apos;re trying to learn.</p>
                 </div>
                 <div className="space-y-3">
-                  {ASSESSMENT_TYPES.map(({ id, label, description }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => set('assessmentType', id)}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${
-                        form.assessmentType === id
-                          ? 'border-[#4a6fa5] bg-[#f0f5fb]'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}
-                    >
-                      <p className={`text-sm font-semibold mb-0.5 ${form.assessmentType === id ? 'text-[#1a2744]' : 'text-gray-800'}`}>
-                        {label}
-                      </p>
-                      <p className="text-xs text-gray-500">{description}</p>
-                    </button>
-                  ))}
+                  {ASSESSMENT_TYPES.map(({ id, label, description }) => {
+                    const selected = form.assessmentType === id;
+                    const thisIsCS = id === 'community-schools';
+                    const thisStudentsSelected = thisIsCS && form.respondents.includes('Students');
+                    return (
+                      <div key={id}>
+                        <button
+                          type="button"
+                          onClick={() => set('assessmentType', id)}
+                          className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${
+                            selected ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          <p className={`text-sm font-semibold mb-0.5 ${selected ? 'text-[#1a2744]' : 'text-gray-800'}`}>{label}</p>
+                          <p className="text-xs text-gray-500">{description}</p>
+                        </button>
+
+                        {selected && (
+                          <div className="mt-3 space-y-4 pl-1">
+                            {thisIsCS && (
+                              <MultiCheck
+                                label="Who will be responding? *"
+                                options={['Students', 'Families / Parents', 'Staff']}
+                                value={form.respondents}
+                                onChange={v => set('respondents', v)}
+                              />
+                            )}
+                            {(!thisIsCS || thisStudentsSelected) && (
+                              <MultiCheck
+                                label="Which grade levels? *"
+                                options={GRADE_BANDS}
+                                value={form.gradeLevels}
+                                onChange={v => set('gradeLevels', v)}
+                              />
+                            )}
+                            <div>
+                              <Field label="What is your primary goal for this pilot?">
+                                <select value={form.primaryGoal} onChange={e => set('primaryGoal', e.target.value)} className={SELECT_CLS}>
+                                  <option value="">Select one…</option>
+                                  <option>LCAP / strategic planning data</option>
+                                  <option>Family engagement and outreach</option>
+                                  <option>School climate and belonging</option>
+                                  <option>Student wellness and behavioral health</option>
+                                  <option>Learner skills and competency mapping</option>
+                                  <option>Program evaluation</option>
+                                  <option>Staff professional learning</option>
+                                  <option>Other</option>
+                                </select>
+                              </Field>
+                              {form.primaryGoal === 'Other' && (
+                                <input
+                                  className={INPUT_CLS + ' mt-2'}
+                                  placeholder="Tell us more…"
+                                  value={form.primaryGoalOther}
+                                  onChange={e => set('primaryGoalOther', e.target.value)}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-
-                {isCS && (
-                  <MultiCheck
-                    label="Who will be responding? *"
-                    options={['Students', 'Families / Parents', 'Staff']}
-                    value={form.respondents}
-                    onChange={v => set('respondents', v)}
-                  />
-                )}
-
-                {(isLP || isBH || studentsSelected) && (
-                  <MultiCheck
-                    label="Which grade levels? *"
-                    options={GRADE_BANDS}
-                    value={form.gradeLevels}
-                    onChange={v => set('gradeLevels', v)}
-                  />
-                )}
-
-                {!!form.assessmentType && (
-                  <div>
-                    <Field label="What is your primary goal for this pilot?">
-                      <select value={form.primaryGoal} onChange={e => set('primaryGoal', e.target.value)} className={SELECT_CLS}>
-                        <option value="">Select one…</option>
-                        <option>LCAP / strategic planning data</option>
-                        <option>Family engagement and outreach</option>
-                        <option>School climate and belonging</option>
-                        <option>Student wellness and behavioral health</option>
-                        <option>Learner skills and competency mapping</option>
-                        <option>Program evaluation</option>
-                        <option>Staff professional learning</option>
-                        <option>Other</option>
-                      </select>
-                    </Field>
-                    {form.primaryGoal === 'Other' && (
-                      <input
-                        className={INPUT_CLS + ' mt-2'}
-                        placeholder="Tell us more…"
-                        value={form.primaryGoalOther}
-                        onChange={e => set('primaryGoalOther', e.target.value)}
-                      />
-                    )}
-                  </div>
-                )}
 
                 <div className="flex justify-end pt-2">
                   <button
