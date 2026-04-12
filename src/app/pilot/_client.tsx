@@ -761,18 +761,18 @@ export default function PilotClient() {
             {[
               {
                 n: '1', color: '#e07b54',
-                title: 'Share a link',
-                body: 'We configure a custom assessment for your school or district. Respondents click a link and answer 3–6 voice-based questions — in their own words. No app download. No login.',
+                title: 'Create your assessment',
+                body: 'Choose from our ready-to-go prompt sets or build something custom with our team. Standard, customized, or fully co-designed — it takes minutes, not meetings.',
               },
               {
                 n: '2', color: '#2d7a5f',
-                title: 'Get your data',
-                body: 'Within days, you receive a structured dataset with every response, a rubric-aligned score (200–800), language analysis, and a recommended next step for each respondent.',
+                title: 'Share a link',
+                body: 'Respondents click a link and answer 3–6 voice-based questions — in their own words. No app download. No login. Minimal class time. Kids actually like it.',
               },
               {
                 n: '3', color: '#4a6fa5',
                 title: 'Receive your report',
-                body: 'A week after the window closes, we deliver a synthesized report — cross-campus analytics, theme clusters, equity breakdowns, and the standout moments you\'d never get from a checkbox.',
+                body: 'About a week after the window closes, we deliver a synthesized report — cross-campus analytics, theme clusters, equity breakdowns, and the standout moments you\'d never get from a checkbox.',
               },
             ].map(({ n, color, title, body }) => (
               <div key={n} className="bg-white rounded-2xl p-6 shadow-sm" style={{ borderTop: `3px solid ${color}` }}>
