@@ -1600,7 +1600,7 @@ export default function PilotClient() {
                   {/* Rotating report preview — matches home-page insight panel style */}
                   <div className="mt-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample report insights</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample disaggregated report insights</p>
                       <div className="flex items-center gap-1.5">
                         {/* Prev / Next arrows */}
                         {[
