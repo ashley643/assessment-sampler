@@ -700,7 +700,7 @@ export default function PilotClient() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #3a62aa 18%, #4a6ab8 36%, #6a5ab0 54%, #9a4a80 68%, #cc6648 84%, #bf5c3c 100%)', minHeight: '72vh', display: 'flex', alignItems: 'center' }}>
+      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #3a62aa 18%, #4a6ab8 36%, #6a5ab0 54%, #9a4a80 68%, #cc6648 84%, #bf5c3c 100%)', minHeight: '42vh', display: 'flex', alignItems: 'center' }}>
         {/* Soft radial overlay for depth */}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 60%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
         {/* SVG circular watermark */}
@@ -711,7 +711,7 @@ export default function PilotClient() {
             return <line key={i} x1="170" y1="170" x2={170+Math.cos(a)*r} y2={170+Math.sin(a)*r} stroke="white" strokeWidth="0.5" />;
           })}
         </svg>
-        <div className="max-w-3xl mx-auto px-6 py-24 text-center relative w-full">
+        <div className="max-w-3xl mx-auto px-6 py-12 text-center relative w-full">
           <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse inline-block"></span>
             Pilot Program
