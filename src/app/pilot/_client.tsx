@@ -561,22 +561,20 @@ export default function PilotClient() {
     }
   }
 
-  const canAdvanceStep1 = !!form.assessmentType;
-  const canAdvanceStep2 = !!form.launchTimeline;
-  const studentsSelected = form.respondents.includes('Students');
-  const canAdvanceStep3 = form.respondents.length > 0
-    && (!studentsSelected || form.gradeLevels.length > 0)
-    && !!form.expectedCount
-    && !!form.launchTimeline
-    && form.languages.length > 0
-    && (!form.languages.includes('Other') || !!form.otherLanguage)
-    && form.modalities.length > 0;
-  const canAdvanceContact = !!form.name && !!form.email && !!form.organization;
-
   // Assessment type helpers
   const isCS = form.assessmentType === 'community-schools';
   const isBH = form.assessmentType === 'behavioral-health';
   const isLP = form.assessmentType === 'learner-portrait';
+
+  const studentsSelected = form.respondents.includes('Students');
+  const canAdvanceStep1 = !!form.assessmentType
+    && (isCS ? form.respondents.length > 0 : form.gradeLevels.length > 0)
+    && (!studentsSelected || form.gradeLevels.length > 0);
+  const canAdvanceStep3 = form.languages.length > 0
+    && (!form.languages.includes('Other') || !!form.otherLanguage)
+    && form.modalities.length > 0;
+  const canAdvanceStep4 = !!form.launchTimeline && !!form.expectedCount;
+  const canAdvanceContact = !!form.name && !!form.email && !!form.organization;
 
   function getCsSections(): Array<{ key: AgeGroup; label: string }> {
     const out: Array<{ key: AgeGroup; label: string }> = [];
@@ -616,16 +614,13 @@ export default function PilotClient() {
     return form.lpSelectedAssessments.length > 0 || form.lpWantsCustom;
   }
 
-  // Step navigation — CS, BH, and LP all use step 4 (questions)
+  // Step navigation — linear 1→2→3→4→5→7
   type S = 1|2|3|4|5|6|7;
   function nextStep(cur: number): S {
-    if (cur === 3) return ((isCS || isBH || isLP) ? 4 : 5) as S;
-    if (cur === 4) return 5;
+    if (cur === 5) return 7;
     return (cur + 1) as S;
   }
   function prevStep(cur: number): S {
-    if (cur === 5) return ((isCS || isBH || isLP) ? 4 : 3) as S;
-    if (cur === 4) return 3;
     return (cur - 1) as S;
   }
 
@@ -1258,10 +1253,13 @@ export default function PilotClient() {
 
             {/* Step indicator */}
             {step < 7 && (() => {
-              const steps = (isCS || isBH || isLP)
-                ? [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:4,l:'Offerings'},{n:5,l:'Contact'}]
-                : [{n:1,l:'Assessment'},{n:2,l:'Dates'},{n:3,l:'Participants'},{n:5,l:'Contact'}];
-              const displayStep = (s: number) => (isCS || isBH || isLP) ? s : s > 3 ? s - 1 : s;
+              const steps = [
+                {n:1,l:'Assessment'},
+                {n:2,l:'Offerings'},
+                {n:3,l:'Customizations'},
+                {n:4,l:'Dates & Details'},
+                {n:5,l:'Contact'},
+              ];
               return (
                 <div className="flex items-center gap-1.5 mb-8">
                   {steps.map(({ n, l }, i) => (
@@ -1269,7 +1267,7 @@ export default function PilotClient() {
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                         step === n ? 'text-white' :
                         step > n  ? '' : 'bg-gray-200 text-gray-400'
-                      }`} style={step === n ? { background: '#4a6fa5' } : step > n ? { background: '#dce8f5', color: '#4a6fa5' } : {}}>{displayStep(n)}</div>
+                      }`} style={step === n ? { background: '#4a6fa5' } : step > n ? { background: '#dce8f5', color: '#4a6fa5' } : {}}>{n}</div>
                       <span className={`text-xs hidden sm:inline ${step === n ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>{l}</span>
                       {i < steps.length - 1 && <div className={`h-px w-5 mx-1 transition-colors ${step > n ? '' : 'bg-gray-200'}`} style={step > n ? { background: '#a8c2e0' } : {}} />}
                     </div>
@@ -1278,9 +1276,9 @@ export default function PilotClient() {
               );
             })()}
 
-            {/* ── Step 1: Assessment type ────────────────────────── */}
+            {/* ── Step 1: Assessment + respondents + grades + goal ── */}
             {step === 1 && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Which assessment fits your goals?</h3>
                   <p className="text-sm text-gray-500 mb-5">Pick the one that matches what you&apos;re trying to learn.</p>
@@ -1304,93 +1302,6 @@ export default function PilotClient() {
                     </button>
                   ))}
                 </div>
-                <div className="flex justify-end pt-2">
-                  <button
-                    disabled={false}
-                    onClick={() => setStep(2)}
-                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── Step 2: Dates ─────────────────────────────────── */}
-            {step === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">When are you thinking?</h3>
-                  <p className="text-sm text-gray-500">
-                    Give us your best guess — we will follow up to confirm the final window.
-                  </p>
-                </div>
-
-                <Field label="When would you like to launch?">
-                  <select value={form.launchTimeline} onChange={e => set('launchTimeline', e.target.value)} className={SELECT_CLS}>
-                    <option value="">Select a timeline…</option>
-                    <option>Within 2 weeks</option>
-                    <option>Within a month</option>
-                    <option>Next quarter</option>
-                    <option>Next school year</option>
-                    <option>Just exploring for now</option>
-                  </select>
-                </Field>
-
-                <Field label="Any important dates or constraints we should know about?">
-                  <textarea
-                    value={form.dateNotes}
-                    onChange={e => set('dateNotes', e.target.value)}
-                    placeholder="e.g. Avoid testing windows, spring break Mar 24–28, prefer mornings…"
-                    rows={3}
-                    className={INPUT_CLS + ' resize-none'}
-                  />
-                </Field>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">
-                    Would you like an Impacter team member to support on-site during implementation?
-                  </p>
-                  <div className="space-y-2">
-                    {([
-                      { value: 'yes',    label: 'Yes please — on-site support would be helpful' },
-                      { value: 'no',     label: 'No, we will handle implementation independently' },
-                      { value: 'unsure', label: 'Not sure yet' },
-                    ] as const).map(({ value, label }) => (
-                      <label key={value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        form.onsiteSupport === value
-                          ? 'border-[#4a6fa5] bg-[#f0f5fb]'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}>
-                        <input type="radio" name="onsiteSupport" value={value}
-                          checked={form.onsiteSupport === value}
-                          onChange={() => set('onsiteSupport', value)}
-                          className="accent-[#4a6fa5]" />
-                        <span className="text-sm text-gray-700">{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex justify-between pt-2">
-                  <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                  <button disabled={false} onClick={() => setStep(3)}
-                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── Step 3: Contextual questions ──────────────────── */}
-            {step === 3 && (
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Tell us about your context</h3>
-                  <p className="text-sm text-gray-500 mb-5">
-                    This helps us configure the right assessment for you.
-                  </p>
-                </div>
 
                 {isCS && (
                   <MultiCheck
@@ -1410,70 +1321,42 @@ export default function PilotClient() {
                   />
                 )}
 
-                <Field label="How many respondents do you anticipate?" required>
-                  <select value={form.expectedCount} onChange={e => set('expectedCount', e.target.value)} className={SELECT_CLS}>
-                    <option value="">Select a range…</option>
-                    <option>Under 50</option>
-                    <option>50–150</option>
-                    <option>150–500</option>
-                    <option>500–1,000</option>
-                    <option>Over 1,000</option>
-                  </select>
-                </Field>
-
-
-
-                {/* Community Schools: extra fields */}
-                {form.assessmentType === 'community-schools' && (
-                  <>
-                    <Field label="What is your primary goal for this pilot?">
-                      <select value={form.primaryGoal} onChange={e => set('primaryGoal', e.target.value)} className={SELECT_CLS}>
-                        <option value="">Select one…</option>
-                        <option>LCAP / strategic planning data</option>
-                        <option>Family engagement and outreach</option>
-                        <option>School climate and belonging</option>
-                        <option>Program evaluation</option>
-                        <option>Staff professional learning</option>
-                        <option>Other</option>
-                      </select>
-                    </Field>
-                    <Field label="Are you part of a Community Schools initiative?">
-                      <select value={form.communityModel} onChange={e => set('communityModel', e.target.value)} className={SELECT_CLS}>
-                        <option value="">Select one…</option>
-                        <option>Yes — state-funded Community Schools</option>
-                        <option>Yes — district-led model</option>
-                        <option>No — but interested in the approach</option>
-                        <option>Not sure</option>
-                      </select>
-                    </Field>
-                  </>
-                )}
-
-                {/* Learner Portrait: extra fields */}
-                {form.assessmentType === 'learner-portrait' && (
-                  <Field label="Which competency areas are most relevant?">
-                    <select value={form.competencyFocus} onChange={e => set('competencyFocus', e.target.value)} className={SELECT_CLS}>
+                {!!form.assessmentType && (
+                  <Field label="What is your primary goal for this pilot?">
+                    <select value={form.primaryGoal} onChange={e => set('primaryGoal', e.target.value)} className={SELECT_CLS}>
                       <option value="">Select one…</option>
-                      <option>SEL — social-emotional skills</option>
-                      <option>Academic identity and purpose</option>
-                      <option>Career and college readiness</option>
-                      <option>Community and civic engagement</option>
-                      <option>All of the above</option>
+                      <option>LCAP / strategic planning data</option>
+                      <option>Family engagement and outreach</option>
+                      <option>School climate and belonging</option>
+                      <option>Student wellness and behavioral health</option>
+                      <option>Learner skills and competency mapping</option>
+                      <option>Program evaluation</option>
+                      <option>Staff professional learning</option>
+                      <option>Other</option>
                     </select>
                   </Field>
                 )}
 
-                {/* Behavioral Health: extra fields */}
-                {form.assessmentType === 'behavioral-health' && (
-                  <Field label="Is this universal screening or targeted outreach?">
-                    <select value={form.screeningScope} onChange={e => set('screeningScope', e.target.value)} className={SELECT_CLS}>
-                      <option value="">Select one…</option>
-                      <option>Universal — screening full grade or school</option>
-                      <option>Targeted — specific student population</option>
-                      <option>Not sure yet</option>
-                    </select>
-                  </Field>
-                )}
+                <div className="flex justify-end pt-2">
+                  <button
+                    disabled={!canAdvanceStep1}
+                    onClick={() => setStep(2)}
+                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+
+            {/* ── Step 3: Customizations ────────────────────────── */}
+            {step === 3 && (
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Customize your assessment</h3>
+                  <p className="text-sm text-gray-500 mb-2">Choose the languages and modalities you want to enable.</p>
+                </div>
 
                 {/* Languages */}
                 <div>
@@ -1551,13 +1434,13 @@ export default function PilotClient() {
                   </div>
                 </div>
 
-                {/* Custom intro question */}
+                {/* Custom intro */}
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-1">
                     Would you like to record a custom intro for your assessment?
                   </p>
                   <p className="text-xs text-gray-400 mb-3">
-                    A short video from a familiar face — a principal, counselor, or teacher — can put students at ease before they respond. Here's an example from Western Placer USD:
+                    A short video from a familiar face — a principal, counselor, or teacher — can put students at ease before they respond. Here&apos;s an example from Western Placer USD:
                   </p>
                   <VideoAskEmbed
                     url="https://wpusd.impacterpathway.com/f78d5omaf?preview"
@@ -1588,7 +1471,7 @@ export default function PilotClient() {
 
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                  <button disabled={false} onClick={() => setStep(nextStep(3))}
+                  <button disabled={!canAdvanceStep3} onClick={() => setStep(4)}
                     className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
                     Continue
                   </button>
@@ -1596,8 +1479,83 @@ export default function PilotClient() {
               </div>
             )}
 
-            {/* ── Step 4: CS Question selector ──────────────────── */}
-            {step === 4 && isCS && (() => {
+            {/* ── Step 4: Dates & Details ────────────────────────── */}
+            {step === 4 && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Dates &amp; Details</h3>
+                  <p className="text-sm text-gray-500">Give us your best guess — we&apos;ll follow up to confirm the final window.</p>
+                </div>
+
+                <Field label="When would you like to launch?" required>
+                  <select value={form.launchTimeline} onChange={e => set('launchTimeline', e.target.value)} className={SELECT_CLS}>
+                    <option value="">Select a timeline…</option>
+                    <option>Within 2 weeks</option>
+                    <option>Within a month</option>
+                    <option>Next quarter</option>
+                    <option>Next school year</option>
+                    <option>Just exploring for now</option>
+                  </select>
+                </Field>
+
+                <Field label="Any important dates or constraints we should know about?">
+                  <textarea
+                    value={form.dateNotes}
+                    onChange={e => set('dateNotes', e.target.value)}
+                    placeholder="e.g. Avoid testing windows, spring break Mar 24–28, prefer mornings…"
+                    rows={3}
+                    className={INPUT_CLS + ' resize-none'}
+                  />
+                </Field>
+
+                <Field label="How many respondents do you anticipate?" required>
+                  <select value={form.expectedCount} onChange={e => set('expectedCount', e.target.value)} className={SELECT_CLS}>
+                    <option value="">Select a range…</option>
+                    <option>Under 50</option>
+                    <option>50–150</option>
+                    <option>150–500</option>
+                    <option>500–1,000</option>
+                    <option>Over 1,000</option>
+                  </select>
+                </Field>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-3">
+                    Would you like an Impacter team member to support on-site during implementation?
+                  </p>
+                  <div className="space-y-2">
+                    {([
+                      { value: 'yes',    label: 'Yes please — on-site support would be helpful' },
+                      { value: 'no',     label: 'No, we will handle implementation independently' },
+                      { value: 'unsure', label: 'Not sure yet' },
+                    ] as const).map(({ value, label }) => (
+                      <label key={value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        form.onsiteSupport === value
+                          ? 'border-[#4a6fa5] bg-[#f0f5fb]'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}>
+                        <input type="radio" name="onsiteSupport" value={value}
+                          checked={form.onsiteSupport === value}
+                          onChange={() => set('onsiteSupport', value)}
+                          className="accent-[#4a6fa5]" />
+                        <span className="text-sm text-gray-700">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between pt-2">
+                  <button onClick={() => setStep(3)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                  <button disabled={!canAdvanceStep4} onClick={() => setStep(5)}
+                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 2: CS Question selector ──────────────────── */}
+            {step === 2 && isCS && (() => {
               const sections = getCsSections();
               return (
                 <div className="space-y-8">
@@ -1698,10 +1656,10 @@ export default function PilotClient() {
                   })}
 
                   <div className="flex justify-between pt-2">
-                    <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                    <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
-                      disabled={false}
-                      onClick={() => setStep(nextStep(4))}
+                      disabled={!canAdvanceCS()}
+                      onClick={() => setStep(3)}
                       className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                     >
                       Continue
@@ -1711,8 +1669,8 @@ export default function PilotClient() {
               );
             })()}
 
-            {/* ── Step 4: BH screener display ───────────────────── */}
-            {step === 4 && isBH && (() => {
+            {/* ── Step 2: BH screener display ───────────────────── */}
+            {step === 2 && isBH && (() => {
               const screeners = getBHScreeners();
               return (
                 <div className="space-y-6">
@@ -1790,10 +1748,10 @@ export default function PilotClient() {
                   </div>
 
                   <div className="flex justify-between pt-2">
-                    <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                    <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
-                      disabled={false}
-                      onClick={() => setStep(nextStep(4))}
+                      disabled={!canAdvanceBH()}
+                      onClick={() => setStep(3)}
                       className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                     >
                       Continue
@@ -1803,8 +1761,8 @@ export default function PilotClient() {
               );
             })()}
 
-            {/* ── Step 4: LP offerings ──────────────────────────── */}
-            {step === 4 && isLP && (() => {
+            {/* ── Step 2: LP offerings ──────────────────────────── */}
+            {step === 2 && isLP && (() => {
               const assessments = getLPAssessments();
               return (
                 <div className="space-y-6">
@@ -1882,10 +1840,10 @@ export default function PilotClient() {
                   </div>
 
                   <div className="flex justify-between pt-2">
-                    <button onClick={() => setStep(prevStep(4))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                    <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                     <button
-                      disabled={false}
-                      onClick={() => setStep(nextStep(4))}
+                      disabled={!canAdvanceLP()}
+                      onClick={() => setStep(3)}
                       className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
                     >
                       Continue
@@ -1938,7 +1896,7 @@ export default function PilotClient() {
                 {error && <p className="text-sm text-red-500">{error}</p>}
 
                 <div className="flex justify-between pt-2">
-                  <button onClick={() => setStep(prevStep(5))} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
+                  <button onClick={() => setStep(4)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
                     disabled={submitting}
                     onClick={submit}
