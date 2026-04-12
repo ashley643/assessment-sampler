@@ -690,9 +690,9 @@ export default function PilotClient() {
     <div className="min-h-screen font-sans" style={{ background: 'white' }}>
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="px-6 py-3 flex items-center justify-between bg-white" style={{ borderBottom: '1px solid #e8edf5', position: 'sticky', top: 0, zIndex: 30 }}>
+      <nav className="px-6 py-1.5 flex items-center justify-between bg-white" style={{ borderBottom: '1px solid #e8edf5', position: 'sticky', top: 0, zIndex: 30 }}>
         <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
-          <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 40, filter: 'brightness(0) saturate(100%) invert(17%) sepia(26%) saturate(1200%) hue-rotate(195deg) brightness(85%)' }} />
+          <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54, filter: 'brightness(0) saturate(100%) invert(17%) sepia(26%) saturate(1200%) hue-rotate(195deg) brightness(85%)' }} />
         </a>
         <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#f0f5fb', color: '#4a6fa5', border: '1px solid #d0dff0' }}>
           Pilot Program
