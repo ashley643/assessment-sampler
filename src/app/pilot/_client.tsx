@@ -562,18 +562,22 @@ export default function PilotClient() {
   const [lpAttrPicks, setLpAttrPicks] = useState<Record<string, string[]>>({}); // el/sec attribute picks
   const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
   const [insightPanel, setInsightPanel] = useState(0);
+  const [insightPaused, setInsightPaused] = useState(false);
   const [demoPanel, setDemoPanel] = useState(0);
+  const [demoPaused, setDemoPaused] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (insightPaused) return;
     const t = setInterval(() => setInsightPanel(p => (p + 1) % 6), 8000);
     return () => clearInterval(t);
-  }, []);
+  }, [insightPaused]);
 
   useEffect(() => {
+    if (demoPaused) return;
     const t = setInterval(() => setDemoPanel(p => (p + 1) % 3), 4000);
     return () => clearInterval(t);
-  }, []);
+  }, [demoPaused]);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -926,7 +930,9 @@ export default function PilotClient() {
           </div>
 
           {/* Panels */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#1a2744', minHeight: 420 }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#1a2744', minHeight: 420 }}
+            onMouseEnter={() => setInsightPaused(true)}
+            onMouseLeave={() => setInsightPaused(false)}>
 
             {/* ── Panel 0: BH Domains by Gender ── */}
             {insightPanel === 0 && (
@@ -1363,7 +1369,7 @@ export default function PilotClient() {
                 {isCS && (
                   <MultiCheck
                     label="Who will be responding? *"
-                    options={['Students', 'Families / Parents', 'Staff', 'Community Members']}
+                    options={['Students', 'Families / Parents', 'Staff']}
                     value={form.respondents}
                     onChange={v => set('respondents', v)}
                   />
@@ -1621,44 +1627,46 @@ export default function PilotClient() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl overflow-hidden" style={{ background: '#1a2744', minHeight: 268 }}>
+                    <div className="rounded-xl overflow-hidden" style={{ background: '#1a2744', minHeight: 268 }}
+                      onMouseEnter={() => setDemoPaused(true)}
+                      onMouseLeave={() => setDemoPaused(false)}>
 
                       {/* Panel 0: Risk by Grade */}
                       {demoPanel === 0 && (
-                        <div className="p-5 flex flex-col" style={{ minHeight: 268 }}>
+                        <div className="p-5 flex flex-col gap-4" style={{ minHeight: 268 }}>
                           <div>
                             <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Risk Patterns</p>
                             <h4 className="text-sm font-bold text-white leading-snug">Risk behaviors peak in 7th grade —<br/>nearly 2× higher than 8th.</h4>
                           </div>
-                          <div className="flex-1 flex flex-col justify-center mt-4">
-                          <table className="w-full border-collapse">
-                            <thead>
-                              <tr>
-                                <th className="text-left pb-2 pr-3 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
-                                {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-2 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {RISK_ROWS.map((row, i) => {
-                                const vals = [row.g6, row.g7, row.g8];
-                                return (
-                                  <tr key={i}>
-                                    <td className="py-2 pr-3 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
-                                    {vals.map((v, j) => {
-                                      const intensity = v / 7.25;
-                                      return (
-                                        <td key={j} className="text-center font-bold rounded px-2 py-2"
-                                          style={{ background: `rgba(74,111,165,${0.12 + intensity * 0.78})`, color: intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: 9 }}>
-                                          {v.toFixed(1)}%
-                                        </td>
-                                      );
-                                    })}
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                          </div>
+                          <svg viewBox="0 0 260 155" className="w-full">
+                            {/* Column headers */}
+                            <text x="84" y="13" textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">Pattern</text>
+                            {['6th','7th','8th'].map((g, ci) => (
+                              <text key={g} x={115 + ci * 53} y="13" textAnchor="middle" fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.45)">{g}</text>
+                            ))}
+                            {/* Data rows */}
+                            {RISK_ROWS.map((row, ri) => {
+                              const ry = 30 + ri * 24;
+                              return (
+                                <g key={ri}>
+                                  <text x="84" y={ry} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="rgba(255,255,255,0.6)">{row.pattern}</text>
+                                  {[row.g6, row.g7, row.g8].map((v, ci) => {
+                                    const intensity = v / 7.25;
+                                    const cx = 89 + ci * 57;
+                                    return (
+                                      <g key={ci}>
+                                        <rect x={cx} y={ry - 9} width={52} height={18} rx="3"
+                                          fill={`rgba(74,111,165,${0.12 + intensity * 0.78})`} />
+                                        <text x={cx + 26} y={ry} textAnchor="middle" dominantBaseline="middle"
+                                          fontSize="9" fontWeight="700"
+                                          fill={intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)'}>{v.toFixed(1)}%</text>
+                                      </g>
+                                    );
+                                  })}
+                                </g>
+                              );
+                            })}
+                          </svg>
                         </div>
                       )}
 
