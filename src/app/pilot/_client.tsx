@@ -391,6 +391,9 @@ interface FormData {
   // Learner Portrait specific
   lpSelectedAssessments: string[];
   lpWantsCustom: boolean;
+  // Demographics opt-in
+  demographics: string[];
+  demographicsOther: string;
   // Contact
   name: string;
   email: string;
@@ -421,6 +424,8 @@ const EMPTY_FORM: FormData = {
   bhWantsCustom: false,
   lpSelectedAssessments: [],
   lpWantsCustom: false,
+  demographics: [],
+  demographicsOther: '',
   name: '',
   email: '',
   role: '',
@@ -1478,6 +1483,111 @@ export default function PilotClient() {
                         <span className="text-sm text-gray-700">{label}</span>
                       </label>
                     ))}
+                  </div>
+                </div>
+
+                {/* Demographics opt-in */}
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Want respondents to share demographic info?</p>
+                  <p className="text-xs text-gray-400 mb-3 leading-relaxed">
+                    FERPA and COPPA compliant. Pilot assessments don&apos;t require student enrollment or integration with systems like Clever or ClassLink — no PII is collected unless you opt in below. Any fields you enable are voluntary for respondents and let you disaggregate results by group.
+                  </p>
+                  <div className="space-y-2">
+                    {['School', 'Grade', 'Gender'].map(opt => {
+                      const checked = form.demographics.includes(opt);
+                      return (
+                        <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          checked ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input type="checkbox" checked={checked}
+                            onChange={() => {
+                              const next = checked ? form.demographics.filter(d => d !== opt) : [...form.demographics, opt];
+                              set('demographics', next);
+                            }}
+                            className="accent-[#4a6fa5] w-4 h-4" />
+                          <span className="text-sm text-gray-700">{opt}</span>
+                        </label>
+                      );
+                    })}
+                    <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      form.demographics.includes('Other') ? 'border-[#4a6fa5]/50 bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input type="checkbox" checked={form.demographics.includes('Other')}
+                        onChange={() => {
+                          const c = form.demographics.includes('Other');
+                          set('demographics', c ? form.demographics.filter(d => d !== 'Other') : [...form.demographics, 'Other']);
+                        }}
+                        className="accent-[#4a6fa5] w-4 h-4" />
+                      <span className="text-sm text-gray-700">Other</span>
+                    </label>
+                    {form.demographics.includes('Other') && (
+                      <input className={INPUT_CLS + ' mt-1'} placeholder="Which demographic field?"
+                        value={form.demographicsOther} onChange={e => set('demographicsOther', e.target.value)} />
+                    )}
+                  </div>
+
+                  {/* Mini chart previews */}
+                  <p className="text-[11px] text-gray-400 mt-4 mb-2">Examples of disaggregated report views:</p>
+                  <div className="grid grid-cols-2 gap-3">
+
+                    {/* Mini: Risk heatmap by grade */}
+                    <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: '#1a2744' }}>
+                      <p className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>By Grade</p>
+                      <table className="w-full border-collapse" style={{ fontSize: 10 }}>
+                        <thead>
+                          <tr>
+                            <th className="text-left pb-1 pr-2 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
+                            {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-1 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {RISK_ROWS.map((row, i) => {
+                            const vals = [row.g6, row.g7, row.g8];
+                            return (
+                              <tr key={i}>
+                                <td className="py-0.5 pr-2 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
+                                {vals.map((v, j) => {
+                                  const intensity = v / 7.25;
+                                  return (
+                                    <td key={j} className="text-center font-bold rounded-sm px-1 py-0.5"
+                                      style={{ background: `rgba(74,111,165,${0.12 + intensity * 0.78})`, color: intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: 9 }}>
+                                      {v.toFixed(1)}%
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mini: BH domains by gender */}
+                    <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: '#1a2744' }}>
+                      <p className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>By Gender</p>
+                      <svg viewBox="0 0 160 115" className="w-full">
+                        {BH_DOMAIN_DATA.map((d, i) => {
+                          const maxW = 90;
+                          const scaleW = (v: number) => (v / 800) * maxW;
+                          const y = 10 + i * 21;
+                          return (
+                            <g key={d.domain}>
+                              <text x="58" y={y + 3} textAnchor="end" fontSize="7" fill="rgba(255,255,255,0.5)">{d.domain.split(' ')[0]}</text>
+                              <rect x="60" y={y - 8} width={scaleW(d.male)} height={10} rx="2" fill="rgba(255,255,255,0.15)" />
+                              <rect x="60" y={y - 8} width={scaleW(d.female)} height={5} rx="2" fill="#4a6fa5" />
+                              <text x={62 + scaleW(d.female)} y={y - 4} fontSize="7" fill="#7aa3cc" fontWeight="700">{d.female}</text>
+                            </g>
+                          );
+                        })}
+                        <g>
+                          <rect x="60" y="107" width="8" height="4" rx="1" fill="#4a6fa5" />
+                          <text x="70" y="111" fontSize="7" fill="rgba(255,255,255,0.4)">Female</text>
+                          <rect x="100" y="107" width="8" height="4" rx="1" fill="rgba(255,255,255,0.15)" />
+                          <text x="110" y="111" fontSize="7" fill="rgba(255,255,255,0.4)">Male</text>
+                        </g>
+                      </svg>
+                    </div>
+
                   </div>
                 </div>
 
