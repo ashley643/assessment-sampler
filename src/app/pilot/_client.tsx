@@ -1811,10 +1811,11 @@ export default function PilotClient() {
                 <Field label="When would you like to launch?" required>
                   <select value={form.launchTimeline} onChange={e => set('launchTimeline', e.target.value)} className={SELECT_CLS}>
                     <option value="">Select a timeline…</option>
-                    <option>Within 2 weeks</option>
-                    <option>Within a month</option>
-                    <option>Next quarter</option>
-                    <option>Next school year</option>
+                    <option>As soon as possible</option>
+                    <option>Within the next month</option>
+                    <option>Within the next 2–3 months</option>
+                    <option>By end of this school year</option>
+                    <option>Start of next school year</option>
                     <option>Just exploring for now</option>
                   </select>
                 </Field>
