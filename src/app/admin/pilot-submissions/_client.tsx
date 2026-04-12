@@ -15,11 +15,18 @@ interface Context {
   wantsCustomIntro?: string | null;
   communityModel?: string | null;
   primaryGoal?: string | null;
+  primaryGoalOther?: string | null;
   competencyFocus?: string | null;
   screeningScope?: string | null;
-  languages?: string[];
-  modalities?: string[];
-  demographics?: string[];
+  languages?: string[] | null;
+  otherLanguage?: string | null;
+  modalities?: string[] | null;
+  demographics?: string[] | null;
+  demographicsOther?: string | null;
+  bhSelectedAssessments?: string[] | null;
+  bhWantsCustom?: boolean | null;
+  lpSelectedAssessments?: string[] | null;
+  lpWantsCustom?: boolean | null;
   stage?: Stage;
 }
 
@@ -80,6 +87,7 @@ export default function PilotFormsClient() {
   const [selected, setSelected] = useState<string | null>(null);
   const [stageFilter, setStageFilter] = useState<Stage | 'all'>('all');
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
+  const [showMore, setShowMore] = useState(false);
 
   const load = useCallback(() => {
     fetch('/api/pilot')
@@ -168,7 +176,7 @@ export default function PilotFormsClient() {
               return (
                 <button
                   key={s.id}
-                  onClick={() => setSelected(isSelected ? null : s.id)}
+                  onClick={() => { setSelected(isSelected ? null : s.id); setShowMore(false); }}
                   className={`w-full text-left px-5 py-4 border-b border-gray-100 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
@@ -272,19 +280,44 @@ export default function PilotFormsClient() {
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Assessment Details</p>
                   <DetailRow label="Type" value={typeInfo?.label ?? selectedSub.assessment_type} />
                   <DetailRow label="Launch timeline" value={selectedSub.context.launchTimeline} />
-                  <DetailRow label="Date notes" value={selectedSub.context.dateNotes} />
                   <DetailRow label="Expected count" value={selectedSub.context.expectedCount} />
                   <DetailRow label="Respondents" value={selectedSub.context.respondents} />
                   <DetailRow label="Grade levels" value={selectedSub.context.gradeLevels} />
-                  <DetailRow label="Languages" value={selectedSub.context.languages} />
-                  <DetailRow label="Modalities" value={selectedSub.context.modalities} />
-                  <DetailRow label="Demographics" value={selectedSub.context.demographics} />
-                  <DetailRow label="Onsite support" value={selectedSub.context.onsiteSupport} />
-                  <DetailRow label="Custom intro" value={selectedSub.context.wantsCustomIntro} />
-                  <DetailRow label="Primary goal" value={selectedSub.context.primaryGoal} />
-                  <DetailRow label="Community model" value={selectedSub.context.communityModel} />
-                  <DetailRow label="Competency focus" value={selectedSub.context.competencyFocus} />
-                  <DetailRow label="Screening scope" value={selectedSub.context.screeningScope} />
+
+                  {showMore && (
+                    <div className="space-y-1 pt-1">
+                      <DetailRow label="Date notes" value={selectedSub.context.dateNotes} />
+                      <DetailRow label="Languages" value={selectedSub.context.languages} />
+                      <DetailRow label="Other language" value={selectedSub.context.otherLanguage} />
+                      <DetailRow label="Modalities" value={selectedSub.context.modalities} />
+                      <DetailRow label="Demographics" value={selectedSub.context.demographics} />
+                      <DetailRow label="Demographics other" value={selectedSub.context.demographicsOther} />
+                      <DetailRow label="Onsite support" value={selectedSub.context.onsiteSupport} />
+                      <DetailRow label="Custom intro" value={selectedSub.context.wantsCustomIntro} />
+                      <DetailRow label="Primary goal" value={selectedSub.context.primaryGoal} />
+                      <DetailRow label="Primary goal other" value={selectedSub.context.primaryGoalOther} />
+                      <DetailRow label="Community model" value={selectedSub.context.communityModel} />
+                      <DetailRow label="Competency focus" value={selectedSub.context.competencyFocus} />
+                      <DetailRow label="Screening scope" value={selectedSub.context.screeningScope} />
+                      <DetailRow label="BH assessments" value={selectedSub.context.bhSelectedAssessments} />
+                      {selectedSub.context.bhWantsCustom != null && (
+                        <DetailRow label="BH custom?" value={selectedSub.context.bhWantsCustom ? 'Yes' : 'No'} />
+                      )}
+                      <DetailRow label="LP assessments" value={selectedSub.context.lpSelectedAssessments} />
+                      {selectedSub.context.lpWantsCustom != null && (
+                        <DetailRow label="LP custom?" value={selectedSub.context.lpWantsCustom ? 'Yes' : 'No'} />
+                      )}
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => setShowMore(v => !v)}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      {showMore ? 'Show less ↑' : 'View more details ↓'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Notes */}
