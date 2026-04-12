@@ -696,17 +696,24 @@ export default function PilotClient() {
     <div className="min-h-screen font-sans" style={{ background: 'white' }}>
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="px-6 py-1.5 flex items-center justify-between" style={{ background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
-        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
+      <nav className="px-6 py-1.5 grid items-center" style={{ gridTemplateColumns: '1fr auto 1fr', background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
+        {/* Left: logo */}
+        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer" className="justify-self-start">
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54 }} />
         </a>
-        <div className="flex items-center gap-3">
+        {/* Center: CTA */}
+        <button
+          onClick={openForm}
+          className="text-sm font-bold px-6 py-2 rounded-xl transition-all hover:opacity-90 hover:scale-[1.03] shadow-lg"
+          style={{ background: 'linear-gradient(135deg, #e07b54 0%, #cc6648 40%, #9a4a80 100%)', color: 'white', letterSpacing: '0.01em', boxShadow: '0 2px 12px rgba(224,123,84,0.45)' }}
+        >
+          Start a Pilot
+        </button>
+        {/* Right: badge */}
+        <div className="justify-self-end">
           <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
             Pilot Program
           </span>
-          <button onClick={openForm} className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90" style={{ background: 'white', color: '#1a2744' }}>
-            Start a Pilot
-          </button>
         </div>
       </nav>
 
