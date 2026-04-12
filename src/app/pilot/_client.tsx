@@ -1846,10 +1846,10 @@ export default function PilotClient() {
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Questions</p>
                         <div className="space-y-3">
                           {s.questions.map((q, i) => (
-                            <div key={i} className="flex gap-3">
-                              <span className="shrink-0 mt-0.5 text-xs font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-2 py-0.5 rounded-full h-fit" style={{ color: '#4a6fa5' }}>
+                            <div key={i} className="rounded-lg border border-[#4a6fa5]/20 bg-[#f8fafd] px-4 py-3">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#4a6fa5' }}>
                                 {q.pillar}
-                              </span>
+                              </p>
                               <p className="text-sm text-gray-700 leading-relaxed">{q.text}</p>
                             </div>
                           ))}
@@ -1936,12 +1936,12 @@ export default function PilotClient() {
                           onOpen={() => setPreviewModal({ label: a.name, url: a.previewUrl })}
                         />
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Prompts</p>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {a.benchmarks.map(b => (
-                            <div key={`${b.num}-${b.attribute}`} className="flex gap-3">
-                              <span className="shrink-0 mt-0.5 text-xs font-medium text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full h-fit">
+                            <div key={`${b.num}-${b.attribute}`} className="rounded-lg border border-[#4a6fa5]/20 bg-[#f8fafd] px-4 py-3">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#4a6fa5' }}>
                                 {b.attribute}
-                              </span>
+                              </p>
                               <p className="text-sm text-gray-700 leading-relaxed">{b.prompt}</p>
                             </div>
                           ))}
