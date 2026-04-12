@@ -463,39 +463,22 @@ const EMPTY_FORM: FormData = {
   notes: '',
 };
 
-const GRADES = ['TK', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+const GRADE_BANDS = [
+  'Lower Elementary (TK–2)',
+  'Elementary (3+)',
+  'Middle (6+)',
+  'High (9+)',
+];
 
-const GRADE_TO_BANDS: Record<string, string[]> = {
-  'TK': ['Lower Elementary (TK–2)'], 'K': ['Lower Elementary (TK–2)'],
-  '1':  ['Lower Elementary (TK–2)'], '2': ['Lower Elementary (TK–2)'],
-  '3':  ['Elementary (3rd–5th)'],    '4': ['Elementary (3rd–5th)'],   '5': ['Elementary (3rd–5th)'],
-  '6':  [], // resolved dynamically by getGradeBands
-  '7':  ['Middle School (6th–8th)'], '8': ['Middle School (6th–8th)'],
-  '9':  ['High School (9th–12th)'],  '10': ['High School (9th–12th)'],
-  '11': ['High School (9th–12th)'],  '12': ['High School (9th–12th)'],
+const BAND_TO_INTERNAL: Record<string, string> = {
+  'Lower Elementary (TK–2)': 'Lower Elementary (TK–2)',
+  'Elementary (3+)':          'Elementary (3rd–5th)',
+  'Middle (6+)':              'Middle School (6th–8th)',
+  'High (9+)':                'High School (9th–12th)',
 };
 
-/** Compute grade bands from the full set of selected grades.
- *  6th-grade rule:
- *   - only 6th selected  → both Elementary and Middle School
- *   - 6th is the highest (no 7+) → Elementary only
- *   - 7+ also selected   → Middle School only
- */
 function getGradeBands(gradeLevels: string[]): Set<string> {
-  const has7plus  = gradeLevels.some(g => ['7','8','9','10','11','12'].includes(g));
-  const has5minus = gradeLevels.some(g => ['TK','K','1','2','3','4','5'].includes(g));
-  const only6     = gradeLevels.length === 1 && gradeLevels[0] === '6';
-  const bands     = new Set<string>();
-  for (const g of gradeLevels) {
-    if (g === '6') {
-      if (only6)                    { bands.add('Elementary (3rd–5th)'); bands.add('Middle School (6th–8th)'); }
-      else if (has7plus && !has5minus){ bands.add('Middle School (6th–8th)'); }
-      else                           { bands.add('Elementary (3rd–5th)'); }
-    } else {
-      for (const b of GRADE_TO_BANDS[g] ?? []) bands.add(b);
-    }
-  }
-  return bands;
+  return new Set(gradeLevels.map(l => BAND_TO_INTERNAL[l]).filter(Boolean) as string[]);
 }
 
 function MultiCheck({ label, options, value, onChange }: {
@@ -1401,7 +1384,7 @@ export default function PilotClient() {
                 {(isLP || isBH || studentsSelected) && (
                   <MultiCheck
                     label="Which grade levels? *"
-                    options={GRADES}
+                    options={GRADE_BANDS}
                     value={form.gradeLevels}
                     onChange={v => set('gradeLevels', v)}
                   />
