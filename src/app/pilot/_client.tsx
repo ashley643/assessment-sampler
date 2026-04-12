@@ -127,17 +127,17 @@ const ASSESSMENT_TYPES = [
   {
     id: 'community-schools' as const,
     label: 'Community Schools Survey',
-    description: 'Structured voice from students, families, and staff to inform continuous improvement and LCAP planning.',
+    description: 'Structured voice from students, families, and staff to inform continuous improvement and community planning.',
   },
   {
     id: 'learner-portrait' as const,
     label: 'Learner Portrait',
-    description: 'Open-ended voice interviews that surface SEL competencies, strengths, and growth areas for each student.',
+    description: 'Open-ended voice interviews that surface human skill competencies, strengths, and growth areas for each student.',
   },
   {
     id: 'behavioral-health' as const,
     label: 'Behavioral Health Screener',
-    description: 'A validated voice-based approach to identifying students who may benefit from counseling or intervention.',
+    description: 'A voice-based approach to identifying students who may benefit from counseling or intervention.',
   },
 ];
 
@@ -1273,8 +1273,8 @@ export default function PilotClient() {
             {step === 1 && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Which assessment fits your needs?</h3>
-                  <p className="text-sm text-gray-500 mb-5">Choose the one that best matches your goals for the pilot.</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Which assessment fits your goals?</h3>
+                  <p className="text-sm text-gray-500 mb-5">Pick the one that matches what you&apos;re trying to learn.</p>
                 </div>
                 <div className="space-y-3">
                   {ASSESSMENT_TYPES.map(({ id, label, description }) => (
