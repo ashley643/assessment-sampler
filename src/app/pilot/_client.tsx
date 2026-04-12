@@ -1460,7 +1460,7 @@ export default function PilotClient() {
                   {form.languages.includes('Other') && (
                     <input
                       className={INPUT_CLS + ' mt-2'}
-                      placeholder="Which language?"
+                      placeholder="Which language(s)?"
                       value={form.otherLanguage}
                       onChange={e => set('otherLanguage', e.target.value)}
                     />
@@ -1753,7 +1753,7 @@ export default function PilotClient() {
                       <span className="text-sm text-gray-700">Other</span>
                     </label>
                     {form.demographics.includes('Other') && (
-                      <input className={INPUT_CLS + ' mt-1'} placeholder="Which demographic field?"
+                      <input className={INPUT_CLS + ' mt-1'} placeholder="Which demographic field(s)?"
                         value={form.demographicsOther} onChange={e => set('demographicsOther', e.target.value)} />
                     )}
                     <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
