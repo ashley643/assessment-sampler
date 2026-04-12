@@ -1883,6 +1883,7 @@ export default function PilotClient() {
                         <div className="p-5 space-y-5">
                           {/* Embedded preview */}
                           <div className="space-y-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample Question</p>
                             <VideoAskEmbed
                               url={lang === 'es' && preview.es ? preview.es : preview.en}
                               label={`${label} — ${lang === 'en' ? 'English' : 'Español'}`}
@@ -2017,6 +2018,7 @@ export default function PilotClient() {
                         <p className="text-xs text-gray-400">{s.grades}</p>
                       </div>
                       <div className="p-5 space-y-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample Question</p>
                         <VideoAskEmbed
                           url={s.previewUrl}
                           label={s.name}
@@ -2116,6 +2118,7 @@ export default function PilotClient() {
                           <p className="text-xs text-gray-400">{a.grades}</p>
                         </div>
                         <div className="px-5 py-4 space-y-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample Question</p>
                           <VideoAskEmbed
                             url={a.previewUrl}
                             label={a.name}
