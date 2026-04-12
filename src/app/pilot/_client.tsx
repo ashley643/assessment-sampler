@@ -2299,10 +2299,16 @@ export default function PilotClient() {
                                                     ? 'border-[#4a6fa5] bg-[#f0f5fb] cursor-pointer'
                                                     : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
                                               }`}>
-                                                <input type="checkbox" checked={checked} disabled={isClaimedByOther}
+                                                <input type="radio"
+                                                  name={`lp-${a.id}-${chipName}`}
+                                                  checked={checked} disabled={isClaimedByOther}
                                                   onChange={() => {
                                                     if (isClaimedByOther) return;
-                                                    const next = checked ? qPicks.filter(id => id !== q.id) : [...qPicks, q.id];
+                                                    // one question per attribute chip: deselect any other question owned by the same chip
+                                                    const next = [
+                                                      ...qPicks.filter(id => (primaryChipForQ.get(id) ?? '') !== primaryChip),
+                                                      q.id,
+                                                    ];
                                                     setLpQPicks(p => ({ ...p, [a.id]: next }));
                                                   }}
                                                   className="accent-[#4a6fa5] mt-0.5 shrink-0" />
