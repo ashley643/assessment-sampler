@@ -1646,10 +1646,15 @@ export default function PilotClient() {
                             ))}
                             {/* Data rows */}
                             {RISK_ROWS.map((row, ri) => {
+                              const shortLabel: Record<string, string> = {
+                                'Self-doubt language': 'Self-Doubt Lang.',
+                                'Help-seeking absence': 'Low Help-Seeking',
+                              };
+                              const label = shortLabel[row.pattern] ?? row.pattern;
                               const ry = 30 + ri * 24;
                               return (
                                 <g key={ri}>
-                                  <text x="84" y={ry} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="rgba(255,255,255,0.6)">{row.pattern}</text>
+                                  <text x="84" y={ry} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="rgba(255,255,255,0.6)">{label}</text>
                                   {[row.g6, row.g7, row.g8].map((v, ci) => {
                                     const intensity = v / 7.25;
                                     const cx = 89 + ci * 57;
