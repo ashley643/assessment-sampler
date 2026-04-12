@@ -240,11 +240,11 @@ const CS_QUESTIONS: CSQ[] = [
 
 // Non-custom preview URLs per section
 const CS_PREVIEWS: Record<string, { en: string; es: string | null }> = {
-  'Elementary School': { en:'https://flex.impacterpathway.com/f5cn3e7bq#contact_email=X%2540XXXX.com&unit_id=XXXX', es:'https://flex.impacterpathway.com/fjoewj96b#contact_email=X%2540XXXX.com&unit_id=XXXX' },
-  'Middle School':     { en:'https://flex.impacterpathway.com/fe2p81t9k#contact_email=X%2540XXXX.com&unit_id=XXXX', es:'https://flex.impacterpathway.com/fyzb1fx9j#contact_email=X%2540XXXX.com&unit_id=XXXX' },
-  'High School':       { en:'https://flex.impacterpathway.com/fiwwhvwwa#contact_email=X%2540XXXX.com&unit_id=XXXX', es:'https://flex.impacterpathway.com/ftgvxd65q#contact_email=X%2540XXXX.com&unit_id=XXXX' },
-  'Parent':            { en:'https://flex.impacterpathway.com/fe2byes29', es:'https://flex.impacterpathway.com/fhd7evhlp' },
-  'Staff':             { en:'https://flex.impacterpathway.com/fad677c4k', es:null },
+  'Elementary School': { en:'https://flex.impacterpathway.com/f0fwulas9?preview', es:null },
+  'Middle School':     { en:'https://flex.impacterpathway.com/f0zy1h485?preview', es:null },
+  'High School':       { en:'https://flex.impacterpathway.com/fzq8z8vw4?preview', es:null },
+  'Parent':            { en:'https://flex.impacterpathway.com/f7u4hz91d?preview', es:null },
+  'Staff':             { en:'https://flex.impacterpathway.com/flgxm5ys9?preview', es:null },
 };
 
 // ── Behavioral Health screeners ───────────────────────────────────────────────
