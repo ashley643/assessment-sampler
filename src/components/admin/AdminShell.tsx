@@ -6,6 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
 const PAGE_TITLES: Record<string, string> = {
+  '/admin/pilot-submissions': 'Pilot Forms — Admin',
   '/admin/dashboard':        'Activity Log — Admin',
   '/admin/codes':            'Access Codes — Admin',
   '/admin/assessments':      'Assessments — Admin',
@@ -17,6 +18,7 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 const NAV = [
+  { href: '/admin/pilot-submissions', label: 'Pilot Forms' },
   { href: '/admin/codes', label: 'Access Codes' },
   { href: '/admin/dashboard', label: 'Activity Log' },
   { href: '/admin/assessments', label: 'Assessments' },
@@ -37,7 +39,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   // Pages that manage their own layout and don't want admin padding
   const fullBleed = pathname.startsWith('/admin/district-finder')
     || pathname.startsWith('/admin/response-finder')
-    || pathname.startsWith('/admin/videoask-import');
+    || pathname.startsWith('/admin/videoask-import')
+    || pathname.startsWith('/admin/pilot-submissions');
 
   useEffect(() => {
     const match = Object.entries(PAGE_TITLES).find(([k]) => pathname.startsWith(k));

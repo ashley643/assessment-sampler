@@ -64,6 +64,33 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
+export async function PATCH(req: Request) {
+  const cookie = req.headers.get('cookie') ?? '';
+  if (!cookie.includes('admin_session')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  if (!body?.id || !body?.stage) {
+    return NextResponse.json({ error: 'Missing id or stage' }, { status: 400 });
+  }
+
+  // Read existing context so we can merge the stage in without losing other fields
+  const { data: row } = await supabaseAdmin
+    .from('pilot_intake')
+    .select('context')
+    .eq('id', body.id)
+    .single();
+
+  const { error } = await supabaseAdmin
+    .from('pilot_intake')
+    .update({ context: { ...(row?.context ?? {}), stage: body.stage } })
+    .eq('id', body.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
 export async function GET(req: Request) {
   // Admin-only listing — simple cookie check
   const cookie = req.headers.get('cookie') ?? '';
