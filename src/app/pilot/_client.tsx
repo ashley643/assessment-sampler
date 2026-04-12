@@ -625,14 +625,16 @@ export default function PilotClient() {
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
       <nav className="px-6 py-3 flex items-center justify-between bg-white" style={{ borderBottom: '1px solid #e8edf5', position: 'sticky', top: 0, zIndex: 30 }}>
-        <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 34, filter: 'brightness(0) saturate(100%) invert(17%) sepia(26%) saturate(1200%) hue-rotate(195deg) brightness(85%)' }} />
+        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
+          <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 40, filter: 'brightness(0) saturate(100%) invert(17%) sepia(26%) saturate(1200%) hue-rotate(195deg) brightness(85%)' }} />
+        </a>
         <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#f0f5fb', color: '#4a6fa5', border: '1px solid #d0dff0' }}>
           Pilot Program
         </span>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #4a52b0 22%, #7a4aaa 44%, #aa5070 64%, #cc6648 82%, #bf5c3c 100%)', minHeight: '72vh', display: 'flex', alignItems: 'center' }}>
+      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #3a62aa 18%, #4a6ab8 36%, #6a5ab0 54%, #9a4a80 68%, #cc6648 84%, #bf5c3c 100%)', minHeight: '72vh', display: 'flex', alignItems: 'center' }}>
         {/* Soft radial overlay for depth */}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 60%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
         {/* SVG circular watermark */}
@@ -676,7 +678,7 @@ export default function PilotClient() {
               {
                 n: '1', color: '#e07b54',
                 title: 'Share a link',
-                body: 'We configure a custom assessment for your school or district. Respondents click a link and answer 3–6 voice-based questions. No app download. No login.',
+                body: 'We configure a custom assessment for your school or district. Respondents click a link and answer 3–6 voice-based questions — in their own words. No app download. No login.',
               },
               {
                 n: '2', color: '#2d7a5f',
@@ -686,7 +688,7 @@ export default function PilotClient() {
               {
                 n: '3', color: '#4a6fa5',
                 title: 'Receive your report',
-                body: 'About a week after the window closes, we deliver a synthesized report — cross-campus analytics, theme clusters, equity breakdowns, voice highlights, and the insights you\'d never get from a checkbox.',
+                body: 'A week after the window closes, we deliver a synthesized report — cross-campus analytics, theme clusters, equity breakdowns, and the standout moments you\'d never get from a checkbox.',
               },
             ].map(({ n, color, title, body }) => (
               <div key={n} className="bg-white rounded-2xl p-6 shadow-sm" style={{ borderTop: `3px solid ${color}` }}>
@@ -701,35 +703,28 @@ export default function PilotClient() {
 
       {/* ── What makes this different ────────────────────────────────────────── */}
       <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
-        <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-xs font-semibold uppercase tracking-widest mb-10 text-center" style={{ color: '#4a6fa5' }}>What makes this different</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {/* Left: Pull quote */}
-            <div>
-              <p className="font-bold leading-snug text-gray-900 mb-4" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
-                Surveys tell you what students select.
-              </p>
-              <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
-                We measure what they actually say.
-              </p>
-              <p className="text-base leading-relaxed text-gray-500">
-                IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how your students, families, and staff are actually experiencing your schools.
-              </p>
-            </div>
-            {/* Right: Stats 2×2 */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                ['200–800', 'rubric-aligned score per respondent'],
-                ['< 1 week', 'from launch to first insights'],
-                ['6 domains', 'of competency analyzed per student'],
-                ['3 languages', 'supported — English, Spanish, and more'],
-              ].map(([val, label]) => (
-                <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
-                  <p className="text-2xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
-                  <p className="text-xs leading-tight text-gray-400">{label}</p>
-                </div>
-              ))}
-            </div>
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5' }}>What makes this different</h2>
+          <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
+            Surveys tell you what students select.
+          </p>
+          <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
+            We measure what they actually say.
+          </p>
+          <p className="text-base leading-relaxed text-gray-500 mb-10">
+            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how respondents are actually experiencing your schools and demonstrating future-ready competencies.
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              ['200–800', 'rubric-aligned score'],
+              ['< 1 week', 'time to first insight'],
+              ['0 PII needed', 'privacy-first by design'],
+            ].map(([val, label]) => (
+              <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
+                <p className="text-xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
+                <p className="text-xs leading-tight text-gray-400">{label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -835,8 +830,7 @@ export default function PilotClient() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
-            <p className="text-xs text-gray-400">All data above is synthetic. Real output is delivered as a downloadable CSV with embedded response links.</p>
+          <div className="flex items-center justify-end mt-3 flex-wrap gap-2">
             <div className="flex items-center gap-3 text-[10px] text-gray-400">
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#d1fae5' }}></span>600+</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fef9c3' }}></span>500–599</span>
@@ -1025,7 +1019,7 @@ export default function PilotClient() {
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Frequency = % of total spoken words flagged per pattern per grade. Darker = higher frequency.</p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Frequency = % of total spoken words flagged per pattern per grade.</p>
               </div>
             )}
 
@@ -1216,10 +1210,11 @@ export default function PilotClient() {
 
       {/* ── CTA ──────────────────────────────────────────────────────────────── */}
       {!formOpen && (
-        <section className="py-24 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #4a52b0 22%, #7a4aaa 44%, #aa5070 64%, #cc6648 82%, #bf5c3c 100%)' }}>
+        <section className="py-24 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #3a62aa 18%, #4a6ab8 36%, #6a5ab0 54%, #9a4a80 68%, #cc6648 84%, #bf5c3c 100%)' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 70% 40%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
           <div className="relative">
-            <h2 className="text-3xl font-bold text-white mb-3">Ready to run a pilot?</h2>
+            <h2 className="text-3xl font-bold text-white mb-3">Schools measure hard skills.</h2>
+            <p className="text-3xl font-bold text-white mb-6" style={{ fontStyle: 'italic' }}>We measure the rest.</p>
             <p className="mb-8 text-base max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.75)' }}>
               Tell us about what you&apos;re looking for and we&apos;ll have everything configured in a few days.
             </p>
