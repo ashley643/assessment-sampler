@@ -469,11 +469,33 @@ const GRADE_TO_BANDS: Record<string, string[]> = {
   'TK': ['Lower Elementary (TK–2)'], 'K': ['Lower Elementary (TK–2)'],
   '1':  ['Lower Elementary (TK–2)'], '2': ['Lower Elementary (TK–2)'],
   '3':  ['Elementary (3rd–5th)'],    '4': ['Elementary (3rd–5th)'],   '5': ['Elementary (3rd–5th)'],
-  '6':  ['Elementary (3rd–5th)', 'Middle School (6th–8th)'], // 6th grade spans both
+  '6':  [], // resolved dynamically by getGradeBands
   '7':  ['Middle School (6th–8th)'], '8': ['Middle School (6th–8th)'],
   '9':  ['High School (9th–12th)'],  '10': ['High School (9th–12th)'],
   '11': ['High School (9th–12th)'],  '12': ['High School (9th–12th)'],
 };
+
+/** Compute grade bands from the full set of selected grades.
+ *  6th-grade rule:
+ *   - only 6th selected  → both Elementary and Middle School
+ *   - 6th is the highest (no 7+) → Elementary only
+ *   - 7+ also selected   → Middle School only
+ */
+function getGradeBands(gradeLevels: string[]): Set<string> {
+  const has7plus = gradeLevels.some(g => ['7','8','9','10','11','12'].includes(g));
+  const only6    = gradeLevels.length === 1 && gradeLevels[0] === '6';
+  const bands    = new Set<string>();
+  for (const g of gradeLevels) {
+    if (g === '6') {
+      if (only6)        { bands.add('Elementary (3rd–5th)'); bands.add('Middle School (6th–8th)'); }
+      else if (has7plus){ bands.add('Middle School (6th–8th)'); }
+      else              { bands.add('Elementary (3rd–5th)'); }
+    } else {
+      for (const b of GRADE_TO_BANDS[g] ?? []) bands.add(b);
+    }
+  }
+  return bands;
+}
 
 function MultiCheck({ label, options, value, onChange }: {
   label: string;
@@ -629,7 +651,7 @@ export default function PilotClient() {
 
   function getCsSections(): Array<{ key: AgeGroup; label: string }> {
     const out: Array<{ key: AgeGroup; label: string }> = [];
-    const bands = new Set(form.gradeLevels.flatMap(g => GRADE_TO_BANDS[g] ?? []));
+    const bands = getGradeBands(form.gradeLevels);
     if (bands.has('Lower Elementary (TK–2)') || bands.has('Elementary (3rd–5th)'))
       out.push({ key: 'Elementary School', label: 'Elementary School' });
     if (bands.has('Middle School (6th–8th)'))  out.push({ key: 'Middle School',   label: 'Middle School' });
@@ -648,7 +670,7 @@ export default function PilotClient() {
   }
 
   function getBHScreeners(): BHScreener[] {
-    const bands = new Set(form.gradeLevels.flatMap(g => GRADE_TO_BANDS[g] ?? []));
+    const bands = getGradeBands(form.gradeLevels);
     return BH_SCREENERS.filter(s => s.gradeBands.some(gb => bands.has(gb)));
   }
 
@@ -657,7 +679,7 @@ export default function PilotClient() {
   }
 
   function getLPAssessments(): LPAssessment[] {
-    const bands = new Set(form.gradeLevels.flatMap(g => GRADE_TO_BANDS[g] ?? []));
+    const bands = getGradeBands(form.gradeLevels);
     return LP_ASSESSMENTS.filter(a => a.gradeBands.some(gb => bands.has(gb)));
   }
 
