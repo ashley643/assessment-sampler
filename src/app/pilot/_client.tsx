@@ -1604,22 +1604,44 @@ export default function PilotClient() {
                           {/* Mode selector */}
                           <div className="space-y-2">
                             {([
-                              { v: 'standard'  as const, l: 'Use the standard assessment' },
-                              { v: 'custom'    as const, l: 'Customize — select one question per pillar' },
-                              { v: 'write-own' as const, l: 'I\'d like to write custom questions' },
-                            ]).map(({ v, l }) => (
-                              <label key={v} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                              { v: 'standard'  as const, l: 'Standard', sub: 'Our recommended prompts, ready to go.' },
+                              { v: 'custom'    as const, l: 'Customize', sub: 'Pick one prompt per pillar from our library.' },
+                              { v: 'write-own' as const, l: 'Build your own', sub: 'We\'ll design custom questions with you.' },
+                            ]).map(({ v, l, sub }) => (
+                              <label key={v} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                                 mode === v ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
                               }`}>
                                 <input type="radio" name={`mode-${key}`} value={v} checked={mode === v}
                                   onChange={() => setCsMode(m => ({ ...m, [key]: v }))}
-                                  className="accent-[#4a6fa5]" />
-                                <span className="text-sm text-gray-700">{l}</span>
+                                  className="accent-[#4a6fa5] mt-0.5" />
+                                <span>
+                                  <span className="text-sm font-medium text-gray-800">{l}</span>
+                                  <span className="text-xs text-gray-500 block">{sub}</span>
+                                </span>
                               </label>
                             ))}
                           </div>
 
-                          {/* Custom question selector */}
+                          {/* Standard: show the default questions inline */}
+                          {mode === 'standard' && (
+                            <div className="border-t border-gray-100 pt-4 space-y-3">
+                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Standard questions</p>
+                              {([1,2,3,4] as const).map(pillar => {
+                                const defaultQ = CS_QUESTIONS.find(q => q.age === key && q.p === pillar && q.def);
+                                if (!defaultQ) return null;
+                                return (
+                                  <div key={pillar} className="rounded-lg border border-[#4a6fa5]/20 bg-[#f8fafd] px-4 py-3">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#4a6fa5' }}>
+                                      Pillar {pillar} — {PILLARS[pillar]}
+                                    </p>
+                                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{defaultQ.text}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Custom: pick one per pillar */}
                           {mode === 'custom' && ([1,2,3,4] as const).map(pillar => {
                             const qs = CS_QUESTIONS.filter(q => q.age === key && q.p === pillar);
                             const selected = csPicks[key]?.[pillar];
@@ -1642,7 +1664,7 @@ export default function PilotClient() {
                                         className="accent-[#4a6fa5] mt-0.5 shrink-0" />
                                       <span className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
                                         {q.text}
-                                        {q.def && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
+                                        {q.def && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>recommended</span>}
                                       </span>
                                     </label>
                                   ))}
