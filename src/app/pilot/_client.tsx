@@ -381,6 +381,7 @@ interface FormData {
   // Community Schools specific
   communityModel: string;
   primaryGoal: string;
+  primaryGoalOther: string;
   // Learner Portrait specific
   competencyFocus: string;
   // Behavioral Health specific
@@ -413,6 +414,7 @@ const EMPTY_FORM: FormData = {
   modalities: [],
   communityModel: '',
   primaryGoal: '',
+  primaryGoalOther: '',
   competencyFocus: '',
   screeningScope: '',
   bhSelectedAssessments: [],
@@ -1322,19 +1324,29 @@ export default function PilotClient() {
                 )}
 
                 {!!form.assessmentType && (
-                  <Field label="What is your primary goal for this pilot?">
-                    <select value={form.primaryGoal} onChange={e => set('primaryGoal', e.target.value)} className={SELECT_CLS}>
-                      <option value="">Select one…</option>
-                      <option>LCAP / strategic planning data</option>
-                      <option>Family engagement and outreach</option>
-                      <option>School climate and belonging</option>
-                      <option>Student wellness and behavioral health</option>
-                      <option>Learner skills and competency mapping</option>
-                      <option>Program evaluation</option>
-                      <option>Staff professional learning</option>
-                      <option>Other</option>
-                    </select>
-                  </Field>
+                  <div>
+                    <Field label="What is your primary goal for this pilot?">
+                      <select value={form.primaryGoal} onChange={e => set('primaryGoal', e.target.value)} className={SELECT_CLS}>
+                        <option value="">Select one…</option>
+                        <option>LCAP / strategic planning data</option>
+                        <option>Family engagement and outreach</option>
+                        <option>School climate and belonging</option>
+                        <option>Student wellness and behavioral health</option>
+                        <option>Learner skills and competency mapping</option>
+                        <option>Program evaluation</option>
+                        <option>Staff professional learning</option>
+                        <option>Other</option>
+                      </select>
+                    </Field>
+                    {form.primaryGoal === 'Other' && (
+                      <input
+                        className={INPUT_CLS + ' mt-2'}
+                        placeholder="Tell us more…"
+                        value={form.primaryGoalOther}
+                        onChange={e => set('primaryGoalOther', e.target.value)}
+                      />
+                    )}
+                  </div>
                 )}
 
                 <div className="flex justify-end pt-2">
@@ -1664,7 +1676,7 @@ export default function PilotClient() {
                                         className="accent-[#4a6fa5] mt-0.5 shrink-0" />
                                       <span className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
                                         {q.text}
-                                        {q.def && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>recommended</span>}
+                                        {q.def && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
                                       </span>
                                     </label>
                                   ))}
