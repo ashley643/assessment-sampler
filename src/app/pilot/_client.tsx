@@ -1621,20 +1621,21 @@ export default function PilotClient() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl overflow-hidden" style={{ background: '#1a2744' }}>
+                    <div className="rounded-xl overflow-hidden" style={{ background: '#1a2744', minHeight: 268 }}>
 
                       {/* Panel 0: Risk by Grade */}
                       {demoPanel === 0 && (
-                        <div className="p-5 flex flex-col gap-4">
+                        <div className="p-5 flex flex-col" style={{ minHeight: 268 }}>
                           <div>
                             <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Risk Patterns</p>
                             <h4 className="text-sm font-bold text-white leading-snug">Risk behaviors peak in 7th grade —<br/>nearly 2× higher than 8th.</h4>
                           </div>
+                          <div className="flex-1 flex flex-col justify-center mt-4">
                           <table className="w-full border-collapse">
                             <thead>
                               <tr>
-                                <th className="text-left pb-1.5 pr-3 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
-                                {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-1.5 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
+                                <th className="text-left pb-2 pr-3 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
+                                {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-2 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
                               </tr>
                             </thead>
                             <tbody>
@@ -1642,11 +1643,11 @@ export default function PilotClient() {
                                 const vals = [row.g6, row.g7, row.g8];
                                 return (
                                   <tr key={i}>
-                                    <td className="py-1 pr-3 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
+                                    <td className="py-2 pr-3 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
                                     {vals.map((v, j) => {
                                       const intensity = v / 7.25;
                                       return (
-                                        <td key={j} className="text-center font-bold rounded px-2 py-1"
+                                        <td key={j} className="text-center font-bold rounded px-2 py-2"
                                           style={{ background: `rgba(74,111,165,${0.12 + intensity * 0.78})`, color: intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: 9 }}>
                                           {v.toFixed(1)}%
                                         </td>
@@ -1657,27 +1658,26 @@ export default function PilotClient() {
                               })}
                             </tbody>
                           </table>
+                          </div>
                         </div>
                       )}
 
                       {/* Panel 1: BH Domains by Gender */}
                       {demoPanel === 1 && (
-                        <div className="p-5 flex flex-col gap-4">
-                          <div className="flex items-start justify-between gap-2 flex-wrap">
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Domain Analysis</p>
-                              <h4 className="text-sm font-bold text-white leading-snug">Girls outscore boys across<br/>all BH domains.</h4>
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        <div className="p-5 flex flex-col gap-4" style={{ minHeight: 268 }}>
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Domain Analysis</p>
+                            <h4 className="text-sm font-bold text-white leading-snug">Girls outscore boys across<br/>all BH domains.</h4>
+                            <div className="flex items-center gap-3 text-[10px] mt-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
                               <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2 rounded-sm" style={{ background: '#4a6fa5' }}></span>Female</span>
                               <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.2)' }}></span>Male</span>
                             </div>
                           </div>
-                          <svg viewBox="0 0 260 140" className="w-full">
+                          <svg viewBox="0 0 260 155" className="w-full">
                             {BH_DOMAIN_DATA.map((d, i) => {
                               const maxW = 140;
                               const scaleW = (v: number) => (v / 800) * maxW;
-                              const y = 14 + i * 26;
+                              const y = 16 + i * 27;
                               return (
                                 <g key={d.domain}>
                                   <text x="90" y={y + 3} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.5)">{d.domain}</text>
@@ -1704,7 +1704,7 @@ export default function PilotClient() {
                         ];
                         const dY = (d: number) => avgY - d * 2.2;
                         return (
-                          <div className="p-5 flex flex-col gap-4">
+                          <div className="p-5 flex flex-col gap-4" style={{ minHeight: 268 }}>
                             <div>
                               <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Community Schools · Pillar Scores</p>
                               <h4 className="text-sm font-bold text-white leading-snug">Franklin leads in Collaborative Leadership —<br/>Jefferson stands out in Family Engagement.</h4>
