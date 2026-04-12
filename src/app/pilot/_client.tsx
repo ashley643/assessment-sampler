@@ -572,6 +572,7 @@ export default function PilotClient() {
   const [demoPanel, setDemoPanel] = useState(0);
   const [demoPaused, setDemoPaused] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (insightPaused) return;
@@ -584,6 +585,10 @@ export default function PilotClient() {
     const t = setInterval(() => setDemoPanel(p => (p + 1) % 3), 4000);
     return () => clearInterval(t);
   }, [demoPaused]);
+
+  useEffect(() => {
+    scrollBodyRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+  }, [step]);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -1329,7 +1334,7 @@ export default function PilotClient() {
             </button>
           </div>
           {/* Scrollable form body */}
-          <div className="flex-1 overflow-y-auto">
+          <div ref={scrollBodyRef} className="flex-1 overflow-y-auto">
           <div className="max-w-xl mx-auto px-6 py-10">
 
             {/* Step indicator */}
