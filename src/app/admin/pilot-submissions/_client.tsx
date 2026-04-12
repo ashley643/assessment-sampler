@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import AdminShell from '@/components/admin/AdminShell';
 
-type Stage = 'new' | 'follow-up' | 'build' | 'execute' | 'report';
+type Stage = 'new' | 'follow-up' | 'build' | 'execute' | 'report' | 'cancelled';
 
 interface Context {
   respondents?: string[];
@@ -42,6 +42,7 @@ const STAGES: { key: Stage; label: string; color: string; bg: string; border: st
   { key: 'build',     label: 'Build',     color: '#b45309', bg: '#fffbeb', border: '#fcd34d', dot: '#f59e0b' },
   { key: 'execute',   label: 'Execute',   color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe', dot: '#8b5cf6' },
   { key: 'report',    label: 'Report',    color: '#065f46', bg: '#ecfdf5', border: '#6ee7b7', dot: '#10b981' },
+  { key: 'cancelled', label: 'Cancelled', color: '#991b1b', bg: '#fef2f2', border: '#fecaca', dot: '#ef4444' },
 ];
 
 const STAGE_MAP = Object.fromEntries(STAGES.map(s => [s.key, s])) as Record<Stage, typeof STAGES[0]>;
@@ -99,6 +100,13 @@ export default function PilotFormsClient() {
       body: JSON.stringify({ id, stage }),
     });
     setUpdatingStage(null);
+  }
+
+  async function deleteSubmission(id: string) {
+    if (!confirm('Delete this submission permanently? This cannot be undone.')) return;
+    setSubmissions(prev => prev.filter(s => s.id !== id));
+    setSelected(null);
+    await fetch(`/api/pilot?id=${id}`, { method: 'DELETE' });
   }
 
   const filtered = stageFilter === 'all'
@@ -287,11 +295,19 @@ export default function PilotFormsClient() {
                   </div>
                 )}
 
-                {/* Meta */}
-                <p className="text-xs text-gray-400">
-                  Submitted {new Date(selectedSub.created_at).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}
-                  {' · '}ID: <code className="bg-gray-100 px-1 rounded">{selectedSub.id}</code>
-                </p>
+                {/* Meta + Delete */}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-400">
+                    Submitted {new Date(selectedSub.created_at).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}
+                    {' · '}ID: <code className="bg-gray-100 px-1 rounded">{selectedSub.id}</code>
+                  </p>
+                  <button
+                    onClick={() => deleteSubmission(selectedSub.id)}
+                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             );
           })()}

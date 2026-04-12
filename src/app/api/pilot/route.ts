@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getAdminSession } from '@/lib/auth';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -65,10 +66,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const cookie = req.headers.get('cookie') ?? '';
-  if (!cookie.includes('admin_session')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json().catch(() => null);
   if (!body?.id || !body?.stage) {
@@ -91,12 +89,20 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-export async function GET(req: Request) {
-  // Admin-only listing — simple cookie check
-  const cookie = req.headers.get('cookie') ?? '';
-  if (!cookie.includes('admin_session')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function DELETE(req: Request) {
+  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+  const { error } = await supabaseAdmin.from('pilot_intake').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
+export async function GET() {
+  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data, error } = await supabaseAdmin
     .from('pilot_intake')
