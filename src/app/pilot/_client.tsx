@@ -571,7 +571,7 @@ export default function PilotClient() {
   }, []);
 
   useEffect(() => {
-    const t = setInterval(() => setDemoPanel(p => (p + 1) % 2), 4000);
+    const t = setInterval(() => setDemoPanel(p => (p + 1) % 3), 4000);
     return () => clearInterval(t);
   }, []);
 
@@ -1591,88 +1591,169 @@ export default function PilotClient() {
                     </label>
                   </div>
 
-                  {/* Rotating report preview */}
-                  <div className="mt-4 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                    {/* Card chrome */}
-                    <div className="bg-white px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-                      <div>
-                        <p className="text-[11px] font-semibold text-gray-700">
-                          {demoPanel === 0 ? 'Risk Patterns by Grade' : 'BH Domains by Gender'}
-                        </p>
-                        <p className="text-[9px] text-gray-400">
-                          {demoPanel === 0 ? 'Disaggregated by grade level' : 'Disaggregated by gender'}
-                        </p>
+                  {/* Rotating report preview — matches home-page insight panel style */}
+                  <div className="mt-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample report insights</p>
+                      <div className="flex items-center gap-1.5">
+                        {/* Prev / Next arrows */}
+                        {[
+                          { dir: -1, path: 'M10 6L6 10l4 4' },
+                          { dir:  1, path: 'M6 6l4 4-4 4'  },
+                        ].map(({ dir, path }) => (
+                          <button key={dir} type="button"
+                            onClick={() => setDemoPanel(p => (p + dir + 3) % 3)}
+                            className="rounded-full flex items-center justify-center border transition-colors hover:border-[#4a6fa5]/40"
+                            style={{ width: 22, height: 22, background: 'white', border: '1px solid #e2e8f0' }}>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d={path} stroke="#4a6fa5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        ))}
+                        {/* Dots */}
+                        <div className="flex items-center gap-1 ml-1">
+                          {[0,1,2].map(i => (
+                            <button key={i} type="button" onClick={() => setDemoPanel(i)}
+                              className="rounded-full transition-all"
+                              style={{ width: demoPanel === i ? 16 : 6, height: 6, background: demoPanel === i ? '#4a6fa5' : '#c8d9ef' }} />
+                          ))}
+                        </div>
                       </div>
-                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-[#f0f5fb] border border-[#4a6fa5]/20" style={{ color: '#4a6fa5' }}>sample report</span>
                     </div>
 
-                    {/* Chart area */}
-                    <div className="p-4" style={{ background: '#1a2744' }}>
+                    <div className="rounded-xl overflow-hidden" style={{ background: '#1a2744' }}>
 
-                      {/* Panel 0: heatmap */}
+                      {/* Panel 0: Risk by Grade */}
                       {demoPanel === 0 && (
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="text-left pb-1.5 pr-3 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
-                              {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-1.5 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {RISK_ROWS.map((row, i) => {
-                              const vals = [row.g6, row.g7, row.g8];
+                        <div className="p-5 flex flex-col gap-4">
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Risk Patterns</p>
+                            <h4 className="text-sm font-bold text-white leading-snug">Risk behaviors peak in 7th grade —<br/>nearly 2× higher than 8th.</h4>
+                          </div>
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="text-left pb-1.5 pr-3 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
+                                {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-1.5 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {RISK_ROWS.map((row, i) => {
+                                const vals = [row.g6, row.g7, row.g8];
+                                return (
+                                  <tr key={i}>
+                                    <td className="py-1 pr-3 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
+                                    {vals.map((v, j) => {
+                                      const intensity = v / 7.25;
+                                      return (
+                                        <td key={j} className="text-center font-bold rounded px-2 py-1"
+                                          style={{ background: `rgba(74,111,165,${0.12 + intensity * 0.78})`, color: intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: 9 }}>
+                                          {v.toFixed(1)}%
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Panel 1: BH Domains by Gender */}
+                      {demoPanel === 1 && (
+                        <div className="p-5 flex flex-col gap-4">
+                          <div className="flex items-start justify-between gap-2 flex-wrap">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Domain Analysis</p>
+                              <h4 className="text-sm font-bold text-white leading-snug">Girls outscore boys across<br/>all BH domains.</h4>
+                            </div>
+                            <div className="flex items-center gap-3 text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                              <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2 rounded-sm" style={{ background: '#4a6fa5' }}></span>Female</span>
+                              <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.2)' }}></span>Male</span>
+                            </div>
+                          </div>
+                          <svg viewBox="0 0 260 140" className="w-full">
+                            {BH_DOMAIN_DATA.map((d, i) => {
+                              const maxW = 140;
+                              const scaleW = (v: number) => (v / 800) * maxW;
+                              const y = 14 + i * 26;
                               return (
-                                <tr key={i}>
-                                  <td className="py-1 pr-3 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
-                                  {vals.map((v, j) => {
-                                    const intensity = v / 7.25;
-                                    return (
-                                      <td key={j} className="text-center font-bold rounded px-2 py-1"
-                                        style={{ background: `rgba(74,111,165,${0.12 + intensity * 0.78})`, color: intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: 9 }}>
-                                        {v.toFixed(1)}%
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
+                                <g key={d.domain}>
+                                  <text x="90" y={y + 3} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.5)">{d.domain}</text>
+                                  <rect x="94" y={y - 11} width={scaleW(d.male)} height={14} rx="3" fill="rgba(255,255,255,0.12)" />
+                                  <rect x="94" y={y - 11} width={scaleW(d.female)} height={7} rx="3" fill="#4a6fa5" />
+                                  <text x={97 + scaleW(d.female)} y={y - 5} fontSize="9" fill="#7aa3cc" fontWeight="700">{d.female}</text>
+                                  <text x={97 + scaleW(d.male)} y={y + 3} fontSize="9" fill="rgba(255,255,255,0.3)" fontWeight="600">{d.male}</text>
+                                </g>
                               );
                             })}
-                          </tbody>
-                        </table>
+                          </svg>
+                        </div>
                       )}
 
-                      {/* Panel 1: gender bars */}
-                      {demoPanel === 1 && (
-                        <svg viewBox="0 0 200 120" className="w-full">
-                          {BH_DOMAIN_DATA.map((d, i) => {
-                            const maxW = 110;
-                            const scaleW = (v: number) => (v / 800) * maxW;
-                            const y = 12 + i * 22;
-                            return (
-                              <g key={d.domain}>
-                                <text x="70" y={y + 3} textAnchor="end" fontSize="8" fill="rgba(255,255,255,0.5)">{d.domain.split(' ')[0]}</text>
-                                <rect x="74" y={y - 9} width={scaleW(d.male)} height={11} rx="2" fill="rgba(255,255,255,0.12)" />
-                                <rect x="74" y={y - 9} width={scaleW(d.female)} height={6} rx="2" fill="#4a6fa5" />
-                                <text x={76 + scaleW(d.female)} y={y - 4} fontSize="8" fill="#7aa3cc" fontWeight="700">{d.female}</text>
-                              </g>
-                            );
-                          })}
-                          <g>
-                            <rect x="74" y="112" width="9" height="4" rx="1" fill="#4a6fa5" />
-                            <text x="85" y="116" fontSize="8" fill="rgba(255,255,255,0.4)">Female</text>
-                            <rect x="124" y="112" width="9" height="4" rx="1" fill="rgba(255,255,255,0.12)" />
-                            <text x="135" y="116" fontSize="8" fill="rgba(255,255,255,0.4)">Male</text>
-                          </g>
-                        </svg>
-                      )}
-                    </div>
-
-                    {/* Dot nav */}
-                    <div className="bg-white border-t border-gray-100 py-2 flex justify-center gap-1.5">
-                      {[0, 1].map(i => (
-                        <button key={i} type="button" onClick={() => setDemoPanel(i)}
-                          className="rounded-full transition-all"
-                          style={{ width: demoPanel === i ? 16 : 6, height: 6, background: demoPanel === i ? '#4a6fa5' : '#d0dff0' }} />
-                      ))}
+                      {/* Panel 2: CS Pillars by School */}
+                      {demoPanel === 2 && (() => {
+                        const pillarXs = [48, 100, 152, 204];
+                        const pillarLabels = ['Student\nSupport', 'Family\nEngage.', 'Collab.\nLeader.', 'Expanded\nLearning'];
+                        const avgY = 80;
+                        const schools = [
+                          { name: 'Franklin',  color: '#4a7fc1', deltas: [+10, -6, +14, +5]  },
+                          { name: 'Lincoln',   color: '#9a5ab0', deltas: [+13, +7, -4,  +2]  },
+                          { name: 'Jefferson', color: '#cc6648', deltas: [-7, +11, +3,  -9]  },
+                        ];
+                        const dY = (d: number) => avgY - d * 2.2;
+                        return (
+                          <div className="p-5 flex flex-col gap-4">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Community Schools · Pillar Scores</p>
+                              <h4 className="text-sm font-bold text-white leading-snug">Franklin leads in Collaborative Leadership —<br/>Jefferson stands out in Family Engagement.</h4>
+                            </div>
+                            <svg viewBox="0 0 260 155" className="w-full">
+                              {/* Avg dashed line */}
+                              <line x1={pillarXs[0] - 20} y1={avgY} x2={pillarXs[3] + 45} y2={avgY}
+                                stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="3 2" />
+                              <text x={pillarXs[0] - 22} y={avgY} textAnchor="end" fontSize="7.5" fill="rgba(255,255,255,0.3)" dominantBaseline="middle">avg</text>
+                              {/* Vertical pillar guides */}
+                              {pillarXs.map((x, i) => (
+                                <line key={i} x1={x} y1={avgY - 42} x2={x} y2={avgY + 42}
+                                  stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                              ))}
+                              {/* School connecting lines */}
+                              {schools.map(s => (
+                                <polyline key={s.name}
+                                  points={pillarXs.map((x, i) => `${x},${dY(s.deltas[i])}`).join(' ')}
+                                  fill="none" stroke={s.color} strokeWidth="2" strokeOpacity="0.55" />
+                              ))}
+                              {/* Dots + delta labels + school name at right */}
+                              {schools.map(s => (
+                                <g key={s.name}>
+                                  {pillarXs.map((x, i) => (
+                                    <g key={i}>
+                                      <circle cx={x} cy={dY(s.deltas[i])} r="4" fill={s.color} />
+                                      <text x={x} y={dY(s.deltas[i]) - 7} textAnchor="middle" fontSize="7.5"
+                                        fill={s.color} fontWeight="700">
+                                        {s.deltas[i] > 0 ? `+${s.deltas[i]}` : s.deltas[i]}
+                                      </text>
+                                    </g>
+                                  ))}
+                                  <text x={pillarXs[3] + 10} y={dY(s.deltas[3])} fontSize="8.5"
+                                    fill={s.color} dominantBaseline="middle" fontWeight="600">{s.name}</text>
+                                </g>
+                              ))}
+                              {/* Pillar labels at bottom */}
+                              {pillarLabels.map((label, i) => (
+                                <g key={i}>
+                                  {label.split('\n').map((line, li) => (
+                                    <text key={li} x={pillarXs[i]} y={128 + li * 10} textAnchor="middle"
+                                      fontSize="8" fill="rgba(255,255,255,0.35)">{line}</text>
+                                  ))}
+                                </g>
+                              ))}
+                            </svg>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
