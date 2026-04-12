@@ -562,10 +562,16 @@ export default function PilotClient() {
   const [lpAttrPicks, setLpAttrPicks] = useState<Record<string, string[]>>({}); // el/sec attribute picks
   const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
   const [insightPanel, setInsightPanel] = useState(0);
+  const [demoPanel, setDemoPanel] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const t = setInterval(() => setInsightPanel(p => (p + 1) % 6), 8000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => setDemoPanel(p => (p + 1) % 2), 4000);
     return () => clearInterval(t);
   }, []);
 
@@ -1585,68 +1591,89 @@ export default function PilotClient() {
                     </label>
                   </div>
 
-                  {/* Mini chart previews */}
-                  <p className="text-[11px] text-gray-400 mt-4 mb-2">Examples of disaggregated report views:</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Rotating report preview */}
+                  <div className="mt-4 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    {/* Card chrome */}
+                    <div className="bg-white px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-semibold text-gray-700">
+                          {demoPanel === 0 ? 'Risk Patterns by Grade' : 'BH Domains by Gender'}
+                        </p>
+                        <p className="text-[9px] text-gray-400">
+                          {demoPanel === 0 ? 'Disaggregated by grade level' : 'Disaggregated by gender'}
+                        </p>
+                      </div>
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-[#f0f5fb] border border-[#4a6fa5]/20" style={{ color: '#4a6fa5' }}>sample report</span>
+                    </div>
 
-                    {/* Mini: Risk heatmap by grade */}
-                    <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: '#1a2744' }}>
-                      <p className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>By Grade</p>
-                      <table className="w-full border-collapse" style={{ fontSize: 10 }}>
-                        <thead>
-                          <tr>
-                            <th className="text-left pb-1 pr-2 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
-                            {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-1 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {RISK_ROWS.map((row, i) => {
-                            const vals = [row.g6, row.g7, row.g8];
+                    {/* Chart area */}
+                    <div className="p-4" style={{ background: '#1a2744' }}>
+
+                      {/* Panel 0: heatmap */}
+                      {demoPanel === 0 && (
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="text-left pb-1.5 pr-3 font-normal" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9 }}>Pattern</th>
+                              {['6th','7th','8th'].map(g => <th key={g} className="text-center pb-1.5 px-1 font-semibold" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 9 }}>{g}</th>)}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {RISK_ROWS.map((row, i) => {
+                              const vals = [row.g6, row.g7, row.g8];
+                              return (
+                                <tr key={i}>
+                                  <td className="py-1 pr-3 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
+                                  {vals.map((v, j) => {
+                                    const intensity = v / 7.25;
+                                    return (
+                                      <td key={j} className="text-center font-bold rounded px-2 py-1"
+                                        style={{ background: `rgba(74,111,165,${0.12 + intensity * 0.78})`, color: intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: 9 }}>
+                                        {v.toFixed(1)}%
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+
+                      {/* Panel 1: gender bars */}
+                      {demoPanel === 1 && (
+                        <svg viewBox="0 0 200 120" className="w-full">
+                          {BH_DOMAIN_DATA.map((d, i) => {
+                            const maxW = 110;
+                            const scaleW = (v: number) => (v / 800) * maxW;
+                            const y = 12 + i * 22;
                             return (
-                              <tr key={i}>
-                                <td className="py-0.5 pr-2 font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, whiteSpace: 'nowrap' }}>{row.pattern}</td>
-                                {vals.map((v, j) => {
-                                  const intensity = v / 7.25;
-                                  return (
-                                    <td key={j} className="text-center font-bold rounded-sm px-1 py-0.5"
-                                      style={{ background: `rgba(74,111,165,${0.12 + intensity * 0.78})`, color: intensity > 0.55 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: 9 }}>
-                                      {v.toFixed(1)}%
-                                    </td>
-                                  );
-                                })}
-                              </tr>
+                              <g key={d.domain}>
+                                <text x="70" y={y + 3} textAnchor="end" fontSize="8" fill="rgba(255,255,255,0.5)">{d.domain.split(' ')[0]}</text>
+                                <rect x="74" y={y - 9} width={scaleW(d.male)} height={11} rx="2" fill="rgba(255,255,255,0.12)" />
+                                <rect x="74" y={y - 9} width={scaleW(d.female)} height={6} rx="2" fill="#4a6fa5" />
+                                <text x={76 + scaleW(d.female)} y={y - 4} fontSize="8" fill="#7aa3cc" fontWeight="700">{d.female}</text>
+                              </g>
                             );
                           })}
-                        </tbody>
-                      </table>
+                          <g>
+                            <rect x="74" y="112" width="9" height="4" rx="1" fill="#4a6fa5" />
+                            <text x="85" y="116" fontSize="8" fill="rgba(255,255,255,0.4)">Female</text>
+                            <rect x="124" y="112" width="9" height="4" rx="1" fill="rgba(255,255,255,0.12)" />
+                            <text x="135" y="116" fontSize="8" fill="rgba(255,255,255,0.4)">Male</text>
+                          </g>
+                        </svg>
+                      )}
                     </div>
 
-                    {/* Mini: BH domains by gender */}
-                    <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: '#1a2744' }}>
-                      <p className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>By Gender</p>
-                      <svg viewBox="0 0 160 115" className="w-full">
-                        {BH_DOMAIN_DATA.map((d, i) => {
-                          const maxW = 90;
-                          const scaleW = (v: number) => (v / 800) * maxW;
-                          const y = 10 + i * 21;
-                          return (
-                            <g key={d.domain}>
-                              <text x="58" y={y + 3} textAnchor="end" fontSize="7" fill="rgba(255,255,255,0.5)">{d.domain.split(' ')[0]}</text>
-                              <rect x="60" y={y - 8} width={scaleW(d.male)} height={10} rx="2" fill="rgba(255,255,255,0.15)" />
-                              <rect x="60" y={y - 8} width={scaleW(d.female)} height={5} rx="2" fill="#4a6fa5" />
-                              <text x={62 + scaleW(d.female)} y={y - 4} fontSize="7" fill="#7aa3cc" fontWeight="700">{d.female}</text>
-                            </g>
-                          );
-                        })}
-                        <g>
-                          <rect x="60" y="107" width="8" height="4" rx="1" fill="#4a6fa5" />
-                          <text x="70" y="111" fontSize="7" fill="rgba(255,255,255,0.4)">Female</text>
-                          <rect x="100" y="107" width="8" height="4" rx="1" fill="rgba(255,255,255,0.15)" />
-                          <text x="110" y="111" fontSize="7" fill="rgba(255,255,255,0.4)">Male</text>
-                        </g>
-                      </svg>
+                    {/* Dot nav */}
+                    <div className="bg-white border-t border-gray-100 py-2 flex justify-center gap-1.5">
+                      {[0, 1].map(i => (
+                        <button key={i} type="button" onClick={() => setDemoPanel(i)}
+                          className="rounded-full transition-all"
+                          style={{ width: demoPanel === i ? 16 : 6, height: 6, background: demoPanel === i ? '#4a6fa5' : '#d0dff0' }} />
+                      ))}
                     </div>
-
                   </div>
                 </div>
 
