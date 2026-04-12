@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAdminSession } from '@/lib/auth';
+import { sendReceiptEmail, sendInternalNotification } from '@/lib/pilot-emails';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -79,8 +80,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 });
   }
 
-  // TODO: Send confirmation email to contact + team when an email service is configured.
-  // Example payload available: { name, email, assessmentType, organization, launchTimeline }
+  // Send emails if Resend is configured
+  if (process.env.RESEND_API_KEY) {
+    await Promise.allSettled([
+      sendReceiptEmail({ name, email, organization, assessmentType, launchTimeline, expectedCount }),
+      sendInternalNotification({
+        name, email, role, organization, phone,
+        assessmentType, launchTimeline, expectedCount,
+        respondents, gradeLevels, primaryGoal, communityModel,
+        competencyFocus, screeningScope, notes,
+      }),
+    ]);
+  }
 
   return NextResponse.json({ ok: true });
 }
