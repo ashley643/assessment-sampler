@@ -2446,7 +2446,7 @@ export default function PilotClient() {
                 </p>
                 <p className="text-xs text-gray-400 mt-6">
                   Questions in the meantime? Reply to the confirmation email or reach us at{' '}
-                  <span className="text-[#4a6fa5]">hello@impacterpathway.com</span>.
+                  <a href="mailto:info@impacterpathway.com" className="text-[#4a6fa5] hover:underline">info@impacterpathway.com</a>.
                 </p>
               </div>
             )}
