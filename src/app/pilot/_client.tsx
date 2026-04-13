@@ -887,18 +887,18 @@ export default function PilotClient() {
           <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
           <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
         </div>
-        {/* Full-width iframe */}
-        <div style={{ width: '100%', lineHeight: 0 }}>
+        {/* Iframe constrained to page content width */}
+        <div className="max-w-6xl mx-auto px-6" style={{ lineHeight: 0 }}>
           <iframe
             key={PREVIEWS[previewIndex].url}
             src={PREVIEWS[previewIndex].url}
-            style={{ width: '100%', height: 520, border: 'none', display: 'block' }}
+            style={{ width: '100%', height: 520, border: 'none', display: 'block', borderRadius: 16 }}
             allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *"
             title={PREVIEWS[previewIndex].label}
           />
         </div>
         {/* Label + dot nav */}
-        <div className="px-6 py-6 flex items-center justify-between max-w-5xl mx-auto">
+        <div className="px-6 py-6 flex items-center justify-between max-w-6xl mx-auto">
           <div>
             <p className="text-sm font-semibold text-gray-900">{PREVIEWS[previewIndex].label}</p>
             <p className="text-xs text-gray-400">{PREVIEWS[previewIndex].org}</p>
