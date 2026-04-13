@@ -5,7 +5,7 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
-const FROM = 'Impacter Pathway <pilot@impacterpathway.com>';
+const FROM = 'Impacter Pathway <info@impacterpathway.com>';
 const INTERNAL_TO = ['ashley@impacterpathway.com'];
 const ADMIN_URL = 'https://try.impacterpathway.com/admin/pilot-submissions';
 
