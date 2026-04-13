@@ -568,6 +568,7 @@ export default function PilotClient() {
   const [lpAttrPicks, setLpAttrPicks] = useState<Record<string, string[]>>({}); // el/sec attribute picks
   const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [simShown, setSimShown] = useState(false);
   const [insightPanel, setInsightPanel] = useState(0);
   const [insightPaused, setInsightPaused] = useState(false);
   const [demoPanel, setDemoPanel] = useState(0);
@@ -882,53 +883,132 @@ export default function PilotClient() {
       </section>
 
       {/* ── See it in action ─────────────────────────────────────────────────── */}
-      <section style={{ background: '#f4f7fc' }}>
-        <div className="pt-16 pb-8 text-center px-6">
-          <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
-          <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
-        </div>
-        {/* Iframe constrained to page content width */}
-        <div className="max-w-6xl mx-auto px-6" style={{ lineHeight: 0 }}>
-          <iframe
-            key={PREVIEWS[previewIndex].url}
-            src={PREVIEWS[previewIndex].url}
-            style={{ width: '100%', height: 520, border: 'none', display: 'block', borderRadius: 16 }}
-            allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *"
-            title={PREVIEWS[previewIndex].label}
-          />
-        </div>
-        {/* Label + dot nav */}
-        <div className="px-6 py-6 flex items-center justify-between max-w-6xl mx-auto">
-          <div>
-            <p className="text-sm font-semibold text-gray-900">{PREVIEWS[previewIndex].label}</p>
-            <p className="text-xs text-gray-400">{PREVIEWS[previewIndex].org}</p>
+      <section className="py-16" style={{ background: '#f4f7fc' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-8 text-center">
+            <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
+            <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setPreviewIndex(i => (i - 1 + PREVIEWS.length) % PREVIEWS.length)}
-              className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
-              aria-label="Previous"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="#374151" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-            <div className="flex gap-1.5">
-              {PREVIEWS.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPreviewIndex(i)}
-                  className="rounded-full transition-all"
-                  style={{ width: i === previewIndex ? 20 : 7, height: 7, background: i === previewIndex ? '#4a6fa5' : '#d1d5db' }}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ))}
+
+          {/* Fake player shell */}
+          <div style={{ background: '#0d1b2e', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.28)' }}>
+
+            {/* Top bar */}
+            <div style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ background: '#1a3d6b', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
+                  Impacter Pathway
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Empathy Interview</span>
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>Vista High School</span>
             </div>
-            <button
-              onClick={() => setPreviewIndex(i => (i + 1) % PREVIEWS.length)}
-              className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
-              aria-label="Next"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2l5 5-5 5" stroke="#374151" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
+
+            {/* Two-panel body */}
+            <div style={{ display: 'flex', minHeight: 400 }}>
+
+              {/* ── Left: question video placeholder ── */}
+              <div style={{ flex: '0 0 62%', position: 'relative', background: '#09111e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {/* VIDEO GOES HERE — drop in a <video> or <iframe> replacing this placeholder */}
+                <div style={{ width: '100%', height: '100%', minHeight: 400, position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0d1f3c 0%, #0a1628 100%)' }} />
+
+                {/* Pause / Skip controls */}
+                <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 8, zIndex: 2 }}>
+                  <button style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
+                    ⏸
+                  </button>
+                  <button style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: '0.02em' }}>
+                    Skip ››
+                  </button>
+                </div>
+
+                {/* Question overlay at bottom */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 22px', zIndex: 2 }}>
+                  <p style={{ color: '#60a5fa', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>
+                    Assessment Prompt · Empathy
+                  </p>
+                  <p style={{ color: 'white', fontSize: 14, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
+                    &ldquo;Tell us about a time you noticed someone else was struggling or feeling left out. What did you do — and what would you do differently now?&rdquo;
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Right: response panel ── */}
+              <div style={{ flex: '1', background: '#0d1b2e', padding: '36px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
+                {!simShown ? (
+                  <>
+                    <p style={{ color: 'white', fontSize: 18, fontWeight: 600, margin: '0 0 24px' }}>
+                      How would you like to answer?
+                    </p>
+
+                    {/* Response mode buttons */}
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                      {([
+                        { label: 'VIDEO', icon: (
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3V9z"/>
+                          </svg>
+                        )},
+                        { label: 'AUDIO', icon: (
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="22"/>
+                          </svg>
+                        )},
+                        { label: 'TEXT', icon: (
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        )},
+                      ] as const).map(({ label, icon }) => (
+                        <button key={label} style={{ flex: 1, background: '#1a3558', border: '1.5px solid #2a4f7a', borderRadius: 10, padding: '16px 8px 12px', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, transition: 'background 0.15s' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#1e4068')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '#1a3558')}
+                        >
+                          {icon}
+                          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Practice link */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 28 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/>
+                      </svg>
+                      <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>Practice before sending</span>
+                    </div>
+
+                    {/* Simulate button */}
+                    <button
+                      onClick={() => setSimShown(true)}
+                      style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: 'white', border: 'none', borderRadius: 10, padding: '16px 24px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 4px 20px rgba(34,197,94,0.35)', letterSpacing: '0.01em' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      Simulate a Student Response
+                    </button>
+                  </>
+                ) : (
+                  /* ── Student response panel (video goes here) ── */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                      Student Response
+                    </p>
+                    {/* STUDENT RESPONSE VIDEO GOES HERE */}
+                    <div style={{ background: '#09111e', borderRadius: 10, aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>response video</span>
+                    </div>
+                    <button
+                      onClick={() => setSimShown(false)}
+                      style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 12, cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                    >
+                      ← Back
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
