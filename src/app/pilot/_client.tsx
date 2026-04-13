@@ -768,6 +768,39 @@ export default function PilotClient() {
   return (
     <div className="min-h-screen font-sans" style={{ background: 'white' }}>
 
+      {/* ── Floating CTA tab ─────────────────────────────────────────────────── */}
+      {!formOpen && (
+        <button
+          onClick={openForm}
+          aria-label="Start Today"
+          style={{
+            position: 'fixed',
+            right: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 25,
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            rotate: '180deg',
+            background: 'linear-gradient(180deg, #e07b54 0%, #cc6648 35%, #9a4a80 100%)',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: 13,
+            letterSpacing: '0.06em',
+            padding: '22px 13px',
+            borderRadius: '8px 0 0 8px',
+            boxShadow: '-3px 0 18px rgba(0,0,0,0.18)',
+            border: 'none',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          Start Today
+        </button>
+      )}
+
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
       <nav className="px-6 py-1.5 grid items-center" style={{ gridTemplateColumns: '1fr auto 1fr', background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
         {/* Left: logo */}
@@ -780,7 +813,7 @@ export default function PilotClient() {
           className="text-sm font-bold px-6 py-2 rounded-xl transition-all hover:opacity-90 hover:scale-[1.03] shadow-lg"
           style={{ background: 'linear-gradient(135deg, #e07b54 0%, #cc6648 40%, #9a4a80 100%)', color: 'white', letterSpacing: '0.01em', boxShadow: '0 2px 12px rgba(224,123,84,0.45)' }}
         >
-          Build a Custom Pilot
+          Sign Your School Up
         </button>
         {/* Right: badge */}
         <div className="justify-self-end">
@@ -1381,7 +1414,7 @@ export default function PilotClient() {
               className="font-semibold px-8 py-3 rounded-xl text-sm hover:opacity-90 transition-opacity shadow-lg"
               style={{ background: 'white', color: '#1a2744' }}
             >
-              Begin
+              Start Today
             </button>
           </div>
         </section>
