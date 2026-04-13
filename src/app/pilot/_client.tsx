@@ -115,14 +115,14 @@ const VOICE_TONE = [
 // ── VideoAsk previews ────────────────────────────────────────────────────────
 const PREVIEWS = [
   {
-    label: 'Community Schools Parent Survey',
-    org: 'San Mateo-Foster City USD',
-    url: 'https://smfcsd.impacterpathway.com/f5wvxewbq?preview',
-  },
-  {
     label: 'Empathy Interview',
     org: 'Vista High School',
     url: 'https://vistahs.impacterpathway.com/fzbfs0rrd?preview',
+  },
+  {
+    label: 'Community Schools Parent Survey',
+    org: 'San Mateo-Foster City USD',
+    url: 'https://smfcsd.impacterpathway.com/f5wvxewbq?preview',
   },
   {
     label: 'Graduate Portrait Survey',
@@ -567,6 +567,7 @@ export default function PilotClient() {
   const [lpPicks, setLpPicks] = useState<Record<string, string[]>>({});       // littles question picks
   const [lpAttrPicks, setLpAttrPicks] = useState<Record<string, string[]>>({}); // el/sec attribute picks
   const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [insightPanel, setInsightPanel] = useState(0);
   const [insightPaused, setInsightPaused] = useState(false);
   const [demoPanel, setDemoPanel] = useState(0);
@@ -784,43 +785,32 @@ export default function PilotClient() {
             rotate: '180deg',
             background: 'linear-gradient(180deg, #e07b54 0%, #cc6648 35%, #9a4a80 100%)',
             color: 'white',
-            fontWeight: 700,
-            fontSize: 13,
-            letterSpacing: '0.06em',
-            padding: '22px 13px',
-            borderRadius: '8px 0 0 8px',
-            boxShadow: '-3px 0 18px rgba(0,0,0,0.18)',
+            fontWeight: 800,
+            fontSize: 15,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '28px 16px',
+            borderRadius: '10px 0 0 10px',
+            boxShadow: '-4px 0 24px rgba(224,123,84,0.55), -2px 0 8px rgba(0,0,0,0.15)',
             border: 'none',
             cursor: 'pointer',
             userSelect: 'none',
           }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          onMouseEnter={e => { e.currentTarget.style.paddingRight = '20px'; e.currentTarget.style.opacity = '0.92'; }}
+          onMouseLeave={e => { e.currentTarget.style.paddingRight = '16px'; e.currentTarget.style.opacity = '1'; }}
         >
           Start Today
         </button>
       )}
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="px-6 py-1.5 grid items-center" style={{ gridTemplateColumns: '1fr auto 1fr', background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
-        {/* Left: logo */}
-        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer" className="justify-self-start">
+      <nav className="px-6 py-1.5 flex items-center justify-between" style={{ background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
+        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54 }} />
         </a>
-        {/* Center: CTA */}
-        <button
-          onClick={openForm}
-          className="text-sm font-bold px-6 py-2 rounded-xl transition-all hover:opacity-90 hover:scale-[1.03] shadow-lg"
-          style={{ background: 'linear-gradient(135deg, #e07b54 0%, #cc6648 40%, #9a4a80 100%)', color: 'white', letterSpacing: '0.01em', boxShadow: '0 2px 12px rgba(224,123,84,0.45)' }}
-        >
-          Sign Your School Up
-        </button>
-        {/* Right: badge */}
-        <div className="justify-self-end">
-          <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
-            Pilot Program
-          </span>
-        </div>
+        <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
+          Pilot Program
+        </span>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
@@ -891,51 +881,54 @@ export default function PilotClient() {
         </div>
       </section>
 
-      {/* ── What makes this different ────────────────────────────────────────── */}
-      <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5' }}>What makes this different</h2>
-          <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
-            Surveys tell you what students select.
-          </p>
-          <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
-            We measure what they actually say.
-          </p>
-          <p className="text-base leading-relaxed text-gray-500 mb-10">
-            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how respondents are actually experiencing your schools and demonstrating future-ready competencies.
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              ['200–800', 'rubric-aligned score'],
-              ['< 1 week', 'time to first insight'],
-              ['0 PII needed', 'privacy-first by design'],
-            ].map(([val, label]) => (
-              <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
-                <p className="text-xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
-                <p className="text-xs leading-tight text-gray-400">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── See it in action ─────────────────────────────────────────────────── */}
-      <section className="py-20" style={{ background: '#f4f7fc' }}>
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="mb-10 text-center">
-            <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
-            <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
+      <section style={{ background: '#f4f7fc' }}>
+        <div className="pt-16 pb-8 text-center px-6">
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
+          <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
+        </div>
+        {/* Full-width iframe */}
+        <div style={{ width: '100%', lineHeight: 0 }}>
+          <iframe
+            key={PREVIEWS[previewIndex].url}
+            src={PREVIEWS[previewIndex].url}
+            style={{ width: '100%', height: 520, border: 'none', display: 'block' }}
+            allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *"
+            title={PREVIEWS[previewIndex].label}
+          />
+        </div>
+        {/* Label + dot nav */}
+        <div className="px-6 py-6 flex items-center justify-between max-w-5xl mx-auto">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">{PREVIEWS[previewIndex].label}</p>
+            <p className="text-xs text-gray-400">{PREVIEWS[previewIndex].org}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PREVIEWS.map(({ label, org, url }) => (
-              <div key={url} className="rounded-2xl overflow-hidden flex flex-col bg-white shadow-sm" style={{ border: '1px solid #e8edf5' }}>
-                <VideoAskEmbed url={url} label={label} onOpen={() => setPreviewModal({ label, url })} height={220} />
-                <div className="px-5 py-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-0.5">{label}</p>
-                  <p className="text-xs text-gray-400">{org}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setPreviewIndex(i => (i - 1 + PREVIEWS.length) % PREVIEWS.length)}
+              className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+              aria-label="Previous"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="#374151" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <div className="flex gap-1.5">
+              {PREVIEWS.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPreviewIndex(i)}
+                  className="rounded-full transition-all"
+                  style={{ width: i === previewIndex ? 20 : 7, height: 7, background: i === previewIndex ? '#4a6fa5' : '#d1d5db' }}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => setPreviewIndex(i => (i + 1) % PREVIEWS.length)}
+              className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+              aria-label="Next"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2l5 5-5 5" stroke="#374151" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
         </div>
       </section>
@@ -1398,26 +1391,6 @@ export default function PilotClient() {
             />
           </div>
         </div>
-      )}
-
-      {/* ── CTA ──────────────────────────────────────────────────────────────── */}
-      {!formOpen && (
-        <section className="py-24 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #3a62aa 18%, #4a6ab8 36%, #6a5ab0 54%, #9a4a80 68%, #cc6648 84%, #bf5c3c 100%)' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 70% 40%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
-          <div className="relative">
-            <h2 className="text-3xl font-bold text-white mb-3">Interested in piloting?</h2>
-            <p className="mb-8 text-base max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Tell us about what you&apos;re looking for and we&apos;ll have everything configured in a few days.
-            </p>
-            <button
-              onClick={openForm}
-              className="font-semibold px-8 py-3 rounded-xl text-sm hover:opacity-90 transition-opacity shadow-lg"
-              style={{ background: 'white', color: '#1a2744' }}
-            >
-              Start Today
-            </button>
-          </div>
-        </section>
       )}
 
       {/* ── Intake Form (full-screen overlay) ────────────────────────────────── */}
@@ -2560,6 +2533,34 @@ export default function PilotClient() {
           </div>{/* end scrollable body */}
         </div>
       )}
+
+      {/* ── What makes this different ────────────────────────────────────────── */}
+      <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5' }}>What makes this different</h2>
+          <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
+            Surveys tell you what students select.
+          </p>
+          <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
+            We measure what they actually say.
+          </p>
+          <p className="text-base leading-relaxed text-gray-500 mb-10">
+            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how respondents are actually experiencing your schools and demonstrating future-ready competencies.
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              ['200–800', 'rubric-aligned score'],
+              ['< 1 week', 'time to first insight'],
+              ['0 PII needed', 'privacy-first by design'],
+            ].map(([val, label]) => (
+              <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
+                <p className="text-xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
+                <p className="text-xs leading-tight text-gray-400">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <footer className="py-8 text-center" style={{ background: '#1a2744', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
