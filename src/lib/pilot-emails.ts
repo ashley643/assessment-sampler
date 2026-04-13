@@ -1,6 +1,9 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY not set');
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 const FROM = 'Impacter Pathway <pilot@impacterpathway.com>';
 const INTERNAL_TO = ['ashley@impacterpathway.com'];
@@ -129,7 +132,7 @@ export async function sendReceiptEmail(opts: {
     </p>
   `;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: opts.email,
     subject: `Your Pilot Request — Impacter Pathway`,
@@ -202,7 +205,7 @@ export async function sendInternalNotification(opts: {
     </p>
   `;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: INTERNAL_TO,
     subject: `New Pilot Request — ${opts.organization} (${typeLabel})`,
