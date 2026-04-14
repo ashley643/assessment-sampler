@@ -918,6 +918,7 @@ export default function PilotClient() {
   const [insightPaused, setInsightPaused] = useState(false);
   const [demoPanel, setDemoPanel] = useState(0);
   const [demoPaused, setDemoPaused] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   const scrollBodyRef = useRef<HTMLDivElement>(null);
 
@@ -1611,118 +1612,6 @@ export default function PilotClient() {
         </div>
       </section>
 
-      {/* ── Sample data ──────────────────────────────────────────────────────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="mb-6 flex items-end justify-between flex-wrap gap-3">
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Sample output</h2>
-              <p className="font-semibold text-gray-800">What the dataset looks like — anonymized example data</p>
-            </div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full" style={{ background: 'rgba(224,123,84,0.1)', color: '#e07b54', border: '1px solid rgba(224,123,84,0.3)' }}>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              ML-scored &amp; analyzed
-            </span>
-          </div>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-            <table className="text-xs whitespace-nowrap border-collapse w-full">
-              <thead>
-                <tr style={{ background: '#1a2744' }}>
-                  {CSV_COLS.map((col, ci) => (
-                    <th key={col} className="px-3 py-2.5 text-left font-semibold border-b border-white/10 text-white/80 sticky top-0" style={{ background: '#1a2744' }}>
-                      {ci === 10 ? (
-                        <span className="flex items-center gap-1">
-                          {col}
-                          <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                        </span>
-                      ) : col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {CSV_ROWS.map((row, i) => {
-                  const score = parseInt(row[10], 10);
-                  const { bg: scoreBg, text: scoreText } = scoreColor(score);
-                  return (
-                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
-                      {row.map((cell, j) => {
-                        // Score column (index 10 after removing Ethnicity)
-                        if (j === 10) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100 font-bold text-center" style={{ background: scoreBg, color: scoreText }}>
-                              <span className="inline-flex items-center gap-1">
-                                {cell}
-                                <span className="text-[10px] font-normal opacity-60">/800</span>
-                              </span>
-                            </td>
-                          );
-                        }
-                        // Q response columns (4, 6, 8)
-                        if (j === 4 || j === 6 || j === 8) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100 text-gray-600 max-w-[200px]">
-                              <span className="block overflow-hidden text-ellipsis" style={{ maxWidth: 180 }}>{cell}</span>
-                              <a href="#" onClick={e => e.preventDefault()} className="text-[10px] font-medium mt-0.5 block" style={{ color: '#4a6fa5' }}>View response →</a>
-                            </td>
-                          );
-                        }
-                        // Community Signal (index 12)
-                        if (j === 12) {
-                          const isHigh = cell.toLowerCase().includes('high') || cell.toLowerCase().includes('strong');
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100">
-                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${isHigh ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{cell}</span>
-                            </td>
-                          );
-                        }
-                        // Unmet Need (index 13)
-                        if (j === 13) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700">{cell}</span>
-                            </td>
-                          );
-                        }
-                        // Next Step (index 14)
-                        if (j === 14) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: '#f0f5fb', color: '#1a2744' }}>{cell}</span>
-                            </td>
-                          );
-                        }
-                        // Language Style (index 11)
-                        if (j === 11) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100 italic text-gray-500 text-[11px]">
-                              <span className="block max-w-[160px] overflow-hidden text-ellipsis">{cell}</span>
-                            </td>
-                          );
-                        }
-                        return (
-                          <td key={j} className="px-3 py-2 border-b border-gray-100 text-gray-600">
-                            <span className="block max-w-[120px] overflow-hidden text-ellipsis">{cell}</span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-end mt-3 flex-wrap gap-2">
-            <div className="flex items-center gap-3 text-[10px] text-gray-400">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#d1fae5' }}></span>600+</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fef9c3' }}></span>500–599</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fed7aa' }}></span>400–499</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fee2e2' }}></span>&lt;400</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── Sample Report Insights ───────────────────────────────────────────── */}
       <section className="border-b border-gray-100 py-14" style={{ background: '#f4f7fc' }}>
         <div className="max-w-6xl mx-auto px-6">
@@ -1731,17 +1620,32 @@ export default function PilotClient() {
               <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Sample report insights</p>
               <h2 className="text-xl font-bold text-gray-900">What you can&apos;t get from a survey.</h2>
             </div>
-            {/* Panel nav dots */}
-            <div className="flex items-center gap-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <button key={i} onClick={() => setInsightPanel(i)}
-                  className="rounded-full transition-all"
-                  style={{
-                    width: insightPanel === i ? 20 : 8,
-                    height: 8,
-                    background: insightPanel === i ? '#4a6fa5' : '#c8d9ef',
-                  }} />
-              ))}
+            {/* Panel nav dots + CSV button */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <button key={i} onClick={() => setInsightPanel(i)}
+                    className="rounded-full transition-all"
+                    style={{
+                      width: insightPanel === i ? 20 : 8,
+                      height: 8,
+                      background: insightPanel === i ? '#4a6fa5' : '#c8d9ef',
+                    }} />
+                ))}
+              </div>
+              <button
+                onClick={() => setCsvOpen(true)}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors"
+                style={{ color: '#6b7280', border: '1px solid #d1d5db', background: 'white' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#4a6fa5'; e.currentTarget.style.color = '#4a6fa5'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#6b7280'; }}
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
+                </svg>
+                CSV
+              </button>
             </div>
           </div>
 
@@ -2072,6 +1976,111 @@ export default function PilotClient() {
       )}
 
       {/* ── Request a Demo modal ─────────────────────────────────────────────── */}
+      {/* ── CSV preview modal ─────────────────────────────────────────────────── */}
+      {csvOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 55, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget) setCsvOpen(false); }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.6)', backdropFilter: 'blur(6px)' }} onClick={() => setCsvOpen(false)} />
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 860, maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+            {/* Modal header */}
+            <div style={{ padding: '20px 28px 16px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexShrink: 0 }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4a6fa5', margin: '0 0 4px' }}>Raw data export</p>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a2744', margin: '0 0 4px', letterSpacing: '-0.2px' }}>Every response, as a structured CSV</h2>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
+                  In addition to the synthesized insights and charts in your dashboard, you can export the full dataset at any time.
+                </p>
+              </div>
+              <button onClick={() => setCsvOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20, lineHeight: 1, flexShrink: 0, padding: '2px 4px' }}>✕</button>
+            </div>
+            {/* Callout */}
+            <div style={{ margin: '16px 28px 0', padding: '12px 16px', background: '#f0f5ff', borderRadius: 10, borderLeft: '3px solid #4a6fa5', flexShrink: 0 }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#1a2744', lineHeight: 1.55 }}>
+                <strong>You get both.</strong> Your dashboard surfaces synthesized insights, flags, and charts automatically.
+                The CSV gives you full flexibility to slice the data in your own tools — filter by school, grade, score range, or any dimension you need.
+              </p>
+            </div>
+            {/* Table */}
+            <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1, margin: '16px 0 0' }}>
+              <table style={{ fontSize: 11, whiteSpace: 'nowrap', borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr style={{ background: '#1a2744', position: 'sticky', top: 0 }}>
+                    {CSV_COLS.map((col, ci) => (
+                      <th key={col} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', background: '#1a2744' }}>
+                        {ci === 10
+                          ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{col} <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></span>
+                          : col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CSV_ROWS.map((row, i) => {
+                    const score = parseInt(row[10], 10);
+                    const { bg: scoreBg, text: scoreText } = scoreColor(score);
+                    return (
+                      <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#f9fafb' }}>
+                        {row.map((cell, j) => {
+                          if (j === 10) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', fontWeight: 700, textAlign: 'center', background: scoreBg, color: scoreText }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{cell}<span style={{ fontSize: 9, fontWeight: 400, opacity: 0.6 }}>/800</span></span>
+                            </td>
+                          );
+                          if (j === 4 || j === 6 || j === 8) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', color: '#4b5563', maxWidth: 180 }}>
+                              <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 170 }}>{cell}</span>
+                            </td>
+                          );
+                          if (j === 12) {
+                            const isHigh = cell.toLowerCase().includes('high') || cell.toLowerCase().includes('strong');
+                            return (
+                              <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6' }}>
+                                <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: isHigh ? '#d1fae5' : '#fef3c7', color: isHigh ? '#065f46' : '#92400e' }}>{cell}</span>
+                              </td>
+                            );
+                          }
+                          if (j === 13) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6' }}>
+                              <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#dbeafe', color: '#1e40af' }}>{cell}</span>
+                            </td>
+                          );
+                          if (j === 14) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6' }}>
+                              <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#f0f5fb', color: '#1a2744' }}>{cell}</span>
+                            </td>
+                          );
+                          if (j === 11) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', fontStyle: 'italic', color: '#6b7280' }}>
+                              <span style={{ display: 'block', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>{cell}</span>
+                            </td>
+                          );
+                          return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', color: '#4b5563' }}>
+                              <span style={{ display: 'block', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}>{cell}</span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Footer */}
+            <div style={{ padding: '14px 28px', borderTop: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 10, color: '#9ca3af' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#d1fae5', display: 'inline-block' }} />600+</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#fef9c3', display: 'inline-block' }} />500–599</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#fed7aa', display: 'inline-block' }} />400–499</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#fee2e2', display: 'inline-block' }} />&lt;400</span>
+              </div>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>Sample anonymized data — 6 of N rows shown</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {demoOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
           onClick={e => { if (e.target === e.currentTarget) { setDemoOpen(false); setDemoSuccess(false); setDemoError(''); setDemoForm({ name:'',email:'',org:'',phone:'',notes:'' }); } }}>
