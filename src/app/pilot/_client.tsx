@@ -1690,7 +1690,7 @@ export default function PilotClient() {
                           <ScoreDial score={currentScore} />
                         </div>
                       )}
-                      {/* Green word captions */}
+                      {/* Green word captions — sliding window of 7 words */}
                       {!responseEnded && panel.words.length > 0 && captionIdx >= 0 && (() => {
                         const captionStart = panel.captions[captionIdx]?.t ?? 0;
                         const captionEnd = captionIdx + 1 < panel.captions.length ? panel.captions[captionIdx + 1].t : Infinity;
@@ -1698,10 +1698,15 @@ export default function PilotClient() {
                           .map((w, origIdx) => ({ ...w, origIdx }))
                           .filter(w => w.t >= captionStart && w.t < captionEnd);
                         if (!captionWords.length) return null;
+                        // Sliding window: 1 spoken word of context + up to 6 upcoming
+                        const curInCaption = captionWords.findIndex(w => w.origIdx === wordIdx);
+                        const winStart = Math.max(0, curInCaption - 1);
+                        const winEnd = Math.min(captionWords.length, winStart + 7);
+                        const displayWords = captionWords.slice(winStart, winEnd);
                         return (
-                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 210, pointerEvents: 'none', padding: '0 16px' }}>
-                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)' }}>
-                              {captionWords.map((w, i) => {
+                          <div key={`${captionIdx}-${winStart}`} style={{ position: 'absolute', bottom: 22, left: 0, right: 150, pointerEvents: 'none', padding: '0 16px' }}>
+                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {displayWords.map((w, i) => {
                                 const isCurrent = w.origIdx === wordIdx;
                                 const isSpoken = w.t <= responseCurrentTime;
                                 return (
@@ -1944,6 +1949,7 @@ export default function PilotClient() {
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Pillar Scores</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}>Student supports lead. <span style={{ color: '#7c5cbf' }}>Collaborative leadership</span> is the gap — and the lever.</p>
               <svg viewBox="0 0 440 210" style={{ width: '100%', overflow: 'visible' }}>
+                {/* Bars first so tooltip always paints on top */}
                 {PARTHENON_PILLARS.map((p, i) => {
                   const pillarW = 84;
                   const gapW = 16;
@@ -1969,36 +1975,42 @@ export default function PilotClient() {
                       <rect x={x - 5} y={y - 8} width={pillarW + 10} height={8} rx="2" fill={p.color} fillOpacity={isHov ? 1 : 0.88} />
                       <text x={x + pillarW / 2} y="178" textAnchor="middle" fontSize="9" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{p.label.split(' ').slice(0, 2).join(' ')}</text>
                       <text x={x + pillarW / 2} y="191" textAnchor="middle" fontSize="9" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{p.label.split(' ').slice(2).join(' ')}</text>
-                      {isHov && (() => {
-                        const tipW = 196;
-                        const tipH = 90;
-                        const rawX = x + pillarW / 2 - tipW / 2;
-                        const tipX = Math.max(4, Math.min(440 - tipW - 4, rawX));
-                        const tipY = y - tipH - 10;
-                        const arrowX = x + pillarW / 2 - tipX;
-                        return (
-                          <g transform={`translate(${tipX}, ${tipY})`}>
-                            <rect x="0" y="0" width={tipW} height={tipH} rx="8" fill="#1a2a44" />
-                            <polygon points={`${arrowX - 6},${tipH} ${arrowX},${tipH + 8} ${arrowX + 6},${tipH}`} fill="#1a2a44" />
-                            {/* Pillar label */}
-                            <text x={tipW / 2} y="15" textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.4)" fontWeight="700" letterSpacing="0.08em">{p.label.toUpperCase()}</text>
-                            <line x1="10" y1="21" x2={tipW - 10} y2="21" stroke="rgba(255,255,255,0.09)" strokeWidth="1" />
-                            {/* School rows — name left, score right, ★ on leader */}
-                            {p.schools.map((s, si) => (
-                              <g key={si}>
-                                {s.leads && <rect x="8" y={28 + si * 20} width={tipW - 16} height="17" rx="3" fill={`${p.color}22`} />}
-                                <text x="14" y={41 + si * 20} fontSize="10.5" fill={s.leads ? 'white' : 'rgba(255,255,255,0.55)'} fontWeight={s.leads ? '600' : '400'}>{s.name}</text>
-                                <text x={tipW - 14} y={41 + si * 20} textAnchor="end" fontSize="11" fill={s.leads ? p.color : 'rgba(255,255,255,0.4)'} fontWeight={s.leads ? '800' : '400'}>{s.score.toFixed(2)}</text>
-                                {s.leads && <text x={tipW - 8} y={41 + si * 20} fontSize="9.5" fill="#fbbf24">★</text>}
-                              </g>
-                            ))}
-                          </g>
-                        );
-                      })()}
                     </g>
                   );
                 })}
                 <rect x="10" y="162" width="420" height="4" rx="2" fill="#e5e7eb" />
+                {/* Tooltip rendered last so it's always above all bars */}
+                {csHover !== null && (() => {
+                  const p = PARTHENON_PILLARS[csHover];
+                  const pillarW = 84;
+                  const gapW = 16;
+                  const startX = (440 - (4 * pillarW + 3 * gapW)) / 2;
+                  const x = startX + csHover * (pillarW + gapW);
+                  const h = (p.height / 100) * 148;
+                  const y = 162 - h;
+                  const tipW = 196;
+                  const tipH = 90;
+                  const rawX = x + pillarW / 2 - tipW / 2;
+                  const tipX = Math.max(4, Math.min(440 - tipW - 4, rawX));
+                  const tipY = y - tipH - 10;
+                  const arrowX = x + pillarW / 2 - tipX;
+                  return (
+                    <g transform={`translate(${tipX}, ${tipY})`} style={{ pointerEvents: 'none' }}>
+                      <rect x="0" y="0" width={tipW} height={tipH} rx="8" fill="#1a2a44" />
+                      <polygon points={`${arrowX - 6},${tipH} ${arrowX},${tipH + 8} ${arrowX + 6},${tipH}`} fill="#1a2a44" />
+                      <text x={tipW / 2} y="15" textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.4)" fontWeight="700" letterSpacing="0.08em">{p.label.toUpperCase()}</text>
+                      <line x1="10" y1="21" x2={tipW - 10} y2="21" stroke="rgba(255,255,255,0.09)" strokeWidth="1" />
+                      {p.schools.map((s, si) => (
+                        <g key={si}>
+                          {s.leads && <rect x="8" y={28 + si * 20} width={tipW - 16} height="17" rx="3" fill={`${p.color}22`} />}
+                          <text x="14" y={41 + si * 20} fontSize="10.5" fill={s.leads ? 'white' : 'rgba(255,255,255,0.55)'} fontWeight={s.leads ? '600' : '400'}>{s.name}</text>
+                          <text x={tipW - 14} y={41 + si * 20} textAnchor="end" fontSize="11" fill={s.leads ? p.color : 'rgba(255,255,255,0.4)'} fontWeight={s.leads ? '800' : '400'}>{s.score.toFixed(2)}</text>
+                          {s.leads && <text x={tipW - 8} y={41 + si * 20} fontSize="9.5" fill="#fbbf24">★</text>}
+                        </g>
+                      ))}
+                    </g>
+                  );
+                })()}
               </svg>
             </div>
 
