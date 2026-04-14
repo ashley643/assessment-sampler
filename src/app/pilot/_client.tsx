@@ -3026,11 +3026,11 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                                   const qs = CS_QUESTIONS.filter(q => q.age === key && q.p === pillar);
                                   const selected = csPicks[key]?.[pillar];
                                   return (
-                                    <div key={pillar}>
+                                    <div key={pillar} style={{ borderLeft: `3px solid ${selected ? '#4a6fa5' : '#d1d5db'}`, borderRadius: '0 8px 8px 0', background: selected ? '#f0f5fb' : '#f8fafd', padding: '10px 14px' }}>
                                       {/* Pillar label row */}
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                                         <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: selected ? '#4a6fa5' : '#9ca3af' }}>Pillar {pillar}</span>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{PILLARS[pillar]}</span>
+                                        <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2937' }}>{PILLARS[pillar]}</span>
                                         {selected && (
                                           <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: '#4a6fa5', display: 'flex', alignItems: 'center', gap: 3 }}>
                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Done
@@ -3044,7 +3044,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                                           return (
                                             <button key={q.id} type="button"
                                               onClick={() => setCsPicks(p => ({ ...p, [key]: { ...(p[key] ?? {}), [pillar]: q.id } }))}
-                                              style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 8, border: 'none', background: isSelected ? '#4a6fa5' : '#f9fafb', color: isSelected ? 'white' : '#374151', fontSize: 13, lineHeight: 1.5, cursor: 'pointer', width: '100%' }}>
+                                              style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 8, border: 'none', background: isSelected ? '#4a6fa5' : 'white', color: isSelected ? 'white' : '#374151', fontSize: 13, lineHeight: 1.5, cursor: 'pointer', width: '100%' }}>
                                               {q.text.replace(/\n/g, ' ')}
                                               {q.def && !isSelected && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: '#4a6fa5', background: '#f0f5fb', padding: '2px 6px', borderRadius: 20 }}>standard</span>}
                                             </button>
@@ -3234,32 +3234,25 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                           {mode === 'custom' && isLittles && (() => {
                             const picks = lpPicks[a.id] ?? [];
                             return (
-                              <div className="border-t border-gray-100 pt-4 space-y-3">
-                                <div className="flex justify-between items-center">
-                                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Choose your questions</p>
-                                  <span className="text-xs text-gray-400">{picks.length}/3 selected</span>
+                              <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9ca3af' }}>Choose your questions</span>
+                                  <span style={{ fontSize: 11, color: '#9ca3af' }}>{picks.length}/3 selected</span>
                                 </div>
                                 {allQs.map(q => {
                                   const checked = picks.includes(q.id);
                                   const atMax = picks.length >= 3 && !checked;
                                   return (
-                                    <label key={q.id} className={`flex gap-3 p-3 rounded-lg border transition-colors ${
-                                      checked ? 'border-[#4a6fa5] bg-[#f0f5fb] cursor-pointer'
-                                        : atMax ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                                        : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
-                                    }`}>
-                                      <input type="checkbox" checked={checked} disabled={atMax}
-                                        onChange={() => {
-                                          const next = checked ? picks.filter(id => id !== q.id) : [...picks, q.id];
-                                          setLpPicks(p => ({ ...p, [a.id]: next }));
-                                        }}
-                                        className="accent-[#4a6fa5] mt-0.5 shrink-0" />
-                                      <div>
-                                        <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: '#4a6fa5' }}>{q.attribute}</p>
-                                        <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
-                                        {q.def && <span className="mt-1 inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
-                                      </div>
-                                    </label>
+                                    <button key={q.id} type="button" disabled={atMax}
+                                      onClick={() => {
+                                        const next = checked ? picks.filter(id => id !== q.id) : [...picks, q.id];
+                                        setLpPicks(p => ({ ...p, [a.id]: next }));
+                                      }}
+                                      style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 8, border: 'none', background: checked ? '#4a6fa5' : atMax ? '#f5f5f5' : '#f9fafb', color: checked ? 'white' : atMax ? '#aaa' : '#374151', fontSize: 13, lineHeight: 1.5, cursor: atMax ? 'not-allowed' : 'pointer', width: '100%', opacity: atMax ? 0.55 : 1 }}>
+                                      <span style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: checked ? 'rgba(255,255,255,0.7)' : '#4a6fa5', marginBottom: 3 }}>{q.attribute}</span>
+                                      {q.prompt}
+                                      {q.def && !checked && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: '#4a6fa5', background: '#f0f5fb', padding: '2px 6px', borderRadius: 20 }}>standard</span>}
+                                    </button>
                                   );
                                 })}
                               </div>
@@ -3352,52 +3345,34 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
                                 {/* Layer 2: question selection (shown once ≥1 attribute selected) */}
                                 {attrPicks.length > 0 && (
-                                  <div className="space-y-4 border-t border-gray-100 pt-4">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Step 2 — Choose your prompts</p>
+                                  <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9ca3af' }}>Step 2 — Choose your prompts</span>
                                     {qGroups.length === 0 && (
                                       <p className="text-xs text-gray-400">No prompts available for these attributes at this grade level.</p>
                                     )}
                                     {qGroups.map(({ chipName, qs }) => (
-                                      <div key={chipName}>
-                                        <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#4a6fa5' }}>{chipName}</p>
-                                        <div className="space-y-2">
+                                      <div key={chipName} style={{ borderLeft: '3px solid #4a6fa5', borderRadius: '0 8px 8px 0', background: '#f8fafd', padding: '10px 14px' }}>
+                                        <span style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4a6fa5', marginBottom: 8 }}>{chipName}</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                           {qs.map(q => {
                                             const checked = qPicks.includes(q.id);
                                             const primaryChip = primaryChipForQ.get(q.id) ?? chipName;
                                             const isClaimedByOther = checked && primaryChip !== chipName;
                                             return (
-                                              <label key={q.id} className={`flex gap-3 p-3 rounded-lg border transition-colors ${
-                                                isClaimedByOther
-                                                  ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                                                  : checked
-                                                    ? 'border-[#4a6fa5] bg-[#f0f5fb] cursor-pointer'
-                                                    : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
-                                              }`}>
-                                                <input type="radio"
-                                                  name={`lp-${a.id}-${chipName}`}
-                                                  checked={checked} disabled={isClaimedByOther}
-                                                  onChange={() => {
-                                                    if (isClaimedByOther) return;
-                                                    // one question per attribute chip: deselect any other question owned by the same chip
-                                                    const next = [
-                                                      ...qPicks.filter(id => (primaryChipForQ.get(id) ?? '') !== primaryChip),
-                                                      q.id,
-                                                    ];
-                                                    setLpQPicks(p => ({ ...p, [a.id]: next }));
-                                                  }}
-                                                  className="accent-[#4a6fa5] mt-0.5 shrink-0" />
-                                                <div>
-                                                  <p className="text-sm text-gray-700 leading-relaxed">{q.prompt}</p>
-                                                  <div className="mt-1 flex flex-wrap gap-1">
-                                                    {q.def && <span className="inline-block text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
-                                                    {isClaimedByOther && (
-                                                      <span className="inline-block text-[10px] font-medium bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full text-amber-700">
-                                                        already selected for {primaryChip}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </label>
+                                              <button key={q.id} type="button" disabled={isClaimedByOther}
+                                                onClick={() => {
+                                                  if (isClaimedByOther) return;
+                                                  const next = [
+                                                    ...qPicks.filter(id => (primaryChipForQ.get(id) ?? '') !== primaryChip),
+                                                    q.id,
+                                                  ];
+                                                  setLpQPicks(p => ({ ...p, [a.id]: next }));
+                                                }}
+                                                style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 8, border: 'none', background: isClaimedByOther ? '#f5f5f5' : checked ? '#4a6fa5' : 'white', color: isClaimedByOther ? '#aaa' : checked ? 'white' : '#374151', fontSize: 13, lineHeight: 1.5, cursor: isClaimedByOther ? 'not-allowed' : 'pointer', width: '100%', opacity: isClaimedByOther ? 0.55 : 1 }}>
+                                                {q.prompt}
+                                                {q.def && !checked && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: '#4a6fa5', background: '#f0f5fb', padding: '2px 6px', borderRadius: 20 }}>standard</span>}
+                                                {isClaimedByOther && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: '#92400e', background: '#fef3c7', padding: '2px 6px', borderRadius: 20 }}>selected for {primaryChip}</span>}
+                                              </button>
                                             );
                                           })}
                                         </div>
