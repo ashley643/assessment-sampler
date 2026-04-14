@@ -963,68 +963,71 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
   const [dur, setDur] = useState(0);
   const [hov, setHov] = useState(false);
   const isAudio = /\.mp3($|\?)/.test(src);
-
-  function toggle() {
-    const el = ref.current;
-    if (!el) return;
-    if (el.paused) { el.play(); setPaused(false); }
-    else { el.pause(); setPaused(true); }
-  }
-
-  function fmt(t: number) {
-    const m = Math.floor(t / 60), s = Math.floor(t % 60);
-    return `${m}:${String(s).padStart(2, '0')}`;
-  }
+  function toggle() { const el = ref.current; if (!el) return; if (el.paused) { el.play(); setPaused(false); } else { el.pause(); setPaused(true); } }
+  function fmt(t: number) { const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${m}:${String(s).padStart(2, '0')}`; }
 
   return (
-    <div
-      style={{ borderRadius: 12, overflow: 'hidden', background: '#0f1c2e', position: 'relative', aspectRatio: isAudio ? '16/6' : '16/9', cursor: 'pointer' }}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      onClick={toggle}
-    >
-      <video ref={ref} src={src} playsInline
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: isAudio ? 0 : 1 }}
-        onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
-        onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
-        onEnded={() => setPaused(true)}
-      />
-      {isAudio && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
-          </svg>
-        </div>
-      )}
-      {/* gradient overlay */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.0) 25%, rgba(0,0,0,0.78) 100%)', pointerEvents: 'none' }} />
-      {/* play/pause button */}
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: paused ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
-        {paused
-          ? <svg width="16" height="16" viewBox="0 0 24 24" fill="#1a2a44"><polygon points="5,3 19,12 5,21"/></svg>
-          : <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-        }
-      </div>
-      {/* question overlay */}
-      <div style={{ position: 'absolute', bottom: 36, left: 0, right: 0, padding: '0 14px', pointerEvents: 'none' }}>
-        <p style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>{pillar}</p>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', lineHeight: 1.45, margin: 0 }}>{question}</p>
-      </div>
-      {/* scrubber */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '5px 12px 8px', background: 'rgba(0,0,0,0.5)' }}
-        onClick={e => e.stopPropagation()}
+    <div style={{ borderRadius: 12, overflow: 'hidden', background: '#0d1b2e', display: 'flex', height: 220 }}>
+      {/* Left: video (~58%) */}
+      <div
+        style={{ flex: '0 0 58%', position: 'relative', background: '#09111e', overflow: 'hidden', cursor: 'pointer' }}
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, minWidth: 28, textAlign: 'center' }}>{fmt(curT)}</span>
-          <input type="range" min={0} max={dur || 1} step={0.1} value={curT}
-            onChange={e => { const t = +e.target.value; if (ref.current) ref.current.currentTime = t; setCurT(t); }}
-            onClick={e => e.stopPropagation()}
-            style={{ flex: 1, accentColor: '#4a6fa5', cursor: 'pointer' }}
-          />
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, minWidth: 28, textAlign: 'center' }}>{fmt(dur)}</span>
+        <video ref={ref} src={src} playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: isAudio ? 0 : 1 }}
+          onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
+          onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
+          onEnded={() => setPaused(true)}
+        />
+        {isAudio && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </div>
+        )}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.55) 100%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44, borderRadius: '50%', background: paused ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
+          {paused
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="#1a2a44"><polygon points="5,3 19,12 5,21"/></svg>
+            : <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          }
+        </div>
+        {/* scrubber */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '4px 10px 6px', background: 'rgba(0,0,0,0.5)' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8, minWidth: 22 }}>{fmt(curT)}</span>
+            <input type="range" min={0} max={dur || 1} step={0.1} value={curT}
+              onChange={e => { const t = +e.target.value; if (ref.current) ref.current.currentTime = t; setCurT(t); }}
+              onClick={e => e.stopPropagation()}
+              style={{ flex: 1, accentColor: '#4a6fa5', cursor: 'pointer' }} />
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8, minWidth: 22 }}>{fmt(dur)}</span>
+          </div>
+        </div>
+      </div>
+      {/* Right: question + response options */}
+      <div style={{ flex: 1, padding: '16px 14px 14px', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden' }}>
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <p style={{ fontSize: 8, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>{pillar}</p>
+          <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, margin: 0 }}>{question}</p>
+        </div>
+        <div style={{ flexShrink: 0 }}>
+          <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10, fontWeight: 600, margin: '0 0 8px', letterSpacing: '0.01em' }}>How would you like to answer?</p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([
+              { label: 'VIDEO', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3V9z"/></svg> },
+              { label: 'AUDIO', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg> },
+              { label: 'TEXT', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> },
+            ] as const).map(({ label, icon }) => (
+              <div key={label} style={{ flex: 1, background: '#1a3558', border: '1.5px solid #2a4f7a', borderRadius: 7, padding: '9px 4px 7px', color: 'rgba(255,255,255,0.65)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                {icon}
+                <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.06em' }}>{label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
