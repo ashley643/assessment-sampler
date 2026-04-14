@@ -140,6 +140,7 @@ interface DemoPanel {
   promptText: string;
   questionUrl: string;
   responseUrl: string;
+  respondentLabel: string;
   captions: DemoCaption[];
 }
 
@@ -151,6 +152,7 @@ const DEMO_PANELS: DemoPanel[] = [
     promptText: "What\u2019s something you\u2019re better at now than you used to be? And what do you think helped you get there?",
     questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvRWxlbV9NaWRkbGVfMV9SZWZsZWN0aXZlX0dyb3d0aF9CSFNfVjMubXA0IiwiaWF0IjoxNzc2MTQzMTE1LCJleHAiOjIwOTE1MDMxMTV9.cM1GzrU1TGx_-P0XX-IQYEPzVDI2v-9I7wR3W5IyJd0',
     responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM',
+    respondentLabel: 'Student',
     captions: [
       { t: 0,    text: 'In first grade, I was very energetic,' },
       { t: 3,    text: 'like \u2014 extremely energetic.', accent: true },
@@ -174,6 +176,7 @@ const DEMO_PANELS: DemoPanel[] = [
     promptText: "Think about the ways your child\u2019s school supports students and families. What\u2019s working well \u2014 and where do you wish there was more support?",
     questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Parent,_Question_1,_Integrated_Student_Supports_(1)_V1%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9QYXJlbnQsX1F1ZXN0aW9uXzEsX0ludGVncmF0ZWRfU3R1ZGVudF9TdXBwb3J0c18oMSlfVjEgKDEpLm1wNCIsImlhdCI6MTc3NjE0MzgyMiwiZXhwIjoyMDkxNTAzODIyfQ.OeXT8Q1eDFWp-WuFqRgFvvBh5dEo94l7Pmn76PHV3tU',
     responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/parent.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvcGFyZW50Lm1wNCIsImlhdCI6MTc3NjE0Mzg1MywiZXhwIjoyMDkxNTAzODUzfQ.oi2qOje4hvioY9GzaQ-dEYvSt1yjyEI_vCVByX8Arko',
+    respondentLabel: 'Parent',
     captions: [
       { t: 0,    text: 'I have two kids at the school' },
       { t: 2.5,  text: 'and they feel safe and seen in different ways.', accent: true },
@@ -1084,7 +1087,7 @@ export default function PilotClient() {
                       onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                      Simulate a Student Response
+                      Simulate a {panel.respondentLabel} Response
                     </button>
                   </>
                 ) : (
@@ -1093,7 +1096,7 @@ export default function PilotClient() {
                     {/* Label bar */}
                     <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-                        Student Response
+                        {panel.respondentLabel} Response
                       </p>
                       <button
                         onClick={() => setSimShown(false)}
