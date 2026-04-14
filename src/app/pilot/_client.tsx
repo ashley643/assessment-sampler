@@ -203,6 +203,17 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 36.5, text: 'Family Partnership',     color: '#f472b6' },
     ],
   },
+  {
+    assessmentName: 'Graduate Portrait',
+    school: 'Orange County Office of Education',
+    promptLabel: 'Assessment Prompt \u00b7 Perseverance & Resilience',
+    promptText: "What has been your biggest failure?",
+    questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/LPD%203.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvTFBEIDMubXA0IiwiaWF0IjoxNzc2MTUzOTc3LCJleHAiOjIwOTE1MTM5Nzd9.p_38RfU53Quq0OaoS2J9UAbeieUrYSvXC9uW3M9idpU',
+    responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/failure.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvZmFpbHVyZS5tcDQiLCJpYXQiOjE3NzYxNTQwMzAsImV4cCI6MjA5MTUxNDAzMH0.jyjAaumSYPWORh7WRGWrpSPnnUvvjr75siIwmdpALCc',
+    respondentLabel: 'Student',
+    captions: [],
+    chips: [],
+  },
 ];
 
 // ── Assessment type options ──────────────────────────────────────────────────
@@ -1006,7 +1017,7 @@ export default function PilotClient() {
             <div style={{ display: 'flex', minHeight: 400 }}>
 
               {/* ── Left: question video ── */}
-              <div style={{ flex: '0 0 62%', position: 'relative', background: '#09111e', overflow: 'hidden' }}>
+              <div style={{ flex: '0 0 50%', position: 'relative', background: '#09111e', overflow: 'hidden' }}>
                 <video
                   key={panel.questionUrl}
                   ref={promptVideoRef}
@@ -1131,10 +1142,14 @@ export default function PilotClient() {
                         onEnded={() => setResponsePaused(true)}
                         onTimeUpdate={() => {
                           const t = responseVideoRef.current?.currentTime ?? 0;
-                          const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
-                          setCaptionIdx(idx);
-                          const cIdx = panel.chips.reduce((acc: number, c, i) => (c.t <= t ? i : acc), -1);
-                          if (cIdx !== chipIdx) setChipIdx(cIdx);
+                          if (panel.captions.length) {
+                            const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
+                            setCaptionIdx(idx);
+                          }
+                          if (panel.chips.length) {
+                            const cIdx = panel.chips.reduce((acc: number, c, i) => (c.t <= t ? i : acc), -1);
+                            if (cIdx !== chipIdx) setChipIdx(cIdx);
+                          }
                         }}
                       />
                       {/* Play/pause button — top-left */}
@@ -1171,7 +1186,7 @@ export default function PilotClient() {
                         </div>
                       )}
                       {/* Caption overlay */}
-                      <div
+                      {panel.captions.length > 0 && <div
                         key={captionIdx}
                         style={{
                           position: 'absolute', bottom: 52, left: 0, right: 0,
@@ -1194,7 +1209,7 @@ export default function PilotClient() {
                         }}>
                           {panel.captions[captionIdx]?.text}
                         </span>
-                      </div>
+                      </div>}
                       {/* Next Question overlay button */}
                       <button
                         onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
