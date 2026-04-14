@@ -2142,10 +2142,10 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             {/* ── Card 4: Voice Tone Analysis ── */}
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Voice Tone Analysis</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}><span style={{ color: '#e07b54' }}>Staff voice</span> carries the most concern language — 44% vs. 22% from families.</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}><span style={{ color: '#e07b54' }}>Staff voice</span> carries the most suggesting language — 44% vs. 22% from families.</p>
               <svg viewBox="0 0 440 185" style={{ width: '100%', overflow: 'visible' }}>
                 <line x1="220" y1="0" x2="220" y2="185" stroke="#e5e7eb" strokeWidth="1.5" strokeDasharray="4 3" />
-                <text x="95" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">← CONCERN</text>
+                <text x="95" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">← SUGGESTING</text>
                 <text x="340" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">AFFIRMING →</text>
                 {VOICE_TONE.map((d, i) => {
                   const rowY = 28 + i * 55;
@@ -2170,7 +2170,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                           <rect x="0" y="0" width="170" height="52" rx="7" fill="#1a2a44" />
                           <polygon points="79,52 85,60 91,52" fill="#1a2a44" />
                           <text x="85" y="18" textAnchor="middle" fontSize="12" fill="white" fontWeight="700">{d.group}</text>
-                          <text x="85" y="34" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.7)">Concern {d.concern}% · Aff. {d.affirming}%</text>
+                          <text x="85" y="34" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.7)">Suggesting {d.concern}% · Aff. {d.affirming}%</text>
                           <text x="85" y="48" textAnchor="middle" fontSize="9.5" fill="#f59e0b">↑ {d.signal}</text>
                         </g>
                       )}
