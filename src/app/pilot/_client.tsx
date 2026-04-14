@@ -1975,14 +1975,17 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#4a6fa5' }} />Female</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#d1dff0' }} />Male</span>
               </div>
-              <svg viewBox="0 0 440 240" style={{ width: '100%', overflow: 'visible' }}>
+              <svg viewBox="0 0 440 210" style={{ width: '100%', overflow: 'visible' }}>
                 {BH_DOMAIN_DATA.map((d, i) => {
-                  const yCenter = 22 + i * 50;
+                  const yCenter = 22 + i * 40;
                   const maxW = 250;
                   const scaleW = (v: number) => (v / 800) * maxW;
                   const gap = d.female - d.male;
                   const maxGap = Math.max(...BH_DOMAIN_DATA.map(x => x.female - x.male));
                   const isHov = bhHover === i;
+                  const gapX1 = 160 + scaleW(d.male);
+                  const gapX2 = 160 + scaleW(d.female);
+                  const gapMid = (gapX1 + gapX2) / 2;
                   return (
                     <g key={d.domain}
                       onMouseEnter={() => setBhHover(i)}
@@ -1997,10 +2000,11 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       <text x={164 + scaleW(d.male)} y={yCenter + 12} fontSize="10" fill="#9ab4d0" fontWeight="600">{d.male}</text>
                       {gap === maxGap && (
                         <g>
-                          <line x1={160 + scaleW(d.male)} y1={yCenter + 20} x2={160 + scaleW(d.female)} y2={yCenter + 20} stroke="#f59e0b" strokeWidth="1.5" />
-                          <line x1={160 + scaleW(d.male)} y1={yCenter + 17} x2={160 + scaleW(d.male)} y2={yCenter + 23} stroke="#f59e0b" strokeWidth="1.5" />
-                          <line x1={160 + scaleW(d.female)} y1={yCenter + 17} x2={160 + scaleW(d.female)} y2={yCenter + 23} stroke="#f59e0b" strokeWidth="1.5" />
-                          <text x={160 + scaleW(d.male) + scaleW(gap) / 2} y={yCenter + 33} textAnchor="middle" fontSize="9" fill="#f59e0b" fontWeight="700">+{gap} pts</text>
+                          {/* Bracket drawn inside the female bar's gap portion — no overflow */}
+                          <line x1={gapX1} y1={yCenter - 13} x2={gapX2} y2={yCenter - 13} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
+                          <line x1={gapX1} y1={yCenter - 14} x2={gapX1} y2={yCenter - 9} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
+                          <line x1={gapX2} y1={yCenter - 14} x2={gapX2} y2={yCenter - 9} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
+                          <text x={gapMid} y={yCenter - 3} textAnchor="middle" fontSize="8.5" fill="#fbbf24" fontWeight="800">+{gap} pts</text>
                         </g>
                       )}
                       {isHov && (
@@ -2014,7 +2018,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                     </g>
                   );
                 })}
-                <line x1="160" y1="0" x2="160" y2="235" stroke="#e5e7eb" strokeWidth="1" />
+                <line x1="160" y1="0" x2="160" y2="205" stroke="#e5e7eb" strokeWidth="1" />
               </svg>
             </div>
 
