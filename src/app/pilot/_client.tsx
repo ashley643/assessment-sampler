@@ -154,19 +154,18 @@ const DEMO_PANELS: DemoPanel[] = [
     responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM',
     respondentLabel: 'Student',
     captions: [
-      { t: 0,    text: 'In first grade, I was very energetic,' },
-      { t: 3,    text: 'like \u2014 extremely energetic.', accent: true },
-      { t: 5.5,  text: 'Like bouncing off the walls energetic.' },
-      { t: 8,    text: 'Like super Ninja Turtles, running around everywhere in the classroom.' },
-      { t: 13,   text: 'But now I\u2019ve gradually gotten better and better.' },
-      { t: 17,   text: 'Because in second grade I learned that\u2026' },
-      { t: 20,   text: 'just take a break!', accent: true },
-      { t: 22.5, text: 'Take a break. It\u2019s not that hard.' },
-      { t: 25.5, text: 'Just ask the teacher if you can have a break or ask for help.' },
-      { t: 30,   text: 'So, yeah, I started acting a little better.' },
-      { t: 34,   text: 'I\u2019m not saying I\u2019m, like, the best of the best.' },
-      { t: 38.5, text: 'I\u2019m like, better than I used to be \u2014', accent: true },
-      { t: 43,   text: 'but yeah, I\u2019ve been doing good.' },
+      { t: 0,    text: 'In first grade, I was very energetic \u2014' },
+      { t: 4,    text: 'extremely energetic. Like bouncing off the walls.', accent: true },
+      { t: 10,   text: 'Like super energetic, running around the whole classroom.' },
+      { t: 15,   text: "But now I\u2019ve gradually gotten better and better." },
+      { t: 23,   text: 'Because in second grade, I learned that\u2026' },
+      { t: 27,   text: 'just take a break.', accent: true },
+      { t: 31,   text: "It\u2019s not that hard. Just take a break." },
+      { t: 33,   text: 'Ask the teacher if you can have a break, or ask for help.' },
+      { t: 39,   text: 'So yeah, I started acting a little better.' },
+      { t: 44,   text: "I\u2019m not saying I\u2019m like the best of the best." },
+      { t: 46,   text: "I\u2019m like, better than I used to be.", accent: true },
+      { t: 52,   text: "But yeah, I\u2019ve been doing good." },
     ],
   },
   {
@@ -178,20 +177,18 @@ const DEMO_PANELS: DemoPanel[] = [
     responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/parent.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvcGFyZW50Lm1wNCIsImlhdCI6MTc3NjE0Mzg1MywiZXhwIjoyMDkxNTAzODUzfQ.oi2qOje4hvioY9GzaQ-dEYvSt1yjyEI_vCVByX8Arko',
     respondentLabel: 'Parent',
     captions: [
-      { t: 0,    text: 'I have two kids at the school' },
+      { t: 0,    text: 'I have two kids in Sunnybrae \u2014' },
       { t: 2.5,  text: 'and they feel safe and seen in different ways.', accent: true },
-      { t: 6.5,  text: 'The older one feels safe and seen' },
-      { t: 9,    text: 'when he\u2019s allowed to play soccer \u2014' },
-      { t: 11.5, text: 'his favorite activity in the whole world.' },
-      { t: 15,   text: 'He really looks up to the coaches.' },
-      { t: 18,   text: 'They\u2019re a great role model for him.' },
-      { t: 21,   text: 'The second one feels safe and seen' },
-      { t: 24,   text: 'when he\u2019s given attention' },
-      { t: 26.5, text: 'and his emotions are validated,', accent: true },
-      { t: 29.5, text: 'by his teacher and all the staff around the school.' },
-      { t: 34,   text: 'So thanks to the school' },
-      { t: 36.5, text: 'for really taking care of both boys' },
-      { t: 40,   text: 'that have different personalities.', accent: true },
+      { t: 5,    text: "The older one feels safe and seen when he\u2019s allowed to play soccer," },
+      { t: 8.8,  text: 'his favorite activity in the whole world.' },
+      { t: 13.9, text: 'He really looks up to the coaches \u2014 they\u2019re a great role model.' },
+      { t: 16.9, text: "The second one feels safe and seen when he\u2019s given attention" },
+      { t: 21,   text: 'and his emotions are validated,', accent: true },
+      { t: 24.4, text: 'by his teacher and all the staff around the school.' },
+      { t: 28,   text: 'When he gets hurt on the playground,' },
+      { t: 31.9, text: 'he gets taken care of. He enjoys that.' },
+      { t: 36.5, text: 'Thanks to the school for really taking care of both boys', accent: true },
+      { t: 39.5, text: 'that have different personalities.' },
     ],
   },
 ];
@@ -636,6 +633,7 @@ export default function PilotClient() {
   const [panelIndex, setPanelIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
   const [promptPaused, setPromptPaused] = useState(false);
+  const [responsePaused, setResponsePaused] = useState(false);
   const [captionIdx, setCaptionIdx] = useState(0);
   const promptVideoRef = useRef<HTMLVideoElement>(null);
   const responseVideoRef = useRef<HTMLVideoElement>(null);
@@ -667,6 +665,7 @@ export default function PilotClient() {
     setCaptionIdx(0);
     setSimShown(false);
     setPromptPaused(false);
+    setResponsePaused(false);
   }, [panelIndex]);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
@@ -1115,12 +1114,24 @@ export default function PilotClient() {
                         autoPlay
                         playsInline
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onEnded={() => setResponsePaused(true)}
                         onTimeUpdate={() => {
                           const t = responseVideoRef.current?.currentTime ?? 0;
                           const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
                           setCaptionIdx(idx);
                         }}
                       />
+                      {/* Play/pause button */}
+                      <button
+                        onClick={() => {
+                          const v = responseVideoRef.current;
+                          if (!v) return;
+                          if (v.paused) { v.play(); setResponsePaused(false); }
+                          else { v.pause(); setResponsePaused(true); }
+                        }}
+                        style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600, minWidth: 36, zIndex: 3 }}>
+                        {responsePaused ? '▶' : '⏸'}
+                      </button>
                       {/* Caption overlay */}
                       <div
                         key={captionIdx}
