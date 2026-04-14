@@ -3001,8 +3001,8 @@ export default function PilotClient() {
                                               <div className="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all" style={{ borderColor: isSelected ? 'rgba(255,255,255,0.7)' : '#d1d5db' }}>
                                                 {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                                               </div>
-                                              <span className="text-sm leading-relaxed whitespace-pre-line" style={{ color: isSelected ? 'white' : '#374151' }}>
-                                                {q.text}
+                                              <span className="text-sm leading-relaxed" style={{ color: isSelected ? 'white' : '#374151' }}>
+                                                {q.text.replace(/\n/g, ' ')}
                                                 {q.def && !isSelected && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
                                               </span>
                                             </label>
