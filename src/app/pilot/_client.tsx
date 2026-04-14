@@ -641,9 +641,9 @@ const BH_SCREENERS: BHScreener[] = [
     grades: 'Grades TK+ (Littles)',
     gradeBands: ['Lower Elementary (TK–2)'],
     previewUrl: 'https://flex.impacterpathway.com/fjzzdvxk8?preview',
-    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/B1_Q1_Self_Esteem_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQjFfUTFfU2VsZl9Fc3RlZW1fVjEubXA0IiwiaWF0IjoxNzc2MTU4OTMyLCJleHAiOjIwOTE1MTg5MzJ9.wjme9sEXL6BE6wHleoOcJVbHu8NHADANpGR2BPPIeYA',
-    videoPillar: 'Self-Esteem',
-    videoQuestion: 'What do you like about yourself and your life?',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Relational_Awareness_Short_1_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvUmVsYXRpb25hbF9Bd2FyZW5lc3NfU2hvcnRfMV9WMS5tcDQiLCJpYXQiOjE3NzYxNTkyODQsImV4cCI6MjA5MTUxOTI4NH0.zUOwvsrqfqDm977fWtbm5W8nyb1Aw5CMZV5QdMoWnpo',
+    videoPillar: 'Relational Awareness',
+    videoQuestion: 'Tell me about a time you saw someone who was really upset. What did you notice? What did you do?',
     questions: [
       { pillar: 'Relational Awareness',  text: 'Tell me about a time you saw someone who was really upset. What did you notice? What did you do?' },
       { pillar: 'Emotional Resilience',  text: 'Tell me about a time you kept trying something hard even when you felt like quitting. What happened?' },
@@ -695,12 +695,42 @@ interface LPAssessment {
   grades: string;
   gradeBands: string[];
   previewUrl: string;
+  videoUrl: string;
+  videoPillar: string;
+  videoQuestion: string;
 }
 
 const LP_ASSESSMENTS: LPAssessment[] = [
-  { id: 'lp-littles',    name: 'Learner Portrait for Littles',    grades: 'Grades TK–2 (Littles)',     gradeBands: ['Lower Elementary (TK–2)'],                               previewUrl: 'https://sdusd.impacterpathway.com/fp9r1r32y?preview' },
-  { id: 'lp-elementary', name: 'Learner Portrait for Elementary', grades: 'Grades 3–5 (Elementary)',   gradeBands: ['Elementary (3rd–5th)'],                                  previewUrl: 'https://flex.impacterpathway.com/fn0l89pl3?preview' },
-  { id: 'lp-secondary',  name: 'Learner Portrait for Secondary',  grades: 'Grades 6–12 (Secondary)',   gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],    previewUrl: 'https://flex.impacterpathway.com/fwxzy777r?preview' },
+  {
+    id: 'lp-littles',
+    name: 'Learner Portrait for Littles',
+    grades: 'Grades TK–2 (Littles)',
+    gradeBands: ['Lower Elementary (TK–2)'],
+    previewUrl: 'https://sdusd.impacterpathway.com/fp9r1r32y?preview',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/B1_Q1_Self_Esteem_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQjFfUTFfU2VsZl9Fc3RlZW1fVjEubXA0IiwiaWF0IjoxNzc2MTU4OTMyLCJleHAiOjIwOTE1MTg5MzJ9.wjme9sEXL6BE6wHleoOcJVbHu8NHADANpGR2BPPIeYA',
+    videoPillar: 'Self-Esteem',
+    videoQuestion: 'What do you like about yourself and your life?',
+  },
+  {
+    id: 'lp-elementary',
+    name: 'Learner Portrait for Elementary',
+    grades: 'Grades 3–5 (Elementary)',
+    gradeBands: ['Elementary (3rd–5th)'],
+    previewUrl: 'https://flex.impacterpathway.com/fn0l89pl3?preview',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Q1_Curiosity_Benchmark_1_V2_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvUTFfQ3VyaW9zaXR5X0JlbmNobWFya18xX1YyX1YxLm1wNCIsImlhdCI6MTc3NjE1OTUzNywiZXhwIjoyMDkxNTE5NTM3fQ.xVyDgNSYqwDgM8vBaNKAwuqvTAAKbDa38tOg8rDCYhA',
+    videoPillar: 'Curiosity',
+    videoQuestion: 'What have you noticed that made you curious? What did it make you wonder?',
+  },
+  {
+    id: 'lp-secondary',
+    name: 'Learner Portrait for Secondary',
+    grades: 'Grades 6–12 (Secondary)',
+    gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
+    previewUrl: 'https://flex.impacterpathway.com/fwxzy777r?preview',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Video_8_3_6_Perspective_Taking_Benchmark_4_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvVmlkZW9fOF8zXzZfUGVyc3BlY3RpdmVfVGFraW5nX0JlbmNobWFya180X1YxLm1wNCIsImlhdCI6MTc3NjE1OTU1MywiZXhwIjoyMDkxNTE5NTUzfQ.MRunPK0ka9a2Oi6f1ieMWD2fz3ZKgMQBt1Ik_Lpf6F0',
+    videoPillar: 'Perspective-Taking',
+    videoQuestion: 'Tell us about a time when you were super annoyed with someone... until you learned their side of the story.',
+  },
 ];
 
 interface LPQuestion { id: string; band: string; attribute: string; prompt: string; def: boolean }
@@ -2990,11 +3020,11 @@ export default function PilotClient() {
                           <p className="text-xs text-gray-400">{a.grades}</p>
                         </div>
                         <div className="px-5 py-4 space-y-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample Question</p>
-                          <VideoAskEmbed
-                            url={a.previewUrl}
-                            label={a.name}
-                            onOpen={() => setPreviewModal({ label: a.name, url: a.previewUrl })}
+                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>Sample Question</p>
+                          <CSVideoPlayer
+                            src={a.videoUrl}
+                            pillar={a.videoPillar}
+                            question={a.videoQuestion}
                           />
 
                           {/* Mode selector */}
