@@ -895,6 +895,8 @@ export default function PilotClient() {
   const [promptPaused, setPromptPaused] = useState(false);
   const [responsePaused, setResponsePaused] = useState(false);
   const [responseEnded, setResponseEnded] = useState(false);
+  const [promptHovered, setPromptHovered] = useState(false);
+  const [responseHovered, setResponseHovered] = useState(false);
   const [captionIdx, setCaptionIdx] = useState(0);
   const [chipIdx, setChipIdx] = useState(-1);
   const [wordIdx, setWordIdx] = useState(-1);
@@ -1263,53 +1265,44 @@ export default function PilotClient() {
                 </span>
                 <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{panel.assessmentName}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
-                {/* Panel dots */}
-                <div style={{ display: 'flex', gap: 5 }}>
-                  {DEMO_PANELS.map((_, i) => (
-                    <div key={i} style={{ width: i === panelIndex ? 16 : 6, height: 6, borderRadius: 3, background: i === panelIndex ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)', transition: 'all 0.2s' }} />
-                  ))}
-                </div>
-              </div>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
             </div>
 
             {/* Two-panel body */}
-            <div style={{ display: 'flex', minHeight: 400 }}>
+            <div style={{ display: 'flex', height: 420 }}>
 
               {/* ── Left: question video ── */}
-              <div style={{ flex: '0 0 50%', position: 'relative', background: '#09111e', overflow: 'hidden' }}>
+              <div
+                style={{ flex: '0 0 50%', position: 'relative', background: '#09111e', overflow: 'hidden', cursor: 'pointer' }}
+                onMouseEnter={() => setPromptHovered(true)}
+                onMouseLeave={() => setPromptHovered(false)}
+                onClick={() => {
+                  const v = promptVideoRef.current;
+                  if (!v) return;
+                  if (v.paused) { v.play(); setPromptPaused(false); }
+                  else { v.pause(); setPromptPaused(true); }
+                }}
+              >
                 <video
                   key={panel.questionUrl}
                   ref={promptVideoRef}
                   src={panel.questionUrl}
                   autoPlay
                   playsInline
-                  style={{ width: '100%', height: '100%', minHeight: 400, objectFit: 'cover', display: 'block' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                   onEnded={() => setPromptPaused(true)}
                 />
-
-                {/* Pause / Skip controls */}
-                <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 8, zIndex: 2 }}>
-                  <button
-                    onClick={() => {
-                      const v = promptVideoRef.current;
-                      if (!v) return;
-                      if (v.paused) { v.play(); setPromptPaused(false); }
-                      else { v.pause(); setPromptPaused(true); }
-                    }}
-                    style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600, minWidth: 36 }}>
-                    {promptPaused ? '▶' : '⏸'}
-                  </button>
-                  <button
-                    onClick={() => { const v = promptVideoRef.current; if (v) { v.currentTime = v.duration; } }}
-                    style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: '0.02em' }}>
-                    Skip ››
-                  </button>
-                </div>
-
+                {/* Play/pause indicator */}
+                {(promptPaused || promptHovered) && (
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 54, height: 54, borderRadius: '50%', background: promptPaused ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 3, pointerEvents: 'none' }}>
+                    {promptPaused
+                      ? <svg width="22" height="22" viewBox="0 0 24 24" fill="#1a2744"><path d="M8 5v14l11-7z"/></svg>
+                      : <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                    }
+                  </div>
+                )}
                 {/* Question overlay at bottom */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 22px', zIndex: 2 }}>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 22px', zIndex: 2, pointerEvents: 'none' }}>
                   <p style={{ color: '#60a5fa', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>
                     {panel.promptLabel}
                   </p>
@@ -1391,7 +1384,17 @@ export default function PilotClient() {
                       </button>
                     </div>
                     {/* Video fills remaining space */}
-                    <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                    <div
+                      style={{ flex: 1, position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                      onMouseEnter={() => setResponseHovered(true)}
+                      onMouseLeave={() => setResponseHovered(false)}
+                      onClick={() => {
+                        const v = responseVideoRef.current;
+                        if (!v) return;
+                        if (v.paused) { v.play(); setResponsePaused(false); }
+                        else { v.pause(); setResponsePaused(true); }
+                      }}
+                    >
                       <style>{`@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes chipIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}@keyframes wordPop{0%{opacity:0;transform:scale(0.65)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}@keyframes endIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}`}</style>
                       <video
                         key={panel.responseUrl}
@@ -1418,17 +1421,15 @@ export default function PilotClient() {
                           }
                         }}
                       />
-                      {/* Play/pause button — top-left */}
-                      <button
-                        onClick={() => {
-                          const v = responseVideoRef.current;
-                          if (!v) return;
-                          if (v.paused) { v.play(); setResponsePaused(false); }
-                          else { v.pause(); setResponsePaused(true); }
-                        }}
-                        style={{ position: 'absolute', top: 14, left: 14, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600, minWidth: 36, zIndex: 3 }}>
-                        {responsePaused ? '▶' : '⏸'}
-                      </button>
+                      {/* Play/pause indicator */}
+                      {(responsePaused || responseHovered) && !responseEnded && (
+                        <div style={{ position: 'absolute', top: '50%', left: '40%', transform: 'translate(-50%,-50%)', width: 54, height: 54, borderRadius: '50%', background: responsePaused ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 3, pointerEvents: 'none' }}>
+                          {responsePaused
+                            ? <svg width="22" height="22" viewBox="0 0 24 24" fill="#1a2744"><path d="M8 5v14l11-7z"/></svg>
+                            : <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                          }
+                        </div>
+                      )}
                       {/* Insight chips — top-right */}
                       {chipIdx >= 0 && (
                         <div
@@ -1538,6 +1539,23 @@ export default function PilotClient() {
                 )}
               </div>
             </div>
+
+            {/* ── Panel navigation tabs ── */}
+            <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              {DEMO_PANELS.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPanelIndex(i)}
+                  style={{ flex: 1, padding: '11px 10px 10px', background: i === panelIndex ? 'rgba(255,255,255,0.06)' : 'transparent', border: 'none', borderTop: `2px solid ${i === panelIndex ? 'rgba(255,255,255,0.5)' : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, transition: 'background 0.15s' }}
+                  onMouseEnter={e => { if (i !== panelIndex) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                  onMouseLeave={e => { if (i !== panelIndex) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span style={{ color: i === panelIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.38)', fontSize: 11, fontWeight: 700, letterSpacing: '0.01em', transition: 'color 0.15s' }}>{p.assessmentName}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9, letterSpacing: '0.01em' }}>{p.school}</span>
+                </button>
+              ))}
+            </div>
+
           </div>
         </div>
       </section>
