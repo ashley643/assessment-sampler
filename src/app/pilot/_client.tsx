@@ -3013,56 +3013,41 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                           {mode === 'custom' && (() => {
                             const donePillars = ([1,2,3,4] as const).filter(p => !!csPicks[key]?.[p]).length;
                             return (
-                              <div className="border-t border-gray-100 pt-4 space-y-3">
-                                {/* Progress bar */}
-                                <div className="flex items-center gap-3 mb-1">
-                                  <div className="flex gap-1">
-                                    {([1,2,3,4] as const).map(p => (
-                                      <div key={p} style={{ width: 32, height: 4, borderRadius: 3, background: csPicks[key]?.[p] ? '#4a6fa5' : '#e5e7eb', transition: 'background 0.2s' }} />
-                                    ))}
-                                  </div>
-                                  <span className="text-xs text-gray-400">{donePillars} of 4 selected</span>
+                              <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                {/* Progress dots */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  {([1,2,3,4] as const).map(p => (
+                                    <div key={p} style={{ width: 32, height: 4, borderRadius: 3, background: csPicks[key]?.[p] ? '#4a6fa5' : '#e5e7eb' }} />
+                                  ))}
+                                  <span style={{ fontSize: 11, color: '#9ca3af' }}>{donePillars} of 4 selected</span>
                                 </div>
-                                {/* Pillar cards */}
+                                {/* Pillars */}
                                 {([1,2,3,4] as const).map(pillar => {
                                   const qs = CS_QUESTIONS.filter(q => q.age === key && q.p === pillar);
                                   const selected = csPicks[key]?.[pillar];
-                                  const isDone = !!selected;
                                   return (
-                                    <div key={pillar} className={`rounded-xl overflow-hidden transition-colors border-2 ${isDone ? 'border-[#4a6fa5]' : 'border-gray-200'}`}>
-                                      {/* Pillar header */}
-                                      <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: isDone ? '#f0f5fb' : '#f9fafb' }}>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: isDone ? '#4a6fa5' : '#9ca3af' }}>Pillar {pillar}</span>
-                                          <span className="text-xs font-semibold text-gray-700">{PILLARS[pillar]}</span>
-                                        </div>
-                                        {isDone
-                                          ? <span className="text-xs font-bold flex items-center gap-1" style={{ color: '#4a6fa5' }}>
-                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Done
-                                            </span>
-                                          : <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Choose one</span>
-                                        }
+                                    <div key={pillar}>
+                                      {/* Pillar label row */}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                                        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: selected ? '#4a6fa5' : '#9ca3af' }}>Pillar {pillar}</span>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{PILLARS[pillar]}</span>
+                                        {selected && (
+                                          <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: '#4a6fa5', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Done
+                                          </span>
+                                        )}
                                       </div>
-                                      {/* Questions */}
-                                      <div className="p-3 space-y-2 bg-white">
+                                      {/* Question blocks */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                         {qs.map(q => {
                                           const isSelected = selected === q.id;
                                           return (
-                                            <label key={q.id}
-                                              className={`flex gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${isSelected ? 'bg-[#4a6fa5] border-[#4a6fa5]' : 'bg-white border-gray-200 hover:border-[#93afd4]'}`}>
-                                              <input type="radio" name={`${key}-p${pillar}`} value={q.id}
-                                                checked={isSelected}
-                                                onChange={() => setCsPicks(p => ({ ...p, [key]: { ...(p[key] ?? {}), [pillar]: q.id } }))}
-                                                className="sr-only" />
-                                              {/* Custom radio dot */}
-                                              <div className="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all" style={{ borderColor: isSelected ? 'rgba(255,255,255,0.7)' : '#d1d5db' }}>
-                                                {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                                              </div>
-                                              <span className="text-sm leading-relaxed" style={{ color: isSelected ? 'white' : '#374151' }}>
-                                                {q.text.replace(/\n/g, ' ')}
-                                                {q.def && !isSelected && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
-                                              </span>
-                                            </label>
+                                            <button key={q.id} type="button"
+                                              onClick={() => setCsPicks(p => ({ ...p, [key]: { ...(p[key] ?? {}), [pillar]: q.id } }))}
+                                              style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 8, border: 'none', background: isSelected ? '#4a6fa5' : '#f9fafb', color: isSelected ? 'white' : '#374151', fontSize: 13, lineHeight: 1.5, cursor: 'pointer', width: '100%' }}>
+                                              {q.text.replace(/\n/g, ' ')}
+                                              {q.def && !isSelected && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: '#4a6fa5', background: '#f0f5fb', padding: '2px 6px', borderRadius: 20 }}>standard</span>}
+                                            </button>
                                           );
                                         })}
                                       </div>
