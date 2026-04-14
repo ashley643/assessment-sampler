@@ -133,6 +133,7 @@ const PREVIEWS = [
 
 // ── Demo player panels ───────────────────────────────────────────────────────
 interface DemoCaption { t: number; text: string; accent?: true }
+interface DemoChip { t: number; text: string; color: string }
 interface DemoPanel {
   assessmentName: string;
   school: string;
@@ -142,6 +143,7 @@ interface DemoPanel {
   responseUrl: string;
   respondentLabel: string;
   captions: DemoCaption[];
+  chips: DemoChip[];
 }
 
 const DEMO_PANELS: DemoPanel[] = [
@@ -167,6 +169,13 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 46,   text: "I\u2019m like, better than I used to be.", accent: true },
       { t: 52,   text: "But yeah, I\u2019ve been doing good." },
     ],
+    chips: [
+      { t: 1,  text: 'Reflective Growth',   color: '#60a5fa' },
+      { t: 15, text: 'Growth Mindset',       color: '#a78bfa' },
+      { t: 26, text: 'Self-Regulation',      color: '#34d399' },
+      { t: 33, text: 'Help-Seeking',         color: '#fbbf24' },
+      { t: 46, text: 'Positive Self-Concept', color: '#f472b6' },
+    ],
   },
   {
     assessmentName: 'Community Schools Assessment',
@@ -189,6 +198,13 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 31.9, text: 'he gets taken care of. He enjoys that.' },
       { t: 36.5, text: 'Thanks to the school for really taking care of both boys', accent: true },
       { t: 39.5, text: 'that have different personalities.' },
+    ],
+    chips: [
+      { t: 1,    text: 'Sense of Belonging',    color: '#60a5fa' },
+      { t: 13.9, text: 'Trusted Adult',          color: '#34d399' },
+      { t: 21,   text: 'Emotional Validation',   color: '#a78bfa' },
+      { t: 28,   text: 'Integrated Support',     color: '#fbbf24' },
+      { t: 36.5, text: 'Family Partnership',     color: '#f472b6' },
     ],
   },
 ];
@@ -635,6 +651,7 @@ export default function PilotClient() {
   const [promptPaused, setPromptPaused] = useState(false);
   const [responsePaused, setResponsePaused] = useState(false);
   const [captionIdx, setCaptionIdx] = useState(0);
+  const [chipIdx, setChipIdx] = useState(-1);
   const promptVideoRef = useRef<HTMLVideoElement>(null);
   const responseVideoRef = useRef<HTMLVideoElement>(null);
   const panel = DEMO_PANELS[panelIndex];
@@ -663,6 +680,7 @@ export default function PilotClient() {
 
   useEffect(() => {
     setCaptionIdx(0);
+    setChipIdx(-1);
     setSimShown(false);
     setPromptPaused(false);
     setResponsePaused(false);
@@ -1106,7 +1124,7 @@ export default function PilotClient() {
                     </div>
                     {/* Video fills remaining space */}
                     <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                      <style>{`@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+                      <style>{`@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes chipIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}`}</style>
                       <video
                         key={panel.responseUrl}
                         ref={responseVideoRef}
@@ -1119,9 +1137,11 @@ export default function PilotClient() {
                           const t = responseVideoRef.current?.currentTime ?? 0;
                           const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
                           setCaptionIdx(idx);
+                          const cIdx = panel.chips.reduce((acc: number, c, i) => (c.t <= t ? i : acc), -1);
+                          if (cIdx !== chipIdx) setChipIdx(cIdx);
                         }}
                       />
-                      {/* Play/pause button */}
+                      {/* Play/pause button — top-left */}
                       <button
                         onClick={() => {
                           const v = responseVideoRef.current;
@@ -1129,9 +1149,31 @@ export default function PilotClient() {
                           if (v.paused) { v.play(); setResponsePaused(false); }
                           else { v.pause(); setResponsePaused(true); }
                         }}
-                        style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600, minWidth: 36, zIndex: 3 }}>
+                        style={{ position: 'absolute', top: 14, left: 14, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600, minWidth: 36, zIndex: 3 }}>
                         {responsePaused ? '▶' : '⏸'}
                       </button>
+                      {/* Insight chips — top-right */}
+                      {chipIdx >= 0 && (
+                        <div
+                          key={`chip-${chipIdx}`}
+                          style={{ position: 'absolute', top: 14, right: 14, zIndex: 3, animation: 'chipIn 0.3s ease both' }}
+                        >
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: `${panel.chips[chipIdx].color}1a`,
+                            border: `1px solid ${panel.chips[chipIdx].color}55`,
+                            backdropFilter: 'blur(8px)',
+                            color: panel.chips[chipIdx].color,
+                            borderRadius: 20, padding: '5px 11px',
+                            fontSize: 11, fontWeight: 700,
+                            letterSpacing: '0.05em', textTransform: 'uppercase',
+                            boxShadow: `0 0 14px ${panel.chips[chipIdx].color}30`,
+                          }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: panel.chips[chipIdx].color, flexShrink: 0 }} />
+                            {panel.chips[chipIdx].text}
+                          </span>
+                        </div>
+                      )}
                       {/* Caption overlay */}
                       <div
                         key={captionIdx}
