@@ -1127,6 +1127,30 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
   );
 }
 
+function ContinueBtn({ reason, onClick }: { reason: string | null; onClick: () => void }) {
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }} className="group">
+      <button
+        disabled={!!reason}
+        onClick={onClick}
+        className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90"
+        style={{ background: '#4a6fa5' }}
+      >
+        Continue
+      </button>
+      {reason && (
+        <div style={{ position: 'absolute', bottom: '100%', right: 0, marginBottom: 8, zIndex: 50, pointerEvents: 'none' }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div style={{ background: '#111827', color: 'white', fontSize: 12, borderRadius: 8, padding: '7px 11px', maxWidth: 230, whiteSpace: 'normal', lineHeight: 1.45, textAlign: 'left' }}>
+            {reason}
+          </div>
+          <div style={{ position: 'absolute', bottom: -4, right: 18, width: 8, height: 8, background: '#111827', transform: 'rotate(45deg)' }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PilotClient() {
   const [formOpen, setFormOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
@@ -1378,6 +1402,54 @@ export default function PilotClient() {
       const qPicks = lpQPicks[a.id] ?? [];
       return attrPicks.length >= 1 && qPicks.length >= 1;
     });
+  }
+
+  // ── Tooltip reasons for each Continue button ────────────────────────────
+  function step1Reason(): string | null {
+    if (!form.assessmentType) return 'Choose an assessment type to continue.';
+    if (isCS && form.respondents.length === 0) return 'Select at least one respondent group.';
+    if (!isCS && form.gradeLevels.length === 0) return 'Select at least one grade level.';
+    if (studentsSelected && form.gradeLevels.length === 0) return 'Select grade levels for your student respondents.';
+    return null;
+  }
+  function step3Reason(): string | null {
+    if (form.languages.length === 0) return 'Select at least one language.';
+    if (form.languages.includes('Other') && !form.otherLanguage) return 'Specify the other language you need.';
+    if (form.modalities.length === 0) return 'Select at least one response modality (video, audio, or text).';
+    return null;
+  }
+  function step4Reason(): string | null {
+    if (!form.launchTimeline) return 'Choose a target launch window.';
+    if (!form.expectedCount) return 'Enter your expected number of respondents.';
+    return null;
+  }
+  function csReason(): string | null {
+    for (const { key, label } of getCsSections()) {
+      if ((csMode[key] ?? 'standard') !== 'custom') continue;
+      const missing = ([1,2,3,4] as const).filter(p => !csPicks[key]?.[p]).length;
+      if (missing > 0) return `${label}: select a question for ${missing === 4 ? 'each' : `${missing} more`} pillar${missing === 1 ? '' : 's'}.`;
+    }
+    return null;
+  }
+  function bhReason(): string | null {
+    if (!form.bhSelectedAssessments.length && !form.bhWantsCustom)
+      return 'Select at least one screener to continue.';
+    return null;
+  }
+  function lpReason(): string | null {
+    for (const a of getLPAssessments()) {
+      const mode = lpMode[a.id] ?? 'standard';
+      if (mode === 'standard' || mode === 'write-own') continue;
+      if (a.id === 'lp-littles') {
+        const picks = lpPicks[a.id] ?? [];
+        if (picks.length < 1) return `${a.name}: select at least one question.`;
+        if (picks.length > 3) return `${a.name}: select no more than 3 questions.`;
+      } else {
+        if (!(lpAttrPicks[a.id] ?? []).length) return `${a.name}: select at least one attribute.`;
+        if (!(lpQPicks[a.id] ?? []).length) return `${a.name}: select at least one question.`;
+      }
+    }
+    return null;
   }
 
   // Step navigation — linear 1→2→3→4→5→7
@@ -2441,13 +2513,7 @@ export default function PilotClient() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <button
-                    disabled={!canAdvanceStep1}
-                    onClick={() => setStep(2)}
-                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
-                  >
-                    Continue
-                  </button>
+                  <ContinueBtn reason={step1Reason()} onClick={() => setStep(2)} />
                 </div>
               </div>
             )}
@@ -2797,10 +2863,7 @@ export default function PilotClient() {
 
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(2)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                  <button disabled={!canAdvanceStep3} onClick={() => setStep(4)}
-                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
-                    Continue
-                  </button>
+                  <ContinueBtn reason={step3Reason()} onClick={() => setStep(4)} />
                 </div>
               </div>
             )}
@@ -2873,10 +2936,7 @@ export default function PilotClient() {
 
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(3)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                  <button disabled={!canAdvanceStep4} onClick={() => setStep(5)}
-                    className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}>
-                    Continue
-                  </button>
+                  <ContinueBtn reason={step4Reason()} onClick={() => setStep(5)} />
                 </div>
               </div>
             )}
@@ -3029,13 +3089,7 @@ export default function PilotClient() {
 
                   <div className="flex justify-between pt-2">
                     <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                    <button
-                      disabled={!canAdvanceCS()}
-                      onClick={() => setStep(3)}
-                      className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
-                    >
-                      Continue
-                    </button>
+                    <ContinueBtn reason={csReason()} onClick={() => setStep(3)} />
                   </div>
                 </div>
               );
@@ -3122,13 +3176,7 @@ export default function PilotClient() {
 
                   <div className="flex justify-between pt-2">
                     <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                    <button
-                      disabled={!canAdvanceBH()}
-                      onClick={() => setStep(3)}
-                      className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
-                    >
-                      Continue
-                    </button>
+                    <ContinueBtn reason={bhReason()} onClick={() => setStep(3)} />
                   </div>
                 </div>
               );
@@ -3392,13 +3440,7 @@ export default function PilotClient() {
 
                   <div className="flex justify-between pt-2">
                     <button onClick={() => setStep(1)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
-                    <button
-                      disabled={!canAdvanceLP()}
-                      onClick={() => setStep(3)}
-                      className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
-                    >
-                      Continue
-                    </button>
+                    <ContinueBtn reason={lpReason()} onClick={() => setStep(3)} />
                   </div>
                 </div>
               );
