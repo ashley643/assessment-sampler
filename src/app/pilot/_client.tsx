@@ -232,12 +232,8 @@ const DEMO_PANELS: DemoPanel[] = [
     ],
     chips: [
       { t: 1,  text: 'Adversity-Persistence',  color: '#60a5fa' },
-      { t: 8,  text: 'Emotional Self-Report',  color: '#38bdf8' },
       { t: 15, text: 'Contrastive Structure',  color: '#a78bfa' },
-      { t: 19, text: 'Grit',                   color: '#818cf8' },
       { t: 23, text: 'Causal Connector',       color: '#34d399' },
-      { t: 33, text: 'Help-Seeking',           color: '#fbbf24' },
-      { t: 41, text: 'Cause-Effect Reasoning', color: '#4ade80' },
       { t: 46, text: 'Growth Mindset',         color: '#f472b6' },
       { t: 53, text: 'Self-Awareness',         color: '#fb923c' },
     ],
@@ -402,16 +398,10 @@ const DEMO_PANELS: DemoPanel[] = [
     ],
     chips: [
       { t: 3.6,  text: 'Viewpoint Shift',       color: '#60a5fa' },
-      { t: 10.3, text: 'Question Framing',      color: '#38bdf8' },
       { t: 15.7, text: 'Value Statement',       color: '#fbbf24' },
-      { t: 22.1, text: 'Emotion+Action Pair',   color: '#a78bfa' },
       { t: 27.5, text: 'Figurative Reasoning',  color: '#818cf8' },
-      { t: 40.8, text: 'Cause-Effect Reasoning',color: '#34d399' },
-      { t: 44.6, text: 'Grit',                  color: '#4ade80' },
       { t: 54.5, text: 'Courageous Action',     color: '#f472b6' },
-      { t: 62.8, text: 'Reciprocity',           color: '#fb923c' },
       { t: 67.3, text: 'Growth Orientation',    color: '#e879f9' },
-      { t: 74.7, text: 'Persistence',           color: '#38bdf8' },
     ],
     words: [
       {t:0.7,word:'When'},{t:1.4,word:'given'},{t:1.6,word:'some'},{t:1.9,word:'thought'},
@@ -595,7 +585,7 @@ const CS_QUESTIONS: CSQ[] = [
 // Non-custom preview URLs per section
 const CS_PREVIEWS: Record<string, { videoUrl: string; question: string; pillar: string }> = {
   'Elementary School': {
-    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Elem,_Question_1__Integrated_Student_Supports_V4.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9FbGVtLF9RdWVzdGlvbl8xX19JbnRlZ3JhdGVkX1N0dWRlbnRfU3VwcG9ydHNfVjQubXAzIiwiaWF0IjoxNzc2MTU4NTc4LCJleHAiOjIwOTE1MTg1Nzh9.e26lMotg2P0PdZtnn6GMM1nrcHpzH5f4Km-eNWhDb50',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA_Elem_Question_1_Integrated_Student_Supports_V3%20(1)%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBX0VsZW1fUXVlc3Rpb25fMV9JbnRlZ3JhdGVkX1N0dWRlbnRfU3VwcG9ydHNfVjMgKDEpICgxKS5tcDQiLCJpYXQiOjE3NzYxNjAxMzMsImV4cCI6MjA5MTUyMDEzM30.jeeXzp16Mv-6FWmJVhHSUq6ZhAmBdMGOFYMPa2v2yfg',
     pillar: 'Integrated Student Supports',
     question: 'Think about a time when you needed help at school — like with homework or during a tough day. Who helped you? And what did they do to make you feel better?',
   },
@@ -1010,7 +1000,7 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
         </div>
       )}
       {/* gradient overlay */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 20%, rgba(0,0,0,0.65) 100%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.0) 25%, rgba(0,0,0,0.78) 100%)', pointerEvents: 'none' }} />
       {/* play/pause button */}
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: paused ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
         {paused
@@ -1021,7 +1011,7 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
       {/* question overlay */}
       <div style={{ position: 'absolute', bottom: 36, left: 0, right: 0, padding: '0 14px', pointerEvents: 'none' }}>
         <p style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>{pillar}</p>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{question}</p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', lineHeight: 1.45, margin: 0 }}>{question}</p>
       </div>
       {/* scrubber */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '5px 12px 8px', background: 'rgba(0,0,0,0.5)' }}
@@ -1444,14 +1434,6 @@ export default function PilotClient() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
-                <button
-                  onClick={() => setDemoOpen(true)}
-                  style={{ background: '#e07b54', color: 'white', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#c96b45')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#e07b54')}
-                >
-                  Request a Demo
-                </button>
               </div>
             </div>
 
@@ -1604,7 +1586,7 @@ export default function PilotClient() {
                         ref={responseVideoRef}
                         src={panel.responseUrl}
                         playsInline
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                         onLoadedMetadata={() => setResponseDuration(responseVideoRef.current?.duration ?? 0)}
                         onEnded={() => { setResponsePaused(true); setResponseEnded(true); }}
                         onTimeUpdate={() => {
@@ -1635,7 +1617,7 @@ export default function PilotClient() {
                         </div>
                       )}
                       {/* Insight chips — top-right */}
-                      {chipIdx >= 0 && (
+                      {chipIdx >= 0 && chipIdx < panel.chips.length && (
                         <div
                           key={`chip-${chipIdx}`}
                           style={{ position: 'absolute', top: 14, right: 14, zIndex: 3, animation: 'chipIn 0.3s ease both' }}
@@ -1672,7 +1654,7 @@ export default function PilotClient() {
                           .filter(w => w.t >= captionStart && w.t < captionEnd);
                         if (!captionWords.length) return null;
                         return (
-                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 155, pointerEvents: 'none', padding: '0 16px' }}>
+                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 210, pointerEvents: 'none', padding: '0 16px' }}>
                             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)' }}>
                               {captionWords.map((w, i) => {
                                 const isCurrent = w.origIdx === wordIdx;
