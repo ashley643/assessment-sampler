@@ -593,12 +593,32 @@ const CS_QUESTIONS: CSQ[] = [
 ];
 
 // Non-custom preview URLs per section
-const CS_PREVIEWS: Record<string, { en: string; es: string | null }> = {
-  'Elementary School': { en:'https://flex.impacterpathway.com/f0fwulas9?preview', es:null },
-  'Middle School':     { en:'https://flex.impacterpathway.com/f0zy1h485?preview', es:null },
-  'High School':       { en:'https://flex.impacterpathway.com/fzq8z8vw4?preview', es:null },
-  'Parent':            { en:'https://flex.impacterpathway.com/f7u4hz91d?preview', es:null },
-  'Staff':             { en:'https://flex.impacterpathway.com/flgxm5ys9?preview', es:null },
+const CS_PREVIEWS: Record<string, { videoUrl: string; question: string; pillar: string }> = {
+  'Elementary School': {
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Elem,_Question_1__Integrated_Student_Supports_V4.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9FbGVtLF9RdWVzdGlvbl8xX19JbnRlZ3JhdGVkX1N0dWRlbnRfU3VwcG9ydHNfVjQubXAzIiwiaWF0IjoxNzc2MTU4NTc4LCJleHAiOjIwOTE1MTg1Nzh9.e26lMotg2P0PdZtnn6GMM1nrcHpzH5f4Km-eNWhDb50',
+    pillar: 'Integrated Student Supports',
+    question: 'Think about a time when you needed help at school — like with homework or during a tough day. Who helped you? And what did they do to make you feel better?',
+  },
+  'Middle School': {
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Middle,_Question_1__Integrated_Student_Supports_V2.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9NaWRkbGUsX1F1ZXN0aW9uXzFfX0ludGVncmF0ZWRfU3R1ZGVudF9TdXBwb3J0c19WMi5tcDQiLCJpYXQiOjE3NzYxNTg2MDYsImV4cCI6MjA5MTUxODYwNn0._1nXbKzqt3FFbKkG7bf5qKYOomqadL1Dyykojo4-P3E',
+    pillar: 'Integrated Student Supports',
+    question: 'Imagine your school could create one new support for students. What should it be? Why would it help students succeed?',
+  },
+  'High School': {
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_High,_Question_1__Integrated_Student_Supports_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9IaWdoLF9RdWVzdGlvbl8xX19JbnRlZ3JhdGVkX1N0dWRlbnRfU3VwcG9ydHNfVjEubXA0IiwiaWF0IjoxNzc2MTU4NjM3LCJleHAiOjIwOTE1MTg2Mzd9.Rx0jPowGfF5co6OzcXNyVrMi034mOcoYUdWKa3S9j6I',
+    pillar: 'Integrated Student Supports',
+    question: 'Think about the ways your school supports students when life gets difficult. Which supports actually help students the most? Why?',
+  },
+  'Staff': {
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Staff_Pillar_4_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvU3RhZmZfUGlsbGFyXzRfVjEubXA0IiwiaWF0IjoxNzc2MTU4NjYxLCJleHAiOjIwOTE1MTg2NjF9.klZb_NFoc_IrdlC2c4dReqPowcDwIKQ6K0O_okrtO80',
+    pillar: 'Expanded & Enriched Learning Time',
+    question: 'What programs, routines, or learning experiences are most engaging for students at your site — and what enrichment opportunities do you wish students had more access to?',
+  },
+  'Parent': {
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Parent,_Question_2__Active_Family_%26_Community_Engagement_(1)_V1%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9QYXJlbnQsX1F1ZXN0aW9uXzJfX0FjdGl2ZV9GYW1pbHlfJl9Db21tdW5pdHlfRW5nYWdlbWVudF8oMSlfVjEgKDEpLm1wNCIsImlhdCI6MTc3NjE1ODY5NSwiZXhwIjoyMDkxNTE4Njk1fQ.6hqsJjJ-1Hd44AGgsa1DL9D96QgMAN6a3Xzq_paeZ5o',
+    pillar: 'Active Family & Community Engagement',
+    question: 'What is one thing the school does well to partner with families — and one thing the school could do to strengthen communication or connection with you?\n\nThis could include language access, events, updates, relationships, or opportunities to be involved.',
+  },
 };
 
 // ── Behavioral Health screeners ───────────────────────────────────────────────
@@ -607,7 +627,10 @@ interface BHScreener {
   name: string;
   grades: string;
   gradeBands: string[];
-  previewUrl: string; // append ?preview — actual form IDs to be confirmed
+  previewUrl: string;
+  videoUrl: string;
+  videoPillar: string;
+  videoQuestion: string;
   questions: Array<{ pillar: string; text: string }>;
 }
 
@@ -618,6 +641,9 @@ const BH_SCREENERS: BHScreener[] = [
     grades: 'Grades TK+ (Littles)',
     gradeBands: ['Lower Elementary (TK–2)'],
     previewUrl: 'https://flex.impacterpathway.com/fjzzdvxk8?preview',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/B1_Q1_Self_Esteem_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQjFfUTFfU2VsZl9Fc3RlZW1fVjEubXA0IiwiaWF0IjoxNzc2MTU4OTMyLCJleHAiOjIwOTE1MTg5MzJ9.wjme9sEXL6BE6wHleoOcJVbHu8NHADANpGR2BPPIeYA',
+    videoPillar: 'Self-Esteem',
+    videoQuestion: 'What do you like about yourself and your life?',
     questions: [
       { pillar: 'Relational Awareness',  text: 'Tell me about a time you saw someone who was really upset. What did you notice? What did you do?' },
       { pillar: 'Emotional Resilience',  text: 'Tell me about a time you kept trying something hard even when you felt like quitting. What happened?' },
@@ -630,6 +656,9 @@ const BH_SCREENERS: BHScreener[] = [
     grades: 'Grades 3+ (Elementary)',
     gradeBands: ['Elementary (3rd–5th)'],
     previewUrl: 'https://flex.impacterpathway.com/fvtnb1z5e?preview',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/2_Relational_Awareness_BHS_Elem_Middle_V2.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvMl9SZWxhdGlvbmFsX0F3YXJlbmVzc19CSFNfRWxlbV9NaWRkbGVfVjIubXA0IiwiaWF0IjoxNzc2MTU4OTkwLCJleHAiOjIwOTE1MTg5OTB9.nxQWMJANNfkugCIWwIH-09w4Y9PfGVu6TMKe1hA9-Hg',
+    videoPillar: 'Relational Awareness',
+    videoQuestion: 'Tell me about a time you noticed how someone else was feeling. What helped you notice, and what did you do?',
     questions: [
       { pillar: 'Reflective Growth',     text: "What's something you're better at now than you used to be? And, what do you think helped you get there?" },
       { pillar: 'Relational Awareness',  text: 'Tell me about a time you noticed how someone else was feeling. What helped you notice, and what did you do?' },
@@ -645,6 +674,9 @@ const BH_SCREENERS: BHScreener[] = [
     grades: 'Grades 6+ (Secondary)',
     gradeBands: ['Middle School (6th–8th)', 'High School (9th–12th)'],
     previewUrl: 'https://flex.impacterpathway.com/fiucp7xof?preview',
+    videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/High_2_Reflective_Growth_BHS_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvSGlnaF8yX1JlZmxlY3RpdmVfR3Jvd3RoX0JIU19WMS5tcDQiLCJpYXQiOjE3NzYxNTkwMTAsImV4cCI6MjA5MTUxOTAxMH0.UX7OHMWhVs7VWM5JnGs_m9cE8RHrDKu-gmVRKoTn4v0',
+    videoPillar: 'Reflective Growth',
+    videoQuestion: "What is one way you've grown or changed as a person recently? Tell the story of what led to that change, and what the experience helped you understand about yourself.",
     questions: [
       { pillar: 'Reflective Growth',     text: "What is one way you've grown or changed as a person recently? Tell the story of what led to that change, and what the experience helped you understand about yourself." },
       { pillar: 'Relational Awareness',  text: 'Tell me about a specific time when you noticed clues that helped you realize how someone else might be feeling. What did you notice, what did you think might be going on for them, and how did that understanding shape the way you responded?' },
@@ -899,6 +931,81 @@ function VideoAskEmbed({ url, label, onOpen, height = 200 }: { url: string; labe
         <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm text-xs font-medium text-gray-700 px-3 py-1 rounded-full shadow-sm">
           Click to expand
         </span>
+      </div>
+    </div>
+  );
+}
+
+function CSVideoPlayer({ src, question, pillar }: { src: string; question: string; pillar: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(true);
+  const [curT, setCurT] = useState(0);
+  const [dur, setDur] = useState(0);
+  const [hov, setHov] = useState(false);
+  const isAudio = /\.mp3($|\?)/.test(src);
+
+  function toggle() {
+    const el = ref.current;
+    if (!el) return;
+    if (el.paused) { el.play(); setPaused(false); }
+    else { el.pause(); setPaused(true); }
+  }
+
+  function fmt(t: number) {
+    const m = Math.floor(t / 60), s = Math.floor(t % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  return (
+    <div
+      style={{ borderRadius: 12, overflow: 'hidden', background: '#0f1c2e', position: 'relative', aspectRatio: isAudio ? '16/6' : '16/9', cursor: 'pointer' }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={toggle}
+    >
+      <video ref={ref} src={src} playsInline
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: isAudio ? 0 : 1 }}
+        onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
+        onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
+        onEnded={() => setPaused(true)}
+      />
+      {isAudio && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </div>
+      )}
+      {/* gradient overlay */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 20%, rgba(0,0,0,0.65) 100%)', pointerEvents: 'none' }} />
+      {/* play/pause button */}
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: paused ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
+        {paused
+          ? <svg width="16" height="16" viewBox="0 0 24 24" fill="#1a2a44"><polygon points="5,3 19,12 5,21"/></svg>
+          : <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        }
+      </div>
+      {/* question overlay */}
+      <div style={{ position: 'absolute', bottom: 36, left: 0, right: 0, padding: '0 14px', pointerEvents: 'none' }}>
+        <p style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>{pillar}</p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{question}</p>
+      </div>
+      {/* scrubber */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '5px 12px 8px', background: 'rgba(0,0,0,0.5)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, minWidth: 28, textAlign: 'center' }}>{fmt(curT)}</span>
+          <input type="range" min={0} max={dur || 1} step={0.1} value={curT}
+            onChange={e => { const t = +e.target.value; if (ref.current) ref.current.currentTime = t; setCurT(t); }}
+            onClick={e => e.stopPropagation()}
+            style={{ flex: 1, accentColor: '#4a6fa5', cursor: 'pointer' }}
+          />
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, minWidth: 28, textAlign: 'center' }}>{fmt(dur)}</span>
+        </div>
       </div>
     </div>
   );
@@ -2649,8 +2756,6 @@ export default function PilotClient() {
                   {sections.map(({ key, label }) => {
                     const mode = csMode[key] ?? 'standard';
                     const preview = CS_PREVIEWS[key];
-                    const lang = csPreviewLang[key] ?? 'en';
-                    const open = !!csPreviewOpen[key];
 
                     return (
                       <div key={key} className="border border-gray-200 rounded-2xl overflow-hidden">
@@ -2661,25 +2766,13 @@ export default function PilotClient() {
 
                         <div className="p-5 space-y-5">
                           {/* Embedded preview */}
-                          <div className="space-y-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample Question</p>
-                            <VideoAskEmbed
-                              url={lang === 'es' && preview.es ? preview.es : preview.en}
-                              label={`${label} — ${lang === 'en' ? 'English' : 'Español'}`}
-                              onOpen={() => setPreviewModal({ label: `${label} — ${lang === 'en' ? 'English' : 'Español'}`, url: lang === 'es' && preview.es ? preview.es : preview.en })}
-                              height={260}
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>Sample Question</p>
+                            <CSVideoPlayer
+                              src={preview.videoUrl}
+                              question={preview.question}
+                              pillar={preview.pillar}
                             />
-                            {preview.es && (
-                              <div className="flex justify-end">
-                                <button
-                                  type="button"
-                                  onClick={() => setCsPreviewLang(p => ({ ...p, [key]: lang === 'en' ? 'es' : 'en' }))}
-                                  className="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
-                                >
-                                  {lang === 'en' ? 'Ver en español' : 'View in English'}
-                                </button>
-                              </div>
-                            )}
                           </div>
 
                           {/* Mode selector */}
@@ -2797,11 +2890,11 @@ export default function PilotClient() {
                         <p className="text-xs text-gray-400">{s.grades}</p>
                       </div>
                       <div className="p-5 space-y-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#4a6fa5' }}>Sample Question</p>
-                        <VideoAskEmbed
-                          url={s.previewUrl}
-                          label={s.name}
-                          onOpen={() => setPreviewModal({ label: s.name, url: s.previewUrl })}
+                        <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>Sample Question</p>
+                        <CSVideoPlayer
+                          src={s.videoUrl}
+                          pillar={s.videoPillar}
+                          question={s.videoQuestion}
                         />
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Questions</p>
                         <div className="space-y-3">
