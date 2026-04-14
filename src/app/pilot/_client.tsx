@@ -869,6 +869,11 @@ function VideoAskEmbed({ url, label, onOpen, height = 200 }: { url: string; labe
 
 export default function PilotClient() {
   const [formOpen, setFormOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const [demoForm, setDemoForm] = useState({ name: '', email: '', org: '', phone: '', notes: '' });
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [demoSuccess, setDemoSuccess] = useState(false);
+  const [demoError, setDemoError] = useState('');
   const [step, setStep] = useState<1|2|3|4|5|6|7>(1);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
@@ -919,6 +924,13 @@ export default function PilotClient() {
   useEffect(() => {
     scrollBodyRef.current?.scrollTo({ top: 0, behavior: 'instant' });
   }, [step]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('start') === '1') {
+      openForm();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setCaptionIdx(0);
@@ -1112,7 +1124,7 @@ export default function PilotClient() {
       {/* ── Floating CTA tab ─────────────────────────────────────────────────── */}
       {!formOpen && (
         <button
-          onClick={openForm}
+          onClick={() => window.open('/pilot?start=1', '_blank')}
           aria-label="Start Today"
           style={{
             position: 'fixed',
@@ -1177,8 +1189,19 @@ export default function PilotClient() {
           <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
             A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
           </p>
+          {/* CTA buttons */}
+          <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
+            <button
+              onClick={() => setDemoOpen(true)}
+              style={{ background: 'white', color: '#1a2744', border: 'none', borderRadius: 10, padding: '13px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.01em', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.92')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >
+              Request a Demo
+            </button>
+          </div>
           {/* Frosted stat chips */}
-          <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
+          <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             {[['No app download', true], ['Results in days', true], ['English & Spanish', true]].map(([label]) => (
               <div key={label as string} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
                 <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
@@ -1975,6 +1998,82 @@ export default function PilotClient() {
               allow="camera; microphone; autoplay"
               title={previewModal.label}
             />
+          </div>
+        </div>
+      )}
+
+      {/* ── Request a Demo modal ─────────────────────────────────────────────── */}
+      {demoOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget) { setDemoOpen(false); setDemoSuccess(false); setDemoError(''); setDemoForm({ name:'',email:'',org:'',phone:'',notes:'' }); } }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.6)', backdropFilter: 'blur(6px)' }} />
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: '40px 36px', width: '100%', maxWidth: 480, boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+            <button onClick={() => { setDemoOpen(false); setDemoSuccess(false); setDemoError(''); setDemoForm({ name:'',email:'',org:'',phone:'',notes:'' }); }}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20, lineHeight: 1 }}>✕</button>
+
+            {demoSuccess ? (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <svg width="24" height="24" fill="none" stroke="#065f46" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a2744', margin: '0 0 8px' }}>You&apos;re on the list!</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>We&apos;ll reach out within 1–2 business days to schedule a time. Check your inbox for a confirmation.</p>
+              </div>
+            ) : (
+              <>
+                <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1a2744', margin: '0 0 6px', letterSpacing: '-0.3px' }}>Request a Demo</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 28px', lineHeight: 1.5 }}>Leave your info and we&apos;ll reach out to set up a time.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {([
+                    { key: 'name', label: 'Full Name', placeholder: 'Jane Smith', required: true },
+                    { key: 'email', label: 'Work Email', placeholder: 'jane@district.org', required: true },
+                    { key: 'org', label: 'Organization', placeholder: 'School or district name', required: true },
+                    { key: 'phone', label: 'Phone (optional)', placeholder: '(555) 000-0000', required: false },
+                  ] as const).map(({ key, label, placeholder, required }) => (
+                    <div key={key}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</label>
+                      <input
+                        type={key === 'email' ? 'email' : 'text'}
+                        placeholder={placeholder}
+                        value={demoForm[key]}
+                        onChange={e => setDemoForm(f => ({ ...f, [key]: e.target.value }))}
+                        style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#111827', outline: 'none', boxSizing: 'border-box' }}
+                        onFocus={e => (e.target.style.borderColor = '#4a6fa5')}
+                        onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Anything you&apos;d like us to know? (optional)</label>
+                    <textarea
+                      placeholder="Tell us a bit about what you're looking for..."
+                      value={demoForm.notes}
+                      onChange={e => setDemoForm(f => ({ ...f, notes: e.target.value }))}
+                      rows={3}
+                      style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#111827', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                      onFocus={e => (e.target.style.borderColor = '#4a6fa5')}
+                      onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
+                    />
+                  </div>
+                  {demoError && <p style={{ fontSize: 13, color: '#dc2626', margin: 0 }}>{demoError}</p>}
+                  <button
+                    disabled={demoSubmitting}
+                    onClick={async () => {
+                      if (!demoForm.name || !demoForm.email || !demoForm.org) { setDemoError('Please fill in the required fields.'); return; }
+                      setDemoError(''); setDemoSubmitting(true);
+                      try {
+                        const res = await fetch('/api/demo-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(demoForm) });
+                        if (!res.ok) throw new Error();
+                        setDemoSuccess(true);
+                      } catch { setDemoError('Something went wrong. Please try again.'); }
+                      finally { setDemoSubmitting(false); }
+                    }}
+                    style={{ background: 'linear-gradient(135deg, #1a2744 0%, #2d4a8a 100%)', color: 'white', border: 'none', borderRadius: 10, padding: '14px', fontSize: 15, fontWeight: 700, cursor: demoSubmitting ? 'wait' : 'pointer', opacity: demoSubmitting ? 0.7 : 1, letterSpacing: '-0.01em' }}>
+                    {demoSubmitting ? 'Sending…' : 'Request a Demo →'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

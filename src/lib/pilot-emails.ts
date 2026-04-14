@@ -212,3 +212,66 @@ export async function sendInternalNotification(opts: {
     html: base(content),
   });
 }
+
+// ─── Demo request emails ─────────────────────────────────────────────────────
+
+export async function sendDemoReceipt(opts: { name: string; email: string; org: string }) {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:${NAVY};letter-spacing:-0.4px;">
+      Thanks, ${opts.name.split(' ')[0]}!
+    </h1>
+    <p style="margin:0 0 24px;font-size:15px;color:${BODY};line-height:1.6;">
+      We received your demo request for <strong>${opts.org}</strong> and we&apos;ll be in touch within 1&ndash;2 business days to find a time that works.
+    </p>
+    <div style="margin:28px 0;padding:20px 24px;background:#f0f4ff;border-radius:10px;border-left:4px solid #3b82f6;">
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:${NAVY};">What to expect</p>
+      <p style="margin:0;font-size:13px;color:${BODY};line-height:1.6;">
+        A quick 30-minute call where we&apos;ll walk you through a live demo, answer your questions, and talk through what a pilot could look like for your district or school.
+      </p>
+    </div>
+    <p style="margin:28px 0 0;font-size:14px;color:${BODY};line-height:1.6;">
+      Talk soon,<br />
+      <strong style="color:${NAVY};">The Impacter Pathway Team</strong>
+    </p>
+    <p style="margin:6px 0 0;font-size:13px;">
+      <a href="mailto:info@impacterpathway.com" style="color:${ACCENT};text-decoration:none;">info@impacterpathway.com</a>
+    </p>
+  `;
+
+  return getResend().emails.send({
+    from: FROM,
+    to: opts.email,
+    subject: `We'll be in touch — Impacter Pathway Demo`,
+    html: base(content),
+  });
+}
+
+export async function sendDemoNotification(opts: {
+  name: string; email: string; org: string; phone?: string; notes?: string;
+}) {
+  const content = `
+    <h1 style="margin:0 0 6px;font-size:20px;font-weight:700;color:${NAVY};letter-spacing:-0.3px;">
+      New Demo Request
+    </h1>
+    <p style="margin:0 0 4px;font-size:15px;color:${BODY};">
+      <strong>${opts.org}</strong> wants to schedule a demo.
+    </p>
+    <p style="margin:0 0 28px;font-size:13px;color:${MUTED};">${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}</p>
+
+    ${section('Contact', [
+      row('Name', opts.name),
+      row('Email', `<a href="mailto:${opts.email}" style="color:${ACCENT};text-decoration:none;">${opts.email}</a>`),
+      row('Organization', opts.org),
+      row('Phone', opts.phone),
+    ].join(''))}
+
+    ${opts.notes ? section('Notes', row('', opts.notes)) : ''}
+  `;
+
+  return getResend().emails.send({
+    from: FROM,
+    to: INTERNAL_TO,
+    subject: `Demo Request — ${opts.org}`,
+    html: base(content),
+  });
+}
