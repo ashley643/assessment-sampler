@@ -1787,18 +1787,26 @@ export default function PilotClient() {
                       )}
                       {/* ── End screen ── */}
                       {responseEnded && (
-                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(9,17,30,0.94)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: 24, animation: 'endIn 0.4s ease both' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' }}>Final Score</p>
-                          <ScoreDial score={currentScore} size="lg" />
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', marginTop: 18, maxWidth: 260 }}>
-                            {panel.chips.map((chip, i) => (
-                              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(0,0,0,0.5)', border: `1.5px solid ${chip.color}`, color: chip.color, borderRadius: 16, padding: '4px 10px', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: chip.color, flexShrink: 0 }} />
-                                {chip.text}
-                              </span>
-                            ))}
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(9,17,30,0.94)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', zIndex: 10, padding: '18px 20px 14px', gap: 12, animation: 'endIn 0.4s ease both' }}>
+                          {/* Score + Chips row */}
+                          <div style={{ flex: 1, display: 'flex', gap: 14, alignItems: 'center', minHeight: 0 }}>
+                            {/* Dial */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>Final Score</p>
+                              <ScoreDial score={currentScore} size="lg" />
+                            </div>
+                            {/* Chips */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignContent: 'center', flex: 1 }}>
+                              {panel.chips.map((chip, i) => (
+                                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(0,0,0,0.45)', border: `1.5px solid ${chip.color}`, color: chip.color, borderRadius: 12, padding: '3px 8px', fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: chip.color, flexShrink: 0 }} />
+                                  {chip.text}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+                          {/* Buttons */}
+                          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexShrink: 0 }}>
                             <button
                               onClick={() => { setResponseEnded(false); setResponsePaused(false); setWordIdx(-1); setCaptionIdx(0); setCurrentScore(panel.scoreTimeline[0].score); const v = responseVideoRef.current; if (v) { v.currentTime = 0; v.play(); } }}
                               style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.18)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.01em' }}>
