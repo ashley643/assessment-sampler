@@ -134,6 +134,7 @@ const PREVIEWS = [
 // ── Demo player panels ───────────────────────────────────────────────────────
 interface DemoCaption { t: number; text: string; accent?: true }
 interface DemoChip { t: number; text: string; color: string }
+interface DemoWord { t: number; word: string }
 interface DemoPanel {
   assessmentName: string;
   school: string;
@@ -144,6 +145,68 @@ interface DemoPanel {
   respondentLabel: string;
   captions: DemoCaption[];
   chips: DemoChip[];
+  words: DemoWord[];
+  scoreTimeline: { t: number; score: number }[];
+}
+
+function interpolateScore(tl: { t: number; score: number }[], time: number): number {
+  if (!tl.length) return 400;
+  if (time <= tl[0].t) return tl[0].score;
+  const last = tl[tl.length - 1];
+  if (time >= last.t) return last.score;
+  const i = tl.findIndex(k => k.t > time);
+  const a = tl[i - 1], b = tl[i];
+  return a.score + (b.score - a.score) * (time - a.t) / (b.t - a.t);
+}
+
+function ScoreDial({ score, size = 'sm' }: { score: number; size?: 'sm' | 'lg' }) {
+  const w = size === 'lg' ? 180 : 108;
+  const h = size === 'lg' ? 138 : 83;
+  const cx = w / 2, cy = h * 0.74;
+  const r  = size === 'lg' ? 64 : 38;
+  const sw = size === 'lg' ? 8 : 5;
+  const fs = size === 'lg' ? 26 : 15;
+
+  // Arc: 120° → 420° clockwise (300° sweep, 7 o'clock → 5 o'clock)
+  const toXY = (deg: number) => ({
+    x: cx + r * Math.cos(deg * Math.PI / 180),
+    y: cy + r * Math.sin(deg * Math.PI / 180),
+  });
+  const s0 = toXY(120), sEnd = toXY(420);
+  const clamped = Math.max(200, Math.min(800, score));
+  const arcDeg = (clamped - 200) / 600 * 300;
+  const sPt = toXY(120 + arcDeg);
+  const nRad = (120 + arcDeg) * Math.PI / 180;
+  const nx = cx + r * 0.82 * Math.cos(nRad);
+  const ny = cy + r * 0.82 * Math.sin(nRad);
+  const color = clamped >= 680 ? '#34d399' : clamped >= 520 ? '#fbbf24' : '#fb7185';
+  const ease = 'transition:all 0.55s cubic-bezier(0.25,0.1,0.25,1)';
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ display: 'block' }}>
+      <path d={`M${s0.x} ${s0.y} A${r} ${r} 0 1 1 ${sEnd.x} ${sEnd.y}`}
+        fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={sw} strokeLinecap="round" />
+      {arcDeg > 1 && (
+        <path d={`M${s0.x} ${s0.y} A${r} ${r} 0 ${arcDeg > 180 ? 1 : 0} 1 ${sPt.x} ${sPt.y}`}
+          fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round"
+          style={{ transition: 'all 0.55s cubic-bezier(0.25,0.1,0.25,1)' }} />
+      )}
+      <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={color}
+        strokeWidth={size === 'lg' ? 2.5 : 1.8} strokeLinecap="round"
+        style={{ transition: 'all 0.55s cubic-bezier(0.25,0.1,0.25,1)' }} />
+      <circle cx={cx} cy={cy} r={size === 'lg' ? 5 : 3.5} fill={color}
+        style={{ transition: 'fill 0.55s' }} />
+      <text x={cx} y={cy - r * 0.28} textAnchor="middle" fill="white"
+        fontSize={fs} fontWeight="800" fontFamily="-apple-system,system-ui,sans-serif"
+        style={{ transition: 'all 0.3s' }}>{Math.round(clamped)}</text>
+      <text x={s0.x - 2} y={s0.y + (size === 'lg' ? 13 : 9)} textAnchor="middle"
+        fill="rgba(255,255,255,0.28)" fontSize={size === 'lg' ? 9 : 6}
+        fontFamily="-apple-system,system-ui,sans-serif">200</text>
+      <text x={sEnd.x + 2} y={sEnd.y + (size === 'lg' ? 13 : 9)} textAnchor="middle"
+        fill="rgba(255,255,255,0.28)" fontSize={size === 'lg' ? 9 : 6}
+        fontFamily="-apple-system,system-ui,sans-serif">800</text>
+    </svg>
+  );
 }
 
 const DEMO_PANELS: DemoPanel[] = [
@@ -174,6 +237,40 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 33, text: 'Help-Seeking',         color: '#fbbf24' },
       { t: 46, text: 'Positive Self-Concept', color: '#f472b6' },
     ],
+    words: [
+      {t:0.0,word:'In'},{t:1.5,word:'first'},{t:1.9,word:'grade'},{t:3.1,word:'I'},{t:3.1,word:'was'},
+      {t:4.8,word:'very'},{t:5.3,word:'energetic'},{t:6.0,word:'extremely'},{t:6.7,word:'energetic'},
+      {t:7.5,word:'like'},{t:7.6,word:'bouncing'},{t:7.9,word:'off'},{t:8.4,word:'the'},{t:8.9,word:'walls'},
+      {t:8.9,word:'energetic'},{t:10.7,word:'Like'},{t:10.9,word:'super'},{t:12.6,word:'energetic'},
+      {t:13.1,word:'I'},{t:13.1,word:'was'},{t:13.2,word:'running'},{t:13.5,word:'around'},
+      {t:13.7,word:'everyone'},{t:14.1,word:'in'},{t:14.7,word:'the'},{t:14.7,word:'classroom'},
+      {t:15.0,word:'But'},{t:15.7,word:'now'},{t:16.4,word:"I've"},{t:18.1,word:'gradually'},
+      {t:18.1,word:'gotten'},{t:18.9,word:'better'},{t:19.7,word:'and'},{t:20.6,word:'better'},
+      {t:21.0,word:'by'},{t:22.6,word:'time'},{t:23.3,word:'Because'},{t:24.2,word:'in'},
+      {t:24.5,word:'second'},{t:24.7,word:'grade'},{t:25.1,word:'I'},{t:25.3,word:'learned'},
+      {t:25.6,word:'that'},{t:27.7,word:'um'},{t:28.3,word:'just'},{t:28.7,word:'take'},
+      {t:28.9,word:'a'},{t:29.7,word:'break'},{t:29.7,word:'take'},{t:30.2,word:'a'},
+      {t:30.6,word:'break'},{t:31.1,word:"It's"},{t:31.6,word:'not'},{t:31.7,word:'that'},
+      {t:32.0,word:'hard'},{t:32.2,word:'just'},{t:32.2,word:'take'},{t:32.4,word:'a'},
+      {t:32.5,word:'break'},{t:33.4,word:'And'},{t:33.9,word:'ask'},{t:34.2,word:'the'},
+      {t:34.5,word:'teacher'},{t:34.6,word:'if'},{t:35.1,word:'you'},{t:35.1,word:'could'},
+      {t:35.1,word:'have'},{t:35.2,word:'a'},{t:35.4,word:'break'},{t:35.8,word:'or'},
+      {t:36.0,word:'like'},{t:36.3,word:'ask'},{t:36.3,word:'for'},{t:36.8,word:'help'},
+      {t:40.4,word:'So'},{t:40.9,word:'yeah'},{t:41.4,word:'I'},{t:41.6,word:'started'},
+      {t:41.9,word:'acting'},{t:43.2,word:'a'},{t:43.7,word:'little'},{t:44.0,word:'better'},
+      {t:44.3,word:"I'm"},{t:44.4,word:'not'},{t:44.6,word:'saying'},{t:44.8,word:'that'},
+      {t:44.9,word:"I'm"},{t:45.0,word:'like'},{t:45.3,word:'the'},{t:45.5,word:'best'},
+      {t:45.8,word:'of'},{t:46.0,word:'the'},{t:46.2,word:'best'},{t:46.5,word:"I'm"},
+      {t:46.9,word:'like'},{t:47.6,word:'better'},{t:48.3,word:'than'},{t:49.0,word:'I'},
+      {t:50.8,word:'used'},{t:51.0,word:'to'},{t:51.3,word:'be'},{t:51.5,word:'better'},
+      {t:53.1,word:'But'},{t:53.6,word:'yeah'},{t:55.0,word:'been'},{t:55.6,word:'doing'},
+      {t:55.8,word:'good'},{t:58.1,word:'Bye'},
+    ],
+    scoreTimeline: [
+      {t:0,score:410},{t:13,score:490},{t:18,score:548},{t:25,score:614},
+      {t:28,score:660},{t:33,score:698},{t:44,score:720},{t:46,score:748},
+      {t:53,score:730},{t:58,score:734},
+    ],
   },
   {
     assessmentName: 'Community Schools Assessment',
@@ -201,6 +298,48 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 21,   text: 'Emotional Validation',   color: '#a78bfa' },
       { t: 28,   text: 'Integrated Support',     color: '#fbbf24' },
       { t: 36.5, text: 'Family Partnership',     color: '#f472b6' },
+    ],
+    words: [
+      {t:0.0,word:'I'},{t:0.2,word:'have'},{t:1.9,word:'two'},{t:2.1,word:'kids'},
+      {t:2.3,word:'in'},{t:2.6,word:'Sunnybrae'},{t:2.9,word:'and'},{t:3.1,word:'they'},
+      {t:3.4,word:'feel'},{t:3.6,word:'safe'},{t:3.9,word:'and'},{t:4.1,word:'seen'},
+      {t:4.1,word:'in'},{t:4.3,word:'different'},{t:4.6,word:'ways'},{t:5.2,word:'The'},
+      {t:5.2,word:'older'},{t:5.4,word:'one'},{t:5.7,word:'feels'},{t:6.0,word:'safe'},
+      {t:6.3,word:'and'},{t:6.6,word:'seen'},{t:6.6,word:'when'},{t:6.8,word:"he's"},
+      {t:7.0,word:'allowed'},{t:7.2,word:'to'},{t:7.6,word:'play'},{t:7.6,word:'soccer'},
+      {t:8.1,word:'which'},{t:8.2,word:'is'},{t:8.3,word:'his'},{t:8.8,word:'favorite'},
+      {t:8.8,word:'activity'},{t:9.3,word:'in'},{t:9.5,word:'the'},{t:9.6,word:'whole'},
+      {t:9.9,word:'world'},{t:10.1,word:'and'},{t:10.6,word:'he'},{t:10.7,word:'really'},
+      {t:11.1,word:'looks'},{t:11.2,word:'up'},{t:11.3,word:'to'},{t:11.4,word:'the'},
+      {t:11.8,word:'coaches'},{t:12.0,word:'and'},{t:13.2,word:'so'},{t:13.4,word:"they're"},
+      {t:13.5,word:'a'},{t:13.7,word:'great'},{t:13.9,word:'role'},{t:14.4,word:'model'},
+      {t:14.5,word:'for'},{t:14.9,word:'him'},{t:15.2,word:'also'},{t:15.6,word:'around'},
+      {t:16.1,word:'that'},{t:16.9,word:'The'},{t:17.1,word:'second'},{t:17.4,word:'one'},
+      {t:17.8,word:'feels'},{t:18.1,word:'safe'},{t:18.4,word:'and'},{t:18.8,word:'seen'},
+      {t:18.8,word:'when'},{t:19.1,word:"he's"},{t:19.3,word:'given'},{t:19.5,word:'attention'},
+      {t:20.1,word:'and'},{t:22.0,word:'his'},{t:22.2,word:'emotions'},{t:22.7,word:'are'},
+      {t:23.7,word:'validated'},{t:24.4,word:'which'},{t:24.6,word:'happens'},{t:25.0,word:'by'},
+      {t:25.3,word:'his'},{t:25.7,word:'teacher'},{t:25.8,word:'and'},{t:26.1,word:'all'},
+      {t:26.2,word:'the'},{t:26.4,word:'staff'},{t:26.6,word:'around'},{t:26.8,word:'the'},
+      {t:27.4,word:'school'},{t:27.4,word:'Also'},{t:28.3,word:'when'},{t:28.5,word:'he'},
+      {t:28.7,word:'gets'},{t:28.9,word:'hurt'},{t:29.1,word:'at'},{t:29.3,word:'the'},
+      {t:29.4,word:'playground'},{t:29.8,word:'he'},{t:30.0,word:'gets'},{t:30.0,word:'to'},
+      {t:30.1,word:'go'},{t:30.2,word:'to'},{t:30.8,word:'the'},{t:30.8,word:'office'},
+      {t:30.8,word:'and'},{t:31.0,word:'gets'},{t:31.3,word:'a'},{t:31.4,word:'band'},
+      {t:31.8,word:'aid'},{t:31.9,word:'and'},{t:32.1,word:'gets'},{t:32.3,word:'taken'},
+      {t:32.5,word:'care'},{t:32.7,word:'of'},{t:33.4,word:'He'},{t:33.6,word:'enjoys'},
+      {t:34.2,word:'that'},{t:34.7,word:'and'},{t:34.9,word:'that'},{t:35.2,word:'makes'},
+      {t:35.2,word:'him'},{t:35.4,word:'feel'},{t:35.7,word:'safe'},{t:35.9,word:'and'},
+      {t:36.2,word:'seen'},{t:36.6,word:'So'},{t:36.9,word:'thanks'},{t:37.0,word:'to'},
+      {t:37.3,word:'the'},{t:37.4,word:'school'},{t:37.6,word:'for'},{t:38.4,word:'really'},
+      {t:39.3,word:'taking'},{t:39.5,word:'care'},{t:39.8,word:'of'},{t:39.9,word:'both'},
+      {t:40.2,word:'boys'},{t:40.5,word:'that'},{t:40.8,word:'have'},{t:41.0,word:'different'},
+      {t:41.3,word:'personalities'},
+    ],
+    scoreTimeline: [
+      {t:0,score:422},{t:3.6,score:508},{t:7.6,score:572},{t:11.4,score:626},
+      {t:19.5,score:678},{t:23.7,score:708},{t:28.9,score:730},{t:36.6,score:760},
+      {t:41.3,score:756},
     ],
   },
   {
@@ -245,6 +384,66 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 33.6, text: 'Comfort Zone Insight',   color: '#a78bfa' },
       { t: 54.5, text: 'Courageous Action',      color: '#34d399' },
       { t: 71.8, text: 'Growth Orientation',     color: '#f472b6' },
+    ],
+    words: [
+      {t:0.7,word:'When'},{t:1.4,word:'given'},{t:1.6,word:'some'},{t:1.9,word:'thought'},
+      {t:2.2,word:'to'},{t:2.3,word:'this'},{t:3.1,word:'question'},{t:3.6,word:'I'},
+      {t:3.6,word:'realized'},{t:4.0,word:'that'},{t:4.4,word:'I'},{t:4.5,word:"don't"},
+      {t:4.7,word:'have'},{t:4.9,word:'any'},{t:5.4,word:'as'},{t:6.0,word:'much'},
+      {t:6.4,word:'failures'},{t:6.9,word:'as'},{t:7.2,word:'I'},{t:7.3,word:'would'},
+      {t:7.5,word:'have'},{t:7.9,word:'expected'},{t:8.3,word:'to'},{t:8.6,word:'have'},
+      {t:10.0,word:'And'},{t:10.3,word:'when'},{t:10.6,word:'given'},{t:10.8,word:'the'},
+      {t:11.2,word:'question'},{t:12.5,word:"what's"},{t:12.6,word:'your'},{t:12.8,word:'biggest'},
+      {t:13.0,word:'failure'},{t:13.6,word:'I'},{t:14.1,word:'think'},{t:14.2,word:'my'},
+      {t:14.5,word:'answer'},{t:14.6,word:'would'},{t:14.8,word:'be'},{t:15.7,word:'not'},
+      {t:16.0,word:'taking'},{t:16.3,word:'enough'},{t:16.8,word:'risks'},{t:17.2,word:'to'},
+      {t:17.7,word:'experience'},{t:18.3,word:'true'},{t:18.9,word:'failure'},{t:19.2,word:'I'},
+      {t:20.1,word:'feel'},{t:20.4,word:'like'},{t:20.7,word:"I've"},{t:21.2,word:'always'},
+      {t:21.5,word:'been'},{t:21.7,word:'so'},{t:22.1,word:'afraid'},{t:22.4,word:'of'},
+      {t:23.1,word:'facing'},{t:23.8,word:'someone'},{t:24.8,word:'saying'},{t:25.1,word:'no'},
+      {t:25.5,word:'or'},{t:25.7,word:'facing'},{t:26.0,word:'failures'},{t:26.4,word:'that'},
+      {t:27.5,word:'I'},{t:28.0,word:'tend'},{t:28.2,word:'to'},{t:28.8,word:'kind'},
+      {t:29.3,word:'of'},{t:29.6,word:'stay'},{t:29.8,word:'in'},{t:30.0,word:'my'},
+      {t:30.3,word:'comfort'},{t:30.5,word:'zone'},{t:30.9,word:'and'},{t:31.2,word:'stand'},
+      {t:31.5,word:'behind'},{t:32.2,word:'the'},{t:33.6,word:'yellow'},{t:33.9,word:'caution'},
+      {t:34.3,word:'tape'},{t:34.5,word:'and'},{t:34.7,word:'not'},{t:34.9,word:'let'},
+      {t:35.7,word:'myself'},{t:36.3,word:'explore'},{t:37.1,word:'the'},{t:37.5,word:'world'},
+      {t:37.6,word:'or'},{t:37.9,word:'explore'},{t:38.5,word:'new'},{t:39.5,word:'challenges'},
+      {t:40.1,word:'new'},{t:40.3,word:'experiences'},{t:40.8,word:'because'},{t:41.4,word:"I'm"},
+      {t:41.9,word:'afraid'},{t:42.2,word:'of'},{t:42.8,word:'someone'},{t:43.0,word:'saying'},
+      {t:43.2,word:'no'},{t:43.4,word:'to'},{t:43.6,word:'me'},{t:43.9,word:'I'},
+      {t:44.6,word:'feel'},{t:44.8,word:'like'},{t:45.0,word:"that's"},{t:45.2,word:'a'},
+      {t:45.5,word:'constant'},{t:45.6,word:'battle'},{t:46.0,word:'that'},{t:46.3,word:"I'm"},
+      {t:46.9,word:'always'},{t:47.2,word:'trying'},{t:47.5,word:'to'},{t:48.5,word:'combat'},
+      {t:48.9,word:'and'},{t:49.3,word:'I'},{t:49.5,word:'feel'},{t:49.5,word:'like'},
+      {t:49.7,word:"that's"},{t:49.9,word:'always'},{t:50.2,word:'going'},{t:50.3,word:'to'},
+      {t:50.4,word:'be'},{t:50.6,word:'something'},{t:50.8,word:"that's"},{t:51.1,word:'going'},
+      {t:51.2,word:'to'},{t:51.4,word:'be'},{t:51.7,word:'present'},{t:52.0,word:'throughout'},
+      {t:52.3,word:'the'},{t:52.6,word:'whole'},{t:52.9,word:'of'},{t:53.1,word:'my'},
+      {t:53.3,word:'entire'},{t:53.6,word:'life'},{t:54.5,word:'And'},{t:55.0,word:'even'},
+      {t:55.1,word:'taking'},{t:55.3,word:'this'},{t:55.6,word:'course'},{t:55.9,word:'was'},
+      {t:56.1,word:'me'},{t:56.4,word:'kind'},{t:56.5,word:'of'},{t:56.6,word:'stepping'},
+      {t:56.8,word:'out'},{t:56.9,word:'of'},{t:57.0,word:'my'},{t:57.3,word:'comfort'},
+      {t:57.5,word:'zone'},{t:57.8,word:'and'},{t:58.3,word:'letting'},{t:58.5,word:'myself'},
+      {t:59.0,word:'learn'},{t:59.3,word:'with'},{t:59.5,word:'other'},{t:59.7,word:'people'},
+      {t:60.1,word:'and'},{t:60.3,word:'letting'},{t:60.9,word:'myself'},{t:61.5,word:'kind'},
+      {t:62.0,word:'of'},{t:62.8,word:'expose'},{t:63.2,word:'myself'},{t:63.8,word:'and'},
+      {t:64.4,word:'talk'},{t:64.8,word:'about'},{t:64.9,word:'my'},{t:65.5,word:'feelings'},
+      {t:65.5,word:'like'},{t:65.7,word:'I'},{t:65.9,word:'am'},{t:66.0,word:'right'},
+      {t:66.2,word:'now'},{t:66.6,word:'So'},{t:67.3,word:'I'},{t:67.5,word:'feel'},
+      {t:67.7,word:'like'},{t:68.9,word:'every'},{t:69.5,word:'day'},{t:69.7,word:"I'm"},
+      {t:69.9,word:'trying'},{t:70.1,word:'to'},{t:71.8,word:'expand'},{t:71.8,word:'the'},
+      {t:72.4,word:'barriers'},{t:72.4,word:'of'},{t:72.7,word:'my'},{t:73.0,word:'comfort'},
+      {t:73.3,word:'zone'},{t:74.3,word:'and'},{t:74.7,word:'I'},{t:76.9,word:'like'},
+      {t:77.9,word:'to'},{t:78.1,word:'experience'},{t:78.9,word:'a'},{t:79.3,word:'lot'},
+      {t:79.4,word:'more'},{t:79.6,word:'failures'},{t:79.9,word:'than'},{t:80.1,word:'I'},
+      {t:80.2,word:'am'},{t:80.5,word:'right'},{t:80.9,word:'now'},
+    ],
+    scoreTimeline: [
+      {t:0,score:382},{t:3.6,score:450},{t:10,score:518},{t:15.7,score:568},
+      {t:20.1,score:600},{t:27.5,score:628},{t:33.6,score:664},{t:44.6,score:690},
+      {t:54.5,score:720},{t:63.2,score:744},{t:71.8,score:762},{t:78.1,score:780},
+      {t:80.9,score:774},
     ],
   },
 ];
@@ -690,8 +889,11 @@ export default function PilotClient() {
   const [simShown, setSimShown] = useState(false);
   const [promptPaused, setPromptPaused] = useState(false);
   const [responsePaused, setResponsePaused] = useState(false);
+  const [responseEnded, setResponseEnded] = useState(false);
   const [captionIdx, setCaptionIdx] = useState(0);
   const [chipIdx, setChipIdx] = useState(-1);
+  const [wordIdx, setWordIdx] = useState(-1);
+  const [currentScore, setCurrentScore] = useState(DEMO_PANELS[0].scoreTimeline[0].score);
   const promptVideoRef = useRef<HTMLVideoElement>(null);
   const responseVideoRef = useRef<HTMLVideoElement>(null);
   const panel = DEMO_PANELS[panelIndex];
@@ -721,9 +923,12 @@ export default function PilotClient() {
   useEffect(() => {
     setCaptionIdx(0);
     setChipIdx(-1);
+    setWordIdx(-1);
+    setResponseEnded(false);
     setSimShown(false);
     setPromptPaused(false);
     setResponsePaused(false);
+    setCurrentScore(DEMO_PANELS[panelIndex].scoreTimeline[0].score);
   }, [panelIndex]);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
@@ -1164,7 +1369,7 @@ export default function PilotClient() {
                     </div>
                     {/* Video fills remaining space */}
                     <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                      <style>{`@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes chipIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}`}</style>
+                      <style>{`@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes chipIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}@keyframes wordPop{0%{opacity:0;transform:scale(0.65)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}@keyframes endIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}`}</style>
                       <video
                         key={panel.responseUrl}
                         ref={responseVideoRef}
@@ -1172,9 +1377,10 @@ export default function PilotClient() {
                         autoPlay
                         playsInline
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        onEnded={() => setResponsePaused(true)}
+                        onEnded={() => { setResponsePaused(true); setResponseEnded(true); }}
                         onTimeUpdate={() => {
                           const t = responseVideoRef.current?.currentTime ?? 0;
+                          setCurrentScore(interpolateScore(panel.scoreTimeline, t));
                           if (panel.captions.length) {
                             const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
                             setCaptionIdx(idx);
@@ -1182,6 +1388,10 @@ export default function PilotClient() {
                           if (panel.chips.length) {
                             const cIdx = panel.chips.reduce((acc: number, c, i) => (c.t <= t ? i : acc), -1);
                             if (cIdx !== chipIdx) setChipIdx(cIdx);
+                          }
+                          if (panel.words.length) {
+                            const wIdx = panel.words.reduce((acc: number, w, i) => (w.t <= t ? i : acc), -1);
+                            if (wIdx !== wordIdx) setWordIdx(wIdx);
                           }
                         }}
                       />
@@ -1218,41 +1428,88 @@ export default function PilotClient() {
                           </span>
                         </div>
                       )}
-                      {/* Caption overlay */}
-                      {panel.captions.length > 0 && <div
-                        key={captionIdx}
-                        style={{
-                          position: 'absolute', bottom: 52, left: 0, right: 0,
-                          display: 'flex', justifyContent: 'center', pointerEvents: 'none',
-                          padding: '0 20px',
-                          animation: 'captionIn 0.25s ease both',
-                        }}
-                      >
-                        <span style={{
-                          background: 'rgba(0,0,0,0.72)',
-                          backdropFilter: 'blur(4px)',
-                          borderRadius: 6,
-                          padding: '5px 12px',
-                          fontSize: 13,
-                          fontWeight: panel.captions[captionIdx]?.accent ? 700 : 500,
-                          color: panel.captions[captionIdx]?.accent ? '#86efac' : 'rgba(255,255,255,0.92)',
-                          lineHeight: 1.5,
-                          letterSpacing: panel.captions[captionIdx]?.accent ? '0.01em' : 'normal',
-                          textAlign: 'center',
-                        }}>
-                          {panel.captions[captionIdx]?.text}
-                        </span>
-                      </div>}
-                      {/* Next Question overlay button */}
-                      <button
-                        onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
-                        style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.8)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.65)')}
-                      >
-                        Next Question
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                      </button>
+                      {/* Score dial — middle right */}
+                      {!responseEnded && (
+                        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Score</span>
+                          <ScoreDial score={currentScore} />
+                        </div>
+                      )}
+                      {/* Word karaoke — replaces caption pill when word data present */}
+                      {!responseEnded && panel.words.length > 0 && wordIdx >= 0 && (
+                        <div style={{ position: 'absolute', bottom: 52, left: 0, right: 120, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 14px' }}>
+                          <div style={{ display: 'flex', gap: 5, alignItems: 'baseline', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {([-2,-1,0,1,2] as const).map(offset => {
+                              const idx = wordIdx + offset;
+                              const w = panel.words[idx];
+                              if (!w) return null;
+                              const cur = offset === 0;
+                              return (
+                                <span key={`${idx}-${cur}`}
+                                  style={{
+                                    fontSize: cur ? 20 : 13,
+                                    fontWeight: cur ? 800 : 400,
+                                    color: cur ? 'white' : offset < 0 ? 'rgba(255,255,255,0.32)' : 'rgba(255,255,255,0.18)',
+                                    textShadow: cur ? '0 2px 16px rgba(0,0,0,0.9)' : 'none',
+                                    display: 'inline-block',
+                                    animation: cur ? 'wordPop 0.18s ease both' : 'none',
+                                    lineHeight: 1.3,
+                                  }}>
+                                  {w.word}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {/* Caption pill — shown only if no word data */}
+                      {!responseEnded && panel.words.length === 0 && panel.captions.length > 0 && (
+                        <div key={captionIdx} style={{ position: 'absolute', bottom: 52, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 20px', animation: 'captionIn 0.25s ease both' }}>
+                          <span style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: panel.captions[captionIdx]?.accent ? 700 : 500, color: panel.captions[captionIdx]?.accent ? '#86efac' : 'rgba(255,255,255,0.92)', lineHeight: 1.5, textAlign: 'center' }}>
+                            {panel.captions[captionIdx]?.text}
+                          </span>
+                        </div>
+                      )}
+                      {/* Next Question button */}
+                      {!responseEnded && (
+                        <button
+                          onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
+                          style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em', zIndex: 3 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.8)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.65)')}
+                        >
+                          Next Question
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                        </button>
+                      )}
+                      {/* ── End screen ── */}
+                      {responseEnded && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(9,17,30,0.94)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: 24, animation: 'endIn 0.4s ease both' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' }}>Final Score</p>
+                          <ScoreDial score={currentScore} size="lg" />
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', marginTop: 18, maxWidth: 260 }}>
+                            {panel.chips.map((chip, i) => (
+                              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(0,0,0,0.5)', border: `1.5px solid ${chip.color}`, color: chip.color, borderRadius: 16, padding: '4px 10px', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: chip.color, flexShrink: 0 }} />
+                                {chip.text}
+                              </span>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+                            <button
+                              onClick={() => { setResponseEnded(false); setResponsePaused(false); setWordIdx(-1); setCaptionIdx(0); setCurrentScore(panel.scoreTimeline[0].score); const v = responseVideoRef.current; if (v) { v.currentTime = 0; v.play(); } }}
+                              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.18)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.01em' }}>
+                              ↺ Replay
+                            </button>
+                            <button
+                              onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
+                              style={{ background: 'rgba(255,255,255,0.11)', border: '1px solid rgba(255,255,255,0.18)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em' }}>
+                              Next Question
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
