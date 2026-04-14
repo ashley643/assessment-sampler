@@ -1691,7 +1691,7 @@ export default function PilotClient() {
                           <ScoreDial score={currentScore} />
                         </div>
                       )}
-                      {/* Green word captions — sliding window of 7 words */}
+                      {/* Green word captions */}
                       {!responseEnded && panel.words.length > 0 && captionIdx >= 0 && (() => {
                         const captionStart = panel.captions[captionIdx]?.t ?? 0;
                         const captionEnd = captionIdx + 1 < panel.captions.length ? panel.captions[captionIdx + 1].t : Infinity;
@@ -1699,15 +1699,10 @@ export default function PilotClient() {
                           .map((w, origIdx) => ({ ...w, origIdx }))
                           .filter(w => w.t >= captionStart && w.t < captionEnd);
                         if (!captionWords.length) return null;
-                        // Sliding window: 1 spoken word of context + up to 6 upcoming
-                        const curInCaption = captionWords.findIndex(w => w.origIdx === wordIdx);
-                        const winStart = Math.max(0, curInCaption - 1);
-                        const winEnd = Math.min(captionWords.length, winStart + 7);
-                        const displayWords = captionWords.slice(winStart, winEnd);
                         return (
-                          <div key={`${captionIdx}-${winStart}`} style={{ position: 'absolute', bottom: 22, left: 0, right: 150, pointerEvents: 'none', padding: '0 16px' }}>
-                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {displayWords.map((w, i) => {
+                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px' }}>
+                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)' }}>
+                              {captionWords.map((w, i) => {
                                 const isCurrent = w.origIdx === wordIdx;
                                 const isSpoken = w.t <= responseCurrentTime;
                                 return (
