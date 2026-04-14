@@ -901,9 +901,9 @@ export default function PilotClient() {
                 <span style={{ background: '#1a3d6b', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
                   Impacter Pathway
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Empathy Interview</span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Behavioral Health Screener</span>
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>Vista High School</span>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>San Diego Unified School District</span>
             </div>
 
             {/* Two-panel body */}
@@ -951,7 +951,7 @@ export default function PilotClient() {
               </div>
 
               {/* ── Right: response panel ── */}
-              <div style={{ flex: '1', background: '#0d1b2e', padding: '36px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
+              <div style={{ flex: '1', background: '#0d1b2e', padding: '36px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0, position: 'relative', overflow: 'hidden' }}>
                 {!simShown ? (
                   <>
                     <p style={{ color: 'white', fontSize: 18, fontWeight: 600, margin: '0 0 24px' }}>
@@ -1007,24 +1007,39 @@ export default function PilotClient() {
                     </button>
                   </>
                 ) : (
-                  /* ── Student response panel (video goes here) ── */
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-                      Student Response
-                    </p>
-                    <video
-                      src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM"
-                      autoPlay
-                      playsInline
-                      controls
-                      style={{ width: '100%', borderRadius: 10, display: 'block', background: '#09111e' }}
-                    />
-                    <button
-                      onClick={() => setSimShown(false)}
-                      style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 12, cursor: 'pointer', textAlign: 'left', padding: 0 }}
-                    >
-                      ← Back
-                    </button>
+                  /* ── Student response panel — fills full right panel ── */
+                  <div style={{ position: 'absolute', inset: 0, background: '#09111e', display: 'flex', flexDirection: 'column' }}>
+                    {/* Label bar */}
+                    <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                        Student Response
+                      </p>
+                      <button
+                        onClick={() => setSimShown(false)}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                      >
+                        ← Back
+                      </button>
+                    </div>
+                    {/* Video fills remaining space */}
+                    <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                      <video
+                        src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM"
+                        autoPlay
+                        playsInline
+                        controls
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                      {/* Next Question overlay button */}
+                      <button
+                        style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.8)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.65)')}
+                      >
+                        Next Question
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
