@@ -2949,36 +2949,72 @@ export default function PilotClient() {
                           )}
 
                           {/* Custom: pick one per pillar */}
-                          {mode === 'custom' && ([1,2,3,4] as const).map(pillar => {
-                            const qs = CS_QUESTIONS.filter(q => q.age === key && q.p === pillar);
-                            const selected = csPicks[key]?.[pillar];
+                          {mode === 'custom' && (() => {
+                            const donePillars = ([1,2,3,4] as const).filter(p => !!csPicks[key]?.[p]).length;
                             return (
-                              <div key={pillar} className="border-t border-gray-100 pt-4">
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                                  Pillar {pillar} — {PILLARS[pillar]}
-                                </p>
-                                <div className="space-y-2">
-                                  {qs.map(q => (
-                                    <label key={q.id} className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                                      selected === q.id ? 'border-[#4a6fa5] bg-[#f0f5fb]' : 'border-gray-200 bg-white hover:border-gray-300'
-                                    }`}>
-                                      <input type="radio" name={`${key}-p${pillar}`} value={q.id}
-                                        checked={selected === q.id}
-                                        onChange={() => setCsPicks(p => ({
-                                          ...p,
-                                          [key]: { ...(p[key] ?? {}), [pillar]: q.id }
-                                        }))}
-                                        className="accent-[#4a6fa5] mt-0.5 shrink-0" />
-                                      <span className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                                        {q.text}
-                                        {q.def && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
-                                      </span>
-                                    </label>
-                                  ))}
+                              <div className="border-t border-gray-100 pt-4 space-y-3">
+                                {/* Progress bar */}
+                                <div className="flex items-center gap-3 mb-1">
+                                  <div className="flex gap-1">
+                                    {([1,2,3,4] as const).map(p => (
+                                      <div key={p} style={{ width: 32, height: 4, borderRadius: 3, background: csPicks[key]?.[p] ? '#4a6fa5' : '#e5e7eb', transition: 'background 0.2s' }} />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs text-gray-400">{donePillars} of 4 selected</span>
                                 </div>
+                                {/* Pillar cards */}
+                                {([1,2,3,4] as const).map(pillar => {
+                                  const qs = CS_QUESTIONS.filter(q => q.age === key && q.p === pillar);
+                                  const selected = csPicks[key]?.[pillar];
+                                  const isDone = !!selected;
+                                  return (
+                                    <div key={pillar} className="rounded-xl overflow-hidden transition-all" style={{ border: `2px solid ${isDone ? '#4a6fa5' : '#e5e7eb'}` }}>
+                                      {/* Pillar header */}
+                                      <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: isDone ? '#f0f5fb' : '#f9fafb' }}>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: isDone ? '#4a6fa5' : '#9ca3af' }}>Pillar {pillar}</span>
+                                          <span className="text-xs font-semibold text-gray-700">{PILLARS[pillar]}</span>
+                                        </div>
+                                        {isDone
+                                          ? <span className="text-xs font-bold flex items-center gap-1" style={{ color: '#4a6fa5' }}>
+                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Done
+                                            </span>
+                                          : <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Choose one</span>
+                                        }
+                                      </div>
+                                      {/* Questions */}
+                                      <div className="p-3 space-y-2 bg-white">
+                                        {qs.map(q => {
+                                          const isSelected = selected === q.id;
+                                          return (
+                                            <label key={q.id} className="flex gap-3 p-3 rounded-lg cursor-pointer transition-all" style={{
+                                              background: isSelected ? '#4a6fa5' : 'white',
+                                              border: `1.5px solid ${isSelected ? '#4a6fa5' : '#e5e7eb'}`,
+                                            }}
+                                            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = '#93afd4'; }}
+                                            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = '#e5e7eb'; }}>
+                                              <input type="radio" name={`${key}-p${pillar}`} value={q.id}
+                                                checked={isSelected}
+                                                onChange={() => setCsPicks(p => ({ ...p, [key]: { ...(p[key] ?? {}), [pillar]: q.id } }))}
+                                                className="sr-only" />
+                                              {/* Custom radio dot */}
+                                              <div className="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all" style={{ borderColor: isSelected ? 'rgba(255,255,255,0.7)' : '#d1d5db' }}>
+                                                {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                                              </div>
+                                              <span className="text-sm leading-relaxed whitespace-pre-line" style={{ color: isSelected ? 'white' : '#374151' }}>
+                                                {q.text}
+                                                {q.def && !isSelected && <span className="ml-2 text-[10px] font-medium bg-[#f0f5fb] border border-[#4a6fa5]/20 px-1.5 py-0.5 rounded-full" style={{ color: '#4a6fa5' }}>standard</span>}
+                                              </span>
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             );
-                          })}
+                          })()}
                         </div>
                       </div>
                     );
