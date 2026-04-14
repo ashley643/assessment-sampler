@@ -1188,6 +1188,13 @@ export default function PilotClient() {
     scrollBodyRef.current?.scrollTo({ top: 0, behavior: 'instant' });
   }, [step]);
 
+  // Lock body scroll when the form overlay is open so the window doesn't
+  // show a second scrollbar behind the fixed-position overlay.
+  useEffect(() => {
+    document.body.style.overflow = formOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [formOpen]);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('start') === '1') {
       openForm();
