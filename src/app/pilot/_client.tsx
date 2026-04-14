@@ -231,11 +231,15 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 52,   text: "But, yeah, been doing good." },
     ],
     chips: [
-      { t: 1,  text: 'Reflective Growth',   color: '#60a5fa' },
-      { t: 15, text: 'Growth Mindset',       color: '#a78bfa' },
-      { t: 26, text: 'Self-Regulation',      color: '#34d399' },
-      { t: 33, text: 'Help-Seeking',         color: '#fbbf24' },
-      { t: 46, text: 'Positive Self-Concept', color: '#f472b6' },
+      { t: 1,  text: 'Adversity-Persistence',  color: '#60a5fa' },
+      { t: 8,  text: 'Emotional Self-Report',  color: '#38bdf8' },
+      { t: 15, text: 'Contrastive Structure',  color: '#a78bfa' },
+      { t: 19, text: 'Grit',                   color: '#818cf8' },
+      { t: 23, text: 'Causal Connector',       color: '#34d399' },
+      { t: 33, text: 'Help-Seeking',           color: '#fbbf24' },
+      { t: 41, text: 'Cause-Effect Reasoning', color: '#4ade80' },
+      { t: 46, text: 'Growth Mindset',         color: '#f472b6' },
+      { t: 53, text: 'Self-Awareness',         color: '#fb923c' },
     ],
     words: [
       {t:0.0,word:'In'},{t:1.5,word:'first'},{t:1.9,word:'grade'},{t:3.1,word:'I'},{t:3.1,word:'was'},
@@ -267,9 +271,17 @@ const DEMO_PANELS: DemoPanel[] = [
       {t:55.8,word:'good'},{t:58.1,word:'Bye'},
     ],
     scoreTimeline: [
-      {t:0,score:410},{t:13,score:490},{t:18,score:548},{t:25,score:614},
-      {t:28,score:660},{t:33,score:698},{t:44,score:720},{t:46,score:748},
-      {t:53,score:730},{t:58,score:734},
+      {t:0,score:200},{t:0.8,score:200},
+      {t:2,score:348},   // jump: Adversity-Persistence (t=1)
+      {t:7.5,score:348},{t:9,score:438}, // jump: Emotional Self-Report (t=8)
+      {t:14.5,score:438},{t:16,score:514}, // jump: Contrastive Structure (t=15)
+      {t:18.5,score:514},{t:20,score:558}, // jump: Grit (t=19)
+      {t:22.5,score:558},{t:24,score:618}, // jump: Causal Connector (t=23)
+      {t:32.5,score:618},{t:34,score:668}, // jump: Help-Seeking (t=33)
+      {t:40.5,score:668},{t:42,score:704}, // jump: Cause-Effect (t=41)
+      {t:45.5,score:704},{t:47,score:748}, // jump: Growth Mindset (t=46)
+      {t:52.5,score:748},{t:54,score:778}, // jump: Self-Awareness (t=53)
+      {t:58,score:778},
     ],
   },
   {
@@ -294,10 +306,13 @@ const DEMO_PANELS: DemoPanel[] = [
     ],
     chips: [
       { t: 1,    text: 'Sense of Belonging',    color: '#60a5fa' },
-      { t: 13.9, text: 'Trusted Adult',          color: '#34d399' },
-      { t: 21,   text: 'Emotional Validation',   color: '#a78bfa' },
-      { t: 28,   text: 'Integrated Support',     color: '#fbbf24' },
-      { t: 36.5, text: 'Family Partnership',     color: '#f472b6' },
+      { t: 7.6,  text: 'Value Statement',       color: '#38bdf8' },
+      { t: 13.9, text: 'Trusted Adult',         color: '#34d399' },
+      { t: 18.8, text: 'Reciprocity',           color: '#818cf8' },
+      { t: 21,   text: 'Emotional Validation',  color: '#a78bfa' },
+      { t: 28,   text: 'Integrated Support',    color: '#fbbf24' },
+      { t: 33.4, text: 'Compassion',            color: '#4ade80' },
+      { t: 36.5, text: 'Family Partnership',    color: '#f472b6' },
     ],
     words: [
       {t:0.0,word:'I'},{t:0.2,word:'have'},{t:1.9,word:'two'},{t:2.1,word:'kids'},
@@ -337,8 +352,15 @@ const DEMO_PANELS: DemoPanel[] = [
       {t:41.3,word:'personalities'},
     ],
     scoreTimeline: [
-      {t:0,score:422},{t:3.6,score:508},{t:7.6,score:572},{t:11.4,score:626},
-      {t:19.5,score:678},{t:23.7,score:708},{t:28.9,score:730},{t:36.6,score:760},
+      {t:0,score:200},{t:0.8,score:200},
+      {t:2,score:368},   // jump: Sense of Belonging (t=1)
+      {t:7.2,score:368},{t:8.5,score:434}, // jump: Value Statement (t=7.6)
+      {t:13.5,score:434},{t:15,score:504}, // jump: Trusted Adult (t=13.9)
+      {t:18.4,score:504},{t:19.8,score:558}, // jump: Reciprocity (t=18.8)
+      {t:20.6,score:558},{t:22,score:618}, // jump: Emotional Validation (t=21)
+      {t:27.5,score:618},{t:29,score:674}, // jump: Integrated Support (t=28)
+      {t:33,score:674},{t:34.2,score:714}, // jump: Compassion (t=33.4)
+      {t:36,score:714},{t:37.5,score:754}, // jump: Family Partnership (t=36.5)
       {t:41.3,score:756},
     ],
   },
@@ -379,11 +401,17 @@ const DEMO_PANELS: DemoPanel[] = [
       { t: 79.9, text: "than I am right now." },
     ],
     chips: [
-      { t: 3.6,  text: 'Self-Reflection',       color: '#60a5fa' },
-      { t: 15.7, text: 'Risk Awareness',         color: '#fbbf24' },
-      { t: 33.6, text: 'Comfort Zone Insight',   color: '#a78bfa' },
-      { t: 54.5, text: 'Courageous Action',      color: '#34d399' },
-      { t: 71.8, text: 'Growth Orientation',     color: '#f472b6' },
+      { t: 3.6,  text: 'Viewpoint Shift',       color: '#60a5fa' },
+      { t: 10.3, text: 'Question Framing',      color: '#38bdf8' },
+      { t: 15.7, text: 'Value Statement',       color: '#fbbf24' },
+      { t: 22.1, text: 'Emotion+Action Pair',   color: '#a78bfa' },
+      { t: 27.5, text: 'Figurative Reasoning',  color: '#818cf8' },
+      { t: 40.8, text: 'Cause-Effect Reasoning',color: '#34d399' },
+      { t: 44.6, text: 'Grit',                  color: '#4ade80' },
+      { t: 54.5, text: 'Courageous Action',     color: '#f472b6' },
+      { t: 62.8, text: 'Reciprocity',           color: '#fb923c' },
+      { t: 67.3, text: 'Growth Orientation',    color: '#e879f9' },
+      { t: 74.7, text: 'Persistence',           color: '#38bdf8' },
     ],
     words: [
       {t:0.7,word:'When'},{t:1.4,word:'given'},{t:1.6,word:'some'},{t:1.9,word:'thought'},
@@ -440,10 +468,19 @@ const DEMO_PANELS: DemoPanel[] = [
       {t:80.2,word:'am'},{t:80.5,word:'right'},{t:80.9,word:'now'},
     ],
     scoreTimeline: [
-      {t:0,score:382},{t:3.6,score:450},{t:10,score:518},{t:15.7,score:568},
-      {t:20.1,score:600},{t:27.5,score:628},{t:33.6,score:664},{t:44.6,score:690},
-      {t:54.5,score:720},{t:63.2,score:744},{t:71.8,score:762},{t:78.1,score:780},
-      {t:80.9,score:774},
+      {t:0,score:200},{t:3.2,score:200},
+      {t:4.5,score:348},   // jump: Viewpoint Shift (t=3.6)
+      {t:9.8,score:348},{t:11.2,score:418}, // jump: Question Framing (t=10.3)
+      {t:15.3,score:418},{t:16.8,score:482}, // jump: Value Statement (t=15.7)
+      {t:21.6,score:482},{t:23,score:534}, // jump: Emotion+Action Pair (t=22.1)
+      {t:27.1,score:534},{t:28.5,score:586}, // jump: Figurative Reasoning (t=27.5)
+      {t:40.4,score:586},{t:41.8,score:628}, // jump: Cause-Effect (t=40.8)
+      {t:44.2,score:628},{t:45.6,score:668}, // jump: Grit (t=44.6)
+      {t:54.1,score:668},{t:55.5,score:712}, // jump: Courageous Action (t=54.5)
+      {t:62.4,score:712},{t:63.8,score:742}, // jump: Reciprocity (t=62.8)
+      {t:66.9,score:742},{t:68.3,score:764}, // jump: Growth Orientation (t=67.3)
+      {t:74.3,score:764},{t:75.7,score:782}, // jump: Persistence (t=74.7)
+      {t:80.9,score:780},
     ],
   },
 ];
@@ -892,30 +929,31 @@ export default function PilotClient() {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [panelIndex, setPanelIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
-  const [promptPaused, setPromptPaused] = useState(false);
+  const [promptPaused, setPromptPaused] = useState(true);
   const [responsePaused, setResponsePaused] = useState(false);
   const [responseEnded, setResponseEnded] = useState(false);
   const [promptHovered, setPromptHovered] = useState(false);
   const [responseHovered, setResponseHovered] = useState(false);
   const [captionIdx, setCaptionIdx] = useState(0);
   const [chipIdx, setChipIdx] = useState(-1);
+  const [promptCurrentTime, setPromptCurrentTime] = useState(0);
+  const [promptDuration, setPromptDuration] = useState(0);
+  const [responseCurrentTime, setResponseCurrentTime] = useState(0);
+  const [responseDuration, setResponseDuration] = useState(0);
   const [wordIdx, setWordIdx] = useState(-1);
   const [currentScore, setCurrentScore] = useState(DEMO_PANELS[0].scoreTimeline[0].score);
   const promptVideoRef = useRef<HTMLVideoElement>(null);
   const responseVideoRef = useRef<HTMLVideoElement>(null);
   const panel = DEMO_PANELS[panelIndex];
-  const [insightPanel, setInsightPanel] = useState(0);
-  const [insightPaused, setInsightPaused] = useState(false);
+  const [bhHover, setBhHover] = useState<number | null>(null);
+  const [hmHover, setHmHover] = useState<{ r: number; c: number } | null>(null);
+  const [csHover, setCsHover] = useState<number | null>(null);
+  const [toneHover, setToneHover] = useState<number | null>(null);
   const [demoPanel, setDemoPanel] = useState(0);
   const [demoPaused, setDemoPaused] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   const scrollBodyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (insightPaused) return;
-    const t = setInterval(() => setInsightPanel(p => (p + 1) % 6), 8000);
-    return () => clearInterval(t);
-  }, [insightPaused]);
 
   useEffect(() => {
     if (demoPaused) return;
@@ -940,9 +978,11 @@ export default function PilotClient() {
     setWordIdx(-1);
     setResponseEnded(false);
     setSimShown(false);
-    setPromptPaused(false);
-    setResponsePaused(false);
-    setCurrentScore(DEMO_PANELS[panelIndex].scoreTimeline[0].score);
+    setPromptPaused(true);
+    setPromptCurrentTime(0);
+    setResponsePaused(true);
+    setResponseCurrentTime(0);
+    setCurrentScore(200);
   }, [panelIndex]);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
@@ -1258,14 +1298,24 @@ export default function PilotClient() {
           <div style={{ background: '#0d1b2e', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.28)' }}>
 
             {/* Top bar */}
-            <div style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ background: '#1a3d6b', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
                   Impacter Pathway
                 </span>
                 <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{panel.assessmentName}</span>
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
+                <button
+                  onClick={() => setDemoOpen(true)}
+                  style={{ background: '#e07b54', color: 'white', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#c96b45')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#e07b54')}
+                >
+                  Request a Demo
+                </button>
+              </div>
             </div>
 
             {/* Two-panel body */}
@@ -1287,9 +1337,10 @@ export default function PilotClient() {
                   key={panel.questionUrl}
                   ref={promptVideoRef}
                   src={panel.questionUrl}
-                  autoPlay
                   playsInline
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  onLoadedMetadata={() => setPromptDuration(promptVideoRef.current?.duration ?? 0)}
+                  onTimeUpdate={() => setPromptCurrentTime(promptVideoRef.current?.currentTime ?? 0)}
                   onEnded={() => setPromptPaused(true)}
                 />
                 {/* Play/pause indicator */}
@@ -1302,13 +1353,28 @@ export default function PilotClient() {
                   </div>
                 )}
                 {/* Question overlay at bottom */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 22px', zIndex: 2, pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 26px', zIndex: 2, pointerEvents: 'none' }}>
                   <p style={{ color: '#60a5fa', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>
                     {panel.promptLabel}
                   </p>
                   <p style={{ color: 'white', fontSize: 14, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
                     &ldquo;{panel.promptText}&rdquo;
                   </p>
+                </div>
+                {/* Prompt scrubber */}
+                <div
+                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 18, zIndex: 5, cursor: 'pointer' }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    const v = promptVideoRef.current;
+                    if (v && promptDuration) v.currentTime = pct * promptDuration;
+                  }}
+                >
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.18)' }}>
+                    <div style={{ height: '100%', background: 'rgba(255,255,255,0.7)', width: `${promptDuration ? (promptCurrentTime / promptDuration) * 100 : 0}%`, transition: 'width 0.1s linear' }} />
+                  </div>
                 </div>
               </div>
 
@@ -1359,7 +1425,7 @@ export default function PilotClient() {
 
                     {/* Simulate button */}
                     <button
-                      onClick={() => setSimShown(true)}
+                      onClick={() => { setSimShown(true); setResponsePaused(true); }}
                       style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: 'white', border: 'none', borderRadius: 10, padding: '16px 24px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 4px 20px rgba(34,197,94,0.35)', letterSpacing: '0.01em' }}
                       onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
                       onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -1400,12 +1466,13 @@ export default function PilotClient() {
                         key={panel.responseUrl}
                         ref={responseVideoRef}
                         src={panel.responseUrl}
-                        autoPlay
                         playsInline
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                        onLoadedMetadata={() => setResponseDuration(responseVideoRef.current?.duration ?? 0)}
                         onEnded={() => { setResponsePaused(true); setResponseEnded(true); }}
                         onTimeUpdate={() => {
                           const t = responseVideoRef.current?.currentTime ?? 0;
+                          setResponseCurrentTime(t);
                           setCurrentScore(interpolateScore(panel.scoreTimeline, t));
                           if (panel.captions.length) {
                             const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
@@ -1454,41 +1521,44 @@ export default function PilotClient() {
                       )}
                       {/* Score dial — middle right */}
                       {!responseEnded && (
-                        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Score</span>
+                        <div style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', zIndex: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, pointerEvents: 'none' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>SCORE</span>
                           <ScoreDial score={currentScore} />
                         </div>
                       )}
-                      {/* Word karaoke — replaces caption pill when word data present */}
-                      {!responseEnded && panel.words.length > 0 && wordIdx >= 0 && (
-                        <div style={{ position: 'absolute', bottom: 52, left: 0, right: 120, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 14px' }}>
-                          <div style={{ display: 'flex', gap: 5, alignItems: 'baseline', flexWrap: 'wrap', justifyContent: 'center' }}>
-                            {([-2,-1,0,1,2] as const).map(offset => {
-                              const idx = wordIdx + offset;
-                              const w = panel.words[idx];
-                              if (!w) return null;
-                              const cur = offset === 0;
-                              return (
-                                <span key={`${idx}-${cur}`}
-                                  style={{
-                                    fontSize: cur ? 20 : 13,
-                                    fontWeight: cur ? 800 : 400,
-                                    color: cur ? 'white' : offset < 0 ? 'rgba(255,255,255,0.32)' : 'rgba(255,255,255,0.18)',
-                                    textShadow: cur ? '0 2px 16px rgba(0,0,0,0.9)' : 'none',
-                                    display: 'inline-block',
-                                    animation: cur ? 'wordPop 0.18s ease both' : 'none',
-                                    lineHeight: 1.3,
+                      {/* Green word captions */}
+                      {!responseEnded && panel.words.length > 0 && captionIdx >= 0 && (() => {
+                        const captionStart = panel.captions[captionIdx]?.t ?? 0;
+                        const captionEnd = captionIdx + 1 < panel.captions.length ? panel.captions[captionIdx + 1].t : Infinity;
+                        const captionWords = panel.words
+                          .map((w, origIdx) => ({ ...w, origIdx }))
+                          .filter(w => w.t >= captionStart && w.t < captionEnd);
+                        if (!captionWords.length) return null;
+                        return (
+                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 155, pointerEvents: 'none', padding: '0 16px' }}>
+                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)' }}>
+                              {captionWords.map((w, i) => {
+                                const isCurrent = w.origIdx === wordIdx;
+                                const isSpoken = w.t <= responseCurrentTime;
+                                return (
+                                  <span key={i} style={{
+                                    color: isCurrent ? '#4ade80' : isSpoken ? '#86efac' : 'rgba(255,255,255,0.28)',
+                                    fontWeight: isCurrent ? 700 : isSpoken ? 500 : 400,
+                                    marginRight: '0.28em',
+                                    transition: 'color 0.12s',
+                                    display: 'inline',
                                   }}>
-                                  {w.word}
-                                </span>
-                              );
-                            })}
+                                    {w.word}
+                                  </span>
+                                );
+                              })}
+                            </p>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                       {/* Caption pill — shown only if no word data */}
                       {!responseEnded && panel.words.length === 0 && panel.captions.length > 0 && (
-                        <div key={captionIdx} style={{ position: 'absolute', bottom: 52, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 20px', animation: 'captionIn 0.25s ease both' }}>
+                        <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 20px', animation: 'captionIn 0.25s ease both' }}>
                           <span style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: panel.captions[captionIdx]?.accent ? 700 : 500, color: panel.captions[captionIdx]?.accent ? '#86efac' : 'rgba(255,255,255,0.92)', lineHeight: 1.5, textAlign: 'center' }}>
                             {panel.captions[captionIdx]?.text}
                           </span>
@@ -1505,6 +1575,23 @@ export default function PilotClient() {
                           Next Question
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                         </button>
+                      )}
+                      {/* Response scrubber */}
+                      {!responseEnded && (
+                        <div
+                          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 18, zIndex: 5, cursor: 'pointer' }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const pct = (e.clientX - rect.left) / rect.width;
+                            const v = responseVideoRef.current;
+                            if (v && responseDuration) v.currentTime = pct * responseDuration;
+                          }}
+                        >
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
+                            <div style={{ height: '100%', background: 'rgba(255,255,255,0.65)', width: `${responseDuration ? (responseCurrentTime / responseDuration) * 100 : 0}%`, transition: 'width 0.1s linear' }} />
+                          </div>
+                        </div>
                       )}
                       {/* ── End screen ── */}
                       {responseEnded && (
@@ -1560,438 +1647,222 @@ export default function PilotClient() {
         </div>
       </section>
 
-      {/* ── Sample data ──────────────────────────────────────────────────────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="mb-6 flex items-end justify-between flex-wrap gap-3">
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Sample output</h2>
-              <p className="font-semibold text-gray-800">What the dataset looks like — anonymized example data</p>
-            </div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full" style={{ background: 'rgba(224,123,84,0.1)', color: '#e07b54', border: '1px solid rgba(224,123,84,0.3)' }}>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              ML-scored &amp; analyzed
-            </span>
-          </div>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-            <table className="text-xs whitespace-nowrap border-collapse w-full">
-              <thead>
-                <tr style={{ background: '#1a2744' }}>
-                  {CSV_COLS.map((col, ci) => (
-                    <th key={col} className="px-3 py-2.5 text-left font-semibold border-b border-white/10 text-white/80 sticky top-0" style={{ background: '#1a2744' }}>
-                      {ci === 10 ? (
-                        <span className="flex items-center gap-1">
-                          {col}
-                          <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                        </span>
-                      ) : col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {CSV_ROWS.map((row, i) => {
-                  const score = parseInt(row[10], 10);
-                  const { bg: scoreBg, text: scoreText } = scoreColor(score);
-                  return (
-                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
-                      {row.map((cell, j) => {
-                        // Score column (index 10 after removing Ethnicity)
-                        if (j === 10) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100 font-bold text-center" style={{ background: scoreBg, color: scoreText }}>
-                              <span className="inline-flex items-center gap-1">
-                                {cell}
-                                <span className="text-[10px] font-normal opacity-60">/800</span>
-                              </span>
-                            </td>
-                          );
-                        }
-                        // Q response columns (4, 6, 8)
-                        if (j === 4 || j === 6 || j === 8) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100 text-gray-600 max-w-[200px]">
-                              <span className="block overflow-hidden text-ellipsis" style={{ maxWidth: 180 }}>{cell}</span>
-                              <a href="#" onClick={e => e.preventDefault()} className="text-[10px] font-medium mt-0.5 block" style={{ color: '#4a6fa5' }}>View response →</a>
-                            </td>
-                          );
-                        }
-                        // Community Signal (index 12)
-                        if (j === 12) {
-                          const isHigh = cell.toLowerCase().includes('high') || cell.toLowerCase().includes('strong');
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100">
-                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${isHigh ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{cell}</span>
-                            </td>
-                          );
-                        }
-                        // Unmet Need (index 13)
-                        if (j === 13) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700">{cell}</span>
-                            </td>
-                          );
-                        }
-                        // Next Step (index 14)
-                        if (j === 14) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: '#f0f5fb', color: '#1a2744' }}>{cell}</span>
-                            </td>
-                          );
-                        }
-                        // Language Style (index 11)
-                        if (j === 11) {
-                          return (
-                            <td key={j} className="px-3 py-2 border-b border-gray-100 italic text-gray-500 text-[11px]">
-                              <span className="block max-w-[160px] overflow-hidden text-ellipsis">{cell}</span>
-                            </td>
-                          );
-                        }
-                        return (
-                          <td key={j} className="px-3 py-2 border-b border-gray-100 text-gray-600">
-                            <span className="block max-w-[120px] overflow-hidden text-ellipsis">{cell}</span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-end mt-3 flex-wrap gap-2">
-            <div className="flex items-center gap-3 text-[10px] text-gray-400">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#d1fae5' }}></span>600+</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fef9c3' }}></span>500–599</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fed7aa' }}></span>400–499</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fee2e2' }}></span>&lt;400</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Sample Report Insights ───────────────────────────────────────────── */}
+      {/* ── Sample Report Insights (2×2 interactive grid) ───────────────────── */}
       <section className="border-b border-gray-100 py-14" style={{ background: '#f4f7fc' }}>
         <div className="max-w-6xl mx-auto px-6">
-          <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+          <div className="mb-8 flex items-end justify-between flex-wrap gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Sample report insights</p>
               <h2 className="text-xl font-bold text-gray-900">What you can&apos;t get from a survey.</h2>
             </div>
-            {/* Panel nav dots */}
-            <div className="flex items-center gap-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <button key={i} onClick={() => setInsightPanel(i)}
-                  className="rounded-full transition-all"
-                  style={{
-                    width: insightPanel === i ? 20 : 8,
-                    height: 8,
-                    background: insightPanel === i ? '#4a6fa5' : '#c8d9ef',
-                  }} />
-              ))}
-            </div>
+            <button
+              onClick={() => setCsvOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors"
+              style={{ color: '#6b7280', border: '1px solid #d1d5db', background: 'white' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#4a6fa5'; e.currentTarget.style.color = '#4a6fa5'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#6b7280'; }}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
+              </svg>
+              CSV
+            </button>
           </div>
 
-          {/* Panels */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#1a2744', minHeight: 420 }}
-            onMouseEnter={() => setInsightPaused(true)}
-            onMouseLeave={() => setInsightPaused(false)}>
+          {/* 2×2 interactive grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
 
-            {/* ── Panel 0: BH Domains by Gender ── */}
-            {insightPanel === 0 && (
-              <div className="p-8 flex flex-col gap-5">
-                <div className="flex items-start justify-between flex-wrap gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Domain Analysis</p>
-                    <h3 className="text-lg font-bold text-white leading-snug">Girls outscore boys by up to 122 pts —<br/>the gap widest in relational skills.</h3>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Female</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: 'rgba(255,255,255,0.25)' }}></span>Male</span>
-                  </div>
-                </div>
-                <svg viewBox="0 0 620 260" className="w-full" style={{ maxHeight: 260 }}>
-                  {/* X-axis tick marks at 200, 400, 600, 800 */}
-                  {[200, 400, 600, 800].map(v => {
-                    const px = 173 + ((v - 0) / 800) * 400;
-                    return (
-                      <g key={v}>
-                        <line x1={px} y1="0" x2={px} y2="250" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                        <text x={px} y="258" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.25)">{v}</text>
-                      </g>
-                    );
-                  })}
-                  {(() => {
-                    const maxGap = Math.max(...BH_DOMAIN_DATA.map(d => d.female - d.male));
-                    return BH_DOMAIN_DATA.map((d, i) => {
-                      const yCenter = 26 + i * 44;
-                      const maxW = 400;
-                      const scaleW = (v: number) => (v / 800) * maxW;
-                      const gap = d.female - d.male;
-                      return (
-                        <g key={d.domain}>
-                          <text x="168" y={yCenter - 2} textAnchor="end" fontSize="11.5" fill="rgba(255,255,255,0.6)">{d.domain}</text>
-                          {/* Male bar (background) */}
-                          <rect x="173" y={yCenter - 16} width={scaleW(d.male)} height={28} rx="4" fill="rgba(255,255,255,0.12)" />
-                          {/* Female bar */}
-                          <rect x="173" y={yCenter - 16} width={scaleW(d.female)} height={14} rx="4" fill="#4a6fa5" />
-                          <text x={177 + scaleW(d.female)} y={yCenter - 5} fontSize="11" fill="#7aa3cc" fontWeight="700">{d.female}</text>
-                          <text x={177 + scaleW(d.male)} y={yCenter + 10} fontSize="11" fill="rgba(255,255,255,0.35)" fontWeight="600">{d.male}</text>
-                          {/* Gap annotation on widest gap row */}
-                          {gap === maxGap && (
-                            <g>
-                              <line x1={173 + scaleW(d.male)} y1={yCenter - 21} x2={173 + scaleW(d.female)} y2={yCenter - 21} stroke="#f59e0b" strokeWidth="1.5" />
-                              <line x1={173 + scaleW(d.male)} y1={yCenter - 24} x2={173 + scaleW(d.male)} y2={yCenter - 18} stroke="#f59e0b" strokeWidth="1.5" />
-                              <line x1={173 + scaleW(d.female)} y1={yCenter - 24} x2={173 + scaleW(d.female)} y2={yCenter - 18} stroke="#f59e0b" strokeWidth="1.5" />
-                              <text x={173 + scaleW(d.male) + scaleW(gap) / 2} y={yCenter - 27} textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="700">+{gap} pts</text>
-                            </g>
-                          )}
+            {/* ── Card 1: BH Gender Gap ── */}
+            <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Domain Analysis</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}>Girls outscore boys by up to <span style={{ color: '#4a6fa5' }}>122 pts</span> — gap widest in relational skills.</p>
+              <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 11, color: '#6b7280' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#4a6fa5' }} />Female</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#d1dff0' }} />Male</span>
+              </div>
+              <svg viewBox="0 0 440 210" style={{ width: '100%', overflow: 'visible' }}>
+                {BH_DOMAIN_DATA.map((d, i) => {
+                  const yCenter = 22 + i * 40;
+                  const maxW = 250;
+                  const scaleW = (v: number) => (v / 800) * maxW;
+                  const gap = d.female - d.male;
+                  const maxGap = Math.max(...BH_DOMAIN_DATA.map(x => x.female - x.male));
+                  const isHov = bhHover === i;
+                  return (
+                    <g key={d.domain}
+                      onMouseEnter={() => setBhHover(i)}
+                      onMouseLeave={() => setBhHover(null)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {isHov && <rect x="0" y={yCenter - 19} width="440" height="38" rx="6" fill="#f0f5ff" />}
+                      <text x="156" y={yCenter + 3} textAnchor="end" fontSize="11" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{d.domain}</text>
+                      <rect x="160" y={yCenter - 14} width={scaleW(d.male)} height={28} rx="4" fill={isHov ? '#c8d9f0' : '#e0eaf8'} />
+                      <rect x="160" y={yCenter - 14} width={scaleW(d.female)} height={13} rx="3" fill={isHov ? '#2d5fa5' : '#4a6fa5'} />
+                      <text x={164 + scaleW(d.female)} y={yCenter - 3} fontSize="10" fill="#4a6fa5" fontWeight="700">{d.female}</text>
+                      <text x={164 + scaleW(d.male)} y={yCenter + 12} fontSize="10" fill="#9ab4d0" fontWeight="600">{d.male}</text>
+                      {gap === maxGap && (
+                        <g>
+                          <line x1={160 + scaleW(d.male)} y1={yCenter - 19} x2={160 + scaleW(d.female)} y2={yCenter - 19} stroke="#f59e0b" strokeWidth="1.5" />
+                          <line x1={160 + scaleW(d.male)} y1={yCenter - 22} x2={160 + scaleW(d.male)} y2={yCenter - 16} stroke="#f59e0b" strokeWidth="1.5" />
+                          <line x1={160 + scaleW(d.female)} y1={yCenter - 22} x2={160 + scaleW(d.female)} y2={yCenter - 16} stroke="#f59e0b" strokeWidth="1.5" />
+                          <text x={160 + scaleW(d.male) + scaleW(gap) / 2} y={yCenter - 25} textAnchor="middle" fontSize="9" fill="#f59e0b" fontWeight="700">+{gap} pts</text>
                         </g>
+                      )}
+                      {isHov && (
+                        <g transform={`translate(160, ${Math.max(-30, yCenter - 56)})`}>
+                          <rect x="0" y="0" width="250" height="44" rx="7" fill="#1a2a44" />
+                          <polygon points="110,44 120,52 130,44" fill="#1a2a44" />
+                          <text x="125" y="17" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.65)">{d.domain}</text>
+                          <text x="125" y="34" textAnchor="middle" fontSize="12" fill="white" fontWeight="700">♀ {d.female} · ♂ {d.male} · gap +{gap}</text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+                <line x1="160" y1="0" x2="160" y2="205" stroke="#e5e7eb" strokeWidth="1" />
+              </svg>
+            </div>
+
+
+            {/* ── Card 2: Risk Language Heatmap ── */}
+            <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px', position: 'relative' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Risk Signals</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 16 }}>8th grade <span style={{ color: '#e07b54' }}>self-doubt language</span> peaks at 7.12% — highest signal in cohort.</p>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', fontSize: 13 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', paddingBottom: 10, paddingRight: 16, fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Pattern</th>
+                      {['6th', '7th', '8th'].map(g => (
+                        <th key={g} style={{ textAlign: 'center', paddingBottom: 10, paddingLeft: 8, paddingRight: 8, fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.05em' }}>{g}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {RISK_ROWS.map((row, r) => {
+                      const vals = [row.g6, row.g7, row.g8];
+                      return (
+                        <tr key={r}>
+                          <td style={{ paddingTop: 5, paddingBottom: 5, paddingRight: 16, fontWeight: 500, color: hmHover?.r === r ? '#1a2a44' : '#374151', fontSize: 12 }}>{row.pattern}</td>
+                          {vals.map((v, c) => {
+                            const intensity = v / 7.25;
+                            const isCell = hmHover?.r === r && hmHover?.c === c;
+                            const bg = isCell ? `rgba(224,123,84,${0.3 + intensity * 0.55})` : `rgba(74,111,165,${0.1 + intensity * 0.72})`;
+                            const textCol = intensity > 0.5 ? '#1e3a5f' : '#6b7280';
+                            return (
+                              <td key={c} style={{ paddingTop: 5, paddingBottom: 5, paddingLeft: 8, paddingRight: 8, textAlign: 'center', fontWeight: 700, fontSize: 13, background: bg, color: isCell ? '#7a2a0a' : textCol, borderRadius: 5, cursor: 'pointer', transition: 'background 0.15s', position: 'relative' }}
+                                onMouseEnter={() => setHmHover({ r, c })}
+                                onMouseLeave={() => setHmHover(null)}
+                              >
+                                {v.toFixed(2)}%
+                                {isCell && (
+                                  <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8, background: '#1a2a44', color: 'white', borderRadius: 7, padding: '7px 12px', fontSize: 11, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }}>
+                                    <div style={{ fontWeight: 700, marginBottom: 2 }}>{row.pattern}</div>
+                                    <div style={{ color: 'rgba(255,255,255,0.7)' }}>{['6th','7th','8th'][c]} Grade · {v.toFixed(2)}% frequency</div>
+                                    <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #1a2a44' }} />
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
                       );
-                    });
-                  })()}
-                  <line x1="173" y1="0" x2="173" y2="250" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                </svg>
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
+              <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 12 }}>% of total spoken words flagged per pattern per grade.</p>
+            </div>
 
-            {/* ── Panel 1: Self-Management Matrix ── */}
-            {insightPanel === 1 && (
-              <div className="p-8 flex flex-col gap-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Learner Portrait · Self-Management Matrix</p>
-                  <h3 className="text-lg font-bold text-white leading-snug">Students who score high in Purpose are 3.4× more likely<br/>to score high in Self-Control.</h3>
-                </div>
-                <svg viewBox="0 0 520 290" className="w-full" style={{ maxHeight: 290 }}>
-                  <defs>
-                    <linearGradient id="wGrad" x1="0" y1="1" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#1e3a5f" />
-                      <stop offset="60%" stopColor="#1e4d6b" />
-                      <stop offset="100%" stopColor="#1a5c4a" />
-                    </linearGradient>
-                  </defs>
-                  {/* Chart area: x 55–505, y 10–240 → width 450, height 230 */}
-                  <rect x="55" y="10" width="450" height="230" rx="6" fill="url(#wGrad)" />
-                  {/* Grid lines at 0.75, 0.80, 0.85, 0.90, 0.95 */}
-                  {[75, 80, 85, 90, 95].map(v => {
-                    const px = 55 + ((v - 70) / 30) * 450;
-                    const py = 240 - ((v - 70) / 30) * 230;
-                    return (
-                      <g key={v}>
-                        <line x1={px} y1="10" x2={px} y2="240" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
-                        <line x1="55" y1={py} x2="505" y2={py} stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
-                        <text x={px} y="255" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">{(v/100).toFixed(2)}</text>
-                        <text x="44" y={py + 3} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">{(v/100).toFixed(2)}</text>
-                      </g>
-                    );
-                  })}
-                  {/* Axis end labels */}
-                  <text x="55" y="255" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">0.70</text>
-                  <text x="505" y="255" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">1.00</text>
-                  <text x="44" y="243" textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">0.70</text>
-                  <text x="44" y="13" textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">1.00</text>
-                  {/* Dots */}
-                  {WELLNESS_DOTS.map((dot, i) => (
-                    <circle key={i}
-                      cx={55 + ((dot.x - 70) / 30) * 450}
-                      cy={240 - ((dot.y - 70) / 30) * 230}
-                      r="3.5" fill="#7aa3cc" fillOpacity="0.8" stroke="#4a6fa5" strokeWidth="1"
-                    />
-                  ))}
-                  {/* Axis labels */}
-                  <text x="280" y="272" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)">Purpose</text>
-                  <text x="14" y="125" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.45)" transform="rotate(-90 14 125)">Self-Control</text>
-                  {/* Annotation */}
-                  <rect x="340" y="16" width="158" height="30" rx="5" fill="rgba(74,111,165,0.35)" />
-                  <text x="419" y="30" textAnchor="middle" fontSize="10" fill="#a8c5e0" fontWeight="600">3.4× more likely</text>
-                  <text x="419" y="42" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.4)">high Purpose → high Self-Control</text>
-                </svg>
-              </div>
-            )}
+            {/* ── Card 3: CS Pillars ── */}
+            <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Pillar Scores</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}>Student supports lead. <span style={{ color: '#7c5cbf' }}>Collaborative leadership</span> is the gap — and the lever.</p>
+              <svg viewBox="0 0 440 210" style={{ width: '100%', overflow: 'visible' }}>
+                {PARTHENON_PILLARS.map((p, i) => {
+                  const pillarW = 84;
+                  const gapW = 16;
+                  const totalW = 4 * pillarW + 3 * gapW;
+                  const startX = (440 - totalW) / 2;
+                  const x = startX + i * (pillarW + gapW);
+                  const maxH = 148;
+                  const h = (p.height / 100) * maxH;
+                  const y = 162 - h;
+                  const isHov = csHover === i;
+                  return (
+                    <g key={p.label}
+                      onMouseEnter={() => setCsHover(i)}
+                      onMouseLeave={() => setCsHover(null)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <rect x={x} y={y} width={pillarW} height={h} rx="5"
+                        fill={p.color} fillOpacity={isHov ? 1 : 0.72}
+                        style={{ transition: 'fill-opacity 0.15s' }}
+                      />
+                      <text x={x + pillarW / 2} y={y + h / 2 - 5} textAnchor="middle" fontSize="19" fontWeight="800" fill="white">{p.score}</text>
+                      <text x={x + pillarW / 2} y={y + h / 2 + 12} textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.6)">avg</text>
+                      <rect x={x - 5} y={y - 8} width={pillarW + 10} height={8} rx="2" fill={p.color} fillOpacity={isHov ? 1 : 0.88} />
+                      <text x={x + pillarW / 2} y="178" textAnchor="middle" fontSize="9" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{p.label.split(' ').slice(0, 2).join(' ')}</text>
+                      <text x={x + pillarW / 2} y="191" textAnchor="middle" fontSize="9" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{p.label.split(' ').slice(2).join(' ')}</text>
+                      {isHov && (
+                        <g transform={`translate(${x + pillarW / 2 - 75}, ${y - 62})`}>
+                          <rect x="0" y="0" width="150" height="52" rx="7" fill="#1a2a44" />
+                          <polygon points="69,52 75,60 81,52" fill="#1a2a44" />
+                          <text x="75" y="18" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.6)">{p.label}</text>
+                          <text x="75" y="36" textAnchor="middle" fontSize="16" fill="white" fontWeight="800">{p.score}</text>
+                          <text x="75" y="50" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.45)">avg score · {p.height}th pct</text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+                <rect x="10" y="162" width="420" height="4" rx="2" fill="#e5e7eb" />
+              </svg>
+            </div>
 
-            {/* ── Panel 2: Risk Language Heatmap ── */}
-            {insightPanel === 2 && (
-              <div className="p-8 flex flex-col gap-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Language Frequency</p>
-                  <h3 className="text-lg font-bold text-white leading-snug">8th grade self-doubt language peaks at 7.12% —<br/>the highest signal in the cohort.</h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse" style={{ fontSize: 13 }}>
-                    <thead>
-                      <tr>
-                        <th className="text-left pb-3 pr-6 font-medium" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>PATTERN DETECTED</th>
-                        {['6th Grade', '7th Grade', '8th Grade'].map(g => (
-                          <th key={g} className="text-center pb-3 px-2 font-semibold" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>{g}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {RISK_ROWS.map((row, i) => {
-                        const vals = [row.g6, row.g7, row.g8];
-                        const maxVal = 7.25;
-                        return (
-                          <tr key={i}>
-                            <td className="py-1.5 pr-6 font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>{row.pattern}</td>
-                            {vals.map((v, j) => {
-                              const intensity = v / maxVal;
-                              const bg = `rgba(74, 111, 165, ${0.12 + intensity * 0.78})`;
-                              const textColor = intensity > 0.55 ? '#ffffff' : 'rgba(255,255,255,0.6)';
-                              return (
-                                <td key={j} className="px-2 py-1.5 text-center font-bold rounded-sm"
-                                  style={{ background: bg, color: textColor, fontSize: 13 }}>
-                                  {v.toFixed(2)}%
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Frequency = % of total spoken words flagged per pattern per grade.</p>
-              </div>
-            )}
+            {/* ── Card 4: Voice Tone Analysis ── */}
+            <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Voice Tone Analysis</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}><span style={{ color: '#e07b54' }}>Staff voice</span> carries the most concern language — 44% vs. 22% from families.</p>
+              <svg viewBox="0 0 440 185" style={{ width: '100%', overflow: 'visible' }}>
+                <line x1="220" y1="0" x2="220" y2="185" stroke="#e5e7eb" strokeWidth="1.5" strokeDasharray="4 3" />
+                <text x="95" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">← CONCERN</text>
+                <text x="340" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">AFFIRMING →</text>
+                {VOICE_TONE.map((d, i) => {
+                  const rowY = 28 + i * 55;
+                  const maxHalf = 190;
+                  const affW = (d.affirming / 100) * maxHalf;
+                  const conW = (d.concern / 100) * maxHalf;
+                  const isHov = toneHover === i;
+                  return (
+                    <g key={d.group}
+                      onMouseEnter={() => setToneHover(i)}
+                      onMouseLeave={() => setToneHover(null)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {isHov && <rect x="0" y={rowY - 2} width="440" height="46" rx="6" fill="#f8f9fc" />}
+                      <text x="220" y={rowY + 8} textAnchor="middle" fontSize="12" fill={isHov ? '#1a2a44' : '#374151'} fontWeight="700">{d.group}</text>
+                      <rect x={220 - conW} y={rowY + 14} width={conW} height={22} rx="4" fill="#e07b54" fillOpacity={isHov ? 0.88 : 0.62} />
+                      <text x={220 - conW - 5} y={rowY + 29} textAnchor="end" fontSize="11" fill="#c0502a" fontWeight="600">{d.concern}%</text>
+                      <rect x="220" y={rowY + 14} width={affW} height={22} rx="4" fill="#2d7a5f" fillOpacity={isHov ? 0.88 : 0.62} />
+                      <text x={220 + affW + 5} y={rowY + 29} textAnchor="start" fontSize="11" fill="#1a5f44" fontWeight="600">{d.affirming}%</text>
+                      {isHov && (
+                        <g transform={`translate(${220 - 85}, ${rowY - 62})`}>
+                          <rect x="0" y="0" width="170" height="52" rx="7" fill="#1a2a44" />
+                          <polygon points="79,52 85,60 91,52" fill="#1a2a44" />
+                          <text x="85" y="18" textAnchor="middle" fontSize="12" fill="white" fontWeight="700">{d.group}</text>
+                          <text x="85" y="34" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.7)">Concern {d.concern}% · Aff. {d.affirming}%</text>
+                          <text x="85" y="48" textAnchor="middle" fontSize="9.5" fill="#f59e0b">↑ {d.signal}</text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+              <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Voice semantics — invisible in traditional survey data.</p>
+            </div>
 
-            {/* ── Panel 3: Protective Factors ── */}
-            {insightPanel === 3 && (
-              <div className="p-8 flex flex-col gap-5">
-                <div className="flex items-start justify-between flex-wrap gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Behavioral Health · Protective Signals</p>
-                    <h3 className="text-lg font-bold text-white leading-snug">Students who named a trusted adult<br/>scored 2.1× higher on resilience.</h3>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: '#4a6fa5' }}></span>Relational</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-2.5 rounded-sm inline-block" style={{ background: '#2d7a5f' }}></span>Internal</span>
-                  </div>
-                </div>
-                <svg viewBox="0 0 520 240" className="w-full" style={{ maxHeight: 240 }}>
-                  {PROTECTIVE_DATA.map((d, i) => {
-                    const y = 18 + i * 37;
-                    const maxW = 320;
-                    const color = d.type === 'relational' ? '#4a6fa5' : '#2d7a5f';
-                    const barW = (d.val / 100) * maxW;
-                    return (
-                      <g key={d.factor}>
-                        {/* Track */}
-                        <rect x="170" y={y + 3} width={maxW} height={22} rx="4" fill="rgba(255,255,255,0.05)" />
-                        {/* Bar */}
-                        <rect x="170" y={y + 3} width={barW} height={22} rx="4" fill={color} fillOpacity="0.8" />
-                        {/* Circle endpoint */}
-                        <circle cx={170 + barW} cy={y + 14} r="8" fill={color} />
-                        <text x={170 + barW} y={y + 18} textAnchor="middle" fontSize="9" fill="white" fontWeight="700">{d.val}</text>
-                        {/* Label */}
-                        <text x="165" y={y + 18} textAnchor="end" fontSize="11" fill="rgba(255,255,255,0.6)">{d.factor}</text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-            )}
-
-            {/* ── Panel 4: CS Parthenon ── */}
-            {insightPanel === 4 && (
-              <div className="p-8 flex flex-col gap-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Community Schools · Pillar Scores</p>
-                  <h3 className="text-lg font-bold text-white leading-snug">Student supports lead. Collaborative leadership<br/>is the gap — and the lever.</h3>
-                </div>
-                <svg viewBox="0 0 520 300" className="w-full" style={{ maxHeight: 300 }}>
-                  {/* Ground line */}
-                  <rect x="20" y="262" width="480" height="6" rx="3" fill="rgba(255,255,255,0.08)" />
-                  {PARTHENON_PILLARS.map((p, i) => {
-                    const pillarW = 84;
-                    const gap = 20;
-                    const totalW = 4 * pillarW + 3 * gap;
-                    const startX = (520 - totalW) / 2;
-                    const x = startX + i * (pillarW + gap);
-                    const maxH = 210;
-                    const h = (p.height / 100) * maxH;
-                    const y = 262 - h;
-                    return (
-                      <g key={p.label}>
-                        {/* Subtle height guide lines */}
-                        <line x1={x} y1={y} x2={x - 6} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                        {/* Pillar */}
-                        <rect x={x} y={y} width={pillarW} height={h} rx="5" fill={p.color} fillOpacity="0.75" />
-                        {/* Score */}
-                        <text x={x + pillarW / 2} y={y + h / 2 - 6} textAnchor="middle" fontSize="20" fontWeight="800" fill="white">{p.score}</text>
-                        <text x={x + pillarW / 2} y={y + h / 2 + 12} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.55)">avg score</text>
-                        {/* Cap */}
-                        <rect x={x - 5} y={y - 9} width={pillarW + 10} height={9} rx="2" fill={p.color} fillOpacity="0.9" />
-                        {/* Label */}
-                        <text x={x + pillarW / 2} y={278} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.5)">{p.label.split(' ').slice(0, 2).join(' ')}</text>
-                        <text x={x + pillarW / 2} y={290} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.5)">{p.label.split(' ').slice(2).join(' ')}</text>
-                      </g>
-                    );
-                  })}
-                  {/* Entablature */}
-                  <rect x="14" y="16" width="492" height="12" rx="3" fill="rgba(255,255,255,0.07)" />
-                  <rect x="22" y="8" width="476" height="9" rx="2" fill="rgba(255,255,255,0.04)" />
-                </svg>
-              </div>
-            )}
-
-            {/* ── Panel 5: Linguistic Tone Divergence ── */}
-            {insightPanel === 5 && (
-              <div className="p-8 flex flex-col gap-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Community Schools · Voice Tone Analysis</p>
-                  <h3 className="text-lg font-bold text-white leading-snug">Staff voice carries the most concern language —<br/>44% flagged, vs. 22% from families.</h3>
-                </div>
-                <svg viewBox="0 0 580 230" className="w-full" style={{ maxHeight: 230 }}>
-                  {/* Center axis */}
-                  <line x1="290" y1="0" x2="290" y2="230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" strokeDasharray="4 3" />
-                  <text x="130" y="14" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.3)" fontWeight="600">← CONCERN LANGUAGE</text>
-                  <text x="440" y="14" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.3)" fontWeight="600">AFFIRMING LANGUAGE →</text>
-
-                  {VOICE_TONE.map((d, i) => {
-                    const rowY = 38 + i * 64;
-                    const maxHalf = 250; // each half = 250px wide
-                    const affW = (d.affirming / 100) * maxHalf;
-                    const conW = (d.concern / 100) * maxHalf;
-                    const neuW = (d.neutral / 100) * maxHalf;
-                    return (
-                      <g key={d.group}>
-                        {/* Group label */}
-                        <text x="290" y={rowY - 4} textAnchor="middle" fontSize="12" fill="white" fontWeight="700">{d.group}</text>
-                        {/* Concern bar (goes left from center) */}
-                        <rect x={290 - conW} y={rowY + 2} width={conW} height={28} rx="4" fill="#e07b54" fillOpacity="0.75" />
-                        <text x={290 - conW - 6} y={rowY + 20} textAnchor="end" fontSize="11" fill="#e07b54" fontWeight="600">{d.concern}%</text>
-                        {/* Neutral (attached left of center) */}
-                        <rect x={290 - conW - neuW} y={rowY + 2} width={neuW} height={28} rx="0" fill="rgba(255,255,255,0.1)" />
-                        {/* Affirming bar (goes right from center) */}
-                        <rect x="290" y={rowY + 2} width={affW} height={28} rx="4" fill="#2d7a5f" fillOpacity="0.75" />
-                        <text x={290 + affW + 6} y={rowY + 20} textAnchor="start" fontSize="11" fill="#4aad8a" fontWeight="600">{d.affirming}%</text>
-                        {/* Signal chip */}
-                        <rect x={290 + affW + 46} y={rowY + 5} width={140} height={20} rx="4" fill="rgba(74,111,165,0.25)" />
-                        <text x={290 + affW + 116} y={rowY + 19} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.5)">↑ {d.signal}</text>
-                      </g>
-                    );
-                  })}
-                </svg>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Affirming and concern language classified via semantic analysis of open-ended voice responses. This signal is invisible in traditional survey data.</p>
-              </div>
-            )}
-
-          </div>
-
-          {/* Panel navigation arrows */}
-          <div className="flex justify-center gap-3 mt-5">
-            <button onClick={() => setInsightPanel(p => (p + 5) % 6)}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'white', color: '#4a6fa5', border: '1px solid #d0dff0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            <button onClick={() => setInsightPanel(p => (p + 1) % 6)}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'white', color: '#4a6fa5', border: '1px solid #d0dff0', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
-            </button>
           </div>
         </div>
       </section>
@@ -2021,6 +1892,111 @@ export default function PilotClient() {
       )}
 
       {/* ── Request a Demo modal ─────────────────────────────────────────────── */}
+      {/* ── CSV preview modal ─────────────────────────────────────────────────── */}
+      {csvOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 55, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget) setCsvOpen(false); }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.6)', backdropFilter: 'blur(6px)' }} onClick={() => setCsvOpen(false)} />
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 860, maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+            {/* Modal header */}
+            <div style={{ padding: '20px 28px 16px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexShrink: 0 }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4a6fa5', margin: '0 0 4px' }}>Raw data export</p>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a2744', margin: '0 0 4px', letterSpacing: '-0.2px' }}>Every response, as a structured CSV</h2>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
+                  In addition to the synthesized insights and charts in your dashboard, you can export the full dataset at any time.
+                </p>
+              </div>
+              <button onClick={() => setCsvOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20, lineHeight: 1, flexShrink: 0, padding: '2px 4px' }}>✕</button>
+            </div>
+            {/* Callout */}
+            <div style={{ margin: '16px 28px 0', padding: '12px 16px', background: '#f0f5ff', borderRadius: 10, borderLeft: '3px solid #4a6fa5', flexShrink: 0 }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#1a2744', lineHeight: 1.55 }}>
+                <strong>You get both.</strong> Your dashboard surfaces synthesized insights, flags, and charts automatically.
+                The CSV gives you full flexibility to slice the data in your own tools — filter by school, grade, score range, or any dimension you need.
+              </p>
+            </div>
+            {/* Table */}
+            <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1, margin: '16px 0 0' }}>
+              <table style={{ fontSize: 11, whiteSpace: 'nowrap', borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr style={{ background: '#1a2744', position: 'sticky', top: 0 }}>
+                    {CSV_COLS.map((col, ci) => (
+                      <th key={col} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', background: '#1a2744' }}>
+                        {ci === 10
+                          ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{col} <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></span>
+                          : col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CSV_ROWS.map((row, i) => {
+                    const score = parseInt(row[10], 10);
+                    const { bg: scoreBg, text: scoreText } = scoreColor(score);
+                    return (
+                      <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#f9fafb' }}>
+                        {row.map((cell, j) => {
+                          if (j === 10) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', fontWeight: 700, textAlign: 'center', background: scoreBg, color: scoreText }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{cell}<span style={{ fontSize: 9, fontWeight: 400, opacity: 0.6 }}>/800</span></span>
+                            </td>
+                          );
+                          if (j === 4 || j === 6 || j === 8) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', color: '#4b5563', maxWidth: 180 }}>
+                              <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 170 }}>{cell}</span>
+                            </td>
+                          );
+                          if (j === 12) {
+                            const isHigh = cell.toLowerCase().includes('high') || cell.toLowerCase().includes('strong');
+                            return (
+                              <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6' }}>
+                                <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: isHigh ? '#d1fae5' : '#fef3c7', color: isHigh ? '#065f46' : '#92400e' }}>{cell}</span>
+                              </td>
+                            );
+                          }
+                          if (j === 13) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6' }}>
+                              <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#dbeafe', color: '#1e40af' }}>{cell}</span>
+                            </td>
+                          );
+                          if (j === 14) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6' }}>
+                              <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 99, fontSize: 10, fontWeight: 500, background: '#f0f5fb', color: '#1a2744' }}>{cell}</span>
+                            </td>
+                          );
+                          if (j === 11) return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', fontStyle: 'italic', color: '#6b7280' }}>
+                              <span style={{ display: 'block', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>{cell}</span>
+                            </td>
+                          );
+                          return (
+                            <td key={j} style={{ padding: '7px 12px', borderBottom: '1px solid #f3f4f6', color: '#4b5563' }}>
+                              <span style={{ display: 'block', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}>{cell}</span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Footer */}
+            <div style={{ padding: '14px 28px', borderTop: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 10, color: '#9ca3af' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#d1fae5', display: 'inline-block' }} />600+</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#fef9c3', display: 'inline-block' }} />500–599</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#fed7aa', display: 'inline-block' }} />400–499</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#fee2e2', display: 'inline-block' }} />&lt;400</span>
+              </div>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>Sample anonymized data — 6 of N rows shown</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {demoOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
           onClick={e => { if (e.target === e.currentTarget) { setDemoOpen(false); setDemoSuccess(false); setDemoError(''); setDemoForm({ name:'',email:'',org:'',phone:'',notes:'' }); } }}>
