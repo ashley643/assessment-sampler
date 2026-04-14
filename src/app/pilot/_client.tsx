@@ -2395,7 +2395,9 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
         <div ref={formRef} className="fixed inset-0 z-40 bg-white flex flex-col overflow-hidden">
           {/* Form header */}
           <div className="flex items-center justify-between px-6 py-0 shrink-0" style={{ background: '#1a2744' }}>
-            <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72 }} />
+            <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
+              <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72 }} />
+            </a>
             <button onClick={() => setFormOpen(false)} className="p-1 rounded-lg transition-colors" style={{ color: 'rgba(255,255,255,0.6)' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'white')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>
