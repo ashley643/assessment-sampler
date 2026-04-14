@@ -264,8 +264,11 @@ const DEMO_PANELS: DemoPanel[] = [
     ],
     chips: [
       { t: 1,  text: 'Adversity-Persistence',  color: '#60a5fa' },
+      { t: 8,  text: 'Emotional Awareness',    color: '#38bdf8' },
       { t: 15, text: 'Contrastive Structure',  color: '#a78bfa' },
+      { t: 19, text: 'Resilience',             color: '#4ade80' },
       { t: 23, text: 'Causal Connector',       color: '#34d399' },
+      { t: 33, text: 'Help-Seeking',           color: '#fbbf24' },
       { t: 46, text: 'Growth Mindset',         color: '#f472b6' },
       { t: 53, text: 'Self-Awareness',         color: '#fb923c' },
     ],
@@ -431,9 +434,12 @@ const DEMO_PANELS: DemoPanel[] = [
     chips: [
       { t: 3.6,  text: 'Viewpoint Shift',       color: '#60a5fa' },
       { t: 15.7, text: 'Value Statement',       color: '#fbbf24' },
+      { t: 20.1, text: 'Vulnerability',         color: '#34d399' },
       { t: 27.5, text: 'Figurative Reasoning',  color: '#818cf8' },
+      { t: 40.8, text: 'Risk Aversion',         color: '#fb923c' },
       { t: 54.5, text: 'Courageous Action',     color: '#f472b6' },
       { t: 67.3, text: 'Growth Orientation',    color: '#e879f9' },
+      { t: 71.8, text: 'Perseverance',          color: '#38bdf8' },
     ],
     words: [
       {t:0.7,word:'When'},{t:1.4,word:'given'},{t:1.6,word:'some'},{t:1.9,word:'thought'},
@@ -1700,8 +1706,8 @@ export default function PilotClient() {
                           .filter(w => w.t >= captionStart && w.t < captionEnd);
                         if (!captionWords.length) return null;
                         return (
-                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px' }}>
-                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)' }}>
+                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px', overflow: 'hidden' }}>
+                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'normal', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                               {captionWords.map((w, i) => {
                                 const isCurrent = w.origIdx === wordIdx;
                                 const isSpoken = w.t <= responseCurrentTime;
