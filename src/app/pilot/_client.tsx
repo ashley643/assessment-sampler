@@ -115,19 +115,342 @@ const VOICE_TONE = [
 // ── VideoAsk previews ────────────────────────────────────────────────────────
 const PREVIEWS = [
   {
-    label: 'Community Schools Parent Survey',
-    org: 'San Mateo-Foster City USD',
-    url: 'https://smfcsd.impacterpathway.com/f5wvxewbq?preview',
-  },
-  {
     label: 'Empathy Interview',
     org: 'Vista High School',
     url: 'https://vistahs.impacterpathway.com/fzbfs0rrd?preview',
   },
   {
+    label: 'Community Schools Parent Survey',
+    org: 'San Mateo-Foster City USD',
+    url: 'https://smfcsd.impacterpathway.com/f5wvxewbq?preview',
+  },
+  {
     label: 'Graduate Portrait Survey',
     org: 'Western Placer USD',
     url: 'https://wpusd.impacterpathway.com/f78d5omaf?preview',
+  },
+];
+
+// ── Demo player panels ───────────────────────────────────────────────────────
+interface DemoCaption { t: number; text: string; accent?: true }
+interface DemoChip { t: number; text: string; color: string }
+interface DemoWord { t: number; word: string }
+interface DemoPanel {
+  assessmentName: string;
+  school: string;
+  promptLabel: string;
+  promptText: string;
+  questionUrl: string;
+  responseUrl: string;
+  respondentLabel: string;
+  captions: DemoCaption[];
+  chips: DemoChip[];
+  words: DemoWord[];
+  scoreTimeline: { t: number; score: number }[];
+}
+
+function interpolateScore(tl: { t: number; score: number }[], time: number): number {
+  if (!tl.length) return 400;
+  if (time <= tl[0].t) return tl[0].score;
+  const last = tl[tl.length - 1];
+  if (time >= last.t) return last.score;
+  const i = tl.findIndex(k => k.t > time);
+  const a = tl[i - 1], b = tl[i];
+  return a.score + (b.score - a.score) * (time - a.t) / (b.t - a.t);
+}
+
+function ScoreDial({ score, size = 'sm' }: { score: number; size?: 'sm' | 'lg' }) {
+  const w = size === 'lg' ? 180 : 108;
+  const h = size === 'lg' ? 138 : 83;
+  const cx = w / 2, cy = h * 0.74;
+  const r  = size === 'lg' ? 64 : 38;
+  const sw = size === 'lg' ? 8 : 5;
+  const fs = size === 'lg' ? 26 : 15;
+
+  // Arc: 120° → 420° clockwise (300° sweep, 7 o'clock → 5 o'clock)
+  const toXY = (deg: number) => ({
+    x: cx + r * Math.cos(deg * Math.PI / 180),
+    y: cy + r * Math.sin(deg * Math.PI / 180),
+  });
+  const s0 = toXY(120), sEnd = toXY(420);
+  const clamped = Math.max(200, Math.min(800, score));
+  const arcDeg = (clamped - 200) / 600 * 300;
+  const sPt = toXY(120 + arcDeg);
+  const nRad = (120 + arcDeg) * Math.PI / 180;
+  const nx = cx + r * 0.82 * Math.cos(nRad);
+  const ny = cy + r * 0.82 * Math.sin(nRad);
+  const color = clamped >= 680 ? '#34d399' : clamped >= 520 ? '#fbbf24' : '#fb7185';
+  const ease = 'transition:all 0.55s cubic-bezier(0.25,0.1,0.25,1)';
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ display: 'block' }}>
+      <path d={`M${s0.x} ${s0.y} A${r} ${r} 0 1 1 ${sEnd.x} ${sEnd.y}`}
+        fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={sw} strokeLinecap="round" />
+      {arcDeg > 1 && (
+        <path d={`M${s0.x} ${s0.y} A${r} ${r} 0 ${arcDeg > 180 ? 1 : 0} 1 ${sPt.x} ${sPt.y}`}
+          fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round"
+          style={{ transition: 'all 0.55s cubic-bezier(0.25,0.1,0.25,1)' }} />
+      )}
+      <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={color}
+        strokeWidth={size === 'lg' ? 2.5 : 1.8} strokeLinecap="round"
+        style={{ transition: 'all 0.55s cubic-bezier(0.25,0.1,0.25,1)' }} />
+      <circle cx={cx} cy={cy} r={size === 'lg' ? 5 : 3.5} fill={color}
+        style={{ transition: 'fill 0.55s' }} />
+      <text x={cx} y={cy - r * 0.28} textAnchor="middle" fill="white"
+        fontSize={fs} fontWeight="800" fontFamily="-apple-system,system-ui,sans-serif"
+        style={{ transition: 'all 0.3s' }}>{Math.round(clamped)}</text>
+      <text x={s0.x - 2} y={s0.y + (size === 'lg' ? 13 : 9)} textAnchor="middle"
+        fill="rgba(255,255,255,0.28)" fontSize={size === 'lg' ? 9 : 6}
+        fontFamily="-apple-system,system-ui,sans-serif">200</text>
+      <text x={sEnd.x + 2} y={sEnd.y + (size === 'lg' ? 13 : 9)} textAnchor="middle"
+        fill="rgba(255,255,255,0.28)" fontSize={size === 'lg' ? 9 : 6}
+        fontFamily="-apple-system,system-ui,sans-serif">800</text>
+    </svg>
+  );
+}
+
+const DEMO_PANELS: DemoPanel[] = [
+  {
+    assessmentName: 'Behavioral Health Screener',
+    school: 'San Diego Unified School District',
+    promptLabel: 'Assessment Prompt · Reflective Growth',
+    promptText: "What\u2019s something you\u2019re better at now than you used to be? And what do you think helped you get there?",
+    questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvRWxlbV9NaWRkbGVfMV9SZWZsZWN0aXZlX0dyb3d0aF9CSFNfVjMubXA0IiwiaWF0IjoxNzc2MTQzMTE1LCJleHAiOjIwOTE1MDMxMTV9.cM1GzrU1TGx_-P0XX-IQYEPzVDI2v-9I7wR3W5IyJd0',
+    responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM',
+    respondentLabel: 'Student',
+    captions: [
+      { t: 0,    text: 'In first grade, I was very energetic, extremely energetic, like bouncing off the walls energetic.', accent: true },
+      { t: 10,   text: 'Like super energetic, I was running around everyone in the classroom.' },
+      { t: 15,   text: "But now I\u2019ve gradually gotten better and better by time." },
+      { t: 23,   text: 'Because in second grade, I learned that \u2014 just take a break, take a break.', accent: true },
+      { t: 31,   text: "It\u2019s not that hard, just take a break." },
+      { t: 33,   text: 'And ask the teacher if you could have a break or like ask for help.' },
+      { t: 39,   text: 'So, yeah, I started acting a little better.' },
+      { t: 44,   text: "I\u2019m not saying that I\u2019m like the best of the best." },
+      { t: 46,   text: "I\u2019m like better than I used to be.", accent: true },
+      { t: 52,   text: "But, yeah, been doing good." },
+    ],
+    chips: [
+      { t: 1,  text: 'Adversity-Persistence',  color: '#60a5fa' },
+      { t: 15, text: 'Contrastive Structure',  color: '#a78bfa' },
+      { t: 23, text: 'Causal Connector',       color: '#34d399' },
+      { t: 33, text: 'Help-Seeking',           color: '#fbbf24' },
+      { t: 46, text: 'Growth Mindset',         color: '#f472b6' },
+      { t: 53, text: 'Self-Awareness',         color: '#fb923c' },
+    ],
+    words: [
+      {t:0.0,word:'In'},{t:1.5,word:'first'},{t:1.9,word:'grade'},{t:3.1,word:'I'},{t:3.1,word:'was'},
+      {t:4.8,word:'very'},{t:5.3,word:'energetic'},{t:6.0,word:'extremely'},{t:6.7,word:'energetic'},
+      {t:7.5,word:'like'},{t:7.6,word:'bouncing'},{t:7.9,word:'off'},{t:8.4,word:'the'},{t:8.9,word:'walls'},
+      {t:8.9,word:'energetic'},{t:10.7,word:'Like'},{t:10.9,word:'super'},{t:12.6,word:'energetic'},
+      {t:13.1,word:'I'},{t:13.1,word:'was'},{t:13.2,word:'running'},{t:13.5,word:'around'},
+      {t:13.7,word:'everyone'},{t:14.1,word:'in'},{t:14.7,word:'the'},{t:14.7,word:'classroom'},
+      {t:15.0,word:'But'},{t:15.7,word:'now'},{t:16.4,word:"I've"},{t:18.1,word:'gradually'},
+      {t:18.1,word:'gotten'},{t:18.9,word:'better'},{t:19.7,word:'and'},{t:20.6,word:'better'},
+      {t:21.0,word:'by'},{t:22.6,word:'time'},{t:23.3,word:'Because'},{t:24.2,word:'in'},
+      {t:24.5,word:'second'},{t:24.7,word:'grade'},{t:25.1,word:'I'},{t:25.3,word:'learned'},
+      {t:25.6,word:'that'},{t:27.7,word:'um'},{t:28.3,word:'just'},{t:28.7,word:'take'},
+      {t:28.9,word:'a'},{t:29.7,word:'break'},{t:29.7,word:'take'},{t:30.2,word:'a'},
+      {t:30.6,word:'break'},{t:31.1,word:"It's"},{t:31.6,word:'not'},{t:31.7,word:'that'},
+      {t:32.0,word:'hard'},{t:32.2,word:'just'},{t:32.2,word:'take'},{t:32.4,word:'a'},
+      {t:32.5,word:'break'},{t:33.4,word:'And'},{t:33.9,word:'ask'},{t:34.2,word:'the'},
+      {t:34.5,word:'teacher'},{t:34.6,word:'if'},{t:35.1,word:'you'},{t:35.1,word:'could'},
+      {t:35.1,word:'have'},{t:35.2,word:'a'},{t:35.4,word:'break'},{t:35.8,word:'or'},
+      {t:36.0,word:'like'},{t:36.3,word:'ask'},{t:36.3,word:'for'},{t:36.8,word:'help'},
+      {t:40.4,word:'So'},{t:40.9,word:'yeah'},{t:41.4,word:'I'},{t:41.6,word:'started'},
+      {t:41.9,word:'acting'},{t:43.2,word:'a'},{t:43.7,word:'little'},{t:44.0,word:'better'},
+      {t:44.3,word:"I'm"},{t:44.4,word:'not'},{t:44.6,word:'saying'},{t:44.8,word:'that'},
+      {t:44.9,word:"I'm"},{t:45.0,word:'like'},{t:45.3,word:'the'},{t:45.5,word:'best'},
+      {t:45.8,word:'of'},{t:46.0,word:'the'},{t:46.2,word:'best'},{t:46.5,word:"I'm"},
+      {t:46.9,word:'like'},{t:47.6,word:'better'},{t:48.3,word:'than'},{t:49.0,word:'I'},
+      {t:50.8,word:'used'},{t:51.0,word:'to'},{t:51.3,word:'be'},{t:51.5,word:'better'},
+      {t:53.1,word:'But'},{t:53.6,word:'yeah'},{t:55.0,word:'been'},{t:55.6,word:'doing'},
+      {t:55.8,word:'good'},{t:58.1,word:'Bye'},
+    ],
+    scoreTimeline: [
+      {t:0,score:200},{t:2,score:290},{t:5,score:368},{t:8,score:432},
+      {t:10,score:468},{t:13,score:495},{t:16,score:532},{t:18,score:558},
+      {t:21,score:544},{t:23,score:524},{t:25,score:618},
+      {t:28,score:664},{t:31,score:646},{t:33,score:698},
+      {t:40,score:718},{t:44,score:708},{t:46,score:752},
+      {t:53,score:734},{t:58,score:738},
+    ],
+  },
+  {
+    assessmentName: 'Community Schools Assessment',
+    school: 'San Mateo-Foster City School District',
+    promptLabel: 'Assessment Prompt · Integrated Student Supports',
+    promptText: "In your experience, when does your child feel most supported, welcomed, or \u201cseen\u201d at school? What do staff or the school do that helps your child feel safe and connected?",
+    questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Parent,_Question_1,_Integrated_Student_Supports_(1)_V1%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9QYXJlbnQsX1F1ZXN0aW9uXzEsX0ludGVncmF0ZWRfU3R1ZGVudF9TdXBwb3J0c18oMSlfVjEgKDEpLm1wNCIsImlhdCI6MTc3NjE0MzgyMiwiZXhwIjoyMDkxNTAzODIyfQ.OeXT8Q1eDFWp-WuFqRgFvvBh5dEo94l7Pmn76PHV3tU',
+    responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/parent.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvcGFyZW50Lm1wNCIsImlhdCI6MTc3NjE0Mzg1MywiZXhwIjoyMDkxNTAzODUzfQ.oi2qOje4hvioY9GzaQ-dEYvSt1yjyEI_vCVByX8Arko',
+    respondentLabel: 'Parent',
+    captions: [
+      { t: 0,    text: 'I have two kids in Sunnybrae and they feel safe and seen in different ways.', accent: true },
+      { t: 5,    text: "The older one feels safe and seen when he\u2019s allowed to play soccer, which is his favorite" },
+      { t: 8.8,  text: 'activity in the whole world and he really looks up to the coaches and so they\u2019re a great' },
+      { t: 13.9, text: 'role model for him also around that.' },
+      { t: 16.9, text: "The second one feels safe and seen when he\u2019s given attention and his emotions are validated,", accent: true },
+      { t: 24.4, text: 'which happens by his teacher and all the staff around the school.' },
+      { t: 28,   text: 'So when he gets hurt at the playground, he gets to go to the office and gets a band-aid' },
+      { t: 31.9, text: 'and gets taken care of.' },
+      { t: 33.4, text: 'He enjoys that and that makes him feel safe and seen.' },
+      { t: 36.5, text: 'So thanks to the school for really taking care of both boys that have different personalities.', accent: true },
+    ],
+    chips: [
+      { t: 1,    text: 'Sense of Belonging',    color: '#60a5fa' },
+      { t: 13.9, text: 'Trusted Adult',          color: '#34d399' },
+      { t: 21,   text: 'Emotional Validation',   color: '#a78bfa' },
+      { t: 28,   text: 'Integrated Support',     color: '#fbbf24' },
+      { t: 36.5, text: 'Family Partnership',     color: '#f472b6' },
+    ],
+    words: [
+      {t:0.0,word:'I'},{t:0.2,word:'have'},{t:1.9,word:'two'},{t:2.1,word:'kids'},
+      {t:2.3,word:'in'},{t:2.6,word:'Sunnybrae'},{t:2.9,word:'and'},{t:3.1,word:'they'},
+      {t:3.4,word:'feel'},{t:3.6,word:'safe'},{t:3.9,word:'and'},{t:4.1,word:'seen'},
+      {t:4.1,word:'in'},{t:4.3,word:'different'},{t:4.6,word:'ways'},{t:5.2,word:'The'},
+      {t:5.2,word:'older'},{t:5.4,word:'one'},{t:5.7,word:'feels'},{t:6.0,word:'safe'},
+      {t:6.3,word:'and'},{t:6.6,word:'seen'},{t:6.6,word:'when'},{t:6.8,word:"he's"},
+      {t:7.0,word:'allowed'},{t:7.2,word:'to'},{t:7.6,word:'play'},{t:7.6,word:'soccer'},
+      {t:8.1,word:'which'},{t:8.2,word:'is'},{t:8.3,word:'his'},{t:8.8,word:'favorite'},
+      {t:8.8,word:'activity'},{t:9.3,word:'in'},{t:9.5,word:'the'},{t:9.6,word:'whole'},
+      {t:9.9,word:'world'},{t:10.1,word:'and'},{t:10.6,word:'he'},{t:10.7,word:'really'},
+      {t:11.1,word:'looks'},{t:11.2,word:'up'},{t:11.3,word:'to'},{t:11.4,word:'the'},
+      {t:11.8,word:'coaches'},{t:12.0,word:'and'},{t:13.2,word:'so'},{t:13.4,word:"they're"},
+      {t:13.5,word:'a'},{t:13.7,word:'great'},{t:13.9,word:'role'},{t:14.4,word:'model'},
+      {t:14.5,word:'for'},{t:14.9,word:'him'},{t:15.2,word:'also'},{t:15.6,word:'around'},
+      {t:16.1,word:'that'},{t:16.9,word:'The'},{t:17.1,word:'second'},{t:17.4,word:'one'},
+      {t:17.8,word:'feels'},{t:18.1,word:'safe'},{t:18.4,word:'and'},{t:18.8,word:'seen'},
+      {t:18.8,word:'when'},{t:19.1,word:"he's"},{t:19.3,word:'given'},{t:19.5,word:'attention'},
+      {t:20.1,word:'and'},{t:22.0,word:'his'},{t:22.2,word:'emotions'},{t:22.7,word:'are'},
+      {t:23.7,word:'validated'},{t:24.4,word:'which'},{t:24.6,word:'happens'},{t:25.0,word:'by'},
+      {t:25.3,word:'his'},{t:25.7,word:'teacher'},{t:25.8,word:'and'},{t:26.1,word:'all'},
+      {t:26.2,word:'the'},{t:26.4,word:'staff'},{t:26.6,word:'around'},{t:26.8,word:'the'},
+      {t:27.4,word:'school'},{t:27.4,word:'Also'},{t:28.3,word:'when'},{t:28.5,word:'he'},
+      {t:28.7,word:'gets'},{t:28.9,word:'hurt'},{t:29.1,word:'at'},{t:29.3,word:'the'},
+      {t:29.4,word:'playground'},{t:29.8,word:'he'},{t:30.0,word:'gets'},{t:30.0,word:'to'},
+      {t:30.1,word:'go'},{t:30.2,word:'to'},{t:30.8,word:'the'},{t:30.8,word:'office'},
+      {t:30.8,word:'and'},{t:31.0,word:'gets'},{t:31.3,word:'a'},{t:31.4,word:'band'},
+      {t:31.8,word:'aid'},{t:31.9,word:'and'},{t:32.1,word:'gets'},{t:32.3,word:'taken'},
+      {t:32.5,word:'care'},{t:32.7,word:'of'},{t:33.4,word:'He'},{t:33.6,word:'enjoys'},
+      {t:34.2,word:'that'},{t:34.7,word:'and'},{t:34.9,word:'that'},{t:35.2,word:'makes'},
+      {t:35.2,word:'him'},{t:35.4,word:'feel'},{t:35.7,word:'safe'},{t:35.9,word:'and'},
+      {t:36.2,word:'seen'},{t:36.6,word:'So'},{t:36.9,word:'thanks'},{t:37.0,word:'to'},
+      {t:37.3,word:'the'},{t:37.4,word:'school'},{t:37.6,word:'for'},{t:38.4,word:'really'},
+      {t:39.3,word:'taking'},{t:39.5,word:'care'},{t:39.8,word:'of'},{t:39.9,word:'both'},
+      {t:40.2,word:'boys'},{t:40.5,word:'that'},{t:40.8,word:'have'},{t:41.0,word:'different'},
+      {t:41.3,word:'personalities'},
+    ],
+    scoreTimeline: [
+      {t:0,score:200},{t:1.5,score:285},{t:3.6,score:372},{t:7.6,score:448},
+      {t:11.4,score:524},{t:16,score:574},{t:19.5,score:612},{t:23.7,score:648},
+      {t:28.9,score:692},{t:33,score:718},{t:36.6,score:744},{t:41.3,score:756},
+    ],
+  },
+  {
+    assessmentName: 'Graduate Portrait',
+    school: 'Orange County Office of Education',
+    promptLabel: 'Assessment Prompt \u00b7 Perseverance & Resilience',
+    promptText: "What has been your biggest failure?",
+    questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/LPD%203.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvTFBEIDMubXA0IiwiaWF0IjoxNzc2MTUzOTc3LCJleHAiOjIwOTE1MTM5Nzd9.p_38RfU53Quq0OaoS2J9UAbeieUrYSvXC9uW3M9idpU',
+    responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/failure.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvZmFpbHVyZS5tcDQiLCJpYXQiOjE3NzYxNTQwMzAsImV4cCI6MjA5MTUxNDAzMH0.jyjAaumSYPWORh7WRGWrpSPnnUvvjr75siIwmdpALCc',
+    respondentLabel: 'Student',
+    captions: [
+      { t: 0.7,  text: "When given some thought to this question," },
+      { t: 3.6,  text: "I realized I don\u2019t have as many failures" },
+      { t: 7.2,  text: "as I would have expected to have." },
+      { t: 10.0, text: "And when given the question \u2014 what\u2019s your biggest failure?" },
+      { t: 13.6, text: "I think my answer would be" },
+      { t: 15.7, text: "not taking enough risks to experience true failure.", accent: true },
+      { t: 20.1, text: "I feel like I\u2019ve always been so afraid" },
+      { t: 23.1, text: "of facing someone saying no, or facing failures \u2014" },
+      { t: 27.5, text: "that I tend to kind of stay in my comfort zone" },
+      { t: 33.6, text: "and stand behind the yellow caution tape.", accent: true },
+      { t: 34.7, text: "Not letting myself explore the world," },
+      { t: 38.5, text: "new challenges, new experiences \u2014" },
+      { t: 40.8, text: "because I\u2019m afraid of someone saying no to me.", accent: true },
+      { t: 44.6, text: "I feel like that\u2019s a constant battle" },
+      { t: 46.3, text: "I\u2019m always trying to combat." },
+      { t: 49.3, text: "And I feel like that\u2019s always going to be" },
+      { t: 51.7, text: "present throughout the whole of my entire life.", accent: true },
+      { t: 54.5, text: "And even taking this course was me" },
+      { t: 56.6, text: "stepping out of my comfort zone \u2014" },
+      { t: 58.3, text: "letting myself learn with other people," },
+      { t: 62.8, text: "letting myself expose myself," },
+      { t: 64.4, text: "and talk about my feelings like I am right now.", accent: true },
+      { t: 66.6, text: "So I feel like every day I\u2019m trying" },
+      { t: 71.8, text: "to expand the barriers of my comfort zone." },
+      { t: 74.7, text: "And I\u2019d like to experience a lot more failures", accent: true },
+      { t: 79.9, text: "than I am right now." },
+    ],
+    chips: [
+      { t: 3.6,  text: 'Viewpoint Shift',       color: '#60a5fa' },
+      { t: 15.7, text: 'Value Statement',        color: '#fbbf24' },
+      { t: 27.5, text: 'Figurative Reasoning',   color: '#a78bfa' },
+      { t: 44.6, text: 'Grit',                   color: '#34d399' },
+      { t: 54.5, text: 'Courageous Action',      color: '#f472b6' },
+      { t: 67.3, text: 'Growth Orientation',     color: '#fb923c' },
+      { t: 74.7, text: 'Persistence',            color: '#38bdf8' },
+    ],
+    words: [
+      {t:0.7,word:'When'},{t:1.4,word:'given'},{t:1.6,word:'some'},{t:1.9,word:'thought'},
+      {t:2.2,word:'to'},{t:2.3,word:'this'},{t:3.1,word:'question'},{t:3.6,word:'I'},
+      {t:3.6,word:'realized'},{t:4.0,word:'that'},{t:4.4,word:'I'},{t:4.5,word:"don't"},
+      {t:4.7,word:'have'},{t:4.9,word:'any'},{t:5.4,word:'as'},{t:6.0,word:'much'},
+      {t:6.4,word:'failures'},{t:6.9,word:'as'},{t:7.2,word:'I'},{t:7.3,word:'would'},
+      {t:7.5,word:'have'},{t:7.9,word:'expected'},{t:8.3,word:'to'},{t:8.6,word:'have'},
+      {t:10.0,word:'And'},{t:10.3,word:'when'},{t:10.6,word:'given'},{t:10.8,word:'the'},
+      {t:11.2,word:'question'},{t:12.5,word:"what's"},{t:12.6,word:'your'},{t:12.8,word:'biggest'},
+      {t:13.0,word:'failure'},{t:13.6,word:'I'},{t:14.1,word:'think'},{t:14.2,word:'my'},
+      {t:14.5,word:'answer'},{t:14.6,word:'would'},{t:14.8,word:'be'},{t:15.7,word:'not'},
+      {t:16.0,word:'taking'},{t:16.3,word:'enough'},{t:16.8,word:'risks'},{t:17.2,word:'to'},
+      {t:17.7,word:'experience'},{t:18.3,word:'true'},{t:18.9,word:'failure'},{t:19.2,word:'I'},
+      {t:20.1,word:'feel'},{t:20.4,word:'like'},{t:20.7,word:"I've"},{t:21.2,word:'always'},
+      {t:21.5,word:'been'},{t:21.7,word:'so'},{t:22.1,word:'afraid'},{t:22.4,word:'of'},
+      {t:23.1,word:'facing'},{t:23.8,word:'someone'},{t:24.8,word:'saying'},{t:25.1,word:'no'},
+      {t:25.5,word:'or'},{t:25.7,word:'facing'},{t:26.0,word:'failures'},{t:26.4,word:'that'},
+      {t:27.5,word:'I'},{t:28.0,word:'tend'},{t:28.2,word:'to'},{t:28.8,word:'kind'},
+      {t:29.3,word:'of'},{t:29.6,word:'stay'},{t:29.8,word:'in'},{t:30.0,word:'my'},
+      {t:30.3,word:'comfort'},{t:30.5,word:'zone'},{t:30.9,word:'and'},{t:31.2,word:'stand'},
+      {t:31.5,word:'behind'},{t:32.2,word:'the'},{t:33.6,word:'yellow'},{t:33.9,word:'caution'},
+      {t:34.3,word:'tape'},{t:34.5,word:'and'},{t:34.7,word:'not'},{t:34.9,word:'let'},
+      {t:35.7,word:'myself'},{t:36.3,word:'explore'},{t:37.1,word:'the'},{t:37.5,word:'world'},
+      {t:37.6,word:'or'},{t:37.9,word:'explore'},{t:38.5,word:'new'},{t:39.5,word:'challenges'},
+      {t:40.1,word:'new'},{t:40.3,word:'experiences'},{t:40.8,word:'because'},{t:41.4,word:"I'm"},
+      {t:41.9,word:'afraid'},{t:42.2,word:'of'},{t:42.8,word:'someone'},{t:43.0,word:'saying'},
+      {t:43.2,word:'no'},{t:43.4,word:'to'},{t:43.6,word:'me'},{t:43.9,word:'I'},
+      {t:44.6,word:'feel'},{t:44.8,word:'like'},{t:45.0,word:"that's"},{t:45.2,word:'a'},
+      {t:45.5,word:'constant'},{t:45.6,word:'battle'},{t:46.0,word:'that'},{t:46.3,word:"I'm"},
+      {t:46.9,word:'always'},{t:47.2,word:'trying'},{t:47.5,word:'to'},{t:48.5,word:'combat'},
+      {t:48.9,word:'and'},{t:49.3,word:'I'},{t:49.5,word:'feel'},{t:49.5,word:'like'},
+      {t:49.7,word:"that's"},{t:49.9,word:'always'},{t:50.2,word:'going'},{t:50.3,word:'to'},
+      {t:50.4,word:'be'},{t:50.6,word:'something'},{t:50.8,word:"that's"},{t:51.1,word:'going'},
+      {t:51.2,word:'to'},{t:51.4,word:'be'},{t:51.7,word:'present'},{t:52.0,word:'throughout'},
+      {t:52.3,word:'the'},{t:52.6,word:'whole'},{t:52.9,word:'of'},{t:53.1,word:'my'},
+      {t:53.3,word:'entire'},{t:53.6,word:'life'},{t:54.5,word:'And'},{t:55.0,word:'even'},
+      {t:55.1,word:'taking'},{t:55.3,word:'this'},{t:55.6,word:'course'},{t:55.9,word:'was'},
+      {t:56.1,word:'me'},{t:56.4,word:'kind'},{t:56.5,word:'of'},{t:56.6,word:'stepping'},
+      {t:56.8,word:'out'},{t:56.9,word:'of'},{t:57.0,word:'my'},{t:57.3,word:'comfort'},
+      {t:57.5,word:'zone'},{t:57.8,word:'and'},{t:58.3,word:'letting'},{t:58.5,word:'myself'},
+      {t:59.0,word:'learn'},{t:59.3,word:'with'},{t:59.5,word:'other'},{t:59.7,word:'people'},
+      {t:60.1,word:'and'},{t:60.3,word:'letting'},{t:60.9,word:'myself'},{t:61.5,word:'kind'},
+      {t:62.0,word:'of'},{t:62.8,word:'expose'},{t:63.2,word:'myself'},{t:63.8,word:'and'},
+      {t:64.4,word:'talk'},{t:64.8,word:'about'},{t:64.9,word:'my'},{t:65.5,word:'feelings'},
+      {t:65.5,word:'like'},{t:65.7,word:'I'},{t:65.9,word:'am'},{t:66.0,word:'right'},
+      {t:66.2,word:'now'},{t:66.6,word:'So'},{t:67.3,word:'I'},{t:67.5,word:'feel'},
+      {t:67.7,word:'like'},{t:68.9,word:'every'},{t:69.5,word:'day'},{t:69.7,word:"I'm"},
+      {t:69.9,word:'trying'},{t:70.1,word:'to'},{t:71.8,word:'expand'},{t:71.8,word:'the'},
+      {t:72.4,word:'barriers'},{t:72.4,word:'of'},{t:72.7,word:'my'},{t:73.0,word:'comfort'},
+      {t:73.3,word:'zone'},{t:74.3,word:'and'},{t:74.7,word:'I'},{t:76.9,word:'like'},
+      {t:77.9,word:'to'},{t:78.1,word:'experience'},{t:78.9,word:'a'},{t:79.3,word:'lot'},
+      {t:79.4,word:'more'},{t:79.6,word:'failures'},{t:79.9,word:'than'},{t:80.1,word:'I'},
+      {t:80.2,word:'am'},{t:80.5,word:'right'},{t:80.9,word:'now'},
+    ],
+    scoreTimeline: [
+      {t:0,score:200},{t:2,score:308},{t:3.6,score:388},{t:10,score:458},
+      {t:15.7,score:504},{t:20.1,score:548},{t:27.5,score:592},{t:33.6,score:634},
+      {t:44.6,score:672},{t:54.5,score:710},{t:63.2,score:736},{t:71.8,score:756},
+      {t:78.1,score:774},{t:80.9,score:768},
+    ],
   },
 ];
 
@@ -552,6 +875,11 @@ function VideoAskEmbed({ url, label, onOpen, height = 200 }: { url: string; labe
 
 export default function PilotClient() {
   const [formOpen, setFormOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const [demoForm, setDemoForm] = useState({ name: '', email: '', org: '', phone: '', notes: '' });
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [demoSuccess, setDemoSuccess] = useState(false);
+  const [demoError, setDemoError] = useState('');
   const [step, setStep] = useState<1|2|3|4|5|6|7>(1);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
@@ -567,6 +895,25 @@ export default function PilotClient() {
   const [lpPicks, setLpPicks] = useState<Record<string, string[]>>({});       // littles question picks
   const [lpAttrPicks, setLpAttrPicks] = useState<Record<string, string[]>>({}); // el/sec attribute picks
   const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [panelIndex, setPanelIndex] = useState(0);
+  const [simShown, setSimShown] = useState(false);
+  const [promptPaused, setPromptPaused] = useState(false);
+  const [responsePaused, setResponsePaused] = useState(false);
+  const [responseEnded, setResponseEnded] = useState(false);
+  const [promptHovered, setPromptHovered] = useState(false);
+  const [responseHovered, setResponseHovered] = useState(false);
+  const [captionIdx, setCaptionIdx] = useState(0);
+  const [chipIdx, setChipIdx] = useState(-1);
+  const [promptCurrentTime, setPromptCurrentTime] = useState(0);
+  const [promptDuration, setPromptDuration] = useState(0);
+  const [responseCurrentTime, setResponseCurrentTime] = useState(0);
+  const [responseDuration, setResponseDuration] = useState(0);
+  const [wordIdx, setWordIdx] = useState(-1);
+  const [currentScore, setCurrentScore] = useState(DEMO_PANELS[0].scoreTimeline[0].score);
+  const promptVideoRef = useRef<HTMLVideoElement>(null);
+  const responseVideoRef = useRef<HTMLVideoElement>(null);
+  const panel = DEMO_PANELS[panelIndex];
   const [insightPanel, setInsightPanel] = useState(0);
   const [insightPaused, setInsightPaused] = useState(false);
   const [demoPanel, setDemoPanel] = useState(0);
@@ -590,6 +937,26 @@ export default function PilotClient() {
     scrollBodyRef.current?.scrollTo({ top: 0, behavior: 'instant' });
   }, [step]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('start') === '1') {
+      openForm();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    setCaptionIdx(0);
+    setChipIdx(-1);
+    setWordIdx(-1);
+    setResponseEnded(false);
+    setSimShown(false);
+    setPromptPaused(false);
+    setPromptCurrentTime(0);
+    setResponsePaused(false);
+    setResponseCurrentTime(0);
+    setCurrentScore(200);
+  }, [panelIndex]);
+
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
     setForm(prev => ({ ...prev, [field]: value }));
   }
@@ -600,6 +967,74 @@ export default function PilotClient() {
     setForm(EMPTY_FORM);
   }
 
+  function buildOfferings() {
+    if (form.assessmentType === 'community-schools') {
+      const sections = getCsSections();
+      const csSelections: Record<string, unknown> = {};
+      for (const { key } of sections) {
+        const mode = csMode[key] ?? 'standard';
+        if (mode === 'write-own') {
+          csSelections[key] = { mode };
+        } else {
+          const questions = ([1, 2, 3, 4] as const).map(p => {
+            const qId = mode === 'custom' ? csPicks[key]?.[p] : undefined;
+            const q = qId
+              ? CS_QUESTIONS.find(q => q.id === qId)
+              : CS_QUESTIONS.find(q => q.age === key && q.p === p && q.def);
+            return q ? { pillar: p, pillarName: PILLARS[p], questionId: q.id, text: q.text } : null;
+          }).filter(Boolean);
+          csSelections[key] = { mode, questions };
+        }
+      }
+      return { csSelections };
+    }
+
+    if (form.assessmentType === 'behavioral-health') {
+      const screeners = getBHScreeners();
+      return {
+        bhSelections: {
+          assessments: screeners
+            .filter(s => form.bhSelectedAssessments.includes(s.id))
+            .map(s => ({ id: s.id, name: s.name, grades: s.grades })),
+          wantsCustom: form.bhWantsCustom,
+        },
+      };
+    }
+
+    if (form.assessmentType === 'learner-portrait') {
+      const assessments = getLPAssessments();
+      const lpSelections: Record<string, unknown> = {};
+      for (const a of assessments) {
+        const mode = lpMode[a.id] ?? 'standard';
+        if (mode === 'write-own') {
+          lpSelections[a.id] = { mode, assessmentName: a.name };
+        } else if (a.id === 'lp-littles') {
+          const picks = mode === 'custom' ? (lpPicks[a.id] ?? []) : [];
+          const qs = mode === 'custom'
+            ? picks.map(qId => { const q = LP_QUESTIONS.find(q => q.id === qId); return q ? { attribute: q.attribute, questionId: qId, text: q.prompt } : null; }).filter(Boolean)
+            : LP_QUESTIONS.filter(q => q.band === a.id && q.def).map(q => ({ attribute: q.attribute, questionId: q.id, text: q.prompt }));
+          lpSelections[a.id] = { mode, assessmentName: a.name, questions: qs };
+        } else {
+          const attrPicks = mode === 'custom' ? (lpAttrPicks[a.id] ?? []) : [];
+          const qPicks   = mode === 'custom' ? (lpQPicks[a.id] ?? [])   : [];
+          const attributes = attrPicks.map(attrId => LP_ATTRIBUTES.find(la => la.id === attrId)?.name ?? attrId);
+          const questions = mode === 'custom'
+            ? qPicks.map(qId => {
+                const q = LP_QUESTIONS.find(q => q.id === qId);
+                if (!q) return null;
+                const attrName = attrPicks.map(aid => LP_ATTRIBUTES.find(la => la.id === aid)).find(la => la?.questionIds.includes(qId))?.name ?? q.attribute;
+                return { attribute: attrName, questionId: qId, text: q.prompt };
+              }).filter(Boolean)
+            : LP_QUESTIONS.filter(q => q.band === a.id && q.def).map(q => ({ attribute: q.attribute, questionId: q.id, text: q.prompt }));
+          lpSelections[a.id] = { mode, assessmentName: a.name, attributes, questions };
+        }
+      }
+      return { lpSelections };
+    }
+
+    return {};
+  }
+
   async function submit() {
     setSubmitting(true);
     setError('');
@@ -607,7 +1042,7 @@ export default function PilotClient() {
       const res = await fetch('/api/pilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ...buildOfferings() }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -700,26 +1135,48 @@ export default function PilotClient() {
   return (
     <div className="min-h-screen font-sans" style={{ background: 'white' }}>
 
+      {/* ── Floating CTA tab ─────────────────────────────────────────────────── */}
+      {!formOpen && (
+        <button
+          onClick={() => window.open('/pilot?start=1', '_blank')}
+          aria-label="Start Today"
+          style={{
+            position: 'fixed',
+            right: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 25,
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            rotate: '180deg',
+            background: 'linear-gradient(180deg, #e07b54 0%, #cc6648 35%, #9a4a80 100%)',
+            color: 'white',
+            fontWeight: 800,
+            fontSize: 15,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '28px 16px',
+            borderRadius: '10px 0 0 10px',
+            boxShadow: '-4px 0 24px rgba(224,123,84,0.55), -2px 0 8px rgba(0,0,0,0.15)',
+            border: 'none',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.paddingRight = '20px'; e.currentTarget.style.opacity = '0.92'; }}
+          onMouseLeave={e => { e.currentTarget.style.paddingRight = '16px'; e.currentTarget.style.opacity = '1'; }}
+        >
+          Start Today
+        </button>
+      )}
+
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="px-6 py-1.5 grid items-center" style={{ gridTemplateColumns: '1fr auto 1fr', background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
-        {/* Left: logo */}
-        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer" className="justify-self-start">
+      <nav className="px-6 py-1.5 flex items-center justify-between" style={{ background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
+        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54 }} />
         </a>
-        {/* Center: CTA */}
-        <button
-          onClick={openForm}
-          className="text-sm font-bold px-6 py-2 rounded-xl transition-all hover:opacity-90 hover:scale-[1.03] shadow-lg"
-          style={{ background: 'linear-gradient(135deg, #e07b54 0%, #cc6648 40%, #9a4a80 100%)', color: 'white', letterSpacing: '0.01em', boxShadow: '0 2px 12px rgba(224,123,84,0.45)' }}
-        >
-          Build a Custom Pilot
-        </button>
-        {/* Right: badge */}
-        <div className="justify-self-end">
-          <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
-            Pilot Program
-          </span>
-        </div>
+        <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
+          Pilot Program
+        </span>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
@@ -746,8 +1203,19 @@ export default function PilotClient() {
           <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
             A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
           </p>
+          {/* CTA buttons */}
+          <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
+            <button
+              onClick={() => setDemoOpen(true)}
+              style={{ background: 'white', color: '#1a2744', border: 'none', borderRadius: 10, padding: '13px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.01em', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.92')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >
+              Request a Demo
+            </button>
+          </div>
           {/* Frosted stat chips */}
-          <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
+          <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             {[['No app download', true], ['Results in days', true], ['English & Spanish', true]].map(([label]) => (
               <div key={label as string} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
                 <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
@@ -790,51 +1258,355 @@ export default function PilotClient() {
         </div>
       </section>
 
-      {/* ── What makes this different ────────────────────────────────────────── */}
-      <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5' }}>What makes this different</h2>
-          <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
-            Surveys tell you what students select.
-          </p>
-          <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
-            We measure what they actually say.
-          </p>
-          <p className="text-base leading-relaxed text-gray-500 mb-10">
-            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how respondents are actually experiencing your schools and demonstrating future-ready competencies.
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              ['200–800', 'rubric-aligned score'],
-              ['< 1 week', 'time to first insight'],
-              ['0 PII needed', 'privacy-first by design'],
-            ].map(([val, label]) => (
-              <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
-                <p className="text-xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
-                <p className="text-xs leading-tight text-gray-400">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── See it in action ─────────────────────────────────────────────────── */}
-      <section className="py-20" style={{ background: '#f4f7fc' }}>
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="mb-10 text-center">
+      <section className="py-16" style={{ background: '#f4f7fc' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-8 text-center">
             <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
             <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PREVIEWS.map(({ label, org, url }) => (
-              <div key={url} className="rounded-2xl overflow-hidden flex flex-col bg-white shadow-sm" style={{ border: '1px solid #e8edf5' }}>
-                <VideoAskEmbed url={url} label={label} onOpen={() => setPreviewModal({ label, url })} height={220} />
-                <div className="px-5 py-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-0.5">{label}</p>
-                  <p className="text-xs text-gray-400">{org}</p>
+
+          {/* Fake player shell */}
+          <div style={{ background: '#0d1b2e', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.28)' }}>
+
+            {/* Top bar */}
+            <div style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ background: '#1a3d6b', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
+                  Impacter Pathway
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{panel.assessmentName}</span>
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
+            </div>
+
+            {/* Two-panel body */}
+            <div style={{ display: 'flex', height: 420 }}>
+
+              {/* ── Left: question video ── */}
+              <div
+                style={{ flex: '0 0 50%', position: 'relative', background: '#09111e', overflow: 'hidden', cursor: 'pointer' }}
+                onMouseEnter={() => setPromptHovered(true)}
+                onMouseLeave={() => setPromptHovered(false)}
+                onClick={() => {
+                  const v = promptVideoRef.current;
+                  if (!v) return;
+                  if (v.paused) { v.play(); setPromptPaused(false); }
+                  else { v.pause(); setPromptPaused(true); }
+                }}
+              >
+                <video
+                  key={panel.questionUrl}
+                  ref={promptVideoRef}
+                  src={panel.questionUrl}
+                  autoPlay
+                  playsInline
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  onLoadedMetadata={() => setPromptDuration(promptVideoRef.current?.duration ?? 0)}
+                  onTimeUpdate={() => setPromptCurrentTime(promptVideoRef.current?.currentTime ?? 0)}
+                  onEnded={() => setPromptPaused(true)}
+                />
+                {/* Play/pause indicator */}
+                {(promptPaused || promptHovered) && (
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 54, height: 54, borderRadius: '50%', background: promptPaused ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 3, pointerEvents: 'none' }}>
+                    {promptPaused
+                      ? <svg width="22" height="22" viewBox="0 0 24 24" fill="#1a2744"><path d="M8 5v14l11-7z"/></svg>
+                      : <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                    }
+                  </div>
+                )}
+                {/* Question overlay at bottom */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 26px', zIndex: 2, pointerEvents: 'none' }}>
+                  <p style={{ color: '#60a5fa', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>
+                    {panel.promptLabel}
+                  </p>
+                  <p style={{ color: 'white', fontSize: 14, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
+                    &ldquo;{panel.promptText}&rdquo;
+                  </p>
+                </div>
+                {/* Prompt scrubber */}
+                <div
+                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 18, zIndex: 5, cursor: 'pointer' }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    const v = promptVideoRef.current;
+                    if (v && promptDuration) v.currentTime = pct * promptDuration;
+                  }}
+                >
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.18)' }}>
+                    <div style={{ height: '100%', background: 'rgba(255,255,255,0.7)', width: `${promptDuration ? (promptCurrentTime / promptDuration) * 100 : 0}%`, transition: 'width 0.1s linear' }} />
+                  </div>
                 </div>
               </div>
-            ))}
+
+              {/* ── Right: response panel ── */}
+              <div style={{ flex: '1', background: '#0d1b2e', padding: '36px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0, position: 'relative', overflow: 'hidden' }}>
+                {!simShown ? (
+                  <>
+                    <p style={{ color: 'white', fontSize: 18, fontWeight: 600, margin: '0 0 24px' }}>
+                      How would you like to answer?
+                    </p>
+
+                    {/* Response mode buttons */}
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                      {([
+                        { label: 'VIDEO', icon: (
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3V9z"/>
+                          </svg>
+                        )},
+                        { label: 'AUDIO', icon: (
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="22"/>
+                          </svg>
+                        )},
+                        { label: 'TEXT', icon: (
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        )},
+                      ] as const).map(({ label, icon }) => (
+                        <button key={label} style={{ flex: 1, background: '#1a3558', border: '1.5px solid #2a4f7a', borderRadius: 10, padding: '16px 8px 12px', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, transition: 'background 0.15s' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#1e4068')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '#1a3558')}
+                        >
+                          {icon}
+                          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Practice link */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 28 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/>
+                      </svg>
+                      <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>Practice before sending</span>
+                    </div>
+
+                    {/* Simulate button */}
+                    <button
+                      onClick={() => setSimShown(true)}
+                      style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: 'white', border: 'none', borderRadius: 10, padding: '16px 24px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 4px 20px rgba(34,197,94,0.35)', letterSpacing: '0.01em' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      Simulate a {panel.respondentLabel} Response
+                    </button>
+                  </>
+                ) : (
+                  /* ── Student response panel — fills full right panel ── */
+                  <div style={{ position: 'absolute', inset: 0, background: '#09111e', display: 'flex', flexDirection: 'column' }}>
+                    {/* Label bar */}
+                    <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                        {panel.respondentLabel} Response
+                      </p>
+                      <button
+                        onClick={() => setSimShown(false)}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                      >
+                        ← Back
+                      </button>
+                    </div>
+                    {/* Video fills remaining space */}
+                    <div
+                      style={{ flex: 1, position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+                      onMouseEnter={() => setResponseHovered(true)}
+                      onMouseLeave={() => setResponseHovered(false)}
+                      onClick={() => {
+                        const v = responseVideoRef.current;
+                        if (!v) return;
+                        if (v.paused) { v.play(); setResponsePaused(false); }
+                        else { v.pause(); setResponsePaused(true); }
+                      }}
+                    >
+                      <style>{`@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes chipIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}@keyframes wordPop{0%{opacity:0;transform:scale(0.65)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}@keyframes endIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}`}</style>
+                      <video
+                        key={panel.responseUrl}
+                        ref={responseVideoRef}
+                        src={panel.responseUrl}
+                        autoPlay
+                        playsInline
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                        onLoadedMetadata={() => setResponseDuration(responseVideoRef.current?.duration ?? 0)}
+                        onEnded={() => { setResponsePaused(true); setResponseEnded(true); }}
+                        onTimeUpdate={() => {
+                          const t = responseVideoRef.current?.currentTime ?? 0;
+                          setResponseCurrentTime(t);
+                          setCurrentScore(interpolateScore(panel.scoreTimeline, t));
+                          if (panel.captions.length) {
+                            const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
+                            setCaptionIdx(idx);
+                          }
+                          if (panel.chips.length) {
+                            const cIdx = panel.chips.reduce((acc: number, c, i) => (c.t <= t ? i : acc), -1);
+                            if (cIdx !== chipIdx) setChipIdx(cIdx);
+                          }
+                          if (panel.words.length) {
+                            const wIdx = panel.words.reduce((acc: number, w, i) => (w.t <= t ? i : acc), -1);
+                            if (wIdx !== wordIdx) setWordIdx(wIdx);
+                          }
+                        }}
+                      />
+                      {/* Play/pause indicator */}
+                      {(responsePaused || responseHovered) && !responseEnded && (
+                        <div style={{ position: 'absolute', top: '50%', left: '40%', transform: 'translate(-50%,-50%)', width: 54, height: 54, borderRadius: '50%', background: responsePaused ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 3, pointerEvents: 'none' }}>
+                          {responsePaused
+                            ? <svg width="22" height="22" viewBox="0 0 24 24" fill="#1a2744"><path d="M8 5v14l11-7z"/></svg>
+                            : <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                          }
+                        </div>
+                      )}
+                      {/* Insight chips — top-right */}
+                      {chipIdx >= 0 && (
+                        <div
+                          key={`chip-${chipIdx}`}
+                          style={{ position: 'absolute', top: 14, right: 14, zIndex: 3, animation: 'chipIn 0.3s ease both' }}
+                        >
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: 'rgba(0,0,0,0.78)',
+                            border: `1.5px solid ${panel.chips[chipIdx].color}`,
+                            backdropFilter: 'blur(8px)',
+                            color: panel.chips[chipIdx].color,
+                            borderRadius: 20, padding: '5px 11px',
+                            fontSize: 11, fontWeight: 700,
+                            letterSpacing: '0.05em', textTransform: 'uppercase',
+                            boxShadow: `0 2px 12px rgba(0,0,0,0.5), 0 0 10px ${panel.chips[chipIdx].color}40`,
+                          }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: panel.chips[chipIdx].color, flexShrink: 0 }} />
+                            {panel.chips[chipIdx].text}
+                          </span>
+                        </div>
+                      )}
+                      {/* Score dial — middle right */}
+                      {!responseEnded && (
+                        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, pointerEvents: 'none' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Score</span>
+                          <ScoreDial score={currentScore} />
+                        </div>
+                      )}
+                      {/* Green word captions */}
+                      {!responseEnded && panel.words.length > 0 && captionIdx >= 0 && (() => {
+                        const captionStart = panel.captions[captionIdx]?.t ?? 0;
+                        const captionEnd = captionIdx + 1 < panel.captions.length ? panel.captions[captionIdx + 1].t : Infinity;
+                        const captionWords = panel.words
+                          .map((w, origIdx) => ({ ...w, origIdx }))
+                          .filter(w => w.t >= captionStart && w.t < captionEnd);
+                        if (!captionWords.length) return null;
+                        return (
+                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 110, pointerEvents: 'none', padding: '0 16px' }}>
+                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)' }}>
+                              {captionWords.map((w, i) => {
+                                const isCurrent = w.origIdx === wordIdx;
+                                const isSpoken = w.t <= responseCurrentTime;
+                                return (
+                                  <span key={i} style={{
+                                    color: isCurrent ? '#4ade80' : isSpoken ? '#86efac' : 'rgba(255,255,255,0.28)',
+                                    fontWeight: isCurrent ? 700 : isSpoken ? 500 : 400,
+                                    marginRight: '0.28em',
+                                    transition: 'color 0.12s',
+                                    display: 'inline',
+                                  }}>
+                                    {w.word}
+                                  </span>
+                                );
+                              })}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                      {/* Caption pill — shown only if no word data */}
+                      {!responseEnded && panel.words.length === 0 && panel.captions.length > 0 && (
+                        <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', padding: '0 20px', animation: 'captionIn 0.25s ease both' }}>
+                          <span style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: panel.captions[captionIdx]?.accent ? 700 : 500, color: panel.captions[captionIdx]?.accent ? '#86efac' : 'rgba(255,255,255,0.92)', lineHeight: 1.5, textAlign: 'center' }}>
+                            {panel.captions[captionIdx]?.text}
+                          </span>
+                        </div>
+                      )}
+                      {/* Next Question button */}
+                      {!responseEnded && (
+                        <button
+                          onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
+                          style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em', zIndex: 3 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.8)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.65)')}
+                        >
+                          Next Question
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                        </button>
+                      )}
+                      {/* Response scrubber */}
+                      {!responseEnded && (
+                        <div
+                          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 18, zIndex: 5, cursor: 'pointer' }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const pct = (e.clientX - rect.left) / rect.width;
+                            const v = responseVideoRef.current;
+                            if (v && responseDuration) v.currentTime = pct * responseDuration;
+                          }}
+                        >
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
+                            <div style={{ height: '100%', background: 'rgba(255,255,255,0.65)', width: `${responseDuration ? (responseCurrentTime / responseDuration) * 100 : 0}%`, transition: 'width 0.1s linear' }} />
+                          </div>
+                        </div>
+                      )}
+                      {/* ── End screen ── */}
+                      {responseEnded && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(9,17,30,0.94)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: 24, animation: 'endIn 0.4s ease both' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' }}>Final Score</p>
+                          <ScoreDial score={currentScore} size="lg" />
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', marginTop: 18, maxWidth: 260 }}>
+                            {panel.chips.map((chip, i) => (
+                              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(0,0,0,0.5)', border: `1.5px solid ${chip.color}`, color: chip.color, borderRadius: 16, padding: '4px 10px', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: chip.color, flexShrink: 0 }} />
+                                {chip.text}
+                              </span>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+                            <button
+                              onClick={() => { setResponseEnded(false); setResponsePaused(false); setWordIdx(-1); setCaptionIdx(0); setCurrentScore(panel.scoreTimeline[0].score); const v = responseVideoRef.current; if (v) { v.currentTime = 0; v.play(); } }}
+                              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.18)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.01em' }}>
+                              ↺ Replay
+                            </button>
+                            <button
+                              onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
+                              style={{ background: 'rgba(255,255,255,0.11)', border: '1px solid rgba(255,255,255,0.18)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em' }}>
+                              Next Question
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Panel navigation tabs ── */}
+            <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              {DEMO_PANELS.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPanelIndex(i)}
+                  style={{ flex: 1, padding: '11px 10px 10px', background: i === panelIndex ? 'rgba(255,255,255,0.06)' : 'transparent', border: 'none', borderTop: `2px solid ${i === panelIndex ? 'rgba(255,255,255,0.5)' : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, transition: 'background 0.15s' }}
+                  onMouseEnter={e => { if (i !== panelIndex) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                  onMouseLeave={e => { if (i !== panelIndex) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span style={{ color: i === panelIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.38)', fontSize: 11, fontWeight: 700, letterSpacing: '0.01em', transition: 'color 0.15s' }}>{p.assessmentName}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9, letterSpacing: '0.01em' }}>{p.school}</span>
+                </button>
+              ))}
+            </div>
+
           </div>
         </div>
       </section>
@@ -1299,24 +2071,80 @@ export default function PilotClient() {
         </div>
       )}
 
-      {/* ── CTA ──────────────────────────────────────────────────────────────── */}
-      {!formOpen && (
-        <section className="py-24 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #3a62aa 18%, #4a6ab8 36%, #6a5ab0 54%, #9a4a80 68%, #cc6648 84%, #bf5c3c 100%)' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 70% 40%, rgba(255,255,255,0.07) 0%, transparent 55%)', pointerEvents: 'none' }} />
-          <div className="relative">
-            <h2 className="text-3xl font-bold text-white mb-3">Interested in piloting?</h2>
-            <p className="mb-8 text-base max-w-md mx-auto" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Tell us about what you&apos;re looking for and we&apos;ll have everything configured in a few days.
-            </p>
-            <button
-              onClick={openForm}
-              className="font-semibold px-8 py-3 rounded-xl text-sm hover:opacity-90 transition-opacity shadow-lg"
-              style={{ background: 'white', color: '#1a2744' }}
-            >
-              Begin
-            </button>
+      {/* ── Request a Demo modal ─────────────────────────────────────────────── */}
+      {demoOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget) { setDemoOpen(false); setDemoSuccess(false); setDemoError(''); setDemoForm({ name:'',email:'',org:'',phone:'',notes:'' }); } }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.6)', backdropFilter: 'blur(6px)' }} />
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, padding: '40px 36px', width: '100%', maxWidth: 480, boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+            <button onClick={() => { setDemoOpen(false); setDemoSuccess(false); setDemoError(''); setDemoForm({ name:'',email:'',org:'',phone:'',notes:'' }); }}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20, lineHeight: 1 }}>✕</button>
+
+            {demoSuccess ? (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <svg width="24" height="24" fill="none" stroke="#065f46" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a2744', margin: '0 0 8px' }}>You&apos;re on the list!</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>We&apos;ll reach out within 1–2 business days to schedule a time. Check your inbox for a confirmation.</p>
+              </div>
+            ) : (
+              <>
+                <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1a2744', margin: '0 0 6px', letterSpacing: '-0.3px' }}>Request a Demo</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 28px', lineHeight: 1.5 }}>Leave your info and we&apos;ll reach out to set up a time.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {([
+                    { key: 'name', label: 'Full Name', placeholder: 'Jane Smith', required: true },
+                    { key: 'email', label: 'Work Email', placeholder: 'jane@district.org', required: true },
+                    { key: 'org', label: 'Organization', placeholder: 'School or district name', required: true },
+                    { key: 'phone', label: 'Phone (optional)', placeholder: '(555) 000-0000', required: false },
+                  ] as const).map(({ key, label, placeholder, required }) => (
+                    <div key={key}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</label>
+                      <input
+                        type={key === 'email' ? 'email' : 'text'}
+                        placeholder={placeholder}
+                        value={demoForm[key]}
+                        onChange={e => setDemoForm(f => ({ ...f, [key]: e.target.value }))}
+                        style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#111827', outline: 'none', boxSizing: 'border-box' }}
+                        onFocus={e => (e.target.style.borderColor = '#4a6fa5')}
+                        onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Anything you&apos;d like us to know? (optional)</label>
+                    <textarea
+                      placeholder="Tell us a bit about what you're looking for..."
+                      value={demoForm.notes}
+                      onChange={e => setDemoForm(f => ({ ...f, notes: e.target.value }))}
+                      rows={3}
+                      style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#111827', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                      onFocus={e => (e.target.style.borderColor = '#4a6fa5')}
+                      onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
+                    />
+                  </div>
+                  {demoError && <p style={{ fontSize: 13, color: '#dc2626', margin: 0 }}>{demoError}</p>}
+                  <button
+                    disabled={demoSubmitting}
+                    onClick={async () => {
+                      if (!demoForm.name || !demoForm.email || !demoForm.org) { setDemoError('Please fill in the required fields.'); return; }
+                      setDemoError(''); setDemoSubmitting(true);
+                      try {
+                        const res = await fetch('/api/demo-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(demoForm) });
+                        if (!res.ok) throw new Error();
+                        setDemoSuccess(true);
+                      } catch { setDemoError('Something went wrong. Please try again.'); }
+                      finally { setDemoSubmitting(false); }
+                    }}
+                    style={{ background: 'linear-gradient(135deg, #1a2744 0%, #2d4a8a 100%)', color: 'white', border: 'none', borderRadius: 10, padding: '14px', fontSize: 15, fontWeight: 700, cursor: demoSubmitting ? 'wait' : 'pointer', opacity: demoSubmitting ? 0.7 : 1, letterSpacing: '-0.01em' }}>
+                    {demoSubmitting ? 'Sending…' : 'Request a Demo →'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        </section>
+        </div>
       )}
 
       {/* ── Intake Form (full-screen overlay) ────────────────────────────────── */}
@@ -2459,6 +3287,34 @@ export default function PilotClient() {
           </div>{/* end scrollable body */}
         </div>
       )}
+
+      {/* ── What makes this different ────────────────────────────────────────── */}
+      <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5' }}>What makes this different</h2>
+          <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
+            Surveys tell you what students select.
+          </p>
+          <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
+            We measure what they actually say.
+          </p>
+          <p className="text-base leading-relaxed text-gray-500 mb-10">
+            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how respondents are actually experiencing your schools and demonstrating future-ready competencies.
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              ['200–800', 'rubric-aligned score'],
+              ['< 1 week', 'time to first insight'],
+              ['0 PII needed', 'privacy-first by design'],
+            ].map(([val, label]) => (
+              <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
+                <p className="text-xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
+                <p className="text-xs leading-tight text-gray-400">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <footer className="py-8 text-center" style={{ background: '#1a2744', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
