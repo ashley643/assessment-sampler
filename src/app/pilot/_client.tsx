@@ -913,7 +913,7 @@ export default function PilotClient() {
               <div style={{ flex: '0 0 62%', position: 'relative', background: '#09111e', overflow: 'hidden' }}>
                 <video
                   ref={promptVideoRef}
-                  src="/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4"
+                  src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvRWxlbV9NaWRkbGVfMV9SZWZsZWN0aXZlX0dyb3d0aF9CSFNfVjMubXA0IiwiaWF0IjoxNzc2MTQzMTE1LCJleHAiOjIwOTE1MDMxMTV9.cM1GzrU1TGx_-P0XX-IQYEPzVDI2v-9I7wR3W5IyJd0"
                   autoPlay
                   playsInline
                   style={{ width: '100%', height: '100%', minHeight: 400, objectFit: 'cover', display: 'block' }}
@@ -1012,10 +1012,13 @@ export default function PilotClient() {
                     <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
                       Student Response
                     </p>
-                    {/* STUDENT RESPONSE VIDEO GOES HERE */}
-                    <div style={{ background: '#09111e', borderRadius: 10, aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>response video</span>
-                    </div>
+                    <video
+                      src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM"
+                      autoPlay
+                      playsInline
+                      controls
+                      style={{ width: '100%', borderRadius: 10, display: 'block', background: '#09111e' }}
+                    />
                     <button
                       onClick={() => setSimShown(false)}
                       style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 12, cursor: 'pointer', textAlign: 'left', padding: 0 }}
