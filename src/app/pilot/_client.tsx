@@ -619,27 +619,27 @@ const CS_PREVIEWS: Record<string, { videoUrl: string; question: string; pillar: 
   'Elementary School': {
     videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA_Elem_Question_1_Integrated_Student_Supports_V3%20(1)%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBX0VsZW1fUXVlc3Rpb25fMV9JbnRlZ3JhdGVkX1N0dWRlbnRfU3VwcG9ydHNfVjMgKDEpICgxKS5tcDQiLCJpYXQiOjE3NzYxNjAxMzMsImV4cCI6MjA5MTUyMDEzM30.jeeXzp16Mv-6FWmJVhHSUq6ZhAmBdMGOFYMPa2v2yfg',
     pillar: 'Integrated Student Supports',
-    question: 'Think about a time when you needed help at school — like with homework or during a tough day. Who helped you? And what did they do to make you feel better?',
+    question: 'Think of a time someone at school helped you. Who was it, and what did they do?',
   },
   'Middle School': {
     videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Middle,_Question_1__Integrated_Student_Supports_V2.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9NaWRkbGUsX1F1ZXN0aW9uXzFfX0ludGVncmF0ZWRfU3R1ZGVudF9TdXBwb3J0c19WMi5tcDQiLCJpYXQiOjE3NzYxNTg2MDYsImV4cCI6MjA5MTUxODYwNn0._1nXbKzqt3FFbKkG7bf5qKYOomqadL1Dyykojo4-P3E',
     pillar: 'Integrated Student Supports',
-    question: 'Imagine your school could create one new support for students. What should it be? Why would it help students succeed?',
+    question: 'If your school could create one new support for students, what would it be — and why?',
   },
   'High School': {
     videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_High,_Question_1__Integrated_Student_Supports_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9IaWdoLF9RdWVzdGlvbl8xX19JbnRlZ3JhdGVkX1N0dWRlbnRfU3VwcG9ydHNfVjEubXA0IiwiaWF0IjoxNzc2MTU4NjM3LCJleHAiOjIwOTE1MTg2Mzd9.Rx0jPowGfF5co6OzcXNyVrMi034mOcoYUdWKa3S9j6I',
     pillar: 'Integrated Student Supports',
-    question: 'Think about the ways your school supports students when life gets difficult. Which supports actually help students the most? Why?',
+    question: 'When life gets hard, which school supports actually help students the most — and why?',
   },
   'Staff': {
     videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Staff_Pillar_4_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvU3RhZmZfUGlsbGFyXzRfVjEubXA0IiwiaWF0IjoxNzc2MTU4NjYxLCJleHAiOjIwOTE1MTg2NjF9.klZb_NFoc_IrdlC2c4dReqPowcDwIKQ6K0O_okrtO80',
     pillar: 'Expanded & Enriched Learning Time',
-    question: 'What programs, routines, or learning experiences are most engaging for students at your site — and what enrichment opportunities do you wish students had more access to?',
+    question: 'What programs or learning experiences engage students most — and what enrichment do you wish they had more access to?',
   },
   'Parent': {
     videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Parent,_Question_2__Active_Family_%26_Community_Engagement_(1)_V1%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9QYXJlbnQsX1F1ZXN0aW9uXzJfX0FjdGl2ZV9GYW1pbHlfJl9Db21tdW5pdHlfRW5nYWdlbWVudF8oMSlfVjEgKDEpLm1wNCIsImlhdCI6MTc3NjE1ODY5NSwiZXhwIjoyMDkxNTE4Njk1fQ.6hqsJjJ-1Hd44AGgsa1DL9D96QgMAN6a3Xzq_paeZ5o',
     pillar: 'Active Family & Community Engagement',
-    question: 'What is one thing the school does well to partner with families — and one thing the school could do to strengthen communication or connection with you?\n\nThis could include language access, events, updates, relationships, or opportunities to be involved.',
+    question: 'What does the school do well to partner with families — and what could they do to strengthen communication or connection with you?',
   },
 };
 
@@ -698,7 +698,7 @@ const BH_SCREENERS: BHScreener[] = [
     previewUrl: 'https://flex.impacterpathway.com/fiucp7xof?preview',
     videoUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/High_2_Reflective_Growth_BHS_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvSGlnaF8yX1JlZmxlY3RpdmVfR3Jvd3RoX0JIU19WMS5tcDQiLCJpYXQiOjE3NzYxNTkwMTAsImV4cCI6MjA5MTUxOTAxMH0.UX7OHMWhVs7VWM5JnGs_m9cE8RHrDKu-gmVRKoTn4v0',
     videoPillar: 'Reflective Growth',
-    videoQuestion: "What is one way you've grown or changed as a person recently? Tell the story of what led to that change, and what the experience helped you understand about yourself.",
+    videoQuestion: "How have you grown or changed as a person recently — and what did that experience teach you about yourself?",
     questions: [
       { pillar: 'Reflective Growth',     text: "What is one way you've grown or changed as a person recently? Tell the story of what led to that change, and what the experience helped you understand about yourself." },
       { pillar: 'Relational Awareness',  text: 'Tell me about a specific time when you noticed clues that helped you realize how someone else might be feeling. What did you notice, what did you think might be going on for them, and how did that understanding shape the way you responded?' },
@@ -1000,9 +1000,9 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
 
   return (
     <div style={{ borderRadius: 12, overflow: 'hidden', background: '#0d1b2e', display: 'flex', height: 220 }}>
-      {/* Left: video (~58%) */}
+      {/* Left: video (2/3) with question overlaid at bottom */}
       <div
-        style={{ flex: '0 0 58%', position: 'relative', background: '#09111e', overflow: 'hidden', cursor: 'pointer' }}
+        style={{ flex: '0 0 66%', position: 'relative', background: '#09111e', overflow: 'hidden', cursor: 'pointer' }}
         onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
         <video ref={ref} src={src} playsInline
@@ -1020,15 +1020,22 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
             </svg>
           </div>
         )}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.55) 100%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44, borderRadius: '50%', background: paused ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
+        {/* Strong gradient for question legibility */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,0.72) 100%)', pointerEvents: 'none' }} />
+        {/* Play/pause button */}
+        <div style={{ position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44, borderRadius: '50%', background: paused ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
           {paused
             ? <svg width="14" height="14" viewBox="0 0 24 24" fill="#1a2a44"><polygon points="5,3 19,12 5,21"/></svg>
             : <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
           }
         </div>
-        {/* scrubber */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '4px 10px 6px', background: 'rgba(0,0,0,0.5)' }}
+        {/* Question overlay */}
+        <div style={{ position: 'absolute', bottom: 28, left: 0, right: 0, padding: '0 14px', pointerEvents: 'none' }}>
+          <p style={{ fontSize: 8.5, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>{pillar}</p>
+          <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)', lineHeight: 1.45, margin: 0, fontStyle: 'italic' }}>&ldquo;{question}&rdquo;</p>
+        </div>
+        {/* Scrubber */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '3px 10px 5px', background: 'rgba(0,0,0,0.55)' }}
           onClick={e => e.stopPropagation()}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8, minWidth: 22 }}>{fmt(curT)}</span>
@@ -1040,26 +1047,20 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
           </div>
         </div>
       </div>
-      {/* Right: question + response options */}
-      <div style={{ flex: 1, padding: '16px 14px 14px', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden' }}>
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          <p style={{ fontSize: 8, fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>{pillar}</p>
-          <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, margin: 0 }}>{question}</p>
-        </div>
-        <div style={{ flexShrink: 0 }}>
-          <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10, fontWeight: 600, margin: '0 0 8px', letterSpacing: '0.01em' }}>How would you like to answer?</p>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {([
-              { label: 'VIDEO', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3V9z"/></svg> },
-              { label: 'AUDIO', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg> },
-              { label: 'TEXT', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> },
-            ] as const).map(({ label, icon }) => (
-              <div key={label} style={{ flex: 1, background: '#1a3558', border: '1.5px solid #2a4f7a', borderRadius: 7, padding: '9px 4px 7px', color: 'rgba(255,255,255,0.65)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                {icon}
-                <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.06em' }}>{label}</span>
-              </div>
-            ))}
-          </div>
+      {/* Right: response options (1/3) */}
+      <div style={{ flex: 1, padding: '18px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9.5, fontWeight: 600, margin: 0, letterSpacing: '0.01em', textAlign: 'center' }}>How would you like to answer?</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+          {([
+            { label: 'VIDEO', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3V9z"/></svg> },
+            { label: 'AUDIO', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg> },
+            { label: 'TEXT', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> },
+          ] as const).map(({ label, icon }) => (
+            <div key={label} style={{ background: '#1a3558', border: '1.5px solid #2a4f7a', borderRadius: 7, padding: '7px 8px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {icon}
+              <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.05em' }}>{label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
