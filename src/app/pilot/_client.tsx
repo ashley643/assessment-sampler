@@ -1734,18 +1734,6 @@ export default function PilotClient() {
                           </span>
                         </div>
                       )}
-                      {/* Next Question button */}
-                      {!responseEnded && (
-                        <button
-                          onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
-                          style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em', zIndex: 3 }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.8)')}
-                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.65)')}
-                        >
-                          Next Question
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                        </button>
-                      )}
                       {/* Response scrubber */}
                       {!responseEnded && (
                         <div
