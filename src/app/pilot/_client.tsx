@@ -131,6 +131,26 @@ const PREVIEWS = [
   },
 ];
 
+// ── Demo player panels ───────────────────────────────────────────────────────
+const DEMO_PANELS = [
+  {
+    assessmentName: 'Behavioral Health Screener',
+    school: 'San Diego Unified School District',
+    promptLabel: 'Assessment Prompt · Reflective Growth',
+    promptText: "What\u2019s something you\u2019re better at now than you used to be? And what do you think helped you get there?",
+    questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvRWxlbV9NaWRkbGVfMV9SZWZsZWN0aXZlX0dyb3d0aF9CSFNfVjMubXA0IiwiaWF0IjoxNzc2MTQzMTE1LCJleHAiOjIwOTE1MDMxMTV9.cM1GzrU1TGx_-P0XX-IQYEPzVDI2v-9I7wR3W5IyJd0',
+    responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM',
+  },
+  {
+    assessmentName: 'Community Schools Assessment',
+    school: 'San Mateo-Foster City School District',
+    promptLabel: 'Assessment Prompt · Integrated Student Supports',
+    promptText: "Think about the ways your child\u2019s school supports students and families. What\u2019s working well \u2014 and where do you wish there was more support?",
+    questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Parent,_Question_1,_Integrated_Student_Supports_(1)_V1%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9QYXJlbnQsX1F1ZXN0aW9uXzEsX0ludGVncmF0ZWRfU3R1ZGVudF9TdXBwb3J0c18oMSlfVjEgKDEpLm1wNCIsImlhdCI6MTc3NjE0MzgyMiwiZXhwIjoyMDkxNTAzODIyfQ.OeXT8Q1eDFWp-WuFqRgFvvBh5dEo94l7Pmn76PHV3tU',
+    responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/parent.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvcGFyZW50Lm1wNCIsImlhdCI6MTc3NjE0Mzg1MywiZXhwIjoyMDkxNTAzODUzfQ.oi2qOje4hvioY9GzaQ-dEYvSt1yjyEI_vCVByX8Arko',
+  },
+] as const;
+
 // ── Assessment type options ──────────────────────────────────────────────────
 const ASSESSMENT_TYPES = [
   {
@@ -568,9 +588,11 @@ export default function PilotClient() {
   const [lpAttrPicks, setLpAttrPicks] = useState<Record<string, string[]>>({}); // el/sec attribute picks
   const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [panelIndex, setPanelIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
   const [promptPaused, setPromptPaused] = useState(false);
   const promptVideoRef = useRef<HTMLVideoElement>(null);
+  const panel = DEMO_PANELS[panelIndex];
   const [insightPanel, setInsightPanel] = useState(0);
   const [insightPaused, setInsightPaused] = useState(false);
   const [demoPanel, setDemoPanel] = useState(0);
@@ -901,9 +923,17 @@ export default function PilotClient() {
                 <span style={{ background: '#1a3d6b', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
                   Impacter Pathway
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Behavioral Health Screener</span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{panel.assessmentName}</span>
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>San Diego Unified School District</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
+                {/* Panel dots */}
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {DEMO_PANELS.map((_, i) => (
+                    <div key={i} style={{ width: i === panelIndex ? 16 : 6, height: 6, borderRadius: 3, background: i === panelIndex ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)', transition: 'all 0.2s' }} />
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Two-panel body */}
@@ -912,8 +942,9 @@ export default function PilotClient() {
               {/* ── Left: question video ── */}
               <div style={{ flex: '0 0 62%', position: 'relative', background: '#09111e', overflow: 'hidden' }}>
                 <video
+                  key={panel.questionUrl}
                   ref={promptVideoRef}
-                  src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvRWxlbV9NaWRkbGVfMV9SZWZsZWN0aXZlX0dyb3d0aF9CSFNfVjMubXA0IiwiaWF0IjoxNzc2MTQzMTE1LCJleHAiOjIwOTE1MDMxMTV9.cM1GzrU1TGx_-P0XX-IQYEPzVDI2v-9I7wR3W5IyJd0"
+                  src={panel.questionUrl}
                   autoPlay
                   playsInline
                   style={{ width: '100%', height: '100%', minHeight: 400, objectFit: 'cover', display: 'block' }}
@@ -942,10 +973,10 @@ export default function PilotClient() {
                 {/* Question overlay at bottom */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 22px', zIndex: 2 }}>
                   <p style={{ color: '#60a5fa', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>
-                    Assessment Prompt · Reflective Growth
+                    {panel.promptLabel}
                   </p>
                   <p style={{ color: 'white', fontSize: 14, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
-                    &ldquo;What&apos;s something you&apos;re better at now than you used to be? And what do you think helped you get there?&rdquo;
+                    &ldquo;{panel.promptText}&rdquo;
                   </p>
                 </div>
               </div>
@@ -1024,7 +1055,7 @@ export default function PilotClient() {
                     {/* Video fills remaining space */}
                     <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                       <video
-                        src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM"
+                        src={panel.responseUrl}
                         autoPlay
                         playsInline
                         controls
@@ -1032,6 +1063,7 @@ export default function PilotClient() {
                       />
                       {/* Next Question overlay button */}
                       <button
+                        onClick={() => { setPanelIndex(i => (i + 1) % DEMO_PANELS.length); setSimShown(false); setPromptPaused(false); }}
                         style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.8)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.65)')}
