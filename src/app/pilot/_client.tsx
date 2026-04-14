@@ -132,7 +132,18 @@ const PREVIEWS = [
 ];
 
 // ── Demo player panels ───────────────────────────────────────────────────────
-const DEMO_PANELS = [
+interface DemoCaption { t: number; text: string; accent?: true }
+interface DemoPanel {
+  assessmentName: string;
+  school: string;
+  promptLabel: string;
+  promptText: string;
+  questionUrl: string;
+  responseUrl: string;
+  captions: DemoCaption[];
+}
+
+const DEMO_PANELS: DemoPanel[] = [
   {
     assessmentName: 'Behavioral Health Screener',
     school: 'San Diego Unified School District',
@@ -140,6 +151,21 @@ const DEMO_PANELS = [
     promptText: "What\u2019s something you\u2019re better at now than you used to be? And what do you think helped you get there?",
     questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvRWxlbV9NaWRkbGVfMV9SZWZsZWN0aXZlX0dyb3d0aF9CSFNfVjMubXA0IiwiaWF0IjoxNzc2MTQzMTE1LCJleHAiOjIwOTE1MDMxMTV9.cM1GzrU1TGx_-P0XX-IQYEPzVDI2v-9I7wR3W5IyJd0',
     responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/ninja.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvbmluamEubXA0IiwiaWF0IjoxNzc2MTQzMTU4LCJleHAiOjIwOTE1MDMxNTh9.5wghUx912E7YtyaBGOX9wxnpUhjK3E8BHyCPG9py6IM',
+    captions: [
+      { t: 0,    text: 'In first grade, I was very energetic,' },
+      { t: 3,    text: 'like \u2014 extremely energetic.', accent: true },
+      { t: 5.5,  text: 'Like bouncing off the walls energetic.' },
+      { t: 8,    text: 'Like super Ninja Turtles, running around everywhere in the classroom.' },
+      { t: 13,   text: 'But now I\u2019ve gradually gotten better and better.' },
+      { t: 17,   text: 'Because in second grade I learned that\u2026' },
+      { t: 20,   text: 'just take a break!', accent: true },
+      { t: 22.5, text: 'Take a break. It\u2019s not that hard.' },
+      { t: 25.5, text: 'Just ask the teacher if you can have a break or ask for help.' },
+      { t: 30,   text: 'So, yeah, I started acting a little better.' },
+      { t: 34,   text: 'I\u2019m not saying I\u2019m, like, the best of the best.' },
+      { t: 38.5, text: 'I\u2019m like, better than I used to be \u2014', accent: true },
+      { t: 43,   text: 'but yeah, I\u2019ve been doing good.' },
+    ],
   },
   {
     assessmentName: 'Community Schools Assessment',
@@ -148,8 +174,24 @@ const DEMO_PANELS = [
     promptText: "Think about the ways your child\u2019s school supports students and families. What\u2019s working well \u2014 and where do you wish there was more support?",
     questionUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/CSA,_Parent,_Question_1,_Integrated_Student_Supports_(1)_V1%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvQ1NBLF9QYXJlbnQsX1F1ZXN0aW9uXzEsX0ludGVncmF0ZWRfU3R1ZGVudF9TdXBwb3J0c18oMSlfVjEgKDEpLm1wNCIsImlhdCI6MTc3NjE0MzgyMiwiZXhwIjoyMDkxNTAzODIyfQ.OeXT8Q1eDFWp-WuFqRgFvvBh5dEo94l7Pmn76PHV3tU',
     responseUrl: 'https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/parent.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvcGFyZW50Lm1wNCIsImlhdCI6MTc3NjE0Mzg1MywiZXhwIjoyMDkxNTAzODUzfQ.oi2qOje4hvioY9GzaQ-dEYvSt1yjyEI_vCVByX8Arko',
+    captions: [
+      { t: 0,    text: 'I have two kids at the school' },
+      { t: 2.5,  text: 'and they feel safe and seen in different ways.', accent: true },
+      { t: 6.5,  text: 'The older one feels safe and seen' },
+      { t: 9,    text: 'when he\u2019s allowed to play soccer \u2014' },
+      { t: 11.5, text: 'his favorite activity in the whole world.' },
+      { t: 15,   text: 'He really looks up to the coaches.' },
+      { t: 18,   text: 'They\u2019re a great role model for him.' },
+      { t: 21,   text: 'The second one feels safe and seen' },
+      { t: 24,   text: 'when he\u2019s given attention' },
+      { t: 26.5, text: 'and his emotions are validated,', accent: true },
+      { t: 29.5, text: 'by his teacher and all the staff around the school.' },
+      { t: 34,   text: 'So thanks to the school' },
+      { t: 36.5, text: 'for really taking care of both boys' },
+      { t: 40,   text: 'that have different personalities.', accent: true },
+    ],
   },
-] as const;
+];
 
 // ── Assessment type options ──────────────────────────────────────────────────
 const ASSESSMENT_TYPES = [
@@ -591,7 +633,9 @@ export default function PilotClient() {
   const [panelIndex, setPanelIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
   const [promptPaused, setPromptPaused] = useState(false);
+  const [captionIdx, setCaptionIdx] = useState(0);
   const promptVideoRef = useRef<HTMLVideoElement>(null);
+  const responseVideoRef = useRef<HTMLVideoElement>(null);
   const panel = DEMO_PANELS[panelIndex];
   const [insightPanel, setInsightPanel] = useState(0);
   const [insightPaused, setInsightPaused] = useState(false);
@@ -615,6 +659,12 @@ export default function PilotClient() {
   useEffect(() => {
     scrollBodyRef.current?.scrollTo({ top: 0, behavior: 'instant' });
   }, [step]);
+
+  useEffect(() => {
+    setCaptionIdx(0);
+    setSimShown(false);
+    setPromptPaused(false);
+  }, [panelIndex]);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -1054,16 +1104,48 @@ export default function PilotClient() {
                     </div>
                     {/* Video fills remaining space */}
                     <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                      <style>{`@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
                       <video
+                        key={panel.responseUrl}
+                        ref={responseVideoRef}
                         src={panel.responseUrl}
                         autoPlay
                         playsInline
-                        controls
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onTimeUpdate={() => {
+                          const t = responseVideoRef.current?.currentTime ?? 0;
+                          const idx = panel.captions.reduce((acc, c, i) => (c.t <= t ? i : acc), 0);
+                          setCaptionIdx(idx);
+                        }}
                       />
+                      {/* Caption overlay */}
+                      <div
+                        key={captionIdx}
+                        style={{
+                          position: 'absolute', bottom: 52, left: 0, right: 0,
+                          display: 'flex', justifyContent: 'center', pointerEvents: 'none',
+                          padding: '0 20px',
+                          animation: 'captionIn 0.25s ease both',
+                        }}
+                      >
+                        <span style={{
+                          background: 'rgba(0,0,0,0.72)',
+                          backdropFilter: 'blur(4px)',
+                          borderRadius: 6,
+                          padding: '5px 12px',
+                          fontSize: 13,
+                          fontWeight: panel.captions[captionIdx]?.accent ? 700 : 500,
+                          color: panel.captions[captionIdx]?.accent ? '#86efac' : 'rgba(255,255,255,0.92)',
+                          lineHeight: 1.5,
+                          letterSpacing: panel.captions[captionIdx]?.accent ? '0.01em' : 'normal',
+                          textAlign: 'center',
+                        }}>
+                          {panel.captions[captionIdx]?.text}
+                        </span>
+                      </div>
                       {/* Next Question overlay button */}
                       <button
-                        onClick={() => { setPanelIndex(i => (i + 1) % DEMO_PANELS.length); setSimShown(false); setPromptPaused(false); }}
+                        onClick={() => setPanelIndex(i => (i + 1) % DEMO_PANELS.length)}
                         style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.01em' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.8)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.65)')}
