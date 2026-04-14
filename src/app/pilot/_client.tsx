@@ -1760,7 +1760,7 @@ export default function PilotClient() {
                           .filter(w => w.t >= captionStart && w.t < captionEnd);
                         if (!captionWords.length) return null;
                         return (
-                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px', overflow: 'hidden' }}>
+                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px', overflow: 'hidden', textAlign: 'center' }}>
                             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                               {captionWords.map((w, i) => {
                                 const isCurrent = w.origIdx === wordIdx;
