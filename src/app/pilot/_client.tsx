@@ -1443,16 +1443,8 @@ export default function PilotClient() {
           <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
             A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
           </p>
-          {/* CTA + chips — equal gap above and below button */}
+          {/* CTA + chips */}
           <div className="mt-10 flex flex-col items-center gap-5">
-            <button
-              onClick={() => setDemoOpen(true)}
-              style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(14px)', border: '1.5px solid rgba(255,255,255,0.38)', color: 'white', borderRadius: 50, padding: '13px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', transition: 'background 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.28)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
-            >
-              Request a Demo
-            </button>
             {/* Frosted stat chips */}
             <div className="flex items-center justify-center gap-3 flex-wrap">
               {['No app download', 'Results in days', 'English & Spanish'].map(label => (
@@ -1462,6 +1454,14 @@ export default function PilotClient() {
                 </div>
               ))}
             </div>
+            <button
+              onClick={() => setDemoOpen(true)}
+              style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(14px)', border: '1.5px solid rgba(255,255,255,0.38)', color: 'white', borderRadius: 50, padding: '13px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', transition: 'background 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.28)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
+            >
+              Request a Demo
+            </button>
           </div>
         </div>
       </section>
