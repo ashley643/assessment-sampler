@@ -3,6 +3,7 @@ import PilotClient from './_client';
 
 export const metadata: Metadata = { title: 'Start a Pilot — Impacter Pathway' };
 
-export default function Page() {
-  return <PilotClient />;
+export default async function Page({ searchParams }: { searchParams: Promise<{ start?: string }> }) {
+  const params = await searchParams;
+  return <PilotClient initialOpen={params.start === '1'} />;
 }

@@ -1151,8 +1151,8 @@ function ContinueBtn({ reason, onClick }: { reason: string | null; onClick: () =
   );
 }
 
-export default function PilotClient() {
-  const [formOpen, setFormOpen] = useState(false);
+export default function PilotClient({ initialOpen = false }: { initialOpen?: boolean }) {
+  const [formOpen, setFormOpen] = useState(initialOpen);
   const [demoOpen, setDemoOpen] = useState(false);
   const [demoForm, setDemoForm] = useState({ name: '', email: '', org: '', phone: '', notes: '' });
   const [demoSubmitting, setDemoSubmitting] = useState(false);
@@ -1219,12 +1219,6 @@ export default function PilotClient() {
     return () => { document.body.style.overflow = ''; };
   }, [formOpen]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('start') === '1') {
-      openForm();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     setCaptionIdx(0);
@@ -1500,9 +1494,9 @@ export default function PilotClient() {
       )}
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="px-6 py-1.5 flex items-center justify-between" style={{ background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
+      <nav className="px-6 py-0 flex items-center justify-between" style={{ background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
         <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
-          <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54 }} />
+          <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72 }} />
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
@@ -3054,12 +3048,8 @@ export default function PilotClient() {
                                         {qs.map(q => {
                                           const isSelected = selected === q.id;
                                           return (
-                                            <label key={q.id} className="flex gap-3 p-3 rounded-lg cursor-pointer transition-all" style={{
-                                              background: isSelected ? '#4a6fa5' : 'white',
-                                              border: `1.5px solid ${isSelected ? '#4a6fa5' : '#e5e7eb'}`,
-                                            }}
-                                            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = '#93afd4'; }}
-                                            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = '#e5e7eb'; }}>
+                                            <label key={q.id}
+                                              className={`flex gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${isSelected ? 'bg-[#4a6fa5] border-[#4a6fa5]' : 'bg-white border-gray-200 hover:border-[#93afd4]'}`}>
                                               <input type="radio" name={`${key}-p${pillar}`} value={q.id}
                                                 checked={isSelected}
                                                 onChange={() => setCsPicks(p => ({ ...p, [key]: { ...(p[key] ?? {}), [pillar]: q.id } }))}
