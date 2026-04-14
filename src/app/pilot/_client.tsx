@@ -3029,7 +3029,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                                   const selected = csPicks[key]?.[pillar];
                                   const isDone = !!selected;
                                   return (
-                                    <div key={pillar} className="rounded-xl overflow-hidden transition-all" style={{ border: `2px solid ${isDone ? '#4a6fa5' : '#e5e7eb'}` }}>
+                                    <div key={pillar} className={`rounded-xl overflow-hidden transition-colors border-2 ${isDone ? 'border-[#4a6fa5]' : 'border-gray-200'}`}>
                                       {/* Pillar header */}
                                       <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: isDone ? '#f0f5fb' : '#f9fafb' }}>
                                         <div className="flex items-center gap-2">
