@@ -569,6 +569,8 @@ export default function PilotClient() {
   const [lpQPicks, setLpQPicks] = useState<Record<string, string[]>>({});       // el/sec question picks
   const [previewIndex, setPreviewIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
+  const [promptPaused, setPromptPaused] = useState(false);
+  const promptVideoRef = useRef<HTMLVideoElement>(null);
   const [insightPanel, setInsightPanel] = useState(0);
   const [insightPaused, setInsightPaused] = useState(false);
   const [demoPanel, setDemoPanel] = useState(0);
@@ -907,17 +909,32 @@ export default function PilotClient() {
             {/* Two-panel body */}
             <div style={{ display: 'flex', minHeight: 400 }}>
 
-              {/* ── Left: question video placeholder ── */}
-              <div style={{ flex: '0 0 62%', position: 'relative', background: '#09111e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {/* VIDEO GOES HERE — drop in a <video> or <iframe> replacing this placeholder */}
-                <div style={{ width: '100%', height: '100%', minHeight: 400, position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0d1f3c 0%, #0a1628 100%)' }} />
+              {/* ── Left: question video ── */}
+              <div style={{ flex: '0 0 62%', position: 'relative', background: '#09111e', overflow: 'hidden' }}>
+                <video
+                  ref={promptVideoRef}
+                  src="/Elem_Middle_1_Reflective_Growth_BHS_V3.mp4"
+                  autoPlay
+                  playsInline
+                  style={{ width: '100%', height: '100%', minHeight: 400, objectFit: 'cover', display: 'block' }}
+                  onEnded={() => setPromptPaused(true)}
+                />
 
                 {/* Pause / Skip controls */}
                 <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 8, zIndex: 2 }}>
-                  <button style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-                    ⏸
+                  <button
+                    onClick={() => {
+                      const v = promptVideoRef.current;
+                      if (!v) return;
+                      if (v.paused) { v.play(); setPromptPaused(false); }
+                      else { v.pause(); setPromptPaused(true); }
+                    }}
+                    style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 13, cursor: 'pointer', fontWeight: 600, minWidth: 36 }}>
+                    {promptPaused ? '▶' : '⏸'}
                   </button>
-                  <button style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: '0.02em' }}>
+                  <button
+                    onClick={() => { const v = promptVideoRef.current; if (v) { v.currentTime = v.duration; } }}
+                    style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: '0.02em' }}>
                     Skip ››
                   </button>
                 </div>
@@ -925,10 +942,10 @@ export default function PilotClient() {
                 {/* Question overlay at bottom */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)', padding: '48px 22px 22px', zIndex: 2 }}>
                   <p style={{ color: '#60a5fa', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>
-                    Assessment Prompt · Empathy
+                    Assessment Prompt · Reflective Growth
                   </p>
                   <p style={{ color: 'white', fontSize: 14, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
-                    &ldquo;Tell us about a time you noticed someone else was struggling or feeling left out. What did you do — and what would you do differently now?&rdquo;
+                    &ldquo;What&apos;s something you&apos;re better at now than you used to be? And what do you think helped you get there?&rdquo;
                   </p>
                 </div>
               </div>
