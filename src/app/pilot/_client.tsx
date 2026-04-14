@@ -264,8 +264,11 @@ const DEMO_PANELS: DemoPanel[] = [
     ],
     chips: [
       { t: 1,  text: 'Adversity-Persistence',  color: '#60a5fa' },
+      { t: 8,  text: 'Emotional Awareness',    color: '#38bdf8' },
       { t: 15, text: 'Contrastive Structure',  color: '#a78bfa' },
+      { t: 19, text: 'Resilience',             color: '#4ade80' },
       { t: 23, text: 'Causal Connector',       color: '#34d399' },
+      { t: 33, text: 'Help-Seeking',           color: '#fbbf24' },
       { t: 46, text: 'Growth Mindset',         color: '#f472b6' },
       { t: 53, text: 'Self-Awareness',         color: '#fb923c' },
     ],
@@ -431,9 +434,12 @@ const DEMO_PANELS: DemoPanel[] = [
     chips: [
       { t: 3.6,  text: 'Viewpoint Shift',       color: '#60a5fa' },
       { t: 15.7, text: 'Value Statement',       color: '#fbbf24' },
+      { t: 20.1, text: 'Vulnerability',         color: '#34d399' },
       { t: 27.5, text: 'Figurative Reasoning',  color: '#818cf8' },
+      { t: 40.8, text: 'Risk Aversion',         color: '#fb923c' },
       { t: 54.5, text: 'Courageous Action',     color: '#f472b6' },
       { t: 67.3, text: 'Growth Orientation',    color: '#e879f9' },
+      { t: 71.8, text: 'Perseverance',          color: '#38bdf8' },
     ],
     words: [
       {t:0.7,word:'When'},{t:1.4,word:'given'},{t:1.6,word:'some'},{t:1.9,word:'thought'},
@@ -1404,25 +1410,25 @@ export default function PilotClient() {
           <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
             A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
           </p>
-          {/* CTA buttons */}
-          <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
+          {/* CTA + chips — equal gap above and below button */}
+          <div className="mt-10 flex flex-col items-center gap-5">
             <button
               onClick={() => setDemoOpen(true)}
-              style={{ background: 'white', color: '#1a2744', border: 'none', borderRadius: 10, padding: '13px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.01em', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.92')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(14px)', border: '1.5px solid rgba(255,255,255,0.38)', color: 'white', borderRadius: 50, padding: '13px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', transition: 'background 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.28)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
             >
               Request a Demo
             </button>
-          </div>
-          {/* Frosted stat chips */}
-          <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
-            {[['No app download', true], ['Results in days', true], ['English & Spanish', true]].map(([label]) => (
-              <div key={label as string} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-                {label}
-              </div>
-            ))}
+            {/* Frosted stat chips */}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              {['No app download', 'Results in days', 'English & Spanish'].map(label => (
+                <div key={label} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                  {label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -1700,8 +1706,8 @@ export default function PilotClient() {
                           .filter(w => w.t >= captionStart && w.t < captionEnd);
                         if (!captionWords.length) return null;
                         return (
-                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px' }}>
-                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)' }}>
+                          <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px', overflow: 'hidden' }}>
+                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'normal', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                               {captionWords.map((w, i) => {
                                 const isCurrent = w.origIdx === wordIdx;
                                 const isSpoken = w.t <= responseCurrentTime;
