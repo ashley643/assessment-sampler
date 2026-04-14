@@ -972,23 +972,56 @@ function Field({ label, required, children }: { label: string; required?: boolea
 const INPUT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4a6fa5]/40 bg-white';
 const SELECT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4a6fa5]/40 bg-white text-gray-700';
 
-function VideoAskEmbed({ url, label, onOpen, height = 200 }: { url: string; label: string; onOpen: () => void; height?: number }) {
+
+
+function IntroVideoPlayer({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(true);
+  const [curT, setCurT] = useState(0);
+  const [dur, setDur] = useState(0);
+  const [hov, setHov] = useState(false);
+  function toggle() { const el = ref.current; if (!el) return; if (el.paused) { el.play(); setPaused(false); } else { el.pause(); setPaused(true); } }
+  function fmt(t: number) { const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${m}:${String(s).padStart(2, '0')}`; }
+
   return (
-    <div
-      className="relative cursor-pointer group rounded-xl overflow-hidden border border-gray-200"
-      onClick={onOpen}
-      style={{ height }}
-    >
-      <iframe
-        src={url}
-        className="w-full h-full pointer-events-none"
-        allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *; display-capture *"
-        title={label}
-      />
-      <div className="absolute inset-0 flex items-end justify-center pb-3 bg-transparent group-hover:bg-black/5 transition-colors">
-        <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm text-xs font-medium text-gray-700 px-3 py-1 rounded-full shadow-sm">
-          Click to expand
-        </span>
+    <div style={{ borderRadius: 12, overflow: 'hidden', background: '#0d1b2e', display: 'flex', height: 220 }}>
+      {/* Left: video (2/3) */}
+      <div
+        style={{ flex: '0 0 66%', position: 'relative', background: '#09111e', overflow: 'hidden', cursor: 'pointer' }}
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
+      >
+        <video ref={ref} src={src} playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
+          onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
+          onEnded={() => setPaused(true)}
+        />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.45) 100%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44, borderRadius: '50%', background: paused ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
+          {paused
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="#1a2a44"><polygon points="5,3 19,12 5,21"/></svg>
+            : <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          }
+        </div>
+        {/* Scrubber */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '3px 10px 5px', background: 'rgba(0,0,0,0.55)' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8, minWidth: 22 }}>{fmt(curT)}</span>
+            <input type="range" min={0} max={dur || 1} step={0.1} value={curT}
+              onChange={e => { const t = +e.target.value; if (ref.current) ref.current.currentTime = t; setCurT(t); }}
+              onClick={e => e.stopPropagation()}
+              style={{ flex: 1, accentColor: '#4a6fa5', cursor: 'pointer' }} />
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8, minWidth: 22 }}>{fmt(dur)}</span>
+          </div>
+        </div>
+      </div>
+      {/* Right: Begin */}
+      <div style={{ flex: 1, padding: '18px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 600, margin: 0, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Ready?</p>
+        <button style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #6a5ab0 100%)', color: 'white', borderRadius: 8, padding: '10px 0', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'default', width: '100%', letterSpacing: '0.04em' }}>
+          Begin
+        </button>
       </div>
     </div>
   );
@@ -1707,7 +1740,7 @@ export default function PilotClient() {
                         if (!captionWords.length) return null;
                         return (
                           <div key={captionIdx} style={{ position: 'absolute', bottom: 22, left: 0, right: 0, pointerEvents: 'none', padding: '0 16px', overflow: 'hidden' }}>
-                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'normal', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                               {captionWords.map((w, i) => {
                                 const isCurrent = w.origIdx === wordIdx;
                                 const isSpoken = w.t <= responseCurrentTime;
@@ -2476,12 +2509,7 @@ export default function PilotClient() {
                   <p className="text-xs text-gray-400 mb-3">
                     A short video from a familiar face — a principal, counselor, or teacher — can put students at ease before they respond. Here&apos;s an example from Western Placer USD:
                   </p>
-                  <VideoAskEmbed
-                    url="https://wpusd.impacterpathway.com/f78d5omaf?preview"
-                    label="Custom intro example — Western Placer USD"
-                    onOpen={() => setPreviewModal({ label: 'Custom intro example — Western Placer USD', url: 'https://wpusd.impacterpathway.com/f78d5omaf?preview' })}
-                    height={200}
-                  />
+                  <IntroVideoPlayer src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/IMG_2879_V1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvSU1HXzI4NzlfVjEubXA0IiwiaWF0IjoxNzc2MTYyNDY4LCJleHAiOjIwOTE1MjI0Njh9.JFWdFqjbRy5X5OISoB_c0eiAySB895E9urI6ua1L1fk" />
                   <div className="space-y-2 mt-3">
                     {([
                       { value: 'yes',    label: 'Yes — I\'d love to record a custom intro' },
