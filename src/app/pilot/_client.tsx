@@ -99,10 +99,42 @@ const PROTECTIVE_DATA = [
 ];
 
 const PARTHENON_PILLARS = [
-  { label: 'Integrated Student Supports',    height: 92, color: '#4a6fa5', score: '0.97' },
-  { label: 'Family & Community Engagement',  height: 76, color: '#2d7a5f', score: '0.88' },
-  { label: 'Collaborative Leadership',       height: 68, color: '#7c5cbf', score: '0.82' },
-  { label: 'Expanded Learning Time',         height: 83, color: '#e07b54', score: '0.93' },
+  {
+    label: 'Integrated Student Supports', height: 92, color: '#4a6fa5', score: '0.97',
+    schools: [
+      { name: 'Riverview K-8',      score: 1.04, leads: true  },
+      { name: 'Mesa Vista Elem',    score: 0.94, leads: false },
+      { name: 'Northgate Academy',  score: 0.93, leads: false },
+    ],
+    insight: 'Riverview K-8 leads — counselor-to-student ratio 2× district avg',
+  },
+  {
+    label: 'Family & Community Engagement', height: 76, color: '#2d7a5f', score: '0.88',
+    schools: [
+      { name: 'Riverview K-8',      score: 0.83, leads: false },
+      { name: 'Mesa Vista Elem',    score: 1.02, leads: true  },
+      { name: 'Northgate Academy',  score: 0.79, leads: false },
+    ],
+    insight: 'Mesa Vista Elem leads — bilingual family nights drive engagement',
+  },
+  {
+    label: 'Collaborative Leadership', height: 68, color: '#7c5cbf', score: '0.82',
+    schools: [
+      { name: 'Riverview K-8',      score: 0.78, leads: false },
+      { name: 'Mesa Vista Elem',    score: 0.80, leads: false },
+      { name: 'Northgate Academy',  score: 0.88, leads: true  },
+    ],
+    insight: 'Northgate Academy leads — shared decision-making model adopted in 2023',
+  },
+  {
+    label: 'Expanded Learning Time', height: 83, color: '#e07b54', score: '0.93',
+    schools: [
+      { name: 'Riverview K-8',      score: 0.98, leads: true  },
+      { name: 'Mesa Vista Elem',    score: 0.93, leads: false },
+      { name: 'Northgate Academy',  score: 0.88, leads: false },
+    ],
+    insight: 'Riverview K-8 leads — after-school partnerships add 6 hrs/week',
+  },
 ];
 
 // Linguistic tone divergence by stakeholder
@@ -1332,9 +1364,19 @@ export default function PilotClient() {
         <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 54 }} />
         </a>
-        <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
-          Pilot Program
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
+            Pilot Program
+          </span>
+          <button
+            onClick={() => setDemoOpen(true)}
+            style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #6a5ab0 50%, #cc6648 100%)', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            Request a Demo
+          </button>
+        </div>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
@@ -1851,7 +1893,7 @@ export default function PilotClient() {
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px', position: 'relative' }}>
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Risk Signals</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 16 }}>8th grade <span style={{ color: '#e07b54' }}>self-doubt language</span> peaks at 7.12% — highest signal in cohort.</p>
-              <div style={{ overflowX: 'auto' }}>
+              <div>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', fontSize: 13 }}>
                   <thead>
                     <tr>
@@ -1927,15 +1969,32 @@ export default function PilotClient() {
                       <rect x={x - 5} y={y - 8} width={pillarW + 10} height={8} rx="2" fill={p.color} fillOpacity={isHov ? 1 : 0.88} />
                       <text x={x + pillarW / 2} y="178" textAnchor="middle" fontSize="9" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{p.label.split(' ').slice(0, 2).join(' ')}</text>
                       <text x={x + pillarW / 2} y="191" textAnchor="middle" fontSize="9" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{p.label.split(' ').slice(2).join(' ')}</text>
-                      {isHov && (
-                        <g transform={`translate(${x + pillarW / 2 - 75}, ${y - 62})`}>
-                          <rect x="0" y="0" width="150" height="52" rx="7" fill="#1a2a44" />
-                          <polygon points="69,52 75,60 81,52" fill="#1a2a44" />
-                          <text x="75" y="18" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.6)">{p.label}</text>
-                          <text x="75" y="36" textAnchor="middle" fontSize="16" fill="white" fontWeight="800">{p.score}</text>
-                          <text x="75" y="50" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.45)">avg score · {p.height}th pct</text>
-                        </g>
-                      )}
+                      {isHov && (() => {
+                        const tipW = 196;
+                        const tipH = 90;
+                        const rawX = x + pillarW / 2 - tipW / 2;
+                        const tipX = Math.max(4, Math.min(440 - tipW - 4, rawX));
+                        const tipY = y - tipH - 10;
+                        const arrowX = x + pillarW / 2 - tipX;
+                        return (
+                          <g transform={`translate(${tipX}, ${tipY})`}>
+                            <rect x="0" y="0" width={tipW} height={tipH} rx="8" fill="#1a2a44" />
+                            <polygon points={`${arrowX - 6},${tipH} ${arrowX},${tipH + 8} ${arrowX + 6},${tipH}`} fill="#1a2a44" />
+                            {/* Pillar label */}
+                            <text x={tipW / 2} y="15" textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.4)" fontWeight="700" letterSpacing="0.08em">{p.label.toUpperCase()}</text>
+                            <line x1="10" y1="21" x2={tipW - 10} y2="21" stroke="rgba(255,255,255,0.09)" strokeWidth="1" />
+                            {/* School rows — name left, score right, ★ on leader */}
+                            {p.schools.map((s, si) => (
+                              <g key={si}>
+                                {s.leads && <rect x="8" y={28 + si * 20} width={tipW - 16} height="17" rx="3" fill={`${p.color}22`} />}
+                                <text x="14" y={41 + si * 20} fontSize="10.5" fill={s.leads ? 'white' : 'rgba(255,255,255,0.55)'} fontWeight={s.leads ? '600' : '400'}>{s.name}</text>
+                                <text x={tipW - 14} y={41 + si * 20} textAnchor="end" fontSize="11" fill={s.leads ? p.color : 'rgba(255,255,255,0.4)'} fontWeight={s.leads ? '800' : '400'}>{s.score.toFixed(2)}</text>
+                                {s.leads && <text x={tipW - 8} y={41 + si * 20} fontSize="9.5" fill="#fbbf24">★</text>}
+                              </g>
+                            ))}
+                          </g>
+                        );
+                      })()}
                     </g>
                   );
                 })}
