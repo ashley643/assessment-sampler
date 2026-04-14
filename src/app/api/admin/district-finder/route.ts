@@ -291,20 +291,28 @@ export async function GET(req: Request) {
 
   if (uuids.length > 0) {
     try {
-      const orConds = uuids.map(u => `media_url.ilike.%${u}%`).join(',');
-      const { data: stepsData } = await db
-        .schema('videoask')
-        .from('steps')
-        .select('media_url, share_url')
-        .or(orConds)
-        .limit(uuids.length * 2);
+      // Batch into groups of 8 to stay well under URL length limits,
+      // run batches in parallel and remove the row-count cap that was
+      // cutting off results when a UUID matched multiple steps rows.
+      const BATCH = 8;
+      const batches: string[][] = [];
+      for (let i = 0; i < uuids.length; i += BATCH) batches.push(uuids.slice(i, i + BATCH));
 
-      if (stepsData) {
-        for (const s of stepsData as { media_url: string | null; share_url: string | null }[]) {
-          const uuid = extractUuid(s.media_url ?? '');
-          if (uuid && s.share_url && !shareUrlMap[uuid]) shareUrlMap[uuid] = s.share_url;
+      await Promise.all(batches.map(async (batch) => {
+        const orConds = batch.map(u => `media_url.ilike.%${u}%`).join(',');
+        const { data: stepsData } = await db
+          .schema('videoask')
+          .from('steps')
+          .select('media_url, share_url')
+          .or(orConds);
+
+        if (stepsData) {
+          for (const s of stepsData as { media_url: string | null; share_url: string | null }[]) {
+            const uuid = extractUuid(s.media_url ?? '');
+            if (uuid && s.share_url && !shareUrlMap[uuid]) shareUrlMap[uuid] = s.share_url;
+          }
         }
-      }
+      }));
     } catch { /* non-fatal */ }
   }
 
