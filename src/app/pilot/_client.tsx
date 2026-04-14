@@ -1404,25 +1404,25 @@ export default function PilotClient() {
           <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
             A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
           </p>
-          {/* CTA buttons */}
-          <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
+          {/* CTA + chips — equal gap above and below button */}
+          <div className="mt-10 flex flex-col items-center gap-5">
             <button
               onClick={() => setDemoOpen(true)}
-              style={{ background: 'white', color: '#1a2744', border: 'none', borderRadius: 10, padding: '13px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.01em', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.92')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(14px)', border: '1.5px solid rgba(255,255,255,0.38)', color: 'white', borderRadius: 50, padding: '13px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', transition: 'background 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.28)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
             >
               Request a Demo
             </button>
-          </div>
-          {/* Frosted stat chips */}
-          <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
-            {[['No app download', true], ['Results in days', true], ['English & Spanish', true]].map(([label]) => (
-              <div key={label as string} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-                {label}
-              </div>
-            ))}
+            {/* Frosted stat chips */}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              {['No app download', 'Results in days', 'English & Spanish'].map(label => (
+                <div key={label} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                  {label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
