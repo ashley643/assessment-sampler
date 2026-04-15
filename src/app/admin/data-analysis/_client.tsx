@@ -317,7 +317,12 @@ async function captureChart(ref: RefObject<HTMLDivElement | null>, filename: str
     scale: 2,
     useCORS: true,
     logging: false,
-    // Skip any element tagged data-no-capture (export button rows)
+    // Capture the full element height, not just the visible viewport slice
+    height: el.scrollHeight,
+    windowHeight: el.scrollHeight,
+    scrollX: 0,
+    scrollY: 0,
+    // Skip any element tagged data-no-capture (chips, export buttons)
     ignoreElements: (node: Element) => node instanceof HTMLElement && node.dataset.noCapture === 'true',
   });
   const a = document.createElement('a');
@@ -361,7 +366,8 @@ export default function DataAnalysisClient() {
 
   // UI state
   const [tab, setTab]               = useState<'participation' | 'analysis'>('participation');
-  const [participDim, setParticipDim] = useState('');
+  // Array of selected dim IDs: 0 = show nothing, 1 = bar chart, 2 = bar + 2D heatmap
+  const [participDims, setParticipDims] = useState<string[]>([]);
   // Analysis tab state
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('csi-pillar-school');
   const [pillarMap, setPillarMap]   = useState<Record<string, number>>({});
@@ -384,7 +390,7 @@ export default function DataAnalysisClient() {
     setPreview(null);
     // Auto-select first categorical demographic column for participation tab
     const detected = detectDemoDims(columns, rows);
-    if (detected.length > 0) setParticipDim(detected[0].id);
+    if (detected.length > 0) setParticipDims([detected[0].id]);
     // Auto-init pillar map from csi_attribute values
     if (columns.includes('csi_attribute')) {
       const attrs = Array.from(new Set(rows.map(r => r['csi_attribute']).filter(Boolean)));
@@ -571,17 +577,21 @@ export default function DataAnalysisClient() {
   const langCol     = columns.includes('home_language') ? 'home_language' : columns.includes('language')  ? 'language'  : '';
   const districtCol = columns.includes('district_name') ? 'district_name' : columns.includes('district')  ? 'district'  : '';
 
+  // Aliases so existing derived code doesn't need rewriting
+  const participDim  = participDims[0] ?? '';
+  const participDim2 = participDims[1] ?? '';
+
   // Participation
   const participCounts = participDim ? countBy(filteredRows, participDim) : {};
   const participSorted = Object.entries(participCounts).sort((a, b) => b[1] - a[1]);
   const participMax    = Math.max(...participSorted.map(x => x[1]), 1);
 
-  // Heatmap for participation tab: school × participDim
-  const schools  = schoolCol ? distinctSorted(filteredRows, schoolCol).slice(0, 25) : [];
-  const dimVals  = participSorted.map(([v]) => v);
-  const heatMax  = schools.length > 0 && participDim ? Math.max(
-    ...schools.flatMap(sc =>
-      dimVals.map(dv => filteredRows.filter(r => r[schoolCol] === sc && r[participDim] === dv).length),
+  // 2D heatmap data when two dims are selected
+  const dim1Vals = participSorted.map(([v]) => v);
+  const dim2Vals = participDim2 ? distinctSorted(filteredRows, participDim2).slice(0, 30) : [];
+  const heatMax2d = dim1Vals.length > 0 && dim2Vals.length > 0 ? Math.max(
+    ...dim1Vals.flatMap(d1 =>
+      dim2Vals.map(d2 => filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length),
     ), 1,
   ) : 1;
 
@@ -819,22 +829,40 @@ export default function DataAnalysisClient() {
             <div ref={refParticip} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Response Count by Dimension</div>
-                  <div style={{ fontSize: 12, color: '#9ca3af' }}>How many responses per group</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
+                    {participDims.length === 0 ? 'Response Count'
+                      : participDims.map(id => activeDemoDims.find(d => d.id === id)?.label ?? id).join(' × ')}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9ca3af' }}>
+                    {participDims.length < 2 ? 'Select up to 2 dimensions — click again to deselect' : 'Click a selected dimension to remove it'}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {activeDemoDims
-                    .filter(d => d.id !== schoolCol && d.id !== districtCol)
-                    .map(d => (
-                      <button key={d.id} onClick={() => setParticipDim(d.id)} style={{
+                <div data-no-capture="true" style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {activeDemoDims.map((d, idx) => {
+                    const selIdx = participDims.indexOf(d.id);
+                    const isFirst = selIdx === 0;
+                    const isSecond = selIdx === 1;
+                    const isSelected = selIdx !== -1;
+                    return (
+                      <button key={d.id} onClick={() => {
+                        setParticipDims(prev =>
+                          prev.includes(d.id)
+                            ? prev.filter(x => x !== d.id)              // deselect
+                            : prev.length < 2 ? [...prev, d.id]         // add (up to 2)
+                            : [prev[1], d.id],                          // rotate oldest out
+                        );
+                      }} style={{
                         ...chipBase,
-                        border: participDim === d.id ? '1.5px solid #3b6fce' : '1.5px solid #e5e7eb',
-                        background: participDim === d.id ? '#3b6fce' : 'white',
-                        color: participDim === d.id ? 'white' : '#374151',
+                        border: isSelected ? `1.5px solid ${isSecond ? '#8b5cf6' : '#3b6fce'}` : '1.5px solid #e5e7eb',
+                        background: isSelected ? (isSecond ? '#8b5cf6' : '#3b6fce') : 'white',
+                        color: isSelected ? 'white' : '#374151',
+                        position: 'relative',
                       }}>
+                        {isSelected && <span style={{ fontSize: 9, marginRight: 4, opacity: 0.85 }}>{isFirst ? '1' : '2'}</span>}
                         {d.label}
                       </button>
-                    ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -878,70 +906,72 @@ export default function DataAnalysisClient() {
               </div>
             </div>
 
-            {/* Heatmap: school × dimension */}
-            {schoolCol && schools.length > 0 && dimVals.length > 0 && participDim !== schoolCol && participDim !== districtCol && (
+            {/* 2D heatmap: dim1 × dim2 (shown when two dimensions are selected) */}
+            {participDim && participDim2 && dim1Vals.length > 0 && dim2Vals.length > 0 && (
               <div ref={refHeatmap} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                  School × {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim} Heatmap
+                  {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim}
+                  {' × '}
+                  {activeDemoDims.find(d => d.id === participDim2)?.label ?? participDim2}
+                  {' '}Breakdown
                 </div>
                 <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>Cell color intensity = response count</div>
                 <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <th style={{ padding: '4px 10px 8px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>School</th>
-                      {dimVals.map(dv => (
-                        <th key={dv} style={{ padding: '4px 6px 8px', textAlign: 'center', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>{dv}</th>
+                    <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ padding: '4px 12px 8px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim}
+                      </th>
+                      {dim2Vals.map(dv => (
+                        <th key={dv} style={{ padding: '4px 8px 8px', textAlign: 'center', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>{dv}</th>
                       ))}
-                      <th style={{ padding: '4px 6px 8px', textAlign: 'center', color: '#374151', fontWeight: 700 }}>Total</th>
+                      <th style={{ padding: '4px 8px 8px', textAlign: 'center', color: '#374151', fontWeight: 700, borderLeft: '2px solid #e5e7eb' }}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {schools.map(sc => {
-                      const rowTotal = filteredRows.filter(r => r[schoolCol] === sc).length;
+                    {dim1Vals.map(d1 => {
+                      const rowTotal = filteredRows.filter(r => r[participDim] === d1).length;
                       return (
-                        <tr key={sc} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                          <td style={{ padding: '5px 10px 5px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }} title={sc}>{sc}</td>
-                          {dimVals.map(dv => {
-                            const cnt = filteredRows.filter(r => r[schoolCol] === sc && r[participDim] === dv).length;
+                        <tr key={d1} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                          <td style={{ padding: '5px 12px 5px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }} title={d1}>{d1}</td>
+                          {dim2Vals.map(d2 => {
+                            const cnt = filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length;
                             return (
-                              <td key={dv} style={{
-                                padding: '5px 6px', textAlign: 'center',
-                                background: heatColor(cnt, heatMax),
-                                color: cnt > heatMax * 0.55 ? 'white' : '#374151',
+                              <td key={d2} style={{
+                                padding: '5px 8px', textAlign: 'center',
+                                background: heatColor(cnt, heatMax2d),
+                                color: cnt > heatMax2d * 0.55 ? 'white' : '#374151',
                                 fontWeight: cnt > 0 ? 600 : 400,
-                                fontSize: 11,
                               }}>
                                 {cnt > 0 ? cnt.toLocaleString() : ''}
                               </td>
                             );
                           })}
-                          <td style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 700, color: '#111827' }}>{rowTotal.toLocaleString()}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 700, color: '#111827', borderLeft: '2px solid #e5e7eb' }}>{rowTotal.toLocaleString()}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
-                {schools.length === 25 && (
-                  <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Showing first 25 schools — use filters to narrow.</p>
+                {dim2Vals.length === 30 && (
+                  <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Showing first 30 values for {activeDemoDims.find(d => d.id === participDim2)?.label ?? participDim2} — use filters to narrow.</p>
                 )}
                 <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button
                     onClick={() => {
-                      const data = schools.map(sc => {
-                        const obj: Record<string, unknown> = { school: sc };
-                        dimVals.forEach(dv => {
-                          obj[dv] = filteredRows.filter(r => r[schoolCol] === sc && r[participDim] === dv).length;
-                        });
-                        obj.total = filteredRows.filter(r => r[schoolCol] === sc).length;
+                      const data = dim1Vals.map(d1 => {
+                        const obj: Record<string, unknown> = { [participDim]: d1 };
+                        dim2Vals.forEach(d2 => { obj[d2] = filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length; });
+                        obj.total = filteredRows.filter(r => r[participDim] === d1).length;
                         return obj;
                       });
-                      exportCSV(data, `heatmap-school-${participDim}.csv`);
+                      exportCSV(data, `participation-${participDim}-${participDim2}.csv`);
                     }}
                     style={exportBtn}
                   >
                     Download CSV
                   </button>
-                  <button onClick={() => captureChart(refHeatmap, `heatmap-school-${participDim}.png`)} style={exportBtn}>
+                  <button onClick={() => captureChart(refHeatmap, `participation-${participDim}-${participDim2}.png`)} style={exportBtn}>
                     Download image
                   </button>
                 </div>
