@@ -1161,18 +1161,17 @@ export default function DataAnalysisClient() {
                   </div>
                 )}
 
-                {/* ---- CSI heatmap + bar chart — two-column grid ---- */}
-                {(
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+                {/* ---- Two-column grid: heatmap table (left) + bar chart (right) ---- */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
 
-                    {/* LEFT: Heatmap card */}
-                    <div ref={refAnalysisTable} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                        CSI × Pillar × {analysisDimLabel}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>
-                        Avg csi_adjusted · colour scaled to data range
-                      </div>
+                  {/* Left card — heatmap table */}
+                  <div ref={refAnalysisTable} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
+                      Heatmap — {analysisDimLabel}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>
+                      colour scaled to data range · 3dp
+                    </div>
 
                       {!analysisDimCol ? (
                         <p style={{ fontSize: 13, color: '#9ca3af' }}>No {analysisDimLabel} column found in your data.</p>
@@ -1182,18 +1181,18 @@ export default function DataAnalysisClient() {
                         <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
                           <thead>
                             <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                              <th style={{ padding: '6px 14px 8px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              <th style={{ padding: '3px 10px 6px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>
                                 {analysisDimLabel}
                               </th>
                               {([1, 2, 3, 4] as const).map(p => (
-                                <th key={p} style={{ padding: '6px 12px 8px', textAlign: 'center', color: PILLAR_COLORS[p - 1], fontWeight: 700, whiteSpace: 'nowrap', minWidth: 90 }}>
+                                <th key={p} style={{ padding: '3px 10px 6px', textAlign: 'center', color: PILLAR_COLORS[p - 1], fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80 }}>
                                   Pillar {p}
                                   <span style={{ display: 'block', fontSize: 9, fontWeight: 400, color: '#9ca3af', marginTop: 1 }}>
                                     {pillarGroups[p].length} attr{pillarGroups[p].length !== 1 ? 's' : ''}
                                   </span>
                                 </th>
                               ))}
-                              <th style={{ padding: '6px 12px 8px', textAlign: 'center', color: '#374151', fontWeight: 700, whiteSpace: 'nowrap', borderLeft: '2px solid #e5e7eb' }}>
+                              <th style={{ padding: '3px 10px 6px', textAlign: 'center', color: '#374151', fontWeight: 700, whiteSpace: 'nowrap', borderLeft: '2px solid #e5e7eb' }}>
                                 Overall
                               </th>
                             </tr>
@@ -1207,14 +1206,14 @@ export default function DataAnalysisClient() {
                               const t_overall = csiNorm(overallAvg);
                               return (
                                 <tr key={row.label} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                  <td style={{ padding: '6px 14px 6px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.label}>
+                                  <td style={{ padding: '3px 10px 3px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.label}>
                                     {row.label}
                                   </td>
                                   {row.pillars.map(({ avg, n }, pi) => {
                                     const t = csiNorm(avg);
                                     return (
                                       <td key={pi} style={{
-                                        padding: '5px 12px', textAlign: 'center',
+                                        padding: '3px 10px', textAlign: 'center',
                                         background: csiColor(t), color: t > 0.5 ? 'white' : '#374151',
                                         fontWeight: avg !== null ? 600 : 400,
                                       }}>
@@ -1228,7 +1227,7 @@ export default function DataAnalysisClient() {
                                     );
                                   })}
                                   <td style={{
-                                    padding: '5px 12px', textAlign: 'center',
+                                    padding: '3px 10px', textAlign: 'center',
                                     background: csiColor(t_overall), color: t_overall > 0.5 ? 'white' : '#374151',
                                     fontWeight: 700, borderLeft: '2px solid #e5e7eb',
                                   }}>
@@ -1245,7 +1244,7 @@ export default function DataAnalysisClient() {
                             {/* Summary row */}
                             {csiHeatData.length > 1 && (
                               <tr style={{ borderTop: '2px solid #e5e7eb', background: '#f9fafb' }}>
-                                <td style={{ padding: '5px 14px 5px 4px', fontSize: 12, fontWeight: 700, color: '#111827' }}>
+                                <td style={{ padding: '3px 10px 3px 4px', fontSize: 11, fontWeight: 700, color: '#111827' }}>
                                   All {analysisDimLabel}s
                                 </td>
                                 {([1, 2, 3, 4] as const).map(p => {
@@ -1253,7 +1252,7 @@ export default function DataAnalysisClient() {
                                   const n = filteredRows.filter(r => pillarGroups[p].includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
                                   const t = csiNorm(avg);
                                   return (
-                                    <td key={p} style={{ padding: '5px 12px', textAlign: 'center', background: csiColor(t), color: t > 0.5 ? 'white' : '#374151', fontWeight: 700 }}>
+                                    <td key={p} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: t > 0.5 ? 'white' : '#374151', fontWeight: 700 }}>
                                       {avg !== null ? <>{avg.toFixed(3)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : '—'}
                                     </td>
                                   );
@@ -1264,7 +1263,7 @@ export default function DataAnalysisClient() {
                                   const grandN = filteredRows.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
                                   const t = csiNorm(grandAvg);
                                   return (
-                                    <td style={{ padding: '5px 12px', textAlign: 'center', fontWeight: 700, background: csiColor(t), color: t > 0.5 ? 'white' : '#374151', borderLeft: '2px solid #e5e7eb' }}>
+                                    <td style={{ padding: '3px 10px', textAlign: 'center', fontWeight: 700, background: csiColor(t), color: t > 0.5 ? 'white' : '#374151', borderLeft: '2px solid #e5e7eb' }}>
                                       {grandAvg !== null ? <>{grandAvg.toFixed(3)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={grandN.toLocaleString()}</span></> : '—'}
                                     </td>
                                   );
@@ -1275,94 +1274,86 @@ export default function DataAnalysisClient() {
                         </table>
                       )}
 
-                      {/* Heatmap export buttons */}
-                      <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                        <button
-                          onClick={() => {
-                            const data = csiHeatData.map(row => {
-                              const obj: Record<string, unknown> = { [analysisDimCol]: row.label };
-                              ([1, 2, 3, 4] as const).forEach((p, pi) => {
-                                obj[`pillar_${p}`] = row.pillars[pi].avg?.toFixed(3) ?? '';
-                                obj[`pillar_${p}_n`] = row.pillars[pi].n;
-                              });
-                              const allIncludedAttrs = ([1, 2, 3, 4] as const).flatMap(pp => pillarGroups[pp]);
-                              const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
-                              obj.overall = csiAvg(dimRows2, allIncludedAttrs)?.toFixed(3) ?? '';
-                              obj.overall_n = dimRows2.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
-                              return obj;
+                    <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                      <button
+                        onClick={() => {
+                          const data = csiHeatData.map(row => {
+                            const obj: Record<string, unknown> = { [analysisDimCol]: row.label };
+                            ([1, 2, 3, 4] as const).forEach((p, pi) => {
+                              obj[`pillar_${p}`] = row.pillars[pi].avg?.toFixed(3) ?? '';
+                              obj[`pillar_${p}_n`] = row.pillars[pi].n;
                             });
-                            exportCSV(data, `csi-pillar-${analysisDimCol}.csv`);
-                          }}
-                          style={exportBtn}
-                        >Download CSV</button>
-                        <button onClick={() => captureChart(refAnalysisTable, `csi-heatmap-${analysisDimCol}.png`)} style={exportBtn}>
-                          Download image
-                        </button>
-                      </div>
+                            const allIncludedAttrs = ([1, 2, 3, 4] as const).flatMap(pp => pillarGroups[pp]);
+                            const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
+                            obj.overall = csiAvg(dimRows2, allIncludedAttrs)?.toFixed(3) ?? '';
+                            obj.overall_n = dimRows2.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
+                            return obj;
+                          });
+                          exportCSV(data, `csi-pillar-${analysisDimCol}.csv`);
+                        }}
+                        style={exportBtn}
+                      >Download CSV</button>
+                      <button onClick={() => captureChart(refAnalysisTable, `csi-heatmap-${analysisDimCol}.png`)} style={exportBtn}>
+                        Download image (table)
+                      </button>
                     </div>
+                  </div>
 
-                    {/* RIGHT: Bar chart card — grouped horizontal bars, one group per dim value */}
-                    {csiHeatData.length > 0 && analysisDimCol ? (
-                      <div ref={refAnalysisChart} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                          CSI Score by Pillar × {analysisDimLabel}
+                  {/* Right card — bar chart */}
+                  <div ref={refAnalysisChart} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 10 }}>
+                      Bar Chart — {analysisDimLabel}
+                    </div>
+                    {/* Pillar legend */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+                      {([1, 2, 3, 4] as const).filter(p => pillarGroups[p].length > 0).map(p => (
+                        <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: PILLAR_COLORS[p - 1], flexShrink: 0 }} />
+                          <span style={{ fontSize: 10, color: '#6b7280' }}>Pillar {p}</span>
                         </div>
-                        <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>
-                          Bars = Pillar 1–4 · width scaled to max score
-                        </div>
-                        {/* Pillar legend */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
-                          {([1, 2, 3, 4] as const).filter(p => pillarGroups[p].length > 0).map(p => (
-                            <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <div style={{ width: 10, height: 10, borderRadius: 2, background: PILLAR_COLORS[p - 1], flexShrink: 0 }} />
-                              <span style={{ fontSize: 11, color: '#6b7280' }}>Pillar {p}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                          {csiHeatData.map(row => (
-                            <div key={row.label}>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.label}>
-                                {row.label}
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {([1, 2, 3, 4] as const).filter(p => pillarGroups[p].length > 0).map((p) => {
-                                  const { avg, n } = row.pillars[p - 1];
-                                  const pct = avg !== null && csiDataMax > 0 ? (avg / csiDataMax) * 100 : 0;
-                                  return (
-                                    <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                      <span style={{ width: 44, fontSize: 10, color: PILLAR_COLORS[p - 1], fontWeight: 700, textAlign: 'right', flexShrink: 0 }}>P{p}</span>
-                                      <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 3, height: 18, position: 'relative', overflow: 'hidden' }}>
-                                        {avg !== null && (
-                                          <div style={{ width: `${pct}%`, height: '100%', background: PILLAR_COLORS[p - 1], borderRadius: 3, opacity: 0.85 }} />
-                                        )}
-                                      </div>
-                                      <span style={{ width: 44, fontSize: 10, color: '#374151', fontWeight: 600, flexShrink: 0 }}>
-                                        {avg !== null ? avg.toFixed(3) : '—'}
-                                      </span>
-                                      <span style={{ width: 48, fontSize: 9, color: '#9ca3af', flexShrink: 0 }}>n={n.toLocaleString()}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        {/* Bar chart export button */}
-                        <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                          <button onClick={() => captureChart(refAnalysisChart, `csi-barchart-${analysisDimCol}.png`)} style={exportBtn}>
-                            Download image
-                          </button>
-                        </div>
-                      </div>
+                      ))}
+                    </div>
+                    {csiHeatData.length === 0 || !analysisDimCol ? (
+                      <p style={{ fontSize: 13, color: '#9ca3af' }}>No data for this breakdown.</p>
                     ) : (
-                      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '24px', color: '#9ca3af', fontSize: 13 }}>
-                        No data to chart.
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {csiHeatData.map(row => (
+                          <div key={row.label}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.label}>
+                              {row.label}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                              {([1, 2, 3, 4] as const).filter(p => pillarGroups[p].length > 0).map((p) => {
+                                const { avg, n } = row.pillars[p - 1];
+                                const pct = avg !== null && csiDataMax > 0 ? (avg / csiDataMax) * 100 : 0;
+                                return (
+                                  <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ width: 18, fontSize: 9, color: PILLAR_COLORS[p - 1], fontWeight: 700, textAlign: 'right', flexShrink: 0 }}>P{p}</span>
+                                    <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 3, height: 16, position: 'relative', overflow: 'hidden' }}>
+                                      {avg !== null && (
+                                        <div style={{ width: `${pct}%`, height: '100%', background: PILLAR_COLORS[p - 1], borderRadius: 3, opacity: 0.85 }} />
+                                      )}
+                                    </div>
+                                    <span style={{ width: 40, fontSize: 10, color: '#374151', fontWeight: 600, flexShrink: 0, textAlign: 'right' }}>
+                                      {avg !== null ? avg.toFixed(3) : '—'}
+                                    </span>
+                                    <span style={{ width: 44, fontSize: 9, color: '#9ca3af', flexShrink: 0 }}>n={n.toLocaleString()}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
-
+                    <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                      <button onClick={() => captureChart(refAnalysisChart, `csi-barchart-${analysisDimCol}.png`)} style={exportBtn}>
+                        Download image (chart)
+                      </button>
+                    </div>
                   </div>
-                )}
+
+                </div>
 
               </>
             )}
