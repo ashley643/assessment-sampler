@@ -171,11 +171,13 @@ export default function DataAnalysisClient() {
     for (const st of SCORE_TYPES) {
       if (columns.includes(st.attrCol)) { setScoreType(st.id); break; }
     }
-    // Auto-select first demo dim present
+    // Auto-select first demo dim that looks like a real categorical column
     for (const d of DEMO_DIMS) {
       if (columns.includes(d.id)) {
-        const vals = new Set(rows.map(r => r[d.id]).filter(Boolean));
-        if (vals.size >= 2) { setParticipDim(d.id); setPerfDim(d.id); break; }
+        const vals = Array.from(new Set(rows.map(r => r[d.id]).filter(Boolean)));
+        if (vals.length >= 2 && vals.length <= 25 && vals.every(v => v.length <= 40)) {
+          setParticipDim(d.id); setPerfDim(d.id); break;
+        }
       }
     }
   }, []);
@@ -209,10 +211,16 @@ export default function DataAnalysisClient() {
   };
 
   // ---- Active demographic dims (present + meaningful variance) -----------
+  // A column qualifies only if it has 2–25 distinct values AND all values are
+  // short strings (≤40 chars). This prevents free-text response columns that
+  // happen to share a name with a demographic column from showing up as chips.
   const activeDemoDims = DEMO_DIMS.filter(d => {
     if (!columns.includes(d.id)) return false;
-    const vals = new Set(allRows.map(r => r[d.id]).filter(Boolean));
-    return vals.size >= 2 && vals.size <= 25;
+    const vals = Array.from(new Set(allRows.map(r => r[d.id]).filter(Boolean)));
+    if (vals.length < 2 || vals.length > 25) return false;
+    // Reject if any value is long (likely free-text response, not a category)
+    if (vals.some(v => v.length > 40)) return false;
+    return true;
   });
 
   // ---- Import screen ------------------------------------------------------
