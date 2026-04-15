@@ -911,11 +911,11 @@ export default function DataAnalysisClient() {
                                 fontWeight: cnt > 0 ? 600 : 400,
                                 fontSize: 11,
                               }}>
-                                {cnt > 0 ? cnt : ''}
+                                {cnt > 0 ? cnt.toLocaleString() : ''}
                               </td>
                             );
                           })}
-                          <td style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 700, color: '#111827' }}>{rowTotal}</td>
+                          <td style={{ padding: '5px 6px', textAlign: 'center', fontWeight: 700, color: '#111827' }}>{rowTotal.toLocaleString()}</td>
                         </tr>
                       );
                     })}
@@ -1110,7 +1110,7 @@ export default function DataAnalysisClient() {
                                     {avg !== null ? (
                                       <>
                                         {avg.toFixed(3)}
-                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n}</span>
+                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span>
                                       </>
                                     ) : <span style={{ color: '#d1d5db' }}>—</span>}
                                   </td>
@@ -1123,7 +1123,7 @@ export default function DataAnalysisClient() {
                                   {overallAvg !== null ? (
                                     <>
                                       {overallAvg.toFixed(3)}
-                                      <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={overallN}</span>
+                                      <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={overallN.toLocaleString()}</span>
                                     </>
                                   ) : <span style={{ color: '#d1d5db' }}>—</span>}
                                 </td>
@@ -1148,7 +1148,7 @@ export default function DataAnalysisClient() {
                                     {avg !== null ? (
                                       <>
                                         {avg.toFixed(3)}
-                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n}</span>
+                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span>
                                       </>
                                     ) : '—'}
                                   </td>
@@ -1167,7 +1167,7 @@ export default function DataAnalysisClient() {
                                     {grandAvg !== null ? (
                                       <>
                                         {grandAvg.toFixed(3)}
-                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={grandN}</span>
+                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={grandN.toLocaleString()}</span>
                                       </>
                                     ) : '—'}
                                   </td>
@@ -1287,11 +1287,11 @@ export default function DataAnalysisClient() {
                                       color: cnt > partHeatMax * 0.55 ? 'white' : '#374151',
                                       fontWeight: cnt > 0 ? 600 : 400,
                                     }}>
-                                      {cnt > 0 ? cnt : ''}
+                                      {cnt > 0 ? cnt.toLocaleString() : ''}
                                     </td>
                                   );
                                 })}
-                                <td style={{ padding: '5px 10px', textAlign: 'center', fontWeight: 700, color: '#111827', borderLeft: '2px solid #e5e7eb' }}>{rowTotal}</td>
+                                <td style={{ padding: '5px 10px', textAlign: 'center', fontWeight: 700, color: '#111827', borderLeft: '2px solid #e5e7eb' }}>{rowTotal.toLocaleString()}</td>
                               </tr>
                             );
                           })}
