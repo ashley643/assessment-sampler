@@ -596,6 +596,14 @@ export default function DataAnalysisClient() {
   const respondersWithText = answerCol ? filteredRows.filter(r => r[answerCol]?.trim()).length : 0;
   const avgWordsPerResponse = respondersWithText > 0 ? Math.round(totalWords / respondersWithText) : 0;
 
+  // ---- Headline stats ------------------------------------------------------
+  const participantCol = columns.includes('student_email') ? 'student_email'
+    : columns.includes('email') ? 'email' : '';
+  const uniqueParticipants = participantCol
+    ? new Set(filteredRows.map(r => r[participantCol]).filter(v => v && !isBlankLike(v))).size
+    : 0;
+  const dataPointsAnalyzed = totalWords + filteredRows.length * columns.length;
+
   // Per-group word stats for the participation bar chart
   const participWordStats: Record<string, { total: number; avg: number }> = {};
   if (answerCol && participDim) {
@@ -786,13 +794,13 @@ export default function DataAnalysisClient() {
         {tab === 'participation' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* Summary cards */}
+            {/* Headline stats */}
             {(() => {
               const cards = [
-                { label: 'Responses', value: filteredRows.length.toLocaleString(), sub: null },
+                { label: 'Responses',               value: filteredRows.length.toLocaleString(),  sub: null },
+                ...(uniqueParticipants > 0 ? [{ label: 'Participants', value: uniqueParticipants.toLocaleString(), sub: null }] : []),
                 ...(totalWords > 0 ? [{ label: 'Words of Authentic Voice', value: totalWords.toLocaleString(), sub: avgWordsPerResponse > 0 ? `avg ${avgWordsPerResponse} per response` : null }] : []),
-                ...(schoolCol   ? [{ label: 'Schools',   value: distinctSorted(filteredRows, schoolCol).length.toString(),   sub: null }] : []),
-                ...(districtCol ? [{ label: 'Districts', value: distinctSorted(filteredRows, districtCol).length.toString(), sub: null }] : []),
+                { label: 'Data Points Analyzed',    value: dataPointsAnalyzed.toLocaleString(),   sub: null },
               ];
               return (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
