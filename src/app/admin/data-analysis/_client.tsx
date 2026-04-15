@@ -255,6 +255,7 @@ const KNOWN_LABELS: Record<string, string> = {
 // Columns to always exclude from demographic filters (PII, free-text, scores)
 const EXCLUDE_FROM_DEMO = new Set([
   'id', 'first_name', 'last_name', 'student_email', 'email',
+  'course_id', 'class_name', 'session_name', 'teacher_name',
   'question', 'answer', 'url', 'answer_date',
   'community_schools_index_score', 'csi_adjusted',
   'harvard_score', 'harvard_impacter_score',
