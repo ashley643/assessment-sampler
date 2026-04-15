@@ -238,35 +238,18 @@ function exportCSV(data: Record<string, unknown>[], filename: string) {
 }
 
 // ---- Chart image export ---------------------------------------------------
-// Uses the browser's built-in html-to-canvas capability via foreignObject SVG.
-// Falls back to a simpler approach: embed the element as an SVG foreignObject,
-// draw to canvas, then download as PNG.
 async function captureChart(ref: RefObject<HTMLDivElement | null>, filename: string) {
   const el = ref.current;
   if (!el) return;
   const { default: html2canvas } = await import('html2canvas').catch(() => ({ default: null }));
-  if (!html2canvas) {
-    // Fallback: serialize to SVG via foreignObject
-    const { width, height } = el.getBoundingClientRect();
-    const clone = el.cloneNode(true) as HTMLElement;
-    clone.style.background = '#ffffff';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml">${clone.outerHTML}</div>
-      </foreignObject>
-    </svg>`;
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename.replace('.png', '.svg');
-    a.click();
-    return;
-  }
+  if (!html2canvas) return;
   const canvas = await html2canvas(el, {
     backgroundColor: '#ffffff',
     scale: 2,
     useCORS: true,
     logging: false,
+    // Skip any element tagged data-no-capture (export button rows)
+    ignoreElements: (node: Element) => node instanceof HTMLElement && node.dataset.noCapture === 'true',
   });
   const a = document.createElement('a');
   a.href = canvas.toDataURL('image/png');
@@ -733,7 +716,7 @@ export default function DataAnalysisClient() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                 <button
                   onClick={() => exportCSV(
                     participSorted.map(([val, cnt]) => ({ [participDim]: val, count: cnt })),
@@ -795,7 +778,7 @@ export default function DataAnalysisClient() {
                 {schools.length === 25 && (
                   <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Showing first 25 schools — use filters to narrow.</p>
                 )}
-                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button
                     onClick={() => {
                       const data = schools.map(sc => {
@@ -874,7 +857,7 @@ export default function DataAnalysisClient() {
                     </div>
                     <div style={{ fontSize: 12, color: '#9ca3af' }}>Click an attribute to see demographic breakdown below</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div data-no-capture="true" style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => exportCSV(
                         attrSorted.map(d => ({ attribute: d.attr, avg_score: d.avg.toFixed(2), n: d.count })),
@@ -1008,7 +991,7 @@ export default function DataAnalysisClient() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button
                     onClick={() => exportCSV(
                       breakdownData.map(d => ({ [perfDim]: d.label, attribute: activeAttr, avg_score: d.avg.toFixed(2), n: d.count })),
@@ -1050,7 +1033,7 @@ export default function DataAnalysisClient() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                     <button
                       onClick={() => exportCSV(
                         schoolAvgs.map(s => ({ school: s.school, attribute: activeAttr, avg_score: s.avg.toFixed(2), n: s.count })),
