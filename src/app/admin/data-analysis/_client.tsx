@@ -100,11 +100,19 @@ function parseDelimited(raw: string): { columns: string[]; rows: Row[]; delimite
 // Keep backward-compat alias used elsewhere in file
 function parseCSV(raw: string) { return parseDelimited(raw); }
 
+// ---- Blank / NA value detection -------------------------------------------
+// Treats "NA", "N/A", "none", "null", "unknown" etc. as missing data so
+// they are excluded from filter chips, charts, and heatmap dimensions.
+function isBlankLike(v: string): boolean {
+  return /^(na|n\/a|n\.a\.|none|null|unknown|-)$/i.test(v.trim());
+}
+
 // ---- Aggregate helpers ----------------------------------------------------
 function countBy(rows: Row[], key: string): Record<string, number> {
   const out: Record<string, number> = {};
   for (const r of rows) {
-    const v = r[key] || '(blank)';
+    const v = r[key];
+    if (!v || isBlankLike(v)) continue;   // skip missing / NA-like values
     out[v] = (out[v] ?? 0) + 1;
   }
   return out;
@@ -128,7 +136,7 @@ function avgBy(
 
 function distinctSorted(rows: Row[], key: string): string[] {
   const s = new Set<string>();
-  for (const r of rows) if (r[key]) s.add(r[key]);
+  for (const r of rows) if (r[key] && !isBlankLike(r[key])) s.add(r[key]);
   return Array.from(s).sort();
 }
 
@@ -268,7 +276,7 @@ function detectDemoDims(columns: string[], rows: Row[]): { id: string; label: st
   return columns
     .filter(col => !EXCLUDE_FROM_DEMO.has(col))
     .map(col => {
-      const vals = Array.from(new Set(rows.map(r => r[col]).filter(Boolean)));
+      const vals = Array.from(new Set(rows.map(r => r[col]).filter(v => v && !isBlankLike(v))));
       if (vals.length < 2 || vals.length > 25) return null;
       if (vals.some(v => v.length > 40)) return null;
       const label = KNOWN_LABELS[col.toLowerCase()]
@@ -676,7 +684,7 @@ export default function DataAnalysisClient() {
               <span style={{ fontSize: 13, color: '#6b7280' }}>
                 <strong style={{ color: '#111827' }}>{filteredRows.length.toLocaleString()}</strong>
                 {hasFilters ? ` of ${allRows.length.toLocaleString()}` : ''}{' '}
-                student response{filteredRows.length !== 1 ? 's' : ''}
+                response{filteredRows.length !== 1 ? 's' : ''}
               </span>
               {totalWords > 0 && (
                 <span style={{ fontSize: 13, color: '#6b7280' }}>
@@ -781,7 +789,7 @@ export default function DataAnalysisClient() {
             {/* Summary cards */}
             {(() => {
               const cards = [
-                { label: 'Student Responses', value: filteredRows.length.toLocaleString(), sub: null },
+                { label: 'Responses', value: filteredRows.length.toLocaleString(), sub: null },
                 ...(totalWords > 0 ? [{ label: 'Words of Authentic Voice', value: totalWords.toLocaleString(), sub: avgWordsPerResponse > 0 ? `avg ${avgWordsPerResponse} per response` : null }] : []),
                 ...(schoolCol   ? [{ label: 'Schools',   value: distinctSorted(filteredRows, schoolCol).length.toString(),   sub: null }] : []),
                 ...(districtCol ? [{ label: 'Districts', value: distinctSorted(filteredRows, districtCol).length.toString(), sub: null }] : []),
