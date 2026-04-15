@@ -150,10 +150,10 @@ function totalWordCount(rows: Row[], col: string): number {
 
 // ---- Heatmap cell color (participation counts) ----------------------------
 function heatColor(val: number, max: number): string {
-  if (max === 0 || val === 0) return '#f9fafb';
-  const t = Math.min(val / max, 1);
-  const r = Math.round(224 + (30 - 224) * t);
-  const g = Math.round(234 + (64 - 234) * t);
+  if (max === 0) return 'rgb(238,242,255)';
+  const t = val === 0 ? 0.04 : (0.12 + 0.88 * Math.min(val / max, 1));
+  const r = Math.round(224 + (30  - 224) * t);
+  const g = Math.round(234 + (64  - 234) * t);
   const b = Math.round(255 + (175 - 255) * t);
   return `rgb(${r},${g},${b})`;
 }
@@ -353,7 +353,8 @@ export default function DataAnalysisClient() {
   // Chart refs for image export
   const refParticip                 = useRef<HTMLDivElement>(null);
   const refHeatmap                  = useRef<HTMLDivElement>(null);
-  const refAnalysis                 = useRef<HTMLDivElement>(null);
+  const refAnalysisTable            = useRef<HTMLDivElement>(null);
+  const refAnalysisChart            = useRef<HTMLDivElement>(null);
 
   // Filters: column → Set of selected values
   const [filters, setFilters]       = useState<Record<string, Set<string>>>({});
@@ -665,17 +666,18 @@ export default function DataAnalysisClient() {
   const csiAllVals = csiHeatData.flatMap(r => r.pillars.map(p => p.avg)).filter((v): v is number => v !== null);
   const csiDataMin = csiAllVals.length ? Math.min(...csiAllVals) : 0;
   const csiDataMax = csiAllVals.length ? Math.max(...csiAllVals) : 1;
-  // Returns normalized 0–1 within the actual data range
+  // Returns normalized 0–1 within the actual data range, floored at 0.1
   function csiNorm(val: number | null): number {
     if (val === null) return 0;
     const range = csiDataMax - csiDataMin;
-    return range > 0.001 ? Math.max(0, Math.min(1, (val - csiDataMin) / range)) : 0.5;
+    const raw = range > 0.001 ? Math.max(0, Math.min(1, (val - csiDataMin) / range)) : 0.5;
+    return 0.1 + raw * 0.9;
   }
 
   // =========================================================================
   return (
     <AdminShell>
-      <div style={{ fontFamily: 'DM Sans, sans-serif', maxWidth: 960 }}>
+      <div style={{ fontFamily: 'DM Sans, sans-serif', maxWidth: 1280 }}>
 
         {/* ---- Header ---------------------------------------------------- */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -798,9 +800,9 @@ export default function DataAnalysisClient() {
               return (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
                   {cards.map(c => (
-                    <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 20px' }}>
+                    <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 16px' }}>
                       <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{c.label}</div>
-                      <div style={{ fontSize: 30, fontWeight: 700, color: '#111827' }}>{c.value}</div>
+                      <div style={{ fontSize: 26, fontWeight: 700, color: '#111827' }}>{c.value}</div>
                       {c.sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{c.sub}</div>}
                     </div>
                   ))}
@@ -808,20 +810,12 @@ export default function DataAnalysisClient() {
               );
             })()}
 
-            {/* Participation breakdown chart */}
-            <div ref={refParticip} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                    {participDims.length === 0 ? 'Response Count'
-                      : participDims.map(id => activeDemoDims.find(d => d.id === id)?.label ?? id).join(' × ')}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#9ca3af' }}>
-                    {participDims.length < 2 ? 'Select up to 2 dimensions — click again to deselect' : 'Click a selected dimension to remove it'}
-                  </div>
-                </div>
+            {/* Chip selector — standalone card above the two-column grid */}
+            <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '10px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>Dimension</span>
                 <div data-no-capture="true" style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {activeDemoDims.map((d, idx) => {
+                  {activeDemoDims.map((d) => {
                     const selIdx = participDims.indexOf(d.id);
                     const isFirst = selIdx === 0;
                     const isSecond = selIdx === 1;
@@ -830,9 +824,9 @@ export default function DataAnalysisClient() {
                       <button key={d.id} onClick={() => {
                         setParticipDims(prev =>
                           prev.includes(d.id)
-                            ? prev.filter(x => x !== d.id)              // deselect
-                            : prev.length < 2 ? [...prev, d.id]         // add (up to 2)
-                            : [prev[1], d.id],                          // rotate oldest out
+                            ? prev.filter(x => x !== d.id)
+                            : prev.length < 2 ? [...prev, d.id]
+                            : [prev[1], d.id],
                         );
                       }} style={{
                         ...chipBase,
@@ -847,119 +841,219 @@ export default function DataAnalysisClient() {
                     );
                   })}
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {participSorted.map(([val, cnt], i) => {
-                  const ws = participWordStats[val];
-                  return (
-                    <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 148, fontSize: 12, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</div>
-                      <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 4, height: 22 }}>
-                        <div style={{ width: `${(cnt / participMax) * 100}%`, height: '100%', background: pickColor(i), borderRadius: 4, transition: 'width 0.3s', minWidth: cnt > 0 ? 4 : 0 }} />
-                      </div>
-                      <div style={{ width: 40, fontSize: 12, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{cnt.toLocaleString()}</div>
-                      {ws && ws.avg > 0 && (
-                        <div style={{ width: 64, fontSize: 10, color: '#9ca3af', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                          ~{ws.avg} words
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button
-                  onClick={() => exportCSV(
-                    participSorted.map(([val, cnt]) => ({
-                      [participDim]: val,
-                      count: cnt,
-                      ...(participWordStats[val] ? { total_words: participWordStats[val].total, avg_words: participWordStats[val].avg } : {}),
-                    })),
-                    `participation-by-${participDim}.csv`,
-                  )}
-                  style={exportBtn}
-                >
-                  Download CSV
-                </button>
-                <button onClick={() => captureChart(refParticip, `participation-by-${participDim}.png`)} style={exportBtn}>
-                  Download image
-                </button>
+                <span style={{ fontSize: 11, color: '#d1d5db', flexShrink: 0 }}>
+                  {participDims.length < 2 ? 'Select up to 2 — click again to deselect' : 'Click a selected dimension to remove it'}
+                </span>
               </div>
             </div>
 
-            {/* 2D heatmap: dim1 × dim2 (shown when two dimensions are selected) */}
-            {participDim && participDim2 && dim1Vals.length > 0 && dim2Vals.length > 0 && (
-              <div ref={refHeatmap} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                  {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim}
-                  {' × '}
-                  {activeDemoDims.find(d => d.id === participDim2)?.label ?? participDim2}
-                  {' '}Breakdown
-                </div>
-                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>Cell color intensity = response count</div>
-                <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                      <th style={{ padding: '4px 12px 8px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                        {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim}
-                      </th>
-                      {dim2Vals.map(dv => (
-                        <th key={dv} style={{ padding: '4px 8px 8px', textAlign: 'center', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>{dv}</th>
-                      ))}
-                      <th style={{ padding: '4px 8px 8px', textAlign: 'center', color: '#374151', fontWeight: 700, borderLeft: '2px solid #e5e7eb' }}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dim1Vals.map(d1 => {
-                      const rowTotal = filteredRows.filter(r => r[participDim] === d1).length;
-                      return (
-                        <tr key={d1} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                          <td style={{ padding: '5px 12px 5px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }} title={d1}>{d1}</td>
-                          {dim2Vals.map(d2 => {
-                            const cnt = filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length;
+            {/* Two-column grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+
+              {/* Left card */}
+              <div ref={refParticip} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+                {participDim2 ? (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
+                      {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim}
+                      {' × '}
+                      {activeDemoDims.find(d => d.id === participDim2)?.label ?? participDim2}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>counts table</div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                            <th style={{ padding: '3px 8px 6px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim}
+                            </th>
+                            {dim2Vals.map(dv => (
+                              <th key={dv} style={{ padding: '3px 8px 6px', textAlign: 'center', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>{dv}</th>
+                            ))}
+                            <th style={{ padding: '3px 8px 6px', textAlign: 'center', color: '#374151', fontWeight: 700, borderLeft: '2px solid #e5e7eb' }}>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dim1Vals.map(d1 => {
+                            const rowTotal = filteredRows.filter(r => r[participDim] === d1).length;
                             return (
-                              <td key={d2} style={{
-                                padding: '5px 8px', textAlign: 'center',
-                                background: heatColor(cnt, heatMax2d),
-                                color: cnt > heatMax2d * 0.55 ? 'white' : '#374151',
-                                fontWeight: cnt > 0 ? 600 : 400,
-                              }}>
-                                {cnt > 0 ? cnt.toLocaleString() : ''}
-                              </td>
+                              <tr key={d1} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <td style={{ padding: '3px 8px 3px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }} title={d1}>{d1}</td>
+                                {dim2Vals.map(d2 => {
+                                  const cnt = filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length;
+                                  return (
+                                    <td key={d2} style={{
+                                      padding: '3px 8px', textAlign: 'center',
+                                      background: heatColor(cnt, heatMax2d),
+                                      color: cnt > heatMax2d * 0.55 ? 'white' : '#374151',
+                                      fontWeight: cnt > 0 ? 600 : 400,
+                                    }}>
+                                      {cnt > 0 ? cnt.toLocaleString() : ''}
+                                    </td>
+                                  );
+                                })}
+                                <td style={{ padding: '3px 8px', textAlign: 'center', fontWeight: 700, color: '#111827', borderLeft: '2px solid #e5e7eb' }}>{rowTotal.toLocaleString()}</td>
+                              </tr>
                             );
                           })}
-                          <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 700, color: '#111827', borderLeft: '2px solid #e5e7eb' }}>{rowTotal.toLocaleString()}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {dim2Vals.length === 30 && (
-                  <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Showing first 30 values for {activeDemoDims.find(d => d.id === participDim2)?.label ?? participDim2} — use filters to narrow.</p>
+                        </tbody>
+                      </table>
+                    </div>
+                    {dim2Vals.length === 30 && (
+                      <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Showing first 30 values for {activeDemoDims.find(d => d.id === participDim2)?.label ?? participDim2} — use filters to narrow.</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
+                      {participDim ? (activeDemoDims.find(d => d.id === participDim)?.label ?? participDim) : 'Select a dimension'}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {participSorted.map(([val, cnt], i) => (
+                        <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 120, fontSize: 11, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</div>
+                          <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 4, height: 18 }}>
+                            <div style={{ width: `${(cnt / participMax) * 100}%`, height: '100%', background: pickColor(i), borderRadius: 4, transition: 'width 0.3s', minWidth: cnt > 0 ? 4 : 0 }} />
+                          </div>
+                          <div style={{ width: 40, fontSize: 11, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{cnt.toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
-                <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                   <button
                     onClick={() => {
-                      const data = dim1Vals.map(d1 => {
-                        const obj: Record<string, unknown> = { [participDim]: d1 };
-                        dim2Vals.forEach(d2 => { obj[d2] = filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length; });
-                        obj.total = filteredRows.filter(r => r[participDim] === d1).length;
-                        return obj;
-                      });
-                      exportCSV(data, `participation-${participDim}-${participDim2}.csv`);
+                      if (participDim2) {
+                        const data = dim1Vals.map(d1 => {
+                          const obj: Record<string, unknown> = { [participDim]: d1 };
+                          dim2Vals.forEach(d2 => { obj[d2] = filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length; });
+                          obj.total = filteredRows.filter(r => r[participDim] === d1).length;
+                          return obj;
+                        });
+                        exportCSV(data, `participation-${participDim}-${participDim2}.csv`);
+                      } else {
+                        exportCSV(
+                          participSorted.map(([val, cnt]) => ({
+                            [participDim]: val,
+                            count: cnt,
+                            ...(participWordStats[val] ? { total_words: participWordStats[val].total, avg_words: participWordStats[val].avg } : {}),
+                          })),
+                          `participation-by-${participDim}.csv`,
+                        );
+                      }
                     }}
                     style={exportBtn}
                   >
                     Download CSV
                   </button>
-                  <button onClick={() => captureChart(refHeatmap, `participation-${participDim}-${participDim2}.png`)} style={exportBtn}>
+                  <button
+                    onClick={() => captureChart(refParticip, participDim2 ? `participation-${participDim}-${participDim2}.png` : `participation-by-${participDim}.png`)}
+                    style={exportBtn}
+                  >
                     Download image
                   </button>
                 </div>
               </div>
-            )}
+
+              {/* Right card */}
+              <div ref={refHeatmap} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+                {participDim2 ? (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 10 }}>
+                      Stacked: {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim}
+                      {' × '}
+                      {activeDemoDims.find(d => d.id === participDim2)?.label ?? participDim2}
+                    </div>
+                    {/* Legend */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                      {dim2Vals.map((dv, i) => (
+                        <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <div style={{ width: 10, height: 10, borderRadius: 2, background: pickColor(i), flexShrink: 0 }} />
+                          <span style={{ fontSize: 10, color: '#6b7280' }}>{dv}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {dim1Vals.map(d1 => {
+                        const rowTotal = filteredRows.filter(r => r[participDim] === d1).length;
+                        return (
+                          <div key={d1} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 120, fontSize: 11, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d1}>{d1}</div>
+                            <div style={{ flex: 1, display: 'flex', height: 20, borderRadius: 3, overflow: 'hidden' }}>
+                              {dim2Vals.map((d2, i) => {
+                                const cnt = filteredRows.filter(r => r[participDim] === d1 && r[participDim2] === d2).length;
+                                const pct = rowTotal > 0 ? (cnt / rowTotal) * 100 : 0;
+                                return pct > 0 ? (
+                                  <div
+                                    key={d2}
+                                    title={`${d2}: ${cnt}`}
+                                    style={{ width: `${pct}%`, height: '100%', background: pickColor(i), flexShrink: 0 }}
+                                  />
+                                ) : null;
+                              })}
+                            </div>
+                            <div style={{ width: 36, fontSize: 11, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{rowTotal.toLocaleString()}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                      <button onClick={() => captureChart(refHeatmap, `participation-stacked-${participDim}-${participDim2}.png`)} style={exportBtn}>
+                        Download image
+                      </button>
+                    </div>
+                  </>
+                ) : answerCol && Object.keys(participWordStats).length > 0 ? (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 12 }}>Avg Words per Response</div>
+                    {(() => {
+                      const wordMax = Math.max(...Object.values(participWordStats).map(w => w.avg), 1);
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {participSorted.map(([val], i) => {
+                            const ws = participWordStats[val];
+                            if (!ws) return null;
+                            return (
+                              <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ width: 120, fontSize: 11, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</div>
+                                <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 4, height: 18 }}>
+                                  <div style={{ width: `${(ws.avg / wordMax) * 100}%`, height: '100%', background: pickColor(i), borderRadius: 4, transition: 'width 0.3s', minWidth: ws.avg > 0 ? 4 : 0 }} />
+                                </div>
+                                <div style={{ width: 40, fontSize: 11, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{ws.avg}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                    <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                      <button
+                        onClick={() => exportCSV(
+                          participSorted.map(([val]) => ({
+                            [participDim]: val,
+                            avg_words: participWordStats[val]?.avg ?? 0,
+                            total_words: participWordStats[val]?.total ?? 0,
+                          })),
+                          `word-count-by-${participDim}.csv`,
+                        )}
+                        style={exportBtn}
+                      >
+                        Download CSV
+                      </button>
+                      <button onClick={() => captureChart(refHeatmap, `word-count-by-${participDim}.png`)} style={exportBtn}>
+                        Download image
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13, color: '#9ca3af', padding: '20px 0' }}>
+                    {answerCol ? 'No word count data available.' : 'No answer column detected. Select a second dimension to see a stacked bar chart.'}
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
         )}
 
@@ -1067,17 +1161,17 @@ export default function DataAnalysisClient() {
                   </div>
                 )}
 
-                {/* ---- CSI heatmap + bar chart ---- */}
+                {/* ---- CSI heatmap + bar chart — two-column grid ---- */}
                 {(
-                  <div ref={refAnalysis} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
 
-                    {/* Heatmap card */}
-                    <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
+                    {/* LEFT: Heatmap card */}
+                    <div ref={refAnalysisTable} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                        CSI Score × Pillar × {analysisDimLabel} — Heatmap
+                        CSI × Pillar × {analysisDimLabel}
                       </div>
                       <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>
-                        Avg csi_adjusted · 3 decimal places · colour scaled to data range
+                        Avg csi_adjusted · colour scaled to data range
                       </div>
 
                       {!analysisDimCol ? (
@@ -1180,16 +1274,41 @@ export default function DataAnalysisClient() {
                           </tbody>
                         </table>
                       )}
+
+                      {/* Heatmap export buttons */}
+                      <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                        <button
+                          onClick={() => {
+                            const data = csiHeatData.map(row => {
+                              const obj: Record<string, unknown> = { [analysisDimCol]: row.label };
+                              ([1, 2, 3, 4] as const).forEach((p, pi) => {
+                                obj[`pillar_${p}`] = row.pillars[pi].avg?.toFixed(3) ?? '';
+                                obj[`pillar_${p}_n`] = row.pillars[pi].n;
+                              });
+                              const allIncludedAttrs = ([1, 2, 3, 4] as const).flatMap(pp => pillarGroups[pp]);
+                              const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
+                              obj.overall = csiAvg(dimRows2, allIncludedAttrs)?.toFixed(3) ?? '';
+                              obj.overall_n = dimRows2.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
+                              return obj;
+                            });
+                            exportCSV(data, `csi-pillar-${analysisDimCol}.csv`);
+                          }}
+                          style={exportBtn}
+                        >Download CSV</button>
+                        <button onClick={() => captureChart(refAnalysisTable, `csi-heatmap-${analysisDimCol}.png`)} style={exportBtn}>
+                          Download image
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Bar chart card — grouped horizontal bars, one group per dim value */}
-                    {csiHeatData.length > 0 && analysisDimCol && (
-                      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+                    {/* RIGHT: Bar chart card — grouped horizontal bars, one group per dim value */}
+                    {csiHeatData.length > 0 && analysisDimCol ? (
+                      <div ref={refAnalysisChart} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
-                          CSI Score × Pillar × {analysisDimLabel} — Bar Chart
+                          CSI Score by Pillar × {analysisDimLabel}
                         </div>
                         <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>
-                          Each group = one {analysisDimLabel.toLowerCase()} · bars = Pillar 1–4
+                          Bars = Pillar 1–4 · width scaled to max score
                         </div>
                         {/* Pillar legend */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
@@ -1203,7 +1322,7 @@ export default function DataAnalysisClient() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                           {csiHeatData.map(row => (
                             <div key={row.label}>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 5, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.label}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.label}>
                                 {row.label}
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -1229,33 +1348,19 @@ export default function DataAnalysisClient() {
                             </div>
                           ))}
                         </div>
+                        {/* Bar chart export button */}
+                        <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                          <button onClick={() => captureChart(refAnalysisChart, `csi-barchart-${analysisDimCol}.png`)} style={exportBtn}>
+                            Download image
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '24px', color: '#9ca3af', fontSize: 13 }}>
+                        No data to chart.
                       </div>
                     )}
 
-                    {/* Export buttons */}
-                    <div data-no-capture="true" style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={() => {
-                          const data = csiHeatData.map(row => {
-                            const obj: Record<string, unknown> = { [analysisDimCol]: row.label };
-                            ([1, 2, 3, 4] as const).forEach((p, pi) => {
-                              obj[`pillar_${p}`] = row.pillars[pi].avg?.toFixed(3) ?? '';
-                              obj[`pillar_${p}_n`] = row.pillars[pi].n;
-                            });
-                            const allIncludedAttrs = ([1, 2, 3, 4] as const).flatMap(pp => pillarGroups[pp]);
-                            const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
-                            obj.overall = csiAvg(dimRows2, allIncludedAttrs)?.toFixed(3) ?? '';
-                            obj.overall_n = dimRows2.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
-                            return obj;
-                          });
-                          exportCSV(data, `csi-pillar-${analysisDimCol}.csv`);
-                        }}
-                        style={exportBtn}
-                      >Download CSV</button>
-                      <button onClick={() => captureChart(refAnalysis, `csi-pillar-${analysisDimCol}.png`)} style={exportBtn}>
-                        Download image
-                      </button>
-                    </div>
                   </div>
                 )}
 
