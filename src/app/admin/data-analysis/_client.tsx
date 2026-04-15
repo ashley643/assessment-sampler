@@ -14,14 +14,32 @@ const PALETTE = [
 ];
 function pickColor(i: number) { return PALETTE[i % PALETTE.length]; }
 
-// ---- CSV parser -----------------------------------------------------------
-function parseCSV(raw: string): { columns: string[]; rows: Row[] } {
+// ---- Delimiter auto-detection & CSV/TSV parser ----------------------------
+function detectDelimiter(firstLine: string): string {
+  // Count each candidate delimiter's occurrences in the header row.
+  // The one with the most hits is almost certainly the real delimiter.
+  const candidates: [string, number][] = [
+    ['\t', (firstLine.match(/\t/g) ?? []).length],
+    [',',  (firstLine.match(/,/g)  ?? []).length],
+    [';',  (firstLine.match(/;/g)  ?? []).length],
+    ['|',  (firstLine.match(/\|/g) ?? []).length],
+  ];
+  return candidates.sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function parseDelimited(raw: string): { columns: string[]; rows: Row[]; delimiter: string } {
   // Strip BOM
   const text = raw.startsWith('\uFEFF') ? raw.slice(1) : raw;
   const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length === 0) return { columns: [], rows: [] };
+  if (lines.length === 0) return { columns: [], rows: [], delimiter: ',' };
+
+  const delimiter = detectDelimiter(lines[0]);
 
   function splitLine(line: string): string[] {
+    // For tab-separated files use a simple split (TSV fields are not quoted)
+    if (delimiter === '\t') return line.split('\t').map(s => s.trim());
+
+    // For comma/semicolon/pipe: handle RFC 4180 quoting
     const result: string[] = [];
     let cur = '';
     let inQ = false;
@@ -30,7 +48,7 @@ function parseCSV(raw: string): { columns: string[]; rows: Row[] } {
       if (ch === '"') {
         if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
         else inQ = !inQ;
-      } else if (ch === ',' && !inQ) {
+      } else if (ch === delimiter && !inQ) {
         result.push(cur.trim()); cur = '';
       } else {
         cur += ch;
@@ -47,8 +65,11 @@ function parseCSV(raw: string): { columns: string[]; rows: Row[] } {
     columns.forEach((col, i) => { row[col] = vals[i] ?? ''; });
     return row;
   });
-  return { columns, rows };
+  return { columns, rows, delimiter };
 }
+
+// Keep backward-compat alias used elsewhere in file
+function parseCSV(raw: string) { return parseDelimited(raw); }
 
 // ---- Aggregate helpers ----------------------------------------------------
 function countBy(rows: Row[], key: string): Record<string, number> {
@@ -243,6 +264,12 @@ export default function DataAnalysisClient() {
   const [allRows, setAllRows]       = useState<Row[]>([]);
   const [dragging, setDragging]     = useState(false);
   const fileRef                     = useRef<HTMLInputElement>(null);
+
+  // Import preview state: after parsing, show a preview before committing
+  const [preview, setPreview]       = useState<{
+    columns: string[]; rows: Row[]; delimiter: string;
+  } | null>(null);
+
   // Chart refs for image export
   const refParticip                 = useRef<HTMLDivElement>(null);
   const refHeatmap                  = useRef<HTMLDivElement>(null);
@@ -262,13 +289,21 @@ export default function DataAnalysisClient() {
   const [perfDim, setPerfDim]       = useState('');
   const [selectedAttr, setSelectedAttr] = useState<string | null>(null);
 
-  // ---- Load CSV -----------------------------------------------------------
+  // ---- Load CSV: parse and show preview first -----------------------------
   const loadText = useCallback((text: string) => {
-    const { columns, rows } = parseCSV(text);
+    const parsed = parseCSV(text);
+    setPreview(parsed);
+  }, []);
+
+  // ---- Commit preview → dashboard -----------------------------------------
+  const commitPreview = useCallback(() => {
+    if (!preview) return;
+    const { columns, rows } = preview;
     setColumns(columns);
     setAllRows(rows);
     setFilters({});
     setSelectedAttr(null);
+    setPreview(null);
     // Auto-select first available score type + default score column variant
     const defaultScoreCols: Record<string, string> = {};
     for (const st of SCORE_TYPES) {
@@ -288,7 +323,7 @@ export default function DataAnalysisClient() {
       setParticipDim(detected[0].id);
       setPerfDim(detected[0].id);
     }
-  }, []);
+  }, [preview]);
 
   const handleFile = useCallback((file: File) => {
     const reader = new FileReader();
@@ -362,6 +397,98 @@ export default function DataAnalysisClient() {
               csi_attribute, community_schools_index_score, harvard_attribute, harvard_score,
               casel_attribute, casel_score
             </p>
+          </div>
+        </div>
+      </AdminShell>
+    );
+  }
+
+  // ---- Import preview screen ----------------------------------------------
+  if (preview) {
+    const DELIM_LABELS: Record<string, string> = {
+      '\t': 'Tab (TSV)',
+      ',': 'Comma (CSV)',
+      ';': 'Semicolon',
+      '|': 'Pipe',
+    };
+    const sampleRows = preview.rows.slice(0, 3);
+    return (
+      <AdminShell>
+        <div style={{ maxWidth: 900, fontFamily: 'DM Sans, sans-serif' }}>
+          <div style={{ marginBottom: 20 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111827', margin: '0 0 6px' }}>Import Preview</h1>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+              Verify the columns and sample rows look correct before continuing.
+            </p>
+          </div>
+
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Rows',      value: preview.rows.length.toLocaleString() },
+              { label: 'Columns',   value: preview.columns.length.toString() },
+              { label: 'Delimiter', value: DELIM_LABELS[preview.delimiter] ?? preview.delimiter },
+            ].map(c => (
+              <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 18px', minWidth: 130 }}>
+                <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{c.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#111827' }}>{c.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Column list */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 10 }}>Detected Columns</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {preview.columns.map((col, i) => (
+                <span key={i} style={{ fontSize: 11, padding: '3px 10px', background: '#f3f4f6', borderRadius: 20, color: '#374151', fontWeight: 500 }}>
+                  {col || <em style={{ color: '#9ca3af' }}>(blank)</em>}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Sample data table */}
+          {sampleRows.length > 0 && (
+            <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', marginBottom: 20, overflowX: 'auto' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 12 }}>First {sampleRows.length} Data Rows</div>
+              <table style={{ borderCollapse: 'collapse', fontSize: 11, whiteSpace: 'nowrap' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    {preview.columns.map((col, i) => (
+                      <th key={i} style={{ padding: '4px 10px', textAlign: 'left', color: '#6b7280', fontWeight: 600, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sampleRows.map((row, ri) => (
+                    <tr key={ri} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      {preview.columns.map((col, ci) => (
+                        <td key={ci} style={{ padding: '4px 10px', color: '#374151', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }} title={row[col]}>
+                          {row[col] || <span style={{ color: '#d1d5db' }}>—</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={commitPreview}
+              style={{ fontSize: 13, fontWeight: 600, color: 'white', background: '#3b6fce', border: 'none', borderRadius: 8, padding: '10px 24px', cursor: 'pointer' }}
+            >
+              Looks good — continue
+            </button>
+            <button
+              onClick={() => { setPreview(null); if (fileRef.current) fileRef.current.value = ''; }}
+              style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 24px', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       </AdminShell>
