@@ -15,6 +15,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/response-finder':  'Response Finder — Admin',
   '/admin/district-finder':  'District Response Finder — Admin',
   '/admin/videoask-import':  'VideoAsk Import — Admin',
+  '/admin/data-analysis':    'Data Analysis — Admin',
 };
 
 const NAV = [
@@ -24,6 +25,7 @@ const NAV = [
   { href: '/admin/assessments', label: 'Assessments' },
   { href: '/admin/bundles', label: 'Bundles' },
   { href: '/admin/audit', label: 'Audit Log' },
+  { href: '/admin/data-analysis', label: 'Data Analysis' },
 ];
 
 const NAV_EXTERNAL = [
