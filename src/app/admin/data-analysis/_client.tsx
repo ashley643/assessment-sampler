@@ -16,13 +16,11 @@ function pickColor(i: number) { return PALETTE[i % PALETTE.length]; }
 
 // ---- Delimiter auto-detection & CSV/TSV parser ----------------------------
 function detectDelimiter(firstLine: string): string {
-  // Count each candidate delimiter's occurrences in the header row.
-  // The one with the most hits is almost certainly the real delimiter.
   const candidates: [string, number][] = [
-    ['\t', (firstLine.match(/\t/g) ?? []).length],
-    [',',  (firstLine.match(/,/g)  ?? []).length],
-    [';',  (firstLine.match(/;/g)  ?? []).length],
-    ['|',  (firstLine.match(/\|/g) ?? []).length],
+    ['\t', (firstLine.match(/\t/g)  ?? []).length],
+    [',',  (firstLine.match(/,/g)   ?? []).length],
+    [';',  (firstLine.match(/;/g)   ?? []).length],
+    ['|',  (firstLine.match(/\|/g)  ?? []).length],
   ];
   return candidates.sort((a, b) => b[1] - a[1])[0][0];
 }
@@ -30,41 +28,72 @@ function detectDelimiter(firstLine: string): string {
 function parseDelimited(raw: string): { columns: string[]; rows: Row[]; delimiter: string } {
   // Strip BOM
   const text = raw.startsWith('\uFEFF') ? raw.slice(1) : raw;
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length === 0) return { columns: [], rows: [], delimiter: ',' };
+  if (!text.trim()) return { columns: [], rows: [], delimiter: ',' };
 
-  const delimiter = detectDelimiter(lines[0]);
+  // Detect delimiter from the first non-empty line
+  const firstLine = text.split(/\r?\n/).find(l => l.trim()) ?? '';
+  const delimiter = detectDelimiter(firstLine);
 
-  function splitLine(line: string): string[] {
-    // For tab-separated files use a simple split (TSV fields are not quoted)
-    if (delimiter === '\t') return line.split('\t').map(s => s.trim());
-
-    // For comma/semicolon/pipe: handle RFC 4180 quoting
-    const result: string[] = [];
-    let cur = '';
-    let inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
-        else inQ = !inQ;
-      } else if (ch === delimiter && !inQ) {
-        result.push(cur.trim()); cur = '';
-      } else {
-        cur += ch;
-      }
-    }
-    result.push(cur.trim());
-    return result;
+  // TSV: simple line split (fields are not quoted; no multiline risk)
+  if (delimiter === '\t') {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length === 0) return { columns: [], rows: [], delimiter: '\t' };
+    const columns = lines[0].split('\t').map(s => s.trim());
+    const rows = lines.slice(1).map(l => {
+      const vals = l.split('\t').map(s => s.trim());
+      const row: Row = {};
+      columns.forEach((col, i) => { row[col] = vals[i] ?? ''; });
+      return row;
+    }).filter(r => Object.values(r).some(v => v));
+    return { columns, rows, delimiter };
   }
 
-  const columns = splitLine(lines[0]);
-  const rows = lines.slice(1).map(l => {
-    const vals = splitLine(l);
-    const row: Row = {};
-    columns.forEach((col, i) => { row[col] = vals[i] ?? ''; });
-    return row;
-  });
+  // CSV (comma / semicolon / pipe): full RFC 4180 character-by-character parse.
+  // This correctly handles quoted fields that contain the delimiter OR newlines.
+  const records: string[][] = [];
+  let record: string[] = [];
+  let field = '';
+  let inQuote = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (inQuote) {
+      if (ch === '"' && next === '"') { field += '"'; i++; }   // escaped quote
+      else if (ch === '"')            { inQuote = false; }     // closing quote
+      else                            { field += ch; }         // literal char (incl. \n)
+    } else {
+      if (ch === '"') {
+        inQuote = true;
+      } else if (ch === delimiter) {
+        record.push(field.trim()); field = '';
+      } else if (ch === '\r' && next === '\n') {
+        record.push(field.trim()); field = '';
+        records.push(record); record = []; i++;
+      } else if (ch === '\n') {
+        record.push(field.trim()); field = '';
+        records.push(record); record = [];
+      } else {
+        field += ch;
+      }
+    }
+  }
+  // Flush last field / record
+  if (field || record.length > 0) {
+    record.push(field.trim());
+    if (record.some(f => f)) records.push(record);
+  }
+
+  if (records.length === 0) return { columns: [], rows: [], delimiter };
+  const columns = records[0].map(c => c.trim());
+  const rows = records.slice(1)
+    .filter(r => r.some(f => f))
+    .map(vals => {
+      const row: Row = {};
+      columns.forEach((col, i) => { row[col] = (vals[i] ?? '').trim(); });
+      return row;
+    });
   return { columns, rows, delimiter };
 }
 
