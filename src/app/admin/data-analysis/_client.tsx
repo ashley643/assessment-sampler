@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, type RefObject } from 'react';
 import AdminShell from '@/components/admin/AdminShell';
 
 // ---- Types ----------------------------------------------------------------
@@ -93,22 +93,79 @@ function heatColor(val: number, max: number): string {
 }
 
 // ---- Score type config ----------------------------------------------------
+// Each entry can have multiple scoreCol options (e.g. raw vs impacter)
 const SCORE_TYPES = [
-  { id: 'csi',     label: 'CSI',     attrCol: 'csi_attribute',     scoreCol: 'community_schools_index_score' },
-  { id: 'harvard', label: 'Harvard', attrCol: 'harvard_attribute', scoreCol: 'harvard_score' },
-  { id: 'casel',   label: 'CASEL',   attrCol: 'casel_attribute',   scoreCol: 'casel_score' },
+  {
+    id: 'csi', label: 'CSI', attrCol: 'csi_attribute',
+    scoreOptions: [
+      { col: 'community_schools_index_score', label: 'Raw' },
+      { col: 'csi_adjusted',                  label: 'Adjusted' },
+    ],
+  },
+  {
+    id: 'harvard', label: 'Harvard', attrCol: 'harvard_attribute',
+    scoreOptions: [
+      { col: 'harvard_score',          label: 'Raw' },
+      { col: 'harvard_impacter_score', label: 'Impacter' },
+    ],
+  },
+  {
+    id: 'casel', label: 'CASEL', attrCol: 'casel_attribute',
+    scoreOptions: [
+      { col: 'casel_score',          label: 'Raw' },
+      { col: 'casel_impacter_score', label: 'Impacter' },
+    ],
+  },
 ] as const;
 type ScoreTypeId = typeof SCORE_TYPES[number]['id'];
 
-// ---- Demographic dimensions (in preferred display order) ------------------
-const DEMO_DIMS = [
-  { id: 'gender',        label: 'Gender' },
-  { id: 'current_grade', label: 'Grade' },
-  { id: 'home_language', label: 'Language' },
-  { id: 'response_type', label: 'Response Type' },
-  { id: 'school_name',   label: 'School' },
-  { id: 'district_name', label: 'District' },
-];
+// ---- Friendly labels for known column names --------------------------------
+const KNOWN_LABELS: Record<string, string> = {
+  gender:         'Gender',
+  current_grade:  'Grade',
+  grade:          'Grade',
+  home_language:  'Language',
+  language:       'Language',
+  response_type:  'Response Type',
+  school_name:    'School',
+  school:         'School',
+  district_name:  'District',
+  district:       'District',
+  ethnicity:      'Ethnicity',
+  hispanic:       'Hispanic',
+  ell:            'ELL',
+  frl:            'FRL',
+  iep:            'IEP',
+  class_name:     'Class',
+  course_id:      'Course',
+  session_name:   'Session',
+  question_num:   'Question #',
+};
+
+// Columns to always exclude from demographic filters (PII, free-text, scores)
+const EXCLUDE_FROM_DEMO = new Set([
+  'id', 'first_name', 'last_name', 'student_email', 'email',
+  'question', 'answer', 'url', 'answer_date',
+  'community_schools_index_score', 'csi_adjusted',
+  'harvard_score', 'harvard_impacter_score',
+  'casel_score', 'casel_impacter_score',
+  'csi_attribute', 'harvard_attribute', 'casel_attribute',
+]);
+
+// Auto-detect categorical demographic columns from whatever columns the CSV has
+function detectDemoDims(columns: string[], rows: Row[]): { id: string; label: string }[] {
+  return columns
+    .filter(col => !EXCLUDE_FROM_DEMO.has(col))
+    .map(col => {
+      const vals = Array.from(new Set(rows.map(r => r[col]).filter(Boolean)));
+      if (vals.length < 2 || vals.length > 25) return null;
+      if (vals.some(v => v.length > 40)) return null;
+      const label = KNOWN_LABELS[col.toLowerCase()]
+        ?? col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return { id: col, label };
+    })
+    .filter(Boolean) as { id: string; label: string }[];
+}
 
 // ---- CSV export helper ----------------------------------------------------
 function exportCSV(data: Record<string, unknown>[], filename: string) {
@@ -126,6 +183,43 @@ function exportCSV(data: Record<string, unknown>[], filename: string) {
   ].join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = filename;
+  a.click();
+}
+
+// ---- Chart image export ---------------------------------------------------
+// Uses the browser's built-in html-to-canvas capability via foreignObject SVG.
+// Falls back to a simpler approach: embed the element as an SVG foreignObject,
+// draw to canvas, then download as PNG.
+async function captureChart(ref: RefObject<HTMLDivElement | null>, filename: string) {
+  const el = ref.current;
+  if (!el) return;
+  const { default: html2canvas } = await import('html2canvas').catch(() => ({ default: null }));
+  if (!html2canvas) {
+    // Fallback: serialize to SVG via foreignObject
+    const { width, height } = el.getBoundingClientRect();
+    const clone = el.cloneNode(true) as HTMLElement;
+    clone.style.background = '#ffffff';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">${clone.outerHTML}</div>
+      </foreignObject>
+    </svg>`;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename.replace('.png', '.svg');
+    a.click();
+    return;
+  }
+  const canvas = await html2canvas(el, {
+    backgroundColor: '#ffffff',
+    scale: 2,
+    useCORS: true,
+    logging: false,
+  });
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
   a.download = filename;
   a.click();
 }
@@ -149,15 +243,23 @@ export default function DataAnalysisClient() {
   const [allRows, setAllRows]       = useState<Row[]>([]);
   const [dragging, setDragging]     = useState(false);
   const fileRef                     = useRef<HTMLInputElement>(null);
+  // Chart refs for image export
+  const refParticip                 = useRef<HTMLDivElement>(null);
+  const refHeatmap                  = useRef<HTMLDivElement>(null);
+  const refPerfAttrs                = useRef<HTMLDivElement>(null);
+  const refPerfBreakdown            = useRef<HTMLDivElement>(null);
+  const refPerfSchool               = useRef<HTMLDivElement>(null);
 
   // Filters: column → Set of selected values
   const [filters, setFilters]       = useState<Record<string, Set<string>>>({});
 
   // UI state
   const [tab, setTab]               = useState<'participation' | 'performance'>('participation');
-  const [participDim, setParticipDim] = useState('gender');
+  const [participDim, setParticipDim] = useState('');
   const [scoreType, setScoreType]   = useState<ScoreTypeId>('csi');
-  const [perfDim, setPerfDim]       = useState('gender');
+  // scoreCol: which score column variant to use per score type
+  const [scoreCols, setScoreCols]   = useState<Record<string, string>>({});
+  const [perfDim, setPerfDim]       = useState('');
   const [selectedAttr, setSelectedAttr] = useState<string | null>(null);
 
   // ---- Load CSV -----------------------------------------------------------
@@ -167,18 +269,24 @@ export default function DataAnalysisClient() {
     setAllRows(rows);
     setFilters({});
     setSelectedAttr(null);
-    // Auto-select first available score type
+    // Auto-select first available score type + default score column variant
+    const defaultScoreCols: Record<string, string> = {};
+    for (const st of SCORE_TYPES) {
+      for (const opt of st.scoreOptions) {
+        if (columns.includes(opt.col) && !defaultScoreCols[st.id]) {
+          defaultScoreCols[st.id] = opt.col;
+        }
+      }
+    }
+    setScoreCols(defaultScoreCols);
     for (const st of SCORE_TYPES) {
       if (columns.includes(st.attrCol)) { setScoreType(st.id); break; }
     }
-    // Auto-select first demo dim that looks like a real categorical column
-    for (const d of DEMO_DIMS) {
-      if (columns.includes(d.id)) {
-        const vals = Array.from(new Set(rows.map(r => r[d.id]).filter(Boolean)));
-        if (vals.length >= 2 && vals.length <= 25 && vals.every(v => v.length <= 40)) {
-          setParticipDim(d.id); setPerfDim(d.id); break;
-        }
-      }
+    // Auto-select first categorical demographic column
+    const detected = detectDemoDims(columns, rows);
+    if (detected.length > 0) {
+      setParticipDim(detected[0].id);
+      setPerfDim(detected[0].id);
     }
   }, []);
 
@@ -210,18 +318,8 @@ export default function DataAnalysisClient() {
     });
   };
 
-  // ---- Active demographic dims (present + meaningful variance) -----------
-  // A column qualifies only if it has 2–25 distinct values AND all values are
-  // short strings (≤40 chars). This prevents free-text response columns that
-  // happen to share a name with a demographic column from showing up as chips.
-  const activeDemoDims = DEMO_DIMS.filter(d => {
-    if (!columns.includes(d.id)) return false;
-    const vals = Array.from(new Set(allRows.map(r => r[d.id]).filter(Boolean)));
-    if (vals.length < 2 || vals.length > 25) return false;
-    // Reject if any value is long (likely free-text response, not a category)
-    if (vals.some(v => v.length > 40)) return false;
-    return true;
-  });
+  // ---- Active demographic dims (auto-detected from actual columns) --------
+  const activeDemoDims = detectDemoDims(columns, allRows);
 
   // ---- Import screen ------------------------------------------------------
   if (allRows.length === 0) {
@@ -271,45 +369,57 @@ export default function DataAnalysisClient() {
   }
 
   // ---- Derived data -------------------------------------------------------
-  const stCfg       = SCORE_TYPES.find(s => s.id === scoreType)!;
+  const stCfg      = SCORE_TYPES.find(s => s.id === scoreType)!;
+  // Active score column (user-selected variant, or first available)
+  const activeScoreCol = scoreCols[scoreType]
+    ?? stCfg.scoreOptions.find(o => columns.includes(o.col))?.col
+    ?? stCfg.scoreOptions[0].col;
+  const availableScoreOpts = stCfg.scoreOptions.filter(o => columns.includes(o.col));
+
   const scoreAttrs  = distinctSorted(filteredRows, stCfg.attrCol);
   const activeAttr  = selectedAttr && scoreAttrs.includes(selectedAttr) ? selectedAttr : null;
 
   // Participation
-  const participCounts = countBy(filteredRows, participDim);
+  const participCounts = participDim ? countBy(filteredRows, participDim) : {};
   const participSorted = Object.entries(participCounts).sort((a, b) => b[1] - a[1]);
   const participMax    = Math.max(...participSorted.map(x => x[1]), 1);
 
+  // Detect school column name dynamically (school_name or school)
+  const schoolCol = columns.includes('school_name') ? 'school_name'
+                  : columns.includes('school') ? 'school' : '';
+
   // Heatmap: school × participDim
-  const schools  = distinctSorted(filteredRows, 'school_name').slice(0, 25);
+  const schools  = schoolCol ? distinctSorted(filteredRows, schoolCol).slice(0, 25) : [];
   const dimVals  = participSorted.map(([v]) => v);
-  const heatMax  = Math.max(
+  const heatMax  = schools.length > 0 && participDim ? Math.max(
     ...schools.flatMap(sc =>
       dimVals.map(dv =>
-        filteredRows.filter(r => r.school_name === sc && r[participDim] === dv).length,
+        filteredRows.filter(r => r[schoolCol] === sc && r[participDim] === dv).length,
       ),
     ), 1,
-  );
+  ) : 1;
 
   // Performance: attribute averages
-  const attrAvgs = avgBy(filteredRows, stCfg.attrCol, stCfg.scoreCol);
+  const attrAvgs = avgBy(filteredRows, stCfg.attrCol, activeScoreCol);
   const attrSorted = Object.entries(attrAvgs)
     .map(([attr, { sum, count }]) => ({ attr, avg: sum / count, count }))
     .sort((a, b) => b.avg - a.avg);
 
   // Breakdown: selected attribute × perfDim
-  const breakdownData = activeAttr
+  const breakdownData = (activeAttr && perfDim)
     ? Object.entries(avgBy(
         filteredRows.filter(r => r[stCfg.attrCol] === activeAttr),
         perfDim,
-        stCfg.scoreCol,
+        activeScoreCol,
       ))
         .map(([label, { sum, count }]) => ({ label, avg: sum / count, count }))
         .sort((a, b) => b.avg - a.avg)
     : [];
 
-  const distinctDistricts = distinctSorted(allRows, 'district_name').length;
-  const distinctSchools   = distinctSorted(allRows, 'school_name').length;
+  const districtCol       = columns.includes('district_name') ? 'district_name'
+                          : columns.includes('district') ? 'district' : '';
+  const distinctDistricts = districtCol ? distinctSorted(allRows, districtCol).length : 0;
+  const distinctSchools   = schoolCol ? distinctSorted(allRows, schoolCol).length : 0;
   const hasFilters        = Object.values(filters).some(s => s.size > 0);
 
   // ---- Chart helpers for performance bars ---------------------------------
@@ -414,21 +524,26 @@ export default function DataAnalysisClient() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Summary cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-              {[
-                { label: 'Total Responses',    value: filteredRows.length.toLocaleString() },
-                { label: 'Schools',            value: distinctSorted(filteredRows, 'school_name').length.toString() },
-                { label: 'Districts',          value: distinctSorted(filteredRows, 'district_name').length.toString() },
-              ].map(c => (
-                <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{c.label}</div>
-                  <div style={{ fontSize: 30, fontWeight: 700, color: '#111827' }}>{c.value}</div>
+            {(() => {
+              const cards = [
+                { label: 'Total Responses', value: filteredRows.length.toLocaleString() },
+                ...(schoolCol   ? [{ label: 'Schools',   value: distinctSorted(filteredRows, schoolCol).length.toString() }]   : []),
+                ...(districtCol ? [{ label: 'Districts', value: distinctSorted(filteredRows, districtCol).length.toString() }] : []),
+              ];
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                  {cards.map(c => (
+                    <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 20px' }}>
+                      <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{c.label}</div>
+                      <div style={{ fontSize: 30, fontWeight: 700, color: '#111827' }}>{c.value}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* Participation breakdown chart */}
-            <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+            <div ref={refParticip} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Response Count by Dimension</div>
@@ -436,7 +551,7 @@ export default function DataAnalysisClient() {
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {activeDemoDims
-                    .filter(d => d.id !== 'school_name' && d.id !== 'district_name')
+                    .filter(d => d.id !== schoolCol && d.id !== districtCol)
                     .map(d => (
                       <button key={d.id} onClick={() => setParticipDim(d.id)} style={{
                         ...chipBase,
@@ -462,20 +577,25 @@ export default function DataAnalysisClient() {
                 ))}
               </div>
 
-              <button
-                onClick={() => exportCSV(
-                  participSorted.map(([val, cnt]) => ({ [participDim]: val, count: cnt })),
-                  `participation-by-${participDim}.csv`,
-                )}
-                style={{ ...exportBtn, marginTop: 16 }}
-              >
-                Export chart data
-              </button>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button
+                  onClick={() => exportCSV(
+                    participSorted.map(([val, cnt]) => ({ [participDim]: val, count: cnt })),
+                    `participation-by-${participDim}.csv`,
+                  )}
+                  style={exportBtn}
+                >
+                  Download CSV
+                </button>
+                <button onClick={() => captureChart(refParticip, `participation-by-${participDim}.png`)} style={exportBtn}>
+                  Download image
+                </button>
+              </div>
             </div>
 
             {/* Heatmap: school × dimension */}
-            {columns.includes('school_name') && schools.length > 0 && dimVals.length > 0 && participDim !== 'school_name' && participDim !== 'district_name' && (
-              <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
+            {schoolCol && schools.length > 0 && dimVals.length > 0 && participDim !== schoolCol && participDim !== districtCol && (
+              <div ref={refHeatmap} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
                   School × {activeDemoDims.find(d => d.id === participDim)?.label ?? participDim} Heatmap
                 </div>
@@ -492,12 +612,12 @@ export default function DataAnalysisClient() {
                   </thead>
                   <tbody>
                     {schools.map(sc => {
-                      const rowTotal = filteredRows.filter(r => r.school_name === sc).length;
+                      const rowTotal = filteredRows.filter(r => r[schoolCol] === sc).length;
                       return (
                         <tr key={sc} style={{ borderBottom: '1px solid #f3f4f6' }}>
                           <td style={{ padding: '5px 10px 5px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }} title={sc}>{sc}</td>
                           {dimVals.map(dv => {
-                            const cnt = filteredRows.filter(r => r.school_name === sc && r[participDim] === dv).length;
+                            const cnt = filteredRows.filter(r => r[schoolCol] === sc && r[participDim] === dv).length;
                             return (
                               <td key={dv} style={{
                                 padding: '5px 6px', textAlign: 'center',
@@ -519,22 +639,27 @@ export default function DataAnalysisClient() {
                 {schools.length === 25 && (
                   <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 10 }}>Showing first 25 schools — use filters to narrow.</p>
                 )}
-                <button
-                  onClick={() => {
-                    const data = schools.map(sc => {
-                      const obj: Record<string, unknown> = { school: sc };
-                      dimVals.forEach(dv => {
-                        obj[dv] = filteredRows.filter(r => r.school_name === sc && r[participDim] === dv).length;
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <button
+                    onClick={() => {
+                      const data = schools.map(sc => {
+                        const obj: Record<string, unknown> = { school: sc };
+                        dimVals.forEach(dv => {
+                          obj[dv] = filteredRows.filter(r => r[schoolCol] === sc && r[participDim] === dv).length;
+                        });
+                        obj.total = filteredRows.filter(r => r[schoolCol] === sc).length;
+                        return obj;
                       });
-                      obj.total = filteredRows.filter(r => r.school_name === sc).length;
-                      return obj;
-                    });
-                    exportCSV(data, `heatmap-school-${participDim}.csv`);
-                  }}
-                  style={{ ...exportBtn, marginTop: 12 }}
-                >
-                  Export heatmap
-                </button>
+                      exportCSV(data, `heatmap-school-${participDim}.csv`);
+                    }}
+                    style={exportBtn}
+                  >
+                    Download CSV
+                  </button>
+                  <button onClick={() => captureChart(refHeatmap, `heatmap-school-${participDim}.png`)} style={exportBtn}>
+                    Download image
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -546,28 +671,46 @@ export default function DataAnalysisClient() {
         {tab === 'performance' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* Score type selector */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              {SCORE_TYPES.filter(st => columns.includes(st.attrCol) && columns.includes(st.scoreCol)).map(st => (
-                <button key={st.id} onClick={() => { setScoreType(st.id); setSelectedAttr(null); }} style={{
-                  fontSize: 13, fontWeight: 600, padding: '8px 22px', borderRadius: 8, cursor: 'pointer',
-                  border: scoreType === st.id ? '1.5px solid #3b6fce' : '1.5px solid #e5e7eb',
-                  background: scoreType === st.id ? '#3b6fce' : 'white',
-                  color: scoreType === st.id ? 'white' : '#374151',
-                }}>
-                  {st.label}
-                </button>
-              ))}
-              {SCORE_TYPES.every(st => !columns.includes(st.attrCol)) && (
-                <p style={{ fontSize: 13, color: '#9ca3af' }}>
-                  No score columns detected. Expected: csi_attribute, harvard_attribute, or casel_attribute.
-                </p>
+            {/* Score type selector + variant picker */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {SCORE_TYPES.filter(st => columns.includes(st.attrCol)).map(st => (
+                  <button key={st.id} onClick={() => { setScoreType(st.id); setSelectedAttr(null); }} style={{
+                    fontSize: 13, fontWeight: 600, padding: '8px 22px', borderRadius: 8, cursor: 'pointer',
+                    border: scoreType === st.id ? '1.5px solid #3b6fce' : '1.5px solid #e5e7eb',
+                    background: scoreType === st.id ? '#3b6fce' : 'white',
+                    color: scoreType === st.id ? 'white' : '#374151',
+                  }}>
+                    {st.label}
+                  </button>
+                ))}
+                {SCORE_TYPES.every(st => !columns.includes(st.attrCol)) && (
+                  <p style={{ fontSize: 13, color: '#9ca3af' }}>
+                    No score columns detected (csi_attribute / harvard_attribute / casel_attribute not found).
+                  </p>
+                )}
+              </div>
+              {/* Score column variant (Raw vs Impacter vs Adjusted) */}
+              {availableScoreOpts.length > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>Score:</span>
+                  {availableScoreOpts.map(opt => (
+                    <button key={opt.col} onClick={() => setScoreCols(prev => ({ ...prev, [scoreType]: opt.col }))} style={{
+                      ...chipBase, fontSize: 11, padding: '3px 10px',
+                      border: activeScoreCol === opt.col ? '1.5px solid #6366f1' : '1.5px solid #e5e7eb',
+                      background: activeScoreCol === opt.col ? '#eef2ff' : 'white',
+                      color: activeScoreCol === opt.col ? '#4f46e5' : '#374151',
+                    }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
             {/* Scores by attribute */}
             {attrSorted.length > 0 ? (
-              <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+              <div ref={refPerfAttrs} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
@@ -575,15 +718,20 @@ export default function DataAnalysisClient() {
                     </div>
                     <div style={{ fontSize: 12, color: '#9ca3af' }}>Click an attribute to see demographic breakdown below</div>
                   </div>
-                  <button
-                    onClick={() => exportCSV(
-                      attrSorted.map(d => ({ attribute: d.attr, avg_score: d.avg.toFixed(2), n: d.count })),
-                      `${scoreType}-scores-by-attribute.csv`,
-                    )}
-                    style={exportBtn}
-                  >
-                    Export
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => exportCSV(
+                        attrSorted.map(d => ({ attribute: d.attr, avg_score: d.avg.toFixed(2), n: d.count })),
+                        `${scoreType}-scores-by-attribute.csv`,
+                      )}
+                      style={exportBtn}
+                    >
+                      Download CSV
+                    </button>
+                    <button onClick={() => captureChart(refPerfAttrs, `${scoreType}-scores-by-attribute.png`)} style={exportBtn}>
+                      Download image
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -642,13 +790,13 @@ export default function DataAnalysisClient() {
               </div>
             ) : columns.includes(stCfg.attrCol) ? (
               <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '24px', color: '#9ca3af', fontSize: 13 }}>
-                No numeric scores found in column "{stCfg.scoreCol}".
+                No numeric scores found in column &ldquo;{activeScoreCol}&rdquo;.
               </div>
             ) : null}
 
             {/* Demographic breakdown for selected attribute */}
             {activeAttr && (
-              <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+              <div ref={refPerfBreakdown} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#0369a1', marginBottom: 2 }}>"{activeAttr}"</div>
@@ -658,7 +806,7 @@ export default function DataAnalysisClient() {
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                     {activeDemoDims
-                      .filter(d => d.id !== 'school_name' && d.id !== 'district_name')
+                      .filter(d => d.id !== schoolCol && d.id !== districtCol)
                       .map(d => (
                         <button key={d.id} onClick={() => setPerfDim(d.id)} style={{
                           ...chipBase,
@@ -704,29 +852,34 @@ export default function DataAnalysisClient() {
                   </div>
                 )}
 
-                <button
-                  onClick={() => exportCSV(
-                    breakdownData.map(d => ({ [perfDim]: d.label, attribute: activeAttr, avg_score: d.avg.toFixed(2), n: d.count })),
-                    `${scoreType}-${activeAttr.replace(/\s+/g, '_')}-by-${perfDim}.csv`,
-                  )}
-                  style={{ ...exportBtn, marginTop: 16 }}
-                >
-                  Export breakdown
-                </button>
+                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                  <button
+                    onClick={() => exportCSV(
+                      breakdownData.map(d => ({ [perfDim]: d.label, attribute: activeAttr, avg_score: d.avg.toFixed(2), n: d.count })),
+                      `${scoreType}-${activeAttr.replace(/\s+/g, '_')}-by-${perfDim}.csv`,
+                    )}
+                    style={exportBtn}
+                  >
+                    Download CSV
+                  </button>
+                  <button onClick={() => captureChart(refPerfBreakdown, `${scoreType}-${activeAttr.replace(/\s+/g, '_')}-by-${perfDim}.png`)} style={exportBtn}>
+                    Download image
+                  </button>
+                </div>
               </div>
             )}
 
             {/* School-level performance table for selected attribute */}
-            {activeAttr && columns.includes('school_name') && (() => {
+            {activeAttr && schoolCol && (() => {
               const schoolAvgs = Object.entries(
-                avgBy(filteredRows.filter(r => r[stCfg.attrCol] === activeAttr), 'school_name', stCfg.scoreCol),
+                avgBy(filteredRows.filter(r => r[stCfg.attrCol] === activeAttr), schoolCol, activeScoreCol),
               )
                 .map(([school, { sum, count }]) => ({ school, avg: sum / count, count }))
                 .sort((a, b) => b.avg - a.avg);
               if (schoolAvgs.length === 0) return null;
               const scMax = Math.max(...schoolAvgs.map(s => s.avg));
               return (
-                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+                <div ref={refPerfSchool} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }}>"{activeAttr}" — by School</div>
                   <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>Average score per school (sorted highest → lowest)</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -741,15 +894,20 @@ export default function DataAnalysisClient() {
                       </div>
                     ))}
                   </div>
-                  <button
-                    onClick={() => exportCSV(
-                      schoolAvgs.map(s => ({ school: s.school, attribute: activeAttr, avg_score: s.avg.toFixed(2), n: s.count })),
-                      `${scoreType}-${activeAttr.replace(/\s+/g, '_')}-by-school.csv`,
-                    )}
-                    style={{ ...exportBtn, marginTop: 14 }}
-                  >
-                    Export school scores
-                  </button>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                    <button
+                      onClick={() => exportCSV(
+                        schoolAvgs.map(s => ({ school: s.school, attribute: activeAttr, avg_score: s.avg.toFixed(2), n: s.count })),
+                        `${scoreType}-${activeAttr.replace(/\s+/g, '_')}-by-school.csv`,
+                      )}
+                      style={exportBtn}
+                    >
+                      Download CSV
+                    </button>
+                    <button onClick={() => captureChart(refPerfSchool, `${scoreType}-${activeAttr.replace(/\s+/g, '_')}-by-school.png`)} style={exportBtn}>
+                      Download image
+                    </button>
+                  </div>
                 </div>
               );
             })()}
