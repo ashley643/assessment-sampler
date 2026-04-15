@@ -118,22 +118,31 @@ export async function GET(req: Request) {
       if (pageRows.length < EXPORT_PAGE) break;
       exportFrom += EXPORT_PAGE;
     }
-    if (rows.length === 0) return new Response('id\n', {
-      headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="export.csv"` },
+    if (rows.length === 0) return new Response('\uFEFFid\n', {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="export.csv"`,
+      },
     });
 
     const cols = Object.keys(rows[0]);
     function csvEscape(v: unknown): string {
       if (v == null) return '';
       const s = String(v);
-      if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
+      // Quote if the value contains comma, double-quote, newline, or carriage-return
+      if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
       return s;
     }
-    const csv = [cols.join(','), ...rows.map(r => cols.map(c => csvEscape(r[c])).join(','))].join('\n');
+    // Prefix with UTF-8 BOM so Excel / Numbers auto-detect encoding instead of
+    // falling back to the system code page (Windows-1252 on most Windows machines),
+    // which would corrupt every multi-byte UTF-8 sequence (e.g. á → Ã¡).
+    const csv = '\uFEFF' + [cols.join(','), ...rows.map(r => cols.map(c => csvEscape(r[c])).join(','))].join('\n');
     const safeName = (schoolName || districtName).replace(/[^a-z0-9]/gi, '_').toLowerCase();
     return new Response(csv, {
       headers: {
-        'Content-Type': 'text/csv',
+        'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${safeName}_export.csv"`,
       },
     });
