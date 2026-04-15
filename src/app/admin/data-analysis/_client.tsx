@@ -356,8 +356,8 @@ export default function DataAnalysisClient() {
   // ---- Active demographic dims (auto-detected from actual columns) --------
   const activeDemoDims = detectDemoDims(columns, allRows);
 
-  // ---- Import screen ------------------------------------------------------
-  if (allRows.length === 0) {
+  // ---- Import screen (only when no preview pending and no data loaded) -----
+  if (allRows.length === 0 && !preview) {
     return (
       <AdminShell>
         <div style={{ maxWidth: 560, margin: '60px auto 0', fontFamily: 'DM Sans, sans-serif' }}>
