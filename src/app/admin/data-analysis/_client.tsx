@@ -132,6 +132,14 @@ function distinctSorted(rows: Row[], key: string): string[] {
   return Array.from(s).sort();
 }
 
+// ---- Word count helpers ---------------------------------------------------
+function wordCount(text: string): number {
+  return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+function totalWordCount(rows: Row[], col: string): number {
+  return rows.reduce((sum, r) => sum + (r[col] ? wordCount(r[col]) : 0), 0);
+}
+
 // ---- Heatmap cell color (participation counts) ----------------------------
 function heatColor(val: number, max: number): string {
   if (max === 0 || val === 0) return '#f9fafb';
@@ -572,6 +580,24 @@ export default function DataAnalysisClient() {
   const distinctSchools   = schoolCol   ? distinctSorted(allRows, schoolCol).length   : 0;
   const hasFilters        = Object.values(filters).some(s => s.size > 0);
 
+  // ---- Word count derived data ---------------------------------------------
+  const answerCol = columns.includes('answer') ? 'answer'
+    : columns.includes('response') ? 'response' : '';
+  const totalWords = answerCol ? totalWordCount(filteredRows, answerCol) : 0;
+  const respondersWithText = answerCol ? filteredRows.filter(r => r[answerCol]?.trim()).length : 0;
+  const avgWordsPerResponse = respondersWithText > 0 ? Math.round(totalWords / respondersWithText) : 0;
+
+  // Per-group word stats for the participation bar chart
+  const participWordStats: Record<string, { total: number; avg: number }> = {};
+  if (answerCol && participDim) {
+    for (const [val] of participSorted) {
+      const grp = filteredRows.filter(r => r[participDim] === val);
+      const withText = grp.filter(r => r[answerCol]?.trim());
+      const words = totalWordCount(withText, answerCol);
+      participWordStats[val] = { total: words, avg: withText.length > 0 ? Math.round(words / withText.length) : 0 };
+    }
+  }
+
   // ---- Analysis tab derived data ------------------------------------------
   // Pillars 1-4: which attributes belong to each
   const pillarGroups: Record<1|2|3|4, string[]> = { 1: [], 2: [], 3: [], 4: [] };
@@ -613,7 +639,11 @@ export default function DataAnalysisClient() {
     const dimRows = filteredRows.filter(r => r[analysisDimCol] === dv);
     return {
       label: dv,
-      pillars: ([1,2,3,4] as const).map(p => csiAvg(dimRows, pillarGroups[p])),
+      pillars: ([1,2,3,4] as const).map(p => {
+        const avg = csiAvg(dimRows, pillarGroups[p]);
+        const n = dimRows.filter(r => pillarGroups[p].includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
+        return { avg, n };
+      }),
     };
   });
 
@@ -641,13 +671,31 @@ export default function DataAnalysisClient() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111827', margin: 0 }}>Data Analysis</h1>
-            <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4, margin: '4px 0 0' }}>
-              {filteredRows.length.toLocaleString()}
-              {hasFilters ? ` of ${allRows.length.toLocaleString()}` : ''} response{filteredRows.length !== 1 ? 's' : ''}
-              {distinctSchools > 0 && ` · ${distinctSchools} school${distinctSchools !== 1 ? 's' : ''}`}
-              {distinctDistricts > 0 && ` · ${distinctDistricts} district${distinctDistricts !== 1 ? 's' : ''}`}
-              {columns.length > 0 && ` · ${columns.length} columns`}
-            </p>
+            <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: '4px 20px' }}>
+              <span style={{ fontSize: 13, color: '#6b7280' }}>
+                <strong style={{ color: '#111827' }}>{filteredRows.length.toLocaleString()}</strong>
+                {hasFilters ? ` of ${allRows.length.toLocaleString()}` : ''}{' '}
+                student response{filteredRows.length !== 1 ? 's' : ''}
+              </span>
+              {totalWords > 0 && (
+                <span style={{ fontSize: 13, color: '#6b7280' }}>
+                  <strong style={{ color: '#111827' }}>{totalWords.toLocaleString()}</strong>{' '}
+                  words of authentic voice
+                </span>
+              )}
+              {distinctSchools > 0 && (
+                <span style={{ fontSize: 13, color: '#6b7280' }}>
+                  <strong style={{ color: '#111827' }}>{distinctSchools}</strong>{' '}
+                  school{distinctSchools !== 1 ? 's' : ''}
+                </span>
+              )}
+              {distinctDistricts > 0 && (
+                <span style={{ fontSize: 13, color: '#6b7280' }}>
+                  <strong style={{ color: '#111827' }}>{distinctDistricts}</strong>{' '}
+                  district{distinctDistricts !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
@@ -732,9 +780,10 @@ export default function DataAnalysisClient() {
             {/* Summary cards */}
             {(() => {
               const cards = [
-                { label: 'Total Responses', value: filteredRows.length.toLocaleString() },
-                ...(schoolCol   ? [{ label: 'Schools',   value: distinctSorted(filteredRows, schoolCol).length.toString() }]   : []),
-                ...(districtCol ? [{ label: 'Districts', value: distinctSorted(filteredRows, districtCol).length.toString() }] : []),
+                { label: 'Student Responses', value: filteredRows.length.toLocaleString(), sub: null },
+                ...(totalWords > 0 ? [{ label: 'Words of Authentic Voice', value: totalWords.toLocaleString(), sub: avgWordsPerResponse > 0 ? `avg ${avgWordsPerResponse} per response` : null }] : []),
+                ...(schoolCol   ? [{ label: 'Schools',   value: distinctSorted(filteredRows, schoolCol).length.toString(),   sub: null }] : []),
+                ...(districtCol ? [{ label: 'Districts', value: distinctSorted(filteredRows, districtCol).length.toString(), sub: null }] : []),
               ];
               return (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
@@ -742,6 +791,7 @@ export default function DataAnalysisClient() {
                     <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 20px' }}>
                       <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{c.label}</div>
                       <div style={{ fontSize: 30, fontWeight: 700, color: '#111827' }}>{c.value}</div>
+                      {c.sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{c.sub}</div>}
                     </div>
                   ))}
                 </div>
@@ -772,21 +822,33 @@ export default function DataAnalysisClient() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {participSorted.map(([val, cnt], i) => (
-                  <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 148, fontSize: 12, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</div>
-                    <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 4, height: 22 }}>
-                      <div style={{ width: `${(cnt / participMax) * 100}%`, height: '100%', background: pickColor(i), borderRadius: 4, transition: 'width 0.3s', minWidth: cnt > 0 ? 4 : 0 }} />
+                {participSorted.map(([val, cnt], i) => {
+                  const ws = participWordStats[val];
+                  return (
+                    <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 148, fontSize: 12, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</div>
+                      <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 4, height: 22 }}>
+                        <div style={{ width: `${(cnt / participMax) * 100}%`, height: '100%', background: pickColor(i), borderRadius: 4, transition: 'width 0.3s', minWidth: cnt > 0 ? 4 : 0 }} />
+                      </div>
+                      <div style={{ width: 40, fontSize: 12, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{cnt.toLocaleString()}</div>
+                      {ws && ws.avg > 0 && (
+                        <div style={{ width: 64, fontSize: 10, color: '#9ca3af', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                          ~{ws.avg} words
+                        </div>
+                      )}
                     </div>
-                    <div style={{ width: 40, fontSize: 12, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{cnt.toLocaleString()}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                 <button
                   onClick={() => exportCSV(
-                    participSorted.map(([val, cnt]) => ({ [participDim]: val, count: cnt })),
+                    participSorted.map(([val, cnt]) => ({
+                      [participDim]: val,
+                      count: cnt,
+                      ...(participWordStats[val] ? { total_words: participWordStats[val].total, avg_words: participWordStats[val].avg } : {}),
+                    })),
                     `participation-by-${participDim}.csv`,
                   )}
                   style={exportBtn}
@@ -1014,27 +1076,39 @@ export default function DataAnalysisClient() {
                         <tbody>
                           {csiHeatData.map(row => {
                             const allIncludedAttrs = ([1, 2, 3, 4] as const).flatMap(p => pillarGroups[p]);
-                            const overallAvg = csiAvg(filteredRows.filter(r => r[analysisDimCol] === row.label), allIncludedAttrs);
+                            const dimRows = filteredRows.filter(r => r[analysisDimCol] === row.label);
+                            const overallAvg = csiAvg(dimRows, allIncludedAttrs);
+                            const overallN = dimRows.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
                             return (
                               <tr key={row.label} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                 <td style={{ padding: '6px 14px 6px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.label}>
                                   {row.label}
                                 </td>
-                                {row.pillars.map((val, pi) => (
+                                {row.pillars.map(({ avg, n }, pi) => (
                                   <td key={pi} style={{
-                                    padding: '6px 12px', textAlign: 'center',
-                                    background: csiColor(val), color: csiTextColor(val),
-                                    fontWeight: val !== null ? 600 : 400,
+                                    padding: '5px 12px', textAlign: 'center',
+                                    background: csiColor(avg), color: csiTextColor(avg),
+                                    fontWeight: avg !== null ? 600 : 400,
                                   }}>
-                                    {val !== null ? val.toFixed(3) : <span style={{ color: '#d1d5db' }}>—</span>}
+                                    {avg !== null ? (
+                                      <>
+                                        {avg.toFixed(3)}
+                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n}</span>
+                                      </>
+                                    ) : <span style={{ color: '#d1d5db' }}>—</span>}
                                   </td>
                                 ))}
                                 <td style={{
-                                  padding: '6px 12px', textAlign: 'center',
+                                  padding: '5px 12px', textAlign: 'center',
                                   background: csiColor(overallAvg), color: csiTextColor(overallAvg),
                                   fontWeight: 700, borderLeft: '2px solid #e5e7eb',
                                 }}>
-                                  {overallAvg !== null ? overallAvg.toFixed(3) : <span style={{ color: '#d1d5db' }}>—</span>}
+                                  {overallAvg !== null ? (
+                                    <>
+                                      {overallAvg.toFixed(3)}
+                                      <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={overallN}</span>
+                                    </>
+                                  ) : <span style={{ color: '#d1d5db' }}>—</span>}
                                 </td>
                               </tr>
                             );
@@ -1043,30 +1117,42 @@ export default function DataAnalysisClient() {
                           {/* Summary row: averages across all dim values */}
                           {csiHeatData.length > 1 && (
                             <tr style={{ borderTop: '2px solid #e5e7eb', background: '#f9fafb' }}>
-                              <td style={{ padding: '6px 14px 6px 4px', fontSize: 12, fontWeight: 700, color: '#111827' }}>
+                              <td style={{ padding: '5px 14px 5px 4px', fontSize: 12, fontWeight: 700, color: '#111827' }}>
                                 All {analysisDimLabel}s
                               </td>
                               {([1, 2, 3, 4] as const).map(p => {
                                 const avg = csiAvg(filteredRows, pillarGroups[p]);
+                                const n = filteredRows.filter(r => pillarGroups[p].includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
                                 return (
                                   <td key={p} style={{
-                                    padding: '6px 12px', textAlign: 'center',
+                                    padding: '5px 12px', textAlign: 'center',
                                     background: csiColor(avg), color: csiTextColor(avg), fontWeight: 700,
                                   }}>
-                                    {avg !== null ? avg.toFixed(3) : '—'}
+                                    {avg !== null ? (
+                                      <>
+                                        {avg.toFixed(3)}
+                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n}</span>
+                                      </>
+                                    ) : '—'}
                                   </td>
                                 );
                               })}
                               {(() => {
                                 const allIncludedAttrs = ([1, 2, 3, 4] as const).flatMap(p => pillarGroups[p]);
                                 const grandAvg = csiAvg(filteredRows, allIncludedAttrs);
+                                const grandN = filteredRows.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
                                 return (
                                   <td style={{
-                                    padding: '6px 12px', textAlign: 'center', fontWeight: 700,
+                                    padding: '5px 12px', textAlign: 'center', fontWeight: 700,
                                     background: csiColor(grandAvg), color: csiTextColor(grandAvg),
                                     borderLeft: '2px solid #e5e7eb',
                                   }}>
-                                    {grandAvg !== null ? grandAvg.toFixed(3) : '—'}
+                                    {grandAvg !== null ? (
+                                      <>
+                                        {grandAvg.toFixed(3)}
+                                        <span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={grandN}</span>
+                                      </>
+                                    ) : '—'}
                                   </td>
                                 );
                               })()}
@@ -1082,10 +1168,13 @@ export default function DataAnalysisClient() {
                           const data = csiHeatData.map(row => {
                             const obj: Record<string, unknown> = { [analysisDimCol]: row.label };
                             ([1, 2, 3, 4] as const).forEach((p, pi) => {
-                              obj[`pillar_${p}`] = row.pillars[pi]?.toFixed(3) ?? '';
+                              obj[`pillar_${p}`] = row.pillars[pi].avg?.toFixed(3) ?? '';
+                              obj[`pillar_${p}_n`] = row.pillars[pi].n;
                             });
                             const allIncludedAttrs = ([1, 2, 3, 4] as const).flatMap(pp => pillarGroups[pp]);
-                            obj.overall = csiAvg(filteredRows.filter(r => r[analysisDimCol] === row.label), allIncludedAttrs)?.toFixed(3) ?? '';
+                            const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
+                            obj.overall = csiAvg(dimRows2, allIncludedAttrs)?.toFixed(3) ?? '';
+                            obj.overall_n = dimRows2.filter(r => allIncludedAttrs.includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
                             return obj;
                           });
                           exportCSV(data, `csi-pillar-${analysisDimCol}.csv`);
