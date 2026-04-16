@@ -1604,10 +1604,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             {/* Top bar */}
             <div style={{ background: 'rgba(0,0,0,0.18)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
-                  Impacter Pathway
-                </span>
-                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{panel.assessmentName}</span>
+                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600 }}>{panel.assessmentName}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{panel.school}</span>
@@ -1918,13 +1915,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             </div>
 
             {/* ── Panel navigation tabs ── */}
-            <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', borderTop: '1px solid rgba(0,0,0,0.18)', background: 'rgba(0,0,0,0.15)' }}>
               {DEMO_PANELS.map((p, i) => (
                 <button
                   key={i}
                   onClick={() => setPanelIndex(i)}
-                  style={{ flex: 1, padding: '11px 10px 10px', background: i === panelIndex ? 'rgba(255,255,255,0.06)' : 'transparent', border: 'none', borderTop: `2px solid ${i === panelIndex ? 'rgba(255,255,255,0.5)' : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, transition: 'background 0.15s' }}
-                  onMouseEnter={e => { if (i !== panelIndex) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                  style={{ flex: 1, padding: '11px 10px 10px', background: i === panelIndex ? 'rgba(255,255,255,0.08)' : 'transparent', border: 'none', borderTop: `2px solid ${i === panelIndex ? 'rgba(255,255,255,0.5)' : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, transition: 'background 0.15s' }}
+                  onMouseEnter={e => { if (i !== panelIndex) e.currentTarget.style.background = 'rgba(0,0,0,0.1)'; }}
                   onMouseLeave={e => { if (i !== panelIndex) e.currentTarget.style.background = 'transparent'; }}
                 >
                   <span style={{ color: i === panelIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.38)', fontSize: 11, fontWeight: 700, letterSpacing: '0.01em', transition: 'color 0.15s' }}>{p.assessmentName}</span>
