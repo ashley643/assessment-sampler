@@ -1599,18 +1599,18 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           </div>
 
           {/* Fake player shell */}
-          <div style={{ background: '#0d1b2e', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.28)' }}>
+          <div style={{ background: '#03568C', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 64px rgba(3,86,140,0.3)' }}>
 
             {/* Top bar */}
-            <div style={{ background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: 'rgba(0,0,0,0.18)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ background: '#1a3d6b', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
+                <span style={{ background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 12, fontWeight: 600, padding: '3px 12px', borderRadius: 5 }}>
                   Impacter Pathway
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{panel.assessmentName}</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{panel.assessmentName}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>{panel.school}</span>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{panel.school}</span>
               </div>
             </div>
 
@@ -1619,7 +1619,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
               {/* ── Left: question video ── */}
               <div
-                style={{ flex: '0 0 50%', position: 'relative', background: '#09111e', overflow: 'hidden', cursor: 'pointer' }}
+                style={{ flex: '0 0 50%', position: 'relative', background: '#012d4a', overflow: 'hidden', cursor: 'pointer' }}
                 onMouseEnter={() => setPromptHovered(true)}
                 onMouseLeave={() => setPromptHovered(false)}
                 onClick={() => {
@@ -1730,7 +1730,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   </>
                 ) : (
                   /* ── Student response panel — fills full right panel ── */
-                  <div style={{ position: 'absolute', inset: 0, background: '#09111e', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: '#024870', display: 'flex', flexDirection: 'column' }}>
                     {/* Label bar */}
                     <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
