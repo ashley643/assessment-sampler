@@ -19,7 +19,6 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 const NAV = [
-  { href: '/admin/pilot-submissions', label: 'Pilot Forms' },
   { href: '/admin/codes', label: 'Access Codes' },
   { href: '/admin/dashboard', label: 'Activity Log' },
   { href: '/admin/assessments', label: 'Assessments' },
@@ -31,6 +30,7 @@ const NAV_EXTERNAL = [
   { href: '/admin/response-finder', label: 'Response Finder' },
   { href: '/admin/district-finder', label: 'District Response Finder' },
   { href: '/admin/data-analysis', label: 'Data Analysis' },
+  { href: '/admin/pilot-submissions', label: 'Pilot Forms' },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
