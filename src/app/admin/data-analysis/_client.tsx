@@ -173,15 +173,12 @@ function csiTextColor(val: number | null): string {
 }
 
 // ---- Analysis modes -------------------------------------------------------
-type AnalysisMode =
-  | 'csi-pillar-school'
-  | 'csi-pillar-grade'
-  | 'csi-pillar-language';
+type AnalysisMode = 'by-school' | 'by-grade' | 'by-language';
 
 const ANALYSIS_MODES: { id: AnalysisMode; label: string }[] = [
-  { id: 'csi-pillar-school',   label: 'CSI × Pillar × School'   },
-  { id: 'csi-pillar-grade',    label: 'CSI × Pillar × Grade'    },
-  { id: 'csi-pillar-language', label: 'CSI × Pillar × Language' },
+  { id: 'by-school',   label: '× School'   },
+  { id: 'by-grade',    label: '× Grade'    },
+  { id: 'by-language', label: '× Language' },
 ];
 
 const PILLAR_COLORS = ['#3b6fce', '#14b8a6', '#8b5cf6', '#f59e0b'] as const;
@@ -191,45 +188,79 @@ const PILLAR_COLORS = ['#3b6fce', '#14b8a6', '#8b5cf6', '#f59e0b'] as const;
 function autoAssignPillars(attrs: string[]): Record<string, number> {
   const sorted = [...attrs].sort();
   const result: Record<string, number> = {};
-  // Try to detect a leading digit (1-4) in the attribute name
   let detected = 0;
   for (const a of sorted) {
     const m = a.match(/^([1-4])[\s_\-]/) ?? a.match(/\bpillar[\s_\-]?([1-4])\b/i);
     if (m) { result[a] = parseInt(m[1]); detected++; }
   }
   if (detected === sorted.length) return result;
-  // Fall back: 4 equal groups in sort order
   const perGroup = Math.ceil(sorted.length / 4);
   sorted.forEach((a, i) => { result[a] = Math.min(Math.floor(i / perGroup) + 1, 4); });
   return result;
 }
 
 // ---- Score type config ----------------------------------------------------
-// Each entry can have multiple scoreCol options (e.g. raw vs impacter)
 const SCORE_TYPES = [
   {
-    id: 'csi', label: 'CSI', attrCol: 'csi_attribute',
-    scoreOptions: [
-      { col: 'community_schools_index_score', label: 'Raw' },
-      { col: 'csi_adjusted',                  label: 'Adjusted' },
-    ],
+    id: 'harvard',   label: 'Harvard',   attrCol: 'harvard_attribute',
+    rawCol:   'harvard_score',
+    impacterCol: 'harvard_impacter_score',
   },
   {
-    id: 'harvard', label: 'Harvard', attrCol: 'harvard_attribute',
-    scoreOptions: [
-      { col: 'harvard_score',          label: 'Raw' },
-      { col: 'harvard_impacter_score', label: 'Impacter' },
-    ],
+    id: 'casel',     label: 'CASEL',     attrCol: 'casel_attribute',
+    rawCol:   'casel_score',
+    impacterCol: 'casel_impacter_score',
   },
   {
-    id: 'casel', label: 'CASEL', attrCol: 'casel_attribute',
-    scoreOptions: [
-      { col: 'casel_score',          label: 'Raw' },
-      { col: 'casel_impacter_score', label: 'Impacter' },
-    ],
+    id: 'crosswalk', label: 'Crosswalk', attrCol: 'crosswalk_attribute',
+    rawCol:   'crosswalk_score',
+    impacterCol: 'crosswalk_impacter_score',
   },
 ] as const;
 type ScoreTypeId = typeof SCORE_TYPES[number]['id'];
+
+// Detect whether a crosswalk dataset represents Community Schools (pillar-based, 0-4 → 0-1)
+function isCommunitySchoolsCrosswalk(rows: Row[]): boolean {
+  const sample = rows.slice(0, 60).map(r => r['crosswalk_attribute']).filter(Boolean);
+  return sample.some(a => /pillar/i.test(a) || /^[1-4][\s_\-\.]/.test(a.trim()));
+}
+
+// ---- Attribute label translation (snake_case → customer-friendly) ---------
+const ATTR_LABEL_MAP: Record<string, string> = {
+  // CASEL
+  self_awareness:              'Self-Awareness',
+  self_management:             'Self-Management',
+  social_awareness:            'Social Awareness',
+  relationship_skills:         'Relationship Skills',
+  responsible_decision_making: 'Responsible Decision-Making',
+  // Harvard
+  curiosity:               'Curiosity',
+  perspective_taking:      'Perspective-Taking',
+  critical_thinking:       'Critical Thinking',
+  creative_thinking:       'Creative Thinking',
+  self_directed_learning:  'Self-Directed Learning',
+  collaboration:           'Collaboration',
+  communication:           'Communication',
+  emotional_regulation:    'Emotional Regulation',
+  growth_mindset:          'Growth Mindset',
+  resilience:              'Resilience',
+  empathy:                 'Empathy',
+  leadership:              'Leadership',
+  // Community Schools pillars (short forms)
+  integrated_student_supports:   'Integrated Student Supports',
+  family_engagement:             'Family & Community Engagement',
+  collaborative_leadership:      'Collaborative Leadership & Practice',
+  extended_learning:             'Expanded & Enriched Learning Time',
+};
+
+function formatAttrLabel(raw: string): string {
+  const key = raw.trim().toLowerCase().replace(/\s+/g, '_');
+  if (ATTR_LABEL_MAP[key]) return ATTR_LABEL_MAP[key];
+  // Smart fallback: hyphenate known gerunds, otherwise title-case with spaces
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/\b(\w+)\b/g, w => w.charAt(0).toUpperCase() + w.slice(1));
+}
 
 // ---- Friendly labels for known column names --------------------------------
 const KNOWN_LABELS: Record<string, string> = {
@@ -259,10 +290,11 @@ const EXCLUDE_FROM_DEMO = new Set([
   'id', 'first_name', 'last_name', 'student_email', 'email',
   'course_id', 'class_name', 'session_name', 'teacher_name',
   'question', 'answer', 'url', 'answer_date',
-  'community_schools_index_score', 'csi_adjusted',
-  'harvard_score', 'harvard_impacter_score',
-  'casel_score', 'casel_impacter_score',
-  'csi_attribute', 'harvard_attribute', 'casel_attribute',
+  'harvard_score', 'harvard_impacter_score', 'harvard_attribute',
+  'casel_score',   'casel_impacter_score',   'casel_attribute',
+  'crosswalk_score', 'crosswalk_impacter_score', 'crosswalk_attribute',
+  // legacy column names
+  'community_schools_index_score', 'csi_adjusted', 'csi_attribute',
 ]);
 
 // Auto-detect categorical demographic columns from whatever columns the CSV has
@@ -325,16 +357,25 @@ async function captureChart(ref: RefObject<HTMLDivElement | null>, filename: str
   a.click();
 }
 
-// ---- Generic score average (works for any paradigm) ----------------------
+// ---- Generic score average (any paradigm, NA-safe, optional transform) ---
 function scoreAvg(
   rows: Row[], attrs: string[], attrCol: string, scoreCol: string,
+  transform?: (v: number) => number,
 ): number | null {
-  const nums = rows
-    .filter(r => attrs.includes(r[attrCol]))
-    .map(r => parseFloat(r[scoreCol]))
-    .filter(n => !isNaN(n));
+  const nums: number[] = [];
+  for (const r of rows) {
+    if (!attrs.includes(r[attrCol])) continue;
+    const raw = r[scoreCol];
+    if (!raw || /^na$/i.test(raw.trim())) continue;
+    const v = parseFloat(raw);
+    if (isNaN(v)) continue;
+    nums.push(transform ? transform(v) : v);
+  }
   return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
 }
+
+// Crosswalk community-schools: convert 0-4 raw → 0-1
+const cswTransform = (v: number) => Math.max(0, Math.min(1, v / 4));
 
 // ---- Interpretation helpers (rule-based) ---------------------------------
 function interpretParticip(sorted: [string, number][], dimLabel: string): string {
@@ -424,13 +465,15 @@ export default function DataAnalysisClient() {
   // Array of selected dim IDs: 0 = show nothing, 1 = bar chart, 2 = bar + 2D heatmap
   const [participDims, setParticipDims] = useState<string[]>([]);
   // Analysis tab state
-  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('csi-pillar-school');
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('by-school');
   // Per-paradigm pillar config (keyed by ScoreTypeId)
   const [pillarMaps, setPillarMaps] = useState<Partial<Record<ScoreTypeId, Record<string, number>>>>({});
   const [includedAttrsSets, setIncludedAttrsSets] = useState<Partial<Record<ScoreTypeId, Set<string>>>>({});
   const [openPillarConfigs, setOpenPillarConfigs] = useState<Set<ScoreTypeId>>(new Set<ScoreTypeId>());
   // Which scoring paradigms to show
   const [selectedParadigms, setSelectedParadigms] = useState<Set<ScoreTypeId>>(new Set<ScoreTypeId>());
+  // Show paradigm-selection screen after import
+  const [showParadigmSelect, setShowParadigmSelect] = useState(false);
   // Over-time toggle for participation tab
   const [overTime, setOverTime] = useState(false);
 
@@ -465,7 +508,9 @@ export default function DataAnalysisClient() {
     }
     setPillarMaps(newPillarMaps);
     setIncludedAttrsSets(newIncludedAttrsSets);
-    setSelectedParadigms(avail);
+    // Start with nothing selected — paradigm-select screen lets user choose
+    setSelectedParadigms(new Set<ScoreTypeId>());
+    if (avail.size > 0) setShowParadigmSelect(true);
   }, [preview]);
 
   const handleFile = useCallback((file: File) => {
@@ -638,6 +683,61 @@ export default function DataAnalysisClient() {
     );
   }
 
+  // ---- Paradigm selection screen (shown once after import) ----------------
+  if (showParadigmSelect) {
+    const available = SCORE_TYPES.filter(st => columns.includes(st.attrCol));
+    return (
+      <AdminShell>
+        <div style={{ maxWidth: 540, margin: '60px auto 0', fontFamily: 'DM Sans, sans-serif' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>Scoring Frameworks</h1>
+          <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 28 }}>
+            Which scoring frameworks would you like to display? You can change this anytime in the Analysis tab.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {available.map(st => {
+              const on = selectedParadigms.has(st.id);
+              const description = st.id === 'harvard'
+                ? 'Measures habits of mind and learning dispositions (200–800 Impacter scale)'
+                : st.id === 'casel'
+                ? 'Measures social-emotional competencies (200–800 Impacter scale)'
+                : isCsw
+                ? 'Community Schools pillars scored 0–4, displayed as 0–1 index'
+                : 'Crosswalk attributes scored on 200–800 Impacter scale';
+              return (
+                <label key={st.id} onClick={() => setSelectedParadigms(prev => { const s = new Set(prev); if (s.has(st.id)) s.delete(st.id); else s.add(st.id); return s; })} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 18px', borderRadius: 12, border: `1.5px solid ${on ? '#3b6fce' : '#e5e7eb'}`, background: on ? '#eff6ff' : 'white', cursor: 'pointer', transition: 'all 0.15s', userSelect: 'none' }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${on ? '#3b6fce' : '#d1d5db'}`, background: on ? '#3b6fce' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, transition: 'all 0.15s' }}>
+                    {on && <svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4.5l3 3 6-7" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: on ? '#1d4ed8' : '#111827', marginBottom: 3 }}>
+                      {st.id === 'crosswalk' && isCsw ? 'Crosswalk (Community Schools)' : st.label}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>{description}</div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+          {available.length === 0 && (
+            <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 12 }}>No scoring columns detected in this CSV.</p>
+          )}
+          <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+            <button
+              onClick={() => setShowParadigmSelect(false)}
+              disabled={selectedParadigms.size === 0 && available.length > 0}
+              style={{ fontSize: 13, fontWeight: 600, color: 'white', background: selectedParadigms.size > 0 || available.length === 0 ? '#3b6fce' : '#9ca3af', border: 'none', borderRadius: 8, padding: '10px 24px', cursor: selectedParadigms.size > 0 || available.length === 0 ? 'pointer' : 'not-allowed' }}
+            >
+              {available.length === 0 ? 'Continue without scoring' : `Show ${selectedParadigms.size} framework${selectedParadigms.size !== 1 ? 's' : ''}`}
+            </button>
+            {available.length > 0 && selectedParadigms.size === 0 && (
+              <span style={{ fontSize: 12, color: '#9ca3af', alignSelf: 'center' }}>Select at least one</span>
+            )}
+          </div>
+        </div>
+      </AdminShell>
+    );
+  }
+
   // ---- Derived data -------------------------------------------------------
   // Column name helpers
   const schoolCol   = columns.includes('school_name')   ? 'school_name'   : columns.includes('school')    ? 'school'    : '';
@@ -649,9 +749,9 @@ export default function DataAnalysisClient() {
   const participDim  = participDims[0] ?? '';
   const participDim2 = participDims[1] ?? '';
 
-  // CSI convenience aliases (used by existing analysis code below)
-  const pillarMap   = pillarMaps['csi'] ?? {};
-  const includedAttrs = includedAttrsSets['csi'] ?? new Set<string>();
+  // Crosswalk convenience aliases (used by analysis render loop)
+  const pillarMap     = pillarMaps['crosswalk'] ?? {};
+  const includedAttrs = includedAttrsSets['crosswalk'] ?? new Set<string>();
 
   // Date column detection for "over time" feature
   const dateCol = ['answer_date', 'date', 'created_at', 'submitted_at', 'response_date', 'timestamp']
@@ -732,58 +832,20 @@ export default function DataAnalysisClient() {
   }
 
   // ---- Analysis tab derived data ------------------------------------------
-  // Pillars 1-4: which attributes belong to each
-  const pillarGroups: Record<1|2|3|4, string[]> = { 1: [], 2: [], 3: [], 4: [] };
-  for (const attr of Array.from(includedAttrs)) {
-    const p = (pillarMap[attr] ?? 1) as 1|2|3|4;
-    if (p >= 1 && p <= 4) pillarGroups[p].push(attr);
-  }
-  // All csi_attributes known in the dataset (for config panel)
-  const allCsiAttrs = distinctSorted(allRows, 'csi_attribute');
-
-  // Helper: avg csi_adjusted for a set of rows filtered to specific attrs
-  function csiAvg(rows: Row[], attrs: string[]): number | null {
-    const nums = rows
-      .filter(r => attrs.includes(r['csi_attribute']))
-      .map(r => parseFloat(r['csi_adjusted']))
-      .filter(n => !isNaN(n));
-    return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
-  }
-
   // dim column for current analysis mode
   const analysisDimCol = ((): string => {
-    if (analysisMode.includes('school'))   return schoolCol;
-    if (analysisMode.includes('grade'))    return gradeCol;
-    if (analysisMode.includes('language')) return langCol;
+    if (analysisMode === 'by-school')   return schoolCol;
+    if (analysisMode === 'by-grade')    return gradeCol;
+    if (analysisMode === 'by-language') return langCol;
     return '';
   })();
   const analysisDimLabel = KNOWN_LABELS[analysisDimCol] ?? analysisDimCol;
 
-  // CSI heatmap data: rows = dim values, cols = pillars 1-4
-  const csiDimValues = analysisDimCol ? distinctSorted(filteredRows, analysisDimCol).slice(0, 40) : [];
-  const csiHeatData = csiDimValues.map(dv => {
-    const dimRows = filteredRows.filter(r => r[analysisDimCol] === dv);
-    return {
-      label: dv,
-      pillars: ([1,2,3,4] as const).map(p => {
-        const avg = csiAvg(dimRows, pillarGroups[p]);
-        const n = dimRows.filter(r => pillarGroups[p].includes(r['csi_attribute']) && !isNaN(parseFloat(r['csi_adjusted']))).length;
-        return { avg, n };
-      }),
-    };
-  });
+  // Dimension values (shared across all paradigms for the current mode)
+  const dimValues = analysisDimCol ? distinctSorted(filteredRows, analysisDimCol).slice(0, 40) : [];
 
-  // Color scale: normalize to actual data range so contrast isn't washed out
-  const csiAllVals = csiHeatData.flatMap(r => r.pillars.map(p => p.avg)).filter((v): v is number => v !== null);
-  const csiDataMin = csiAllVals.length ? Math.min(...csiAllVals) : 0;
-  const csiDataMax = csiAllVals.length ? Math.max(...csiAllVals) : 1;
-  // Returns normalized 0–1 within the actual data range, floored at 0.1
-  function csiNorm(val: number | null): number {
-    if (val === null) return 0;
-    const range = csiDataMax - csiDataMin;
-    const raw = range > 0.001 ? Math.max(0, Math.min(1, (val - csiDataMin) / range)) : 0.5;
-    return 0.1 + raw * 0.9;
-  }
+  // Whether the crosswalk data is community-schools style (pillar grouping + 0-1 scale)
+  const isCsw = isCommunitySchoolsCrosswalk(allRows);
 
   // =========================================================================
   return (
@@ -1286,7 +1348,7 @@ export default function DataAnalysisClient() {
                             {on && <svg width="10" height="8" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>}
                           </div>
                           <span style={{ fontSize: 13, fontWeight: 600, color: on ? '#3b6fce' : '#374151', transition: 'color 0.15s' }}>
-                            {st.id === 'csi' ? 'Crosswalk (CSI)' : st.label}
+                            {st.label}
                           </span>
                         </label>
                       );
@@ -1322,46 +1384,70 @@ export default function DataAnalysisClient() {
                   const pm       = pillarMaps[st.id] ?? {};
                   const included = includedAttrsSets[st.id] ?? new Set<string>();
                   const allAttrs = distinctSorted(allRows, st.attrCol);
-                  const pGroups: Record<1|2|3|4, string[]> = { 1: [], 2: [], 3: [], 4: [] };
-                  for (const attr of Array.from(included)) {
-                    const p = (pm[attr] ?? 1) as 1|2|3|4;
-                    if (p >= 1 && p <= 4) pGroups[p].push(attr);
-                  }
-                  const scoreCol = st.scoreOptions.length > 1 ? st.scoreOptions[1].col : st.scoreOptions[0].col;
                   const isOpen   = openPillarConfigs.has(st.id);
                   const updatePM = (newPm: Record<string, number>) => setPillarMaps(prev => ({ ...prev, [st.id]: newPm }));
                   const updateIn = (newSet: Set<string>) => setIncludedAttrsSets(prev => ({ ...prev, [st.id]: newSet }));
 
-                  // Heatmap data for this paradigm
-                  const heatData = analysisDimCol ? csiDimValues.map(dv => {
+                  // CS crosswalk: raw score (0-4) ÷ 4 → 0-1. Others: impacter score 200-800.
+                  const usePillarGrouping = st.id === 'crosswalk' && isCsw;
+                  const scoreCol  = usePillarGrouping ? st.rawCol : st.impacterCol;
+                  const transform = usePillarGrouping ? cswTransform : undefined;
+                  const scoreName = st.label;
+
+                  // Pillar buckets (CS crosswalk only)
+                  const pGroups4: Record<1|2|3|4, string[]> = { 1: [], 2: [], 3: [], 4: [] };
+                  if (usePillarGrouping) {
+                    for (const attr of Array.from(included)) {
+                      const p = (pm[attr] ?? 1) as 1|2|3|4;
+                      if (p >= 1 && p <= 4) pGroups4[p].push(attr);
+                    }
+                  }
+
+                  // Groups: pillar-based for CS crosswalk, one-per-attribute for others
+                  type Group = { key: string; label: string; attrs: string[]; color: string };
+                  let groups: Group[];
+                  if (usePillarGrouping) {
+                    groups = ([1,2,3,4] as const)
+                      .filter(p => pGroups4[p].length > 0)
+                      .map(p => ({ key: `pillar-${p}`, label: `Pillar ${p}`, attrs: pGroups4[p], color: PILLAR_COLORS[p - 1] }));
+                  } else {
+                    const activeAttrs = allAttrs.filter(a => included.has(a));
+                    groups = (activeAttrs.length > 0 ? activeAttrs : allAttrs).slice(0, 20).map((a, i) => ({
+                      key: a, label: formatAttrLabel(a), attrs: [a], color: PILLAR_COLORS[i % PILLAR_COLORS.length],
+                    }));
+                  }
+
+                  // Heatmap data
+                  const heatData = analysisDimCol ? dimValues.map(dv => {
                     const dimRows = filteredRows.filter(r => r[analysisDimCol] === dv);
                     return {
                       label: dv,
-                      pillars: ([1,2,3,4] as const).map(p => {
-                        const avg = scoreAvg(dimRows, pGroups[p], st.attrCol, scoreCol);
-                        const n   = dimRows.filter(r => pGroups[p].includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
+                      groups: groups.map(g => {
+                        const avg = scoreAvg(dimRows, g.attrs, st.attrCol, scoreCol, transform);
+                        const n   = dimRows.filter(r => g.attrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
                         return { avg, n };
                       }),
                     };
                   }) : [];
 
-                  const allVals  = heatData.flatMap(r => r.pillars.map(p => p.avg)).filter((v): v is number => v !== null);
-                  const dataMin  = allVals.length ? Math.min(...allVals) : 0;
-                  const dataMax  = allVals.length ? Math.max(...allVals) : 1;
+                  const allVals = heatData.flatMap(r => r.groups.map(g => g.avg)).filter((v): v is number => v !== null);
+                  const dataMin = allVals.length ? Math.min(...allVals) : 0;
+                  const dataMax = allVals.length ? Math.max(...allVals) : (usePillarGrouping ? 1 : 800);
                   const norm = (v: number | null) => {
                     if (v === null) return 0;
                     const range = dataMax - dataMin;
                     return 0.1 + (range > 0.001 ? Math.max(0, Math.min(1, (v - dataMin) / range)) : 0.5) * 0.9;
                   };
+                  const fmtScore = (v: number | null) =>
+                    v === null ? null : usePillarGrouping ? v.toFixed(3) : Math.round(v).toString();
+
+                  const allIncludedAttrs = groups.flatMap(g => g.attrs);
 
                   // For interpretation
                   const withOverall = heatData.map(row => {
-                    const allIncl = ([1,2,3,4] as const).flatMap(p => pGroups[p]);
                     const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
-                    return { label: row.label, overall: scoreAvg(dimRows2, allIncl, st.attrCol, scoreCol) };
+                    return { label: row.label, overall: scoreAvg(dimRows2, allIncludedAttrs, st.attrCol, scoreCol, transform) };
                   });
-
-                  const scoreName = st.id === 'csi' ? 'Crosswalk' : st.label;
 
                   return (
                     <div key={st.id} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1375,8 +1461,8 @@ export default function DataAnalysisClient() {
                         </div>
                       )}
 
-                      {/* Pillar config */}
-                      {allAttrs.length > 0 && (
+                      {/* Pillar config — CS crosswalk only */}
+                      {usePillarGrouping && allAttrs.length > 0 && (
                         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12 }}>
                           <button
                             onClick={() => setOpenPillarConfigs(prev => { const s = new Set(prev); if (s.has(st.id)) s.delete(st.id); else s.add(st.id); return s; })}
@@ -1408,7 +1494,7 @@ export default function DataAnalysisClient() {
                                         ) : attrs.map(a => (
                                           <label key={a} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
                                             <input type="checkbox" checked={included.has(a)} onChange={() => { const s = new Set(included); if (s.has(a)) s.delete(a); else s.add(a); updateIn(s); }} style={{ flexShrink: 0 }} />
-                                            <span style={{ fontSize: 11, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={a}>{a}</span>
+                                            <span style={{ fontSize: 11, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={a}>{formatAttrLabel(a)}</span>
                                             <span style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
                                               {([1, 2, 3, 4] as const).filter(pp => pp !== p).map(pp => (
                                                 <button key={pp} onClick={e => { e.preventDefault(); updatePM({ ...pm, [a]: pp }); }} title={`Move to Pillar ${pp}`} style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, border: `1px solid ${PILLAR_COLORS[pp - 1]}`, color: PILLAR_COLORS[pp - 1], background: 'white', cursor: 'pointer' }}>P{pp}</button>
@@ -1426,13 +1512,44 @@ export default function DataAnalysisClient() {
                         </div>
                       )}
 
+                      {/* Attribute inclusion config — Harvard / CASEL / non-CS crosswalk */}
+                      {!usePillarGrouping && allAttrs.length > 0 && (
+                        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                          <button
+                            onClick={() => setOpenPillarConfigs(prev => { const s = new Set(prev); if (s.has(st.id)) s.delete(st.id); else s.add(st.id); return s; })}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '13px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#111827' }}
+                          >
+                            <span>Attributes</span>
+                            <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>
+                              {Array.from(included).length} of {allAttrs.length} shown {isOpen ? '▲' : '▼'}
+                            </span>
+                          </button>
+                          {isOpen && (
+                            <div style={{ padding: '0 18px 18px', borderTop: '1px solid #f3f4f6' }}>
+                              <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 10 }}>
+                                <button onClick={() => updateIn(new Set(allAttrs))} style={{ fontSize: 11, padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', cursor: 'pointer', color: '#374151' }}>Select all</button>
+                                <button onClick={() => updateIn(new Set())} style={{ fontSize: 11, padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', cursor: 'pointer', color: '#374151' }}>Clear all</button>
+                              </div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {allAttrs.map((a, i) => (
+                                  <label key={a} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '4px 10px', border: `1.5px solid ${included.has(a) ? PILLAR_COLORS[i % PILLAR_COLORS.length] : '#e5e7eb'}`, borderRadius: 20, background: included.has(a) ? `${PILLAR_COLORS[i % PILLAR_COLORS.length]}18` : 'white' }}>
+                                    <input type="checkbox" checked={included.has(a)} onChange={() => { const s = new Set(included); if (s.has(a)) s.delete(a); else s.add(a); updateIn(s); }} style={{ display: 'none' }} />
+                                    <span style={{ fontSize: 11, color: included.has(a) ? PILLAR_COLORS[i % PILLAR_COLORS.length] : '#6b7280', fontWeight: included.has(a) ? 600 : 400 }}>{formatAttrLabel(a)}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Two-column grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
 
                         {/* Left: heatmap table */}
                         <div ref={refAnalysisTable} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
                           <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Heatmap — {analysisDimLabel}</div>
-                          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>colour scaled to data range · 3dp</div>
+                          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>colour scaled to data range{usePillarGrouping ? ' · 3dp' : ' · integer'}</div>
                           {!analysisDimCol ? (
                             <p style={{ fontSize: 13, color: '#9ca3af' }}>No {analysisDimLabel} column found.</p>
                           ) : heatData.length === 0 ? (
@@ -1442,10 +1559,10 @@ export default function DataAnalysisClient() {
                               <thead>
                                 <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
                                   <th style={{ padding: '3px 10px 6px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>{analysisDimLabel}</th>
-                                  {([1, 2, 3, 4] as const).map(p => (
-                                    <th key={p} style={{ padding: '3px 10px 6px', textAlign: 'center', color: PILLAR_COLORS[p - 1], fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80 }}>
-                                      Pillar {p}
-                                      <span style={{ display: 'block', fontSize: 9, fontWeight: 400, color: '#9ca3af', marginTop: 1 }}>{pGroups[p].length} attr{pGroups[p].length !== 1 ? 's' : ''}</span>
+                                  {groups.map(g => (
+                                    <th key={g.key} style={{ padding: '3px 10px 6px', textAlign: 'center', color: g.color, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80 }}>
+                                      {g.label}
+                                      {usePillarGrouping && <span style={{ display: 'block', fontSize: 9, fontWeight: 400, color: '#9ca3af', marginTop: 1 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
                                     </th>
                                   ))}
                                   <th style={{ padding: '3px 10px 6px', textAlign: 'center', color: '#374151', fontWeight: 700, whiteSpace: 'nowrap', borderLeft: '2px solid #e5e7eb' }}>Overall</th>
@@ -1453,24 +1570,23 @@ export default function DataAnalysisClient() {
                               </thead>
                               <tbody>
                                 {heatData.map(row => {
-                                  const allIncl = ([1,2,3,4] as const).flatMap(p => pGroups[p]);
                                   const dimRows3 = filteredRows.filter(r => r[analysisDimCol] === row.label);
-                                  const overallAvg = scoreAvg(dimRows3, allIncl, st.attrCol, scoreCol);
-                                  const overallN   = dimRows3.filter(r => allIncl.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
+                                  const overallAvg = scoreAvg(dimRows3, allIncludedAttrs, st.attrCol, scoreCol, transform);
+                                  const overallN   = dimRows3.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
                                   const tOv = norm(overallAvg);
                                   return (
                                     <tr key={row.label} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                       <td style={{ padding: '3px 10px 3px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.label}>{row.label}</td>
-                                      {row.pillars.map(({ avg, n }, pi) => {
+                                      {row.groups.map(({ avg, n }, gi) => {
                                         const t = norm(avg);
                                         return (
-                                          <td key={pi} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: avg !== null ? 600 : 400 }}>
-                                            {avg !== null ? <>{avg.toFixed(3)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
+                                          <td key={gi} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: avg !== null ? 600 : 400 }}>
+                                            {avg !== null ? <>{fmtScore(avg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
                                           </td>
                                         );
                                       })}
                                       <td style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(tOv), color: csiTextColor(tOv), fontWeight: 700, borderLeft: '2px solid #e5e7eb' }}>
-                                        {overallAvg !== null ? <>{overallAvg.toFixed(3)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={overallN.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
+                                        {overallAvg !== null ? <>{fmtScore(overallAvg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={overallN.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
                                       </td>
                                     </tr>
                                   );
@@ -1478,18 +1594,17 @@ export default function DataAnalysisClient() {
                                 {heatData.length > 1 && (
                                   <tr style={{ borderTop: '2px solid #e5e7eb', background: '#f9fafb' }}>
                                     <td style={{ padding: '3px 10px 3px 4px', fontSize: 11, fontWeight: 700, color: '#111827' }}>All {analysisDimLabel}s</td>
-                                    {([1,2,3,4] as const).map(p => {
-                                      const avg = scoreAvg(filteredRows, pGroups[p], st.attrCol, scoreCol);
-                                      const n   = filteredRows.filter(r => pGroups[p].includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
+                                    {groups.map(g => {
+                                      const avg = scoreAvg(filteredRows, g.attrs, st.attrCol, scoreCol, transform);
+                                      const n   = filteredRows.filter(r => g.attrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
                                       const t   = norm(avg);
-                                      return <td key={p} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: 700 }}>{avg !== null ? <>{avg.toFixed(3)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : '—'}</td>;
+                                      return <td key={g.key} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: 700 }}>{avg !== null ? <>{fmtScore(avg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : '—'}</td>;
                                     })}
                                     {(() => {
-                                      const allIncl2 = ([1,2,3,4] as const).flatMap(p => pGroups[p]);
-                                      const gAvg = scoreAvg(filteredRows, allIncl2, st.attrCol, scoreCol);
-                                      const gN   = filteredRows.filter(r => allIncl2.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
+                                      const gAvg = scoreAvg(filteredRows, allIncludedAttrs, st.attrCol, scoreCol, transform);
+                                      const gN   = filteredRows.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
                                       const t    = norm(gAvg);
-                                      return <td style={{ padding: '3px 10px', textAlign: 'center', fontWeight: 700, background: csiColor(t), color: csiTextColor(t), borderLeft: '2px solid #e5e7eb' }}>{gAvg !== null ? <>{gAvg.toFixed(3)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={gN.toLocaleString()}</span></> : '—'}</td>;
+                                      return <td style={{ padding: '3px 10px', textAlign: 'center', fontWeight: 700, background: csiColor(t), color: csiTextColor(t), borderLeft: '2px solid #e5e7eb' }}>{gAvg !== null ? <>{fmtScore(gAvg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={gN.toLocaleString()}</span></> : '—'}</td>;
                                     })()}
                                   </tr>
                                 )}
@@ -1497,29 +1612,36 @@ export default function DataAnalysisClient() {
                             </table>
                           )}
                           <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                            <button onClick={() => { const data = heatData.map(row => { const obj: Record<string,unknown> = { [analysisDimCol]: row.label }; ([1,2,3,4] as const).forEach((p,pi) => { obj[`pillar_${p}`] = row.pillars[pi].avg?.toFixed(3) ?? ''; obj[`pillar_${p}_n`] = row.pillars[pi].n; }); const allIncl3 = ([1,2,3,4] as const).flatMap(p => pGroups[p]); const dr = filteredRows.filter(r => r[analysisDimCol] === row.label); obj.overall = scoreAvg(dr, allIncl3, st.attrCol, scoreCol)?.toFixed(3) ?? ''; obj.overall_n = dr.filter(r => allIncl3.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length; return obj; }); exportCSV(data, `${st.id}-pillar-${analysisDimCol}.csv`); }} style={exportBtn}>Download CSV</button>
+                            <button onClick={() => { const data = heatData.map(row => { const obj: Record<string,unknown> = { [analysisDimCol]: row.label }; groups.forEach((g, gi) => { obj[g.key] = fmtScore(row.groups[gi].avg) ?? ''; obj[`${g.key}_n`] = row.groups[gi].n; }); const dr = filteredRows.filter(r => r[analysisDimCol] === row.label); obj.overall = fmtScore(scoreAvg(dr, allIncludedAttrs, st.attrCol, scoreCol, transform)) ?? ''; obj.overall_n = dr.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length; return obj; }); exportCSV(data, `${st.id}-${analysisDimCol}.csv`); }} style={exportBtn}>Download CSV</button>
                             <button onClick={() => captureChart(refAnalysisTable, `${st.id}-heatmap-${analysisDimCol}.png`)} style={exportBtn}>Download image (table)</button>
                           </div>
                         </div>
 
                         {/* Right: vertical grouped bar chart */}
                         <div ref={refAnalysisChart} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 10 }}>Score by Pillar — {analysisDimLabel}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 10 }}>
+                            {usePillarGrouping ? `Score by Pillar — ${analysisDimLabel}` : `Score by Attribute — ${analysisDimLabel}`}
+                          </div>
                           {heatData.length === 0 || !analysisDimCol ? (
                             <p style={{ fontSize: 13, color: '#9ca3af' }}>No data for this breakdown.</p>
                           ) : (() => {
-                            const activePillars = ([1,2,3,4] as const).filter(p => pGroups[p].length > 0);
                             const CHART_H = 200;
-                            const yFloor  = dataMin > 0.15 ? Math.max(0, Math.floor(dataMin * 20) / 20 - 0.05) : 0;
-                            const yCeil   = Math.min(1.0, Math.ceil(dataMax * 20) / 20 + 0.02);
-                            const yRange  = Math.max(yCeil - yFloor, 0.01);
-                            const yTicks: number[] = [];
-                            for (let v = Math.round(yFloor * 10) / 10; v <= yCeil + 0.001; v = Math.round((v + 0.1) * 100) / 100) yTicks.push(v);
                             const dimVals = heatData.map(r => r.label);
                             const BAR_W   = Math.max(14, Math.floor(52 / Math.max(dimVals.length, 1)));
+                            const yFloor = usePillarGrouping
+                              ? (dataMin > 0.15 ? Math.max(0, Math.floor(dataMin * 20) / 20 - 0.05) : 0)
+                              : Math.max(0, Math.floor(dataMin / 50) * 50 - 50);
+                            const yCeil = usePillarGrouping
+                              ? Math.min(1.0, Math.ceil(dataMax * 20) / 20 + 0.02)
+                              : Math.ceil(dataMax / 50) * 50 + 50;
+                            const yRange = Math.max(yCeil - yFloor, usePillarGrouping ? 0.01 : 1);
+                            const yStep = usePillarGrouping ? 0.1 : 100;
+                            const yTicks: number[] = [];
+                            for (let v = yFloor; v <= yCeil + yStep * 0.01; v = Math.round((v + yStep) * 1000) / 1000) yTicks.push(v);
+                            const fmtTick = (v: number) => usePillarGrouping ? v.toFixed(2) : Math.round(v).toString();
                             return (
                               <div>
-                                {/* Legend */}
+                                {/* Legend: dim values */}
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                                   {dimVals.map((dv, i) => (
                                     <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1535,30 +1657,30 @@ export default function DataAnalysisClient() {
                                       const px = ((v - yFloor) / yRange) * CHART_H;
                                       return (
                                         <div key={v} style={{ position: 'absolute', left: 0, right: 0, bottom: 52 + px, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
-                                          <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: '#9ca3af', paddingRight: 6 }}>{v.toFixed(2)}</span>
+                                          <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: '#9ca3af', paddingRight: 6 }}>{fmtTick(v)}</span>
                                           <div style={{ flex: 1, borderTop: v === yTicks[0] ? '2px solid #e5e7eb' : '1px solid #f0f0f0' }} />
                                         </div>
                                       );
                                     })}
-                                    {/* Pillar groups */}
+                                    {/* Group columns */}
                                     <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', height: CHART_H }}>
-                                      {activePillars.map(p => (
-                                        <div key={p} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                      {groups.map((g, gi) => (
+                                        <div key={g.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: CHART_H }}>
                                             {dimVals.map((dv, di) => {
-                                              const avg  = heatData.find(r => r.label === dv)?.pillars[p - 1].avg ?? null;
+                                              const avg  = heatData.find(r => r.label === dv)?.groups[gi].avg ?? null;
                                               const barH = avg !== null ? Math.max(4, ((avg - yFloor) / yRange) * CHART_H) : 0;
                                               return (
                                                 <div key={dv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: BAR_W }}>
-                                                  {avg !== null && <span style={{ fontSize: 9, color: '#374151', fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap' }}>{avg.toFixed(3)}</span>}
-                                                  <div className="bar-animated" title={`${dv} · Pillar ${p}: ${avg?.toFixed(3) ?? '—'}`} style={{ width: BAR_W, height: barH, background: pickColor(di), borderRadius: '3px 3px 0 0', transformOrigin: 'bottom' }} />
+                                                  {avg !== null && <span style={{ fontSize: 9, color: '#374151', fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap' }}>{fmtScore(avg)}</span>}
+                                                  <div className="bar-animated" title={`${dv} · ${g.label}: ${fmtScore(avg) ?? '—'}`} style={{ width: BAR_W, height: barH, background: pickColor(di), borderRadius: '3px 3px 0 0', transformOrigin: 'bottom' }} />
                                                 </div>
                                               );
                                             })}
                                           </div>
-                                          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 10, color: PILLAR_COLORS[p - 1], fontWeight: 700, maxWidth: BAR_W * dimVals.length + 10 }}>
-                                            Pillar {p}
-                                            <span style={{ display: 'block', fontSize: 8, color: '#9ca3af', fontWeight: 400 }}>{pGroups[p].length} attr{pGroups[p].length !== 1 ? 's' : ''}</span>
+                                          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 10, color: g.color, fontWeight: 700, maxWidth: BAR_W * dimVals.length + 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {g.label}
+                                            {usePillarGrouping && <span style={{ display: 'block', fontSize: 8, color: '#9ca3af', fontWeight: 400 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
                                           </div>
                                         </div>
                                       ))}
