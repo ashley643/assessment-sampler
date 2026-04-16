@@ -835,12 +835,10 @@ export default function DataAnalysisClient() {
 
   // ---- Analysis tab derived data ------------------------------------------
   // dim column for current analysis mode
-  const analysisDimCol = ((): string => {
-    if (analysisMode === 'by-school')   return schoolCol;
-    if (analysisMode === 'by-grade')    return gradeCol;
-    if (analysisMode === 'by-language') return langCol;
-    return '';
-  })();
+  const analysisDimCol = analysisMode === 'by-school' ? schoolCol
+    : analysisMode === 'by-grade' ? gradeCol
+    : analysisMode === 'by-language' ? langCol
+    : '';
   const analysisDimLabel = KNOWN_LABELS[analysisDimCol] ?? analysisDimCol;
 
   // Dimension values (shared across all paradigms for the current mode)
@@ -1406,16 +1404,15 @@ export default function DataAnalysisClient() {
                   }
 
                   // Groups: pillar-based for CS crosswalk, one-per-attribute for others
+                  const activeAttrs = allAttrs.filter(a => included.has(a));
+                  const attrList = activeAttrs.length > 0 ? activeAttrs : allAttrs;
                   const groups: ParadigmGroup[] = usePillarGrouping
                     ? ([1,2,3,4] as const)
                         .filter(p => pGroups4[p].length > 0)
                         .map(p => ({ key: `pillar-${p}`, label: `Pillar ${p}`, attrs: pGroups4[p], color: PILLAR_COLORS[p - 1] }))
-                    : (() => {
-                        const activeAttrs = allAttrs.filter(a => included.has(a));
-                        return (activeAttrs.length > 0 ? activeAttrs : allAttrs).slice(0, 20).map((a, i) => ({
-                          key: a, label: formatAttrLabel(a), attrs: [a], color: PILLAR_COLORS[i % PILLAR_COLORS.length],
-                        }));
-                      })();
+                    : attrList.slice(0, 20).map((a, i) => ({
+                        key: a, label: formatAttrLabel(a), attrs: [a], color: PILLAR_COLORS[i % PILLAR_COLORS.length],
+                      }));
 
                   // Heatmap data
                   const heatData = analysisDimCol ? dimValues.map(dv => {
@@ -1448,6 +1445,22 @@ export default function DataAnalysisClient() {
                     const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
                     return { label: row.label, overall: scoreAvg(dimRows2, allIncludedAttrs, st.attrCol, scoreCol, transform) };
                   });
+
+                  // Pre-compute bar chart layout (avoids IIFE in JSX)
+                  const chartDimVals = heatData.map(r => r.label);
+                  const CHART_H      = 200;
+                  const BAR_W        = Math.max(14, Math.floor(52 / Math.max(chartDimVals.length, 1)));
+                  const yFloor       = usePillarGrouping
+                    ? (dataMin > 0.15 ? Math.max(0, Math.floor(dataMin * 20) / 20 - 0.05) : 0)
+                    : Math.max(0, Math.floor(dataMin / 50) * 50 - 50);
+                  const yCeil        = usePillarGrouping
+                    ? Math.min(1.0, Math.ceil(dataMax * 20) / 20 + 0.02)
+                    : Math.ceil(dataMax / 50) * 50 + 50;
+                  const yRange       = Math.max(yCeil - yFloor, usePillarGrouping ? 0.01 : 1);
+                  const yStep        = usePillarGrouping ? 0.1 : 100;
+                  const yTicks: number[] = [];
+                  for (let yv = yFloor; yv <= yCeil + yStep * 0.01; yv = Math.round((yv + yStep) * 1000) / 1000) yTicks.push(yv);
+                  const fmtTick      = (v: number) => usePillarGrouping ? v.toFixed(2) : Math.round(v).toString();
 
                   return (
                     <div key={st.id} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1600,12 +1613,11 @@ export default function DataAnalysisClient() {
                                       const t   = norm(avg);
                                       return <td key={g.key} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: 700 }}>{avg !== null ? <>{fmtScore(avg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : '—'}</td>;
                                     })}
-                                    {(() => {
-                                      const gAvg = scoreAvg(filteredRows, allIncludedAttrs, st.attrCol, scoreCol, transform);
-                                      const gN   = filteredRows.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
-                                      const t    = norm(gAvg);
-                                      return <td style={{ padding: '3px 10px', textAlign: 'center', fontWeight: 700, background: csiColor(t), color: csiTextColor(t), borderLeft: '2px solid #e5e7eb' }}>{gAvg !== null ? <>{fmtScore(gAvg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={gN.toLocaleString()}</span></> : '—'}</td>;
-                                    })()}
+                                    {(gAvgVal => (
+                                      <td style={{ padding: '3px 10px', textAlign: 'center', fontWeight: 700, background: csiColor(norm(gAvgVal)), color: csiTextColor(norm(gAvgVal)), borderLeft: '2px solid #e5e7eb' }}>
+                                        {gAvgVal !== null ? <>{fmtScore(gAvgVal)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={filteredRows.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length.toLocaleString()}</span></> : '—'}
+                                      </td>
+                                    ))(scoreAvg(filteredRows, allIncludedAttrs, st.attrCol, scoreCol, transform))}
                                   </tr>
                                 )}
                               </tbody>
@@ -1624,75 +1636,59 @@ export default function DataAnalysisClient() {
                           </div>
                           {heatData.length === 0 || !analysisDimCol ? (
                             <p style={{ fontSize: 13, color: '#9ca3af' }}>No data for this breakdown.</p>
-                          ) : (() => {
-                            const CHART_H = 200;
-                            const dimVals = heatData.map(r => r.label);
-                            const BAR_W   = Math.max(14, Math.floor(52 / Math.max(dimVals.length, 1)));
-                            const yFloor = usePillarGrouping
-                              ? (dataMin > 0.15 ? Math.max(0, Math.floor(dataMin * 20) / 20 - 0.05) : 0)
-                              : Math.max(0, Math.floor(dataMin / 50) * 50 - 50);
-                            const yCeil = usePillarGrouping
-                              ? Math.min(1.0, Math.ceil(dataMax * 20) / 20 + 0.02)
-                              : Math.ceil(dataMax / 50) * 50 + 50;
-                            const yRange = Math.max(yCeil - yFloor, usePillarGrouping ? 0.01 : 1);
-                            const yStep = usePillarGrouping ? 0.1 : 100;
-                            const yTicks: number[] = [];
-                            for (let v = yFloor; v <= yCeil + yStep * 0.01; v = Math.round((v + yStep) * 1000) / 1000) yTicks.push(v);
-                            const fmtTick = (v: number) => usePillarGrouping ? v.toFixed(2) : Math.round(v).toString();
-                            return (
-                              <div>
-                                {/* Legend: dim values */}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                                  {dimVals.map((dv, i) => (
-                                    <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                      <div style={{ width: 10, height: 10, borderRadius: 2, background: pickColor(i), flexShrink: 0 }} />
-                                      <span style={{ fontSize: 10, color: '#6b7280' }}>{dv}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                                <div style={{ overflowX: 'auto' }}>
-                                  <div key={`${st.id}-${analysisMode}`} style={{ position: 'relative', paddingLeft: 44, paddingBottom: 52, paddingTop: 8, minWidth: 'max-content', animation: 'fadeUp 0.3s ease' }}>
-                                    {/* Y-axis gridlines */}
-                                    {yTicks.map(v => {
-                                      const px = ((v - yFloor) / yRange) * CHART_H;
-                                      return (
-                                        <div key={v} style={{ position: 'absolute', left: 0, right: 0, bottom: 52 + px, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
-                                          <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: '#9ca3af', paddingRight: 6 }}>{fmtTick(v)}</span>
-                                          <div style={{ flex: 1, borderTop: v === yTicks[0] ? '2px solid #e5e7eb' : '1px solid #f0f0f0' }} />
+                          ) : (
+                            <div>
+                              {/* Legend: dim values */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                                {chartDimVals.map((dv, i) => (
+                                  <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <div style={{ width: 10, height: 10, borderRadius: 2, background: pickColor(i), flexShrink: 0 }} />
+                                    <span style={{ fontSize: 10, color: '#6b7280' }}>{dv}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ overflowX: 'auto' }}>
+                                <div key={`${st.id}-${analysisMode}`} style={{ position: 'relative', paddingLeft: 44, paddingBottom: 52, paddingTop: 8, minWidth: 'max-content', animation: 'fadeUp 0.3s ease' }}>
+                                  {/* Y-axis gridlines */}
+                                  {yTicks.map(v => {
+                                    const px = ((v - yFloor) / yRange) * CHART_H;
+                                    return (
+                                      <div key={v} style={{ position: 'absolute', left: 0, right: 0, bottom: 52 + px, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+                                        <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: '#9ca3af', paddingRight: 6 }}>{fmtTick(v)}</span>
+                                        <div style={{ flex: 1, borderTop: v === yTicks[0] ? '2px solid #e5e7eb' : '1px solid #f0f0f0' }} />
+                                      </div>
+                                    );
+                                  })}
+                                  {/* Group columns */}
+                                  <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', height: CHART_H }}>
+                                    {groups.map((g, gi) => (
+                                      <div key={g.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: CHART_H }}>
+                                          {chartDimVals.map((dv, di) => {
+                                            const avg  = heatData.find(r => r.label === dv)?.groups[gi].avg ?? null;
+                                            const barH = avg !== null ? Math.max(4, ((avg - yFloor) / yRange) * CHART_H) : 0;
+                                            return (
+                                              <div key={dv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: BAR_W }}>
+                                                {avg !== null && <span style={{ fontSize: 9, color: '#374151', fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap' }}>{fmtScore(avg)}</span>}
+                                                <div className="bar-animated" title={`${dv} · ${g.label}: ${fmtScore(avg) ?? '—'}`} style={{ width: BAR_W, height: barH, background: pickColor(di), borderRadius: '3px 3px 0 0', transformOrigin: 'bottom' }} />
+                                              </div>
+                                            );
+                                          })}
                                         </div>
-                                      );
-                                    })}
-                                    {/* Group columns */}
-                                    <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', height: CHART_H }}>
-                                      {groups.map((g, gi) => (
-                                        <div key={g.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: CHART_H }}>
-                                            {dimVals.map((dv, di) => {
-                                              const avg  = heatData.find(r => r.label === dv)?.groups[gi].avg ?? null;
-                                              const barH = avg !== null ? Math.max(4, ((avg - yFloor) / yRange) * CHART_H) : 0;
-                                              return (
-                                                <div key={dv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: BAR_W }}>
-                                                  {avg !== null && <span style={{ fontSize: 9, color: '#374151', fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap' }}>{fmtScore(avg)}</span>}
-                                                  <div className="bar-animated" title={`${dv} · ${g.label}: ${fmtScore(avg) ?? '—'}`} style={{ width: BAR_W, height: barH, background: pickColor(di), borderRadius: '3px 3px 0 0', transformOrigin: 'bottom' }} />
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 10, color: g.color, fontWeight: 700, maxWidth: BAR_W * dimVals.length + 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {g.label}
-                                            {usePillarGrouping && <span style={{ display: 'block', fontSize: 8, color: '#9ca3af', fontWeight: 400 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
-                                          </div>
+                                        <div style={{ marginTop: 6, textAlign: 'center', fontSize: 10, color: g.color, fontWeight: 700, maxWidth: BAR_W * chartDimVals.length + 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                          {g.label}
+                                          {usePillarGrouping && <span style={{ display: 'block', fontSize: 8, color: '#9ca3af', fontWeight: 400 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
                                         </div>
-                                      ))}
-                                    </div>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
-                                <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                                  <button onClick={() => captureChart(refAnalysisChart, `${st.id}-barchart-${analysisDimCol}.png`)} style={exportBtn}>Download image (chart)</button>
-                                </div>
                               </div>
-                            );
-                          })()}
+                              <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                                <button onClick={() => captureChart(refAnalysisChart, `${st.id}-barchart-${analysisDimCol}.png`)} style={exportBtn}>Download image (chart)</button>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                       </div>
