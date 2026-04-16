@@ -25,12 +25,12 @@ const NAV = [
   { href: '/admin/assessments', label: 'Assessments' },
   { href: '/admin/bundles', label: 'Bundles' },
   { href: '/admin/audit', label: 'Audit Log' },
-  { href: '/admin/data-analysis', label: 'Data Analysis' },
 ];
 
 const NAV_EXTERNAL = [
   { href: '/admin/response-finder', label: 'Response Finder' },
   { href: '/admin/district-finder', label: 'District Response Finder' },
+  { href: '/admin/data-analysis', label: 'Data Analysis' },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
