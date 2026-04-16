@@ -1947,16 +1947,16 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             </div>
             <button
               onClick={() => setCsvOpen(true)}
-              className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors"
-              style={{ color: '#6b7280', border: '1px solid #d1d5db', background: 'white' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#4a6fa5'; e.currentTarget.style.color = '#4a6fa5'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#6b7280'; }}
+              className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-opacity"
+              style={{ color: 'white', background: '#2d7a5f', fontSize: 13, boxShadow: '0 2px 10px rgba(45,122,95,0.35)', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
               </svg>
-              CSV
+              View Sample CSV
             </button>
           </div>
 
