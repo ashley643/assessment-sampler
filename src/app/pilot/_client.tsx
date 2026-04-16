@@ -1095,8 +1095,8 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
         )}
         <VideoChrome curT={curT} dur={dur} fmt={fmt} />
         {/* Question text overlaid on video */}
-        <div style={{ position: 'absolute', top: 32, left: 0, right: 0, padding: '10px 14px', pointerEvents: 'none', zIndex: 2 }}>
-          <p style={{ fontSize: 12, fontWeight: 800, color: 'white', lineHeight: 1.4, margin: 0, textShadow: '0 1px 6px rgba(0,0,0,0.7)' }}>{question}</p>
+        <div style={{ position: 'absolute', top: 32, left: 0, right: 0, bottom: 0, padding: '10px 14px 0', pointerEvents: 'none', zIndex: 2, background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }}>
+          <p style={{ fontSize: 16, fontWeight: 800, color: 'white', lineHeight: 1.35, margin: 0, textShadow: '0 1px 10px rgba(0,0,0,0.6)', fontFamily: "'Apercu Pro', 'Apercu', 'DM Sans', sans-serif" }}>{question}</p>
         </div>
         {/* Play/pause button */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none', zIndex: 3 }}>
@@ -1642,8 +1642,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   fmt={t => { const m = Math.floor(t/60), s = Math.floor(t%60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }}
                 />
                 {/* Question text overlaid on video */}
-                <div style={{ position: 'absolute', top: 36, left: 0, right: 0, padding: '12px 20px', pointerEvents: 'none', zIndex: 2 }}>
-                  <p style={{ color: 'white', fontSize: 16, fontWeight: 800, lineHeight: 1.45, margin: 0, textShadow: '0 2px 12px rgba(0,0,0,0.75)' }}>
+                <div style={{ position: 'absolute', top: 36, left: 0, right: 0, bottom: 0, padding: '16px 22px 0', pointerEvents: 'none', zIndex: 2, background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }}>
+                  <p style={{ color: 'white', fontSize: 22, fontWeight: 800, lineHeight: 1.35, margin: 0, textShadow: '0 2px 16px rgba(0,0,0,0.6)', fontFamily: "'Apercu Pro', 'Apercu', 'DM Sans', sans-serif" }}>
                     {panel.promptText}
                   </p>
                 </div>
