@@ -760,34 +760,33 @@ export default function DataAnalysisClient() {
     .find(c => columns.includes(c)) ?? '';
 
   // Time-series slices (computed only when overTime is active)
-  const timeSlicesByMonth = (() => {
-    if (!dateCol || !overTime) return false;
-    const dates = filteredRows.map(r => new Date(r[dateCol])).filter(d => !isNaN(d.getTime()));
-    if (dates.length < 2) return false;
-    const range = Math.max(...dates.map(d => d.getTime())) - Math.min(...dates.map(d => d.getTime()));
-    return range / 86400000 > 90;
-  })();
+  const _tsDates = (dateCol && overTime)
+    ? filteredRows.map(r => new Date(r[dateCol])).filter(d => !isNaN(d.getTime()))
+    : [];
+  const timeSlicesByMonth = _tsDates.length >= 2
+    ? (Math.max(..._tsDates.map(d => d.getTime())) - Math.min(..._tsDates.map(d => d.getTime()))) / 86400000 > 90
+    : false;
 
-  const timeSlices: { label: string; count: number; byDim: Record<string, number> }[] = (() => {
-    if (!dateCol || !overTime) return [];
-    const sliceKey = (d: Date) => timeSlicesByMonth
+  const _tsMap: Record<string, { count: number; byDim: Record<string, number> }> = {};
+  if (dateCol && overTime) {
+    const _tsKey = (d: Date) => timeSlicesByMonth
       ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
       : d.toISOString().slice(0, 10);
-    const map: Record<string, { count: number; byDim: Record<string, number> }> = {};
     for (const row of filteredRows) {
       const d = new Date(row[dateCol]);
       if (isNaN(d.getTime())) continue;
-      const k = sliceKey(d);
-      if (!map[k]) map[k] = { count: 0, byDim: {} };
-      map[k].count++;
+      const k = _tsKey(d);
+      if (!_tsMap[k]) _tsMap[k] = { count: 0, byDim: {} };
+      _tsMap[k].count++;
       if (participDim) {
         const dv = row[participDim] || '(other)';
-        map[k].byDim[dv] = (map[k].byDim[dv] ?? 0) + 1;
+        _tsMap[k].byDim[dv] = (_tsMap[k].byDim[dv] ?? 0) + 1;
       }
     }
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b))
+  }
+  const timeSlices: { label: string; count: number; byDim: Record<string, number> }[] =
+    Object.entries(_tsMap).sort(([a], [b]) => a.localeCompare(b))
       .map(([label, { count, byDim }]) => ({ label, count, byDim }));
-  })();
 
   // Participation
   const participCounts = participDim ? countBy(filteredRows, participDim) : {};
@@ -846,6 +845,22 @@ export default function DataAnalysisClient() {
 
   // Whether the crosswalk data is community-schools style (pillar grouping + 0-1 scale)
   const isCsw = isCommunitySchoolsCrosswalk(allRows);
+
+  // Pre-compute JSX values (avoids IIFEs in render that Terser would inline)
+  const statCards: { label: string; value: string; sub: string | null }[] = [
+    { label: 'Responses',             value: filteredRows.length.toLocaleString(),   sub: null },
+    ...(uniqueParticipants > 0 ? [{ label: 'Participants',              value: uniqueParticipants.toLocaleString(), sub: null }] : []),
+    ...(totalWords > 0         ? [{ label: 'Words of Authentic Voice',  value: totalWords.toLocaleString(),        sub: avgWordsPerResponse > 0 ? `avg ${avgWordsPerResponse} per response` : null }] : []),
+    { label: 'Data Points Analyzed',  value: dataPointsAnalyzed.toLocaleString(),    sub: null },
+  ];
+  const wordBarMax  = Object.values(participWordStats).length > 0
+    ? Math.max(...Object.values(participWordStats).map(w => w.avg), 1) : 1;
+  const tsMaxCount  = timeSlices.length > 0 ? Math.max(...timeSlices.map(s => s.count), 1) : 1;
+  const tsChartH    = 180;
+  const tsDimVals   = participDim
+    ? Array.from(new Set(timeSlices.flatMap(s => Object.keys(s.byDim)))).sort() : [];
+  const tsHasGroups = tsDimVals.length > 0;
+  const tsBarW      = Math.max(14, Math.min(44, Math.floor(560 / Math.max(timeSlices.length, 1)) - 6));
 
   // =========================================================================
   return (
@@ -977,25 +992,15 @@ export default function DataAnalysisClient() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Headline stats */}
-            {(() => {
-              const cards = [
-                { label: 'Responses',               value: filteredRows.length.toLocaleString(),  sub: null },
-                ...(uniqueParticipants > 0 ? [{ label: 'Participants', value: uniqueParticipants.toLocaleString(), sub: null }] : []),
-                ...(totalWords > 0 ? [{ label: 'Words of Authentic Voice', value: totalWords.toLocaleString(), sub: avgWordsPerResponse > 0 ? `avg ${avgWordsPerResponse} per response` : null }] : []),
-                { label: 'Data Points Analyzed',    value: dataPointsAnalyzed.toLocaleString(),   sub: null },
-              ];
-              return (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-                  {cards.map(c => (
-                    <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 16px' }}>
-                      <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{c.label}</div>
-                      <div style={{ fontSize: 26, fontWeight: 700, color: '#111827' }}>{c.value}</div>
-                      {c.sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{c.sub}</div>}
-                    </div>
-                  ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+              {statCards.map(c => (
+                <div key={c.label} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 16px' }}>
+                  <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{c.label}</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#111827' }}>{c.value}</div>
+                  {c.sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{c.sub}</div>}
                 </div>
-              );
-            })()}
+              ))}
+            </div>
 
             {/* Chip selector — standalone card above the two-column grid */}
             <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '10px 14px' }}>
@@ -1209,26 +1214,21 @@ export default function DataAnalysisClient() {
                 ) : answerCol && Object.keys(participWordStats).length > 0 ? (
                   <>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 12 }}>Avg Words per Response</div>
-                    {(() => {
-                      const wordMax = Math.max(...Object.values(participWordStats).map(w => w.avg), 1);
-                      return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {participSorted.map(([val], i) => {
-                            const ws = participWordStats[val];
-                            if (!ws) return null;
-                            return (
-                              <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <div style={{ width: 120, fontSize: 11, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</div>
-                                <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 4, height: 18 }}>
-                                  <div style={{ width: `${(ws.avg / wordMax) * 100}%`, height: '100%', background: pickColor(i), borderRadius: 4, transition: 'width 0.3s', minWidth: ws.avg > 0 ? 4 : 0 }} />
-                                </div>
-                                <div style={{ width: 40, fontSize: 11, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{ws.avg}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {participSorted.map(([val], i) => {
+                        const ws = participWordStats[val];
+                        if (!ws) return null;
+                        return (
+                          <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 120, fontSize: 11, color: '#374151', textAlign: 'right', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</div>
+                            <div style={{ flex: 1, background: '#f3f4f6', borderRadius: 4, height: 18 }}>
+                              <div style={{ width: `${(ws.avg / wordBarMax) * 100}%`, height: '100%', background: pickColor(i), borderRadius: 4, transition: 'width 0.3s', minWidth: ws.avg > 0 ? 4 : 0 }} />
+                            </div>
+                            <div style={{ width: 40, fontSize: 11, color: '#6b7280', textAlign: 'right', flexShrink: 0, fontWeight: 600 }}>{ws.avg}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
                     <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                       <button
                         onClick={() => exportCSV(
@@ -1269,54 +1269,47 @@ export default function DataAnalysisClient() {
                 <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>
                   {!dateCol ? 'No date column detected in your data.' : timeSlices.length === 0 ? 'No valid dates found.' : `${timeSlicesByMonth ? 'Monthly' : 'Daily'} slices · ${timeSlices.length} period${timeSlices.length !== 1 ? 's' : ''}`}
                 </div>
-                {timeSlices.length > 0 && (() => {
-                  const maxCount = Math.max(...timeSlices.map(s => s.count), 1);
-                  const CHART_H = 180;
-                  const dimVals = participDim ? Array.from(new Set(timeSlices.flatMap(s => Object.keys(s.byDim)))).sort() : [];
-                  const hasGroups = dimVals.length > 0;
-                  const BAR_W = Math.max(14, Math.min(44, Math.floor(560 / timeSlices.length) - 6));
-                  return (
-                    <div>
-                      {hasGroups && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-                          {dimVals.map((dv, i) => (
-                            <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <div style={{ width: 10, height: 10, borderRadius: 2, background: pickColor(i), flexShrink: 0 }} />
-                              <span style={{ fontSize: 10, color: '#6b7280' }}>{dv}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div style={{ overflowX: 'auto' }}>
-                        <div key={`${participDim}-${overTime}`} style={{ display: 'flex', alignItems: 'flex-end', gap: 4, paddingBottom: 36, paddingTop: 8, minWidth: 'max-content', position: 'relative', animation: 'fadeUp 0.3s ease' }}>
-                          {timeSlices.map((slice) => {
-                            const barH = Math.max(4, (slice.count / maxCount) * CHART_H);
-                            return (
-                              <div key={slice.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: BAR_W }}>
-                                <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 600, marginBottom: 2 }}>{slice.count}</span>
-                                {hasGroups ? (
-                                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, width: BAR_W }}>
-                                    {dimVals.map((dv, di) => {
-                                      const cnt = slice.byDim[dv] ?? 0;
-                                      const h = Math.max(cnt > 0 ? 3 : 0, (cnt / maxCount) * CHART_H);
-                                      return (
-                                        <div key={dv} className="bar-animated" title={`${dv}: ${cnt}`} style={{ flex: 1, height: h, background: pickColor(di), borderRadius: '2px 2px 0 0' }} />
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <div className="bar-animated" style={{ width: BAR_W, height: barH, background: '#3b6fce', borderRadius: '3px 3px 0 0', opacity: 0.85 }} />
-                                )}
-                                <div style={{ marginTop: 5, fontSize: 8, color: '#9ca3af', textAlign: 'center', width: BAR_W, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slice.label}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                {timeSlices.length > 0 && (
+                  <div>
+                    {tsHasGroups && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                        {tsDimVals.map((dv, i) => (
+                          <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div style={{ width: 10, height: 10, borderRadius: 2, background: pickColor(i), flexShrink: 0 }} />
+                            <span style={{ fontSize: 10, color: '#6b7280' }}>{dv}</span>
+                          </div>
+                        ))}
                       </div>
-                      <InsightBox text={interpretTimeSeries(timeSlices, timeSlicesByMonth)} />
+                    )}
+                    <div style={{ overflowX: 'auto' }}>
+                      <div key={`${participDim}-${overTime}`} style={{ display: 'flex', alignItems: 'flex-end', gap: 4, paddingBottom: 36, paddingTop: 8, minWidth: 'max-content', position: 'relative', animation: 'fadeUp 0.3s ease' }}>
+                        {timeSlices.map((slice) => {
+                          const barH = Math.max(4, (slice.count / tsMaxCount) * tsChartH);
+                          return (
+                            <div key={slice.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: tsBarW }}>
+                              <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 600, marginBottom: 2 }}>{slice.count}</span>
+                              {tsHasGroups ? (
+                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, width: tsBarW }}>
+                                  {tsDimVals.map((dv, di) => {
+                                    const cnt = slice.byDim[dv] ?? 0;
+                                    const h = Math.max(cnt > 0 ? 3 : 0, (cnt / tsMaxCount) * tsChartH);
+                                    return (
+                                      <div key={dv} className="bar-animated" title={`${dv}: ${cnt}`} style={{ flex: 1, height: h, background: pickColor(di), borderRadius: '2px 2px 0 0' }} />
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="bar-animated" style={{ width: tsBarW, height: barH, background: '#3b6fce', borderRadius: '3px 3px 0 0', opacity: 0.85 }} />
+                              )}
+                              <div style={{ marginTop: 5, fontSize: 8, color: '#9ca3af', textAlign: 'center', width: tsBarW, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slice.label}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  );
-                })()}
+                    <InsightBox text={interpretTimeSeries(timeSlices, timeSlicesByMonth)} />
+                  </div>
+                )}
               </div>
             )}
 
