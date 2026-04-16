@@ -374,8 +374,10 @@ function scoreAvg(
   return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
 }
 
-// Crosswalk community-schools: convert 0-4 raw → 0-1
+/// Crosswalk community-schools: convert 0-4 raw → 0-1
 const cswTransform = (v: number) => Math.max(0, Math.min(1, v / 4));
+
+type ParadigmGroup = { key: string; label: string; attrs: string[]; color: string };
 
 // ---- Interpretation helpers (rule-based) ---------------------------------
 function interpretParticip(sorted: [string, number][], dimLabel: string): string {
@@ -1404,18 +1406,16 @@ export default function DataAnalysisClient() {
                   }
 
                   // Groups: pillar-based for CS crosswalk, one-per-attribute for others
-                  type Group = { key: string; label: string; attrs: string[]; color: string };
-                  let groups: Group[];
-                  if (usePillarGrouping) {
-                    groups = ([1,2,3,4] as const)
-                      .filter(p => pGroups4[p].length > 0)
-                      .map(p => ({ key: `pillar-${p}`, label: `Pillar ${p}`, attrs: pGroups4[p], color: PILLAR_COLORS[p - 1] }));
-                  } else {
-                    const activeAttrs = allAttrs.filter(a => included.has(a));
-                    groups = (activeAttrs.length > 0 ? activeAttrs : allAttrs).slice(0, 20).map((a, i) => ({
-                      key: a, label: formatAttrLabel(a), attrs: [a], color: PILLAR_COLORS[i % PILLAR_COLORS.length],
-                    }));
-                  }
+                  const groups: ParadigmGroup[] = usePillarGrouping
+                    ? ([1,2,3,4] as const)
+                        .filter(p => pGroups4[p].length > 0)
+                        .map(p => ({ key: `pillar-${p}`, label: `Pillar ${p}`, attrs: pGroups4[p], color: PILLAR_COLORS[p - 1] }))
+                    : (() => {
+                        const activeAttrs = allAttrs.filter(a => included.has(a));
+                        return (activeAttrs.length > 0 ? activeAttrs : allAttrs).slice(0, 20).map((a, i) => ({
+                          key: a, label: formatAttrLabel(a), attrs: [a], color: PILLAR_COLORS[i % PILLAR_COLORS.length],
+                        }));
+                      })();
 
                   // Heatmap data
                   const heatData = analysisDimCol ? dimValues.map(dv => {
