@@ -283,13 +283,18 @@ const KNOWN_LABELS: Record<string, string> = {
   course_id:      'Course',
   session_name:   'Session',
   question_num:   'Question #',
+  score_band:     'Score Band',
+  grade_band:     'Grade Band',
+  hs_grad_year:   'HS Grad Year',
+  type:           'Type',
 };
 
 // Columns to always exclude from demographic filters (PII, free-text, scores)
 const EXCLUDE_FROM_DEMO = new Set([
-  'id', 'first_name', 'last_name', 'student_email', 'email',
+  'id', 'first_name', 'last_name', 'student_email', 'email', 'initials',
   'course_id', 'class_name', 'session_name', 'teacher_name',
-  'question', 'answer', 'url', 'answer_date',
+  'question', 'answer', 'url', 'share_url',
+  'answer_date', 'answer_time', 'word_count', 'response_duration',
   'harvard_score', 'harvard_impacter_score', 'harvard_attribute',
   'casel_score',   'casel_impacter_score',   'casel_attribute',
   'crosswalk_score', 'crosswalk_impacter_score', 'crosswalk_attribute',
@@ -583,9 +588,10 @@ export default function DataAnalysisClient() {
           <div style={{ marginTop: 24, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e5e7eb' }}>
             <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', margin: '0 0 6px' }}>Expected columns</p>
             <p style={{ fontSize: 11, color: '#9ca3af', margin: 0, lineHeight: 1.7 }}>
-              id, district_name, school_name, gender, current_grade, home_language, response_type,
-              csi_attribute, community_schools_index_score, harvard_attribute, harvard_score,
-              casel_attribute, casel_score
+              district_name, school_name, current_grade, home_language, gender, ethnicity, answer_date,
+              harvard_attribute, harvard_score, harvard_impacter_score,
+              casel_attribute, casel_score, casel_impacter_score,
+              crosswalk_attribute, crosswalk_score, crosswalk_impacter_score, word_count
             </p>
           </div>
         </div>
@@ -807,10 +813,16 @@ export default function DataAnalysisClient() {
   const hasFilters        = Object.values(filters).some(s => s.size > 0);
 
   // ---- Word count derived data ---------------------------------------------
+  // Prefer precomputed word_count column; fall back to counting words in answer text
+  const hasWordCountCol = columns.includes('word_count');
   const answerCol = columns.includes('answer') ? 'answer'
     : columns.includes('response') ? 'response' : '';
-  const totalWords = answerCol ? totalWordCount(filteredRows, answerCol) : 0;
-  const respondersWithText = answerCol ? filteredRows.filter(r => r[answerCol]?.trim()).length : 0;
+  const totalWords = hasWordCountCol
+    ? filteredRows.reduce((sum, r) => sum + (parseInt(r['word_count']) || 0), 0)
+    : answerCol ? totalWordCount(filteredRows, answerCol) : 0;
+  const respondersWithText = hasWordCountCol
+    ? filteredRows.filter(r => parseInt(r['word_count']) > 0).length
+    : answerCol ? filteredRows.filter(r => r[answerCol]?.trim()).length : 0;
   const avgWordsPerResponse = respondersWithText > 0 ? Math.round(totalWords / respondersWithText) : 0;
 
   // ---- Headline stats ------------------------------------------------------
@@ -823,12 +835,16 @@ export default function DataAnalysisClient() {
 
   // Per-group word stats for the participation bar chart
   const participWordStats: Record<string, { total: number; avg: number }> = {};
-  if (answerCol && participDim) {
+  if ((hasWordCountCol || answerCol) && participDim) {
     for (const [val] of participSorted) {
       const grp = filteredRows.filter(r => r[participDim] === val);
-      const withText = grp.filter(r => r[answerCol]?.trim());
-      const words = totalWordCount(withText, answerCol);
-      participWordStats[val] = { total: words, avg: withText.length > 0 ? Math.round(words / withText.length) : 0 };
+      const words = hasWordCountCol
+        ? grp.reduce((sum, r) => sum + (parseInt(r['word_count']) || 0), 0)
+        : totalWordCount(grp.filter(r => r[answerCol]?.trim()), answerCol);
+      const withText = hasWordCountCol
+        ? grp.filter(r => parseInt(r['word_count']) > 0).length
+        : grp.filter(r => r[answerCol]?.trim()).length;
+      participWordStats[val] = { total: words, avg: withText > 0 ? Math.round(words / withText) : 0 };
     }
   }
 
@@ -1211,7 +1227,7 @@ export default function DataAnalysisClient() {
                       </button>
                     </div>
                   </>
-                ) : answerCol && Object.keys(participWordStats).length > 0 ? (
+                ) : (hasWordCountCol || answerCol) && Object.keys(participWordStats).length > 0 ? (
                   <>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 12 }}>Avg Words per Response</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1250,7 +1266,7 @@ export default function DataAnalysisClient() {
                   </>
                 ) : (
                   <div style={{ fontSize: 13, color: '#9ca3af', padding: '20px 0' }}>
-                    {answerCol ? 'No word count data available.' : 'No answer column detected. Select a second dimension to see a stacked bar chart.'}
+                    {(hasWordCountCol || answerCol) ? 'No word count data available.' : 'No answer column detected. Select a second dimension to see a stacked bar chart.'}
                   </div>
                 )}
               </div>
@@ -1324,7 +1340,7 @@ export default function DataAnalysisClient() {
 
             {!SCORE_TYPES.some(st => columns.includes(st.attrCol)) ? (
               <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '24px', color: '#9ca3af', fontSize: 13 }}>
-                No scoring data detected. Make sure your CSV includes at least one of: <code>csi_attribute</code>, <code>harvard_attribute</code>, or <code>casel_attribute</code>.
+                No scoring data detected. Make sure your CSV includes at least one of: <code>harvard_attribute</code>, <code>casel_attribute</code>, or <code>crosswalk_attribute</code>.
               </div>
             ) : (
               <>
