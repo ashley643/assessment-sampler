@@ -1563,23 +1563,28 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       {/* ── How it works ─────────────────────────────────────────────────────── */}
       <section className="py-14 relative" style={{ background: 'linear-gradient(180deg, #f8fafd 0%, #f0f5fb 100%)' }}>
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="font-bold text-gray-900 mb-10" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}>How it works</h2>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-0">
+          <h2 className="font-semibold uppercase tracking-widest mb-10" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>How it works</h2>
+          <div className="flex items-start justify-center">
             {[
               { n: '1', color: '#e07b54', title: 'Create a custom assessment' },
               { n: '2', color: '#2d7a5f', title: 'Share a link with your students' },
               { n: '3', color: '#4a6fa5', title: 'Receive custom insights & recommendations' },
             ].map(({ n, color, title }, i) => (
-              <div key={n} className="flex md:flex-col items-center gap-4 md:gap-0 flex-1">
-                <div className="flex flex-col md:flex-row items-center w-full">
-                  <div className="flex-1 hidden md:block" style={{ height: 2, background: i === 0 ? 'transparent' : '#d1dce8' }} />
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0" style={{ background: color }}>
+              <>
+                <div key={n} className="flex flex-col items-center" style={{ width: 160 }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white mb-4" style={{ background: color }}>
                     {n}
                   </div>
-                  <div className="flex-1 hidden md:block" style={{ height: 2, background: i === 2 ? 'transparent' : '#d1dce8' }} />
+                  <p className="text-sm font-semibold text-gray-700 leading-snug text-center">{title}</p>
                 </div>
-                <p className="text-sm font-semibold text-gray-700 mt-3 px-3 leading-snug">{title}</p>
-              </div>
+                {i < 2 && (
+                  <div key={`arrow-${i}`} className="flex items-start pt-5 shrink-0">
+                    <svg width="32" height="24" viewBox="0 0 32 24" fill="none" style={{ color: '#c5d5e8' }}>
+                      <path d="M2 12h24M20 5l8 7-8 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+              </>
             ))}
           </div>
         </div>
@@ -1589,8 +1594,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       <section className="py-16" style={{ background: '#f4f7fc' }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="mb-8 text-center">
-            <h2 className="font-bold text-gray-900 mb-1" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}>See it in action</h2>
-            <p className="text-base text-gray-500">Real assessments from Impacter Pathway partners</p>
+            <h2 className="font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>See it in action</h2>
+            <p className="text-base font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
           </div>
 
           {/* Fake player shell */}
@@ -1937,7 +1942,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
         <div className="max-w-6xl mx-auto px-6">
           <div className="mb-8 flex items-end justify-between flex-wrap gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5' }}>Sample report insights</p>
+              <p className="font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>Sample report insights</p>
               <h2 className="text-xl font-bold text-gray-900">What you can&apos;t get from a survey.</h2>
             </div>
             <button
@@ -3475,7 +3480,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       {/* ── What makes this different ────────────────────────────────────────── */}
       <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="font-bold text-gray-900 mb-6" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}>What makes this different</h2>
+          <h2 className="font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>What makes this different</h2>
           <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
             Surveys tell you what students select.
           </p>
