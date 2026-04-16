@@ -957,7 +957,9 @@ function MultiCheck({ label, options, value, onChange }: {
   }
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label.endsWith(' *') ? <>{label.slice(0, -2)}<span className="text-red-500 ml-0.5">*</span></> : label}
+      </label>
       <div className="flex flex-wrap gap-2">
         {options.map(opt => (
           <button
@@ -1499,7 +1501,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72 }} />
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="text-xs font-medium px-3 py-1 rounded-full hidden sm:inline-block" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.18)' }}>
+          <span className="text-xs font-semibold hidden sm:inline-block" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Pilot Program
           </span>
           <button
@@ -1526,8 +1528,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           })}
         </svg>
         <div className="max-w-3xl mx-auto px-6 py-12 text-center relative w-full">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse inline-block"></span>
+          <div className="inline-flex items-center gap-2 text-xs font-semibold mb-6 tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: '#e07b54' }}></span>
             Pilot Program
           </div>
           <h1 className="font-bold leading-tight mb-6 text-white" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)' }}>
@@ -1540,10 +1542,10 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           {/* CTA + chips */}
           <div className="mt-10 flex flex-col items-center gap-5">
             {/* Frosted stat chips */}
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              {['No app download', 'Results in days', 'English & Spanish'].map(label => (
-                <div key={label} className="flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ background: 'rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+            <div className="flex items-center justify-center gap-6 flex-wrap">
+              {['No app download', 'Results in days', 'Multilingual'].map(label => (
+                <div key={label} className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: '#e07b54' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
                   {label}
                 </div>
               ))}
@@ -1561,31 +1563,24 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       </section>
 
       {/* ── How it works ─────────────────────────────────────────────────────── */}
-      <section className="py-20 relative" style={{ background: 'linear-gradient(180deg, #f8fafd 0%, #f0f5fb 100%)' }}>
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-xs font-semibold uppercase tracking-widest mb-10 text-center" style={{ color: '#4a6fa5' }}>How it works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="py-14 relative" style={{ background: 'linear-gradient(180deg, #f8fafd 0%, #f0f5fb 100%)' }}>
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="font-bold text-gray-900 mb-10" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}>How it works</h2>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-0">
             {[
-              {
-                n: '1', color: '#e07b54',
-                title: 'Create your assessment',
-                body: 'Choose from our ready-to-go prompt sets or build something custom with our team. Standard, customized, or fully co-designed — it takes minutes, not meetings.',
-              },
-              {
-                n: '2', color: '#2d7a5f',
-                title: 'Share a link',
-                body: 'Respondents click a link and answer 3–6 voice-based questions in their own words. No app download. No login. Minimal class time. Kids love it.',
-              },
-              {
-                n: '3', color: '#4a6fa5',
-                title: 'Receive your report',
-                body: 'A week after the window closes, we deliver a synthesized report — cross-campus analytics, theme clusters, equity breakdowns, and the standout moments you\'d never get from a checkbox.',
-              },
-            ].map(({ n, color, title, body }) => (
-              <div key={n} className="bg-white rounded-2xl p-6 shadow-sm" style={{ borderTop: `3px solid ${color}` }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold mb-4 text-white" style={{ background: color }}>{n}</div>
-                <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{body}</p>
+              { n: '1', color: '#e07b54', title: 'Create a custom assessment' },
+              { n: '2', color: '#2d7a5f', title: 'Share a link with your students' },
+              { n: '3', color: '#4a6fa5', title: 'Receive custom insights & recommendations' },
+            ].map(({ n, color, title }, i) => (
+              <div key={n} className="flex md:flex-col items-center gap-4 md:gap-0 flex-1">
+                <div className="flex flex-col md:flex-row items-center w-full">
+                  <div className="flex-1 hidden md:block" style={{ height: 2, background: i === 0 ? 'transparent' : '#d1dce8' }} />
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0" style={{ background: color }}>
+                    {n}
+                  </div>
+                  <div className="flex-1 hidden md:block" style={{ height: 2, background: i === 2 ? 'transparent' : '#d1dce8' }} />
+                </div>
+                <p className="text-sm font-semibold text-gray-700 mt-3 px-3 leading-snug">{title}</p>
               </div>
             ))}
           </div>
@@ -1596,8 +1591,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       <section className="py-16" style={{ background: '#f4f7fc' }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="mb-8 text-center">
-            <h2 className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>See it in action</h2>
-            <p className="text-lg font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
+            <h2 className="font-bold text-gray-900 mb-1" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}>See it in action</h2>
+            <p className="text-base text-gray-500">Real assessments from Impacter Pathway partners</p>
           </div>
 
           {/* Fake player shell */}
@@ -2529,7 +2524,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
                 {/* Languages */}
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Which languages do you want to enable? *</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Which languages do you want to enable?<span className="text-red-500 ml-0.5">*</span></p>
                   <div className="flex flex-wrap gap-2">
                     {['English', 'Spanish', 'Other'].map(lang => {
                       const checked = form.languages.includes(lang);
@@ -2565,7 +2560,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
                 {/* Modalities */}
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Which response modalities do you want to enable? *</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Which response modalities do you want to enable?<span className="text-red-500 ml-0.5">*</span></p>
                   <div className="space-y-2">
                     {[
                       { id: 'Video',  note: null },
@@ -3447,9 +3442,10 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 <div className="flex justify-between pt-2">
                   <button onClick={() => setStep(4)} className="text-sm text-gray-400 hover:text-gray-600">Back</button>
                   <button
-                    disabled={submitting}
+                    disabled={submitting || !canAdvanceContact}
                     onClick={submit}
                     className="text-white text-sm font-medium px-6 py-2.5 rounded-lg disabled:opacity-40 transition-opacity hover:opacity-90" style={{ background: '#4a6fa5' }}
+                    title={!canAdvanceContact ? 'Fill in Name, Email, and School or District to submit.' : undefined}
                   >
                     {submitting ? 'Submitting…' : 'Submit'}
                   </button>
@@ -3483,7 +3479,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       {/* ── What makes this different ────────────────────────────────────────── */}
       <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5' }}>What makes this different</h2>
+          <h2 className="font-bold text-gray-900 mb-6" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}>What makes this different</h2>
           <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
             Surveys tell you what students select.
           </p>
