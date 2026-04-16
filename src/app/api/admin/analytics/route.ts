@@ -19,15 +19,15 @@ export async function GET(req: Request) {
   if (code) sessionsQuery = sessionsQuery.eq('code', code);
   const { count: sessionCount } = await sessionsQuery;
 
-  // All events unfiltered — used for the full code list
-  const { data: allEvents } = await supabaseAdmin
-    .from('events')
+  // All sessions unfiltered — used for the full code list
+  const { data: allSessions } = await supabaseAdmin
+    .from('sessions')
     .select('code')
-    .gte('created_at', since);
+    .gte('started_at', since);
 
   const byCode: Record<string, number> = {};
-  for (const ev of allEvents ?? []) {
-    byCode[ev.code] = (byCode[ev.code] ?? 0) + 1;
+  for (const s of allSessions ?? []) {
+    byCode[s.code] = (byCode[s.code] ?? 0) + 1;
   }
 
   // Events filtered by selected code — used for all other metrics
