@@ -1717,9 +1717,9 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                     {/* Simulate button */}
                     <button
                       onClick={() => { setSimShown(true); setResponsePaused(true); }}
-                      style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1.5px solid rgba(255,255,255,0.35)', borderRadius: 10, padding: '14px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, letterSpacing: '0.01em', transition: 'background 0.15s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
+                      style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: 'white', border: 'none', borderRadius: 10, padding: '14px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, letterSpacing: '0.01em', boxShadow: '0 4px 20px rgba(34,197,94,0.35)', transition: 'opacity 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                       Simulate a {panel.respondentLabel} Response
