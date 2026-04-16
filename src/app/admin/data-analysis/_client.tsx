@@ -445,6 +445,345 @@ const exportBtn: React.CSSProperties = {
 };
 
 // ==========================================================================
+//  Per-paradigm section — extracted to its own component so Terser minifies
+//  its ~30 local consts in an isolated scope, preventing TDZ name collisions.
+// ==========================================================================
+type ParadigmSectionProps = {
+  st: (typeof SCORE_TYPES)[number];
+  isCsw: boolean;
+  pillarMaps: Partial<Record<ScoreTypeId, Record<string, number>>>;
+  includedAttrsSets: Partial<Record<ScoreTypeId, Set<string>>>;
+  openPillarConfigs: Set<ScoreTypeId>;
+  filteredRows: Row[];
+  allRows: Row[];
+  analysisDimCol: string;
+  analysisDimLabel: string;
+  dimValues: string[];
+  analysisMode: string;
+  selectedParadigms: Set<ScoreTypeId>;
+  setPillarMaps: React.Dispatch<React.SetStateAction<Partial<Record<ScoreTypeId, Record<string, number>>>>>;
+  setIncludedAttrsSets: React.Dispatch<React.SetStateAction<Partial<Record<ScoreTypeId, Set<string>>>>>;
+  setOpenPillarConfigs: React.Dispatch<React.SetStateAction<Set<ScoreTypeId>>>;
+};
+
+function ParadigmSection({
+  st, isCsw, pillarMaps, includedAttrsSets, openPillarConfigs,
+  filteredRows, allRows, analysisDimCol, analysisDimLabel, dimValues,
+  analysisMode, selectedParadigms, setPillarMaps, setIncludedAttrsSets, setOpenPillarConfigs,
+}: ParadigmSectionProps) {
+  const refTable = useRef<HTMLDivElement>(null);
+  const refChart = useRef<HTMLDivElement>(null);
+
+  const pm       = pillarMaps[st.id] ?? {};
+  const included = includedAttrsSets[st.id] ?? new Set<string>();
+  const allAttrs = distinctSorted(allRows, st.attrCol);
+  const isOpen   = openPillarConfigs.has(st.id);
+  const updatePM = (newPm: Record<string, number>) => setPillarMaps(prev => ({ ...prev, [st.id]: newPm }));
+  const updateIn = (newSet: Set<string>) => setIncludedAttrsSets(prev => ({ ...prev, [st.id]: newSet }));
+
+  const usePillarGrouping = st.id === 'crosswalk' && isCsw;
+  const scoreCol  = usePillarGrouping ? st.rawCol : st.impacterCol;
+  const transform = usePillarGrouping ? cswTransform : undefined;
+  const scoreName = st.label;
+
+  const pGroups4: Record<1|2|3|4, string[]> = { 1: [], 2: [], 3: [], 4: [] };
+  if (usePillarGrouping) {
+    for (const attr of Array.from(included)) {
+      const p = (pm[attr] ?? 1) as 1|2|3|4;
+      if (p >= 1 && p <= 4) pGroups4[p].push(attr);
+    }
+  }
+
+  const activeAttrs = allAttrs.filter(a => included.has(a));
+  const attrList    = activeAttrs.length > 0 ? activeAttrs : allAttrs;
+  const groups: ParadigmGroup[] = usePillarGrouping
+    ? ([1,2,3,4] as const)
+        .filter(p => pGroups4[p].length > 0)
+        .map(p => ({ key: `pillar-${p}`, label: `Pillar ${p}`, attrs: pGroups4[p], color: PILLAR_COLORS[p - 1] }))
+    : attrList.slice(0, 20).map((a, i) => ({
+        key: a, label: formatAttrLabel(a), attrs: [a], color: PILLAR_COLORS[i % PILLAR_COLORS.length],
+      }));
+
+  const heatData = analysisDimCol ? dimValues.map(dv => {
+    const dimRows = filteredRows.filter(r => r[analysisDimCol] === dv);
+    return {
+      label: dv,
+      groups: groups.map(g => {
+        const avg = scoreAvg(dimRows, g.attrs, st.attrCol, scoreCol, transform);
+        const n   = dimRows.filter(r => g.attrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
+        return { avg, n };
+      }),
+    };
+  }) : [];
+
+  const allVals = heatData.flatMap(r => r.groups.map(g => g.avg)).filter((v): v is number => v !== null);
+  const dataMin = allVals.length ? Math.min(...allVals) : 0;
+  const dataMax = allVals.length ? Math.max(...allVals) : (usePillarGrouping ? 1 : 800);
+  const norm = (v: number | null) => {
+    if (v === null) return 0;
+    const range = dataMax - dataMin;
+    return 0.1 + (range > 0.001 ? Math.max(0, Math.min(1, (v - dataMin) / range)) : 0.5) * 0.9;
+  };
+  const fmtScore = (v: number | null) =>
+    v === null ? null : usePillarGrouping ? v.toFixed(3) : Math.round(v).toString();
+
+  const allIncludedAttrs = groups.flatMap(g => g.attrs);
+  const withOverall = heatData.map(row => {
+    const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
+    return { label: row.label, overall: scoreAvg(dimRows2, allIncludedAttrs, st.attrCol, scoreCol, transform) };
+  });
+
+  const chartDimVals = heatData.map(r => r.label);
+  const CHART_H      = 200;
+  const BAR_W        = Math.max(14, Math.floor(52 / Math.max(chartDimVals.length, 1)));
+  const yFloor       = usePillarGrouping
+    ? (dataMin > 0.15 ? Math.max(0, Math.floor(dataMin * 20) / 20 - 0.05) : 0)
+    : Math.max(0, Math.floor(dataMin / 50) * 50 - 50);
+  const yCeil        = usePillarGrouping
+    ? Math.min(1.0, Math.ceil(dataMax * 20) / 20 + 0.02)
+    : Math.ceil(dataMax / 50) * 50 + 50;
+  const yRange       = Math.max(yCeil - yFloor, usePillarGrouping ? 0.01 : 1);
+  const yStep        = usePillarGrouping ? 0.1 : 100;
+  const yTicks: number[] = [];
+  for (let yv = yFloor; yv <= yCeil + yStep * 0.01; yv = Math.round((yv + yStep) * 1000) / 1000) yTicks.push(yv);
+  const fmtTick      = (v: number) => usePillarGrouping ? v.toFixed(2) : Math.round(v).toString();
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Section divider (only when multiple paradigms selected) */}
+      {SCORE_TYPES.filter(s => selectedParadigms.has(s.id)).length > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ height: 2, flex: 1, background: '#e5e7eb' }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#111827', padding: '0 4px' }}>{scoreName}</span>
+          <div style={{ height: 2, flex: 1, background: '#e5e7eb' }} />
+        </div>
+      )}
+
+      {/* Pillar config — CS crosswalk only */}
+      {usePillarGrouping && allAttrs.length > 0 && (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+          <button
+            onClick={() => setOpenPillarConfigs(prev => { const s = new Set(prev); if (s.has(st.id)) s.delete(st.id); else s.add(st.id); return s; })}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '13px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#111827' }}
+          >
+            <span>Configure Pillars</span>
+            <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>
+              {Array.from(included).length} of {allAttrs.length} attributes included {isOpen ? '▲' : '▼'}
+            </span>
+          </button>
+          {isOpen && (
+            <div style={{ padding: '0 18px 18px', borderTop: '1px solid #f3f4f6' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginTop: 14 }}>
+                {([1, 2, 3, 4] as const).map(p => {
+                  const attrs = allAttrs.filter(a => (pm[a] ?? 1) === p);
+                  const color = PILLAR_COLORS[p - 1];
+                  return (
+                    <div key={p} style={{ border: `1.5px solid ${color}44`, borderRadius: 10, overflow: 'hidden' }}>
+                      <div style={{ background: color, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>Pillar {p}</span>
+                        <div style={{ display: 'flex', gap: 5 }}>
+                          <button onClick={() => updateIn(new Set([...Array.from(included), ...attrs]))} style={{ fontSize: 10, color: 'white', background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 4, padding: '2px 7px', cursor: 'pointer' }}>All</button>
+                          <button onClick={() => { const s = new Set(included); attrs.forEach(a => s.delete(a)); updateIn(s); }} style={{ fontSize: 10, color: 'white', background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 4, padding: '2px 7px', cursor: 'pointer' }}>None</button>
+                        </div>
+                      </div>
+                      <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {attrs.length === 0 ? (
+                          <span style={{ fontSize: 11, color: '#9ca3af' }}>No attributes assigned</span>
+                        ) : attrs.map(a => (
+                          <label key={a} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+                            <input type="checkbox" checked={included.has(a)} onChange={() => { const s = new Set(included); if (s.has(a)) s.delete(a); else s.add(a); updateIn(s); }} style={{ flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={a}>{formatAttrLabel(a)}</span>
+                            <span style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+                              {([1, 2, 3, 4] as const).filter(pp => pp !== p).map(pp => (
+                                <button key={pp} onClick={e => { e.preventDefault(); updatePM({ ...pm, [a]: pp }); }} title={`Move to Pillar ${pp}`} style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, border: `1px solid ${PILLAR_COLORS[pp - 1]}`, color: PILLAR_COLORS[pp - 1], background: 'white', cursor: 'pointer' }}>P{pp}</button>
+                              ))}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Attribute inclusion config — Harvard / CASEL / non-CS crosswalk */}
+      {!usePillarGrouping && allAttrs.length > 0 && (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+          <button
+            onClick={() => setOpenPillarConfigs(prev => { const s = new Set(prev); if (s.has(st.id)) s.delete(st.id); else s.add(st.id); return s; })}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '13px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#111827' }}
+          >
+            <span>Attributes</span>
+            <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>
+              {Array.from(included).length} of {allAttrs.length} shown {isOpen ? '▲' : '▼'}
+            </span>
+          </button>
+          {isOpen && (
+            <div style={{ padding: '0 18px 18px', borderTop: '1px solid #f3f4f6' }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 10 }}>
+                <button onClick={() => updateIn(new Set(allAttrs))} style={{ fontSize: 11, padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', cursor: 'pointer', color: '#374151' }}>Select all</button>
+                <button onClick={() => updateIn(new Set())} style={{ fontSize: 11, padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', cursor: 'pointer', color: '#374151' }}>Clear all</button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {allAttrs.map((a, i) => (
+                  <label key={a} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '4px 10px', border: `1.5px solid ${included.has(a) ? PILLAR_COLORS[i % PILLAR_COLORS.length] : '#e5e7eb'}`, borderRadius: 20, background: included.has(a) ? `${PILLAR_COLORS[i % PILLAR_COLORS.length]}18` : 'white' }}>
+                    <input type="checkbox" checked={included.has(a)} onChange={() => { const s = new Set(included); if (s.has(a)) s.delete(a); else s.add(a); updateIn(s); }} style={{ display: 'none' }} />
+                    <span style={{ fontSize: 11, color: included.has(a) ? PILLAR_COLORS[i % PILLAR_COLORS.length] : '#6b7280', fontWeight: included.has(a) ? 600 : 400 }}>{formatAttrLabel(a)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Two-column grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+
+        {/* Left: heatmap table */}
+        <div ref={refTable} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Heatmap — {analysisDimLabel}</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>colour scaled to data range{usePillarGrouping ? ' · 3dp' : ' · integer'}</div>
+          {!analysisDimCol ? (
+            <p style={{ fontSize: 13, color: '#9ca3af' }}>No {analysisDimLabel} column found.</p>
+          ) : heatData.length === 0 ? (
+            <p style={{ fontSize: 13, color: '#9ca3af' }}>No data for this breakdown.</p>
+          ) : (
+            <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                  <th style={{ padding: '3px 10px 6px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>{analysisDimLabel}</th>
+                  {groups.map(g => (
+                    <th key={g.key} style={{ padding: '3px 10px 6px', textAlign: 'center', color: g.color, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80 }}>
+                      {g.label}
+                      {usePillarGrouping && <span style={{ display: 'block', fontSize: 9, fontWeight: 400, color: '#9ca3af', marginTop: 1 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
+                    </th>
+                  ))}
+                  <th style={{ padding: '3px 10px 6px', textAlign: 'center', color: '#374151', fontWeight: 700, whiteSpace: 'nowrap', borderLeft: '2px solid #e5e7eb' }}>Overall</th>
+                </tr>
+              </thead>
+              <tbody>
+                {heatData.map(row => {
+                  const dimRows3 = filteredRows.filter(r => r[analysisDimCol] === row.label);
+                  const overallAvg = scoreAvg(dimRows3, allIncludedAttrs, st.attrCol, scoreCol, transform);
+                  const overallN   = dimRows3.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
+                  const tOv = norm(overallAvg);
+                  return (
+                    <tr key={row.label} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '3px 10px 3px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.label}>{row.label}</td>
+                      {row.groups.map(({ avg, n }, gi) => {
+                        const t = norm(avg);
+                        return (
+                          <td key={gi} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: avg !== null ? 600 : 400 }}>
+                            {avg !== null ? <>{fmtScore(avg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
+                          </td>
+                        );
+                      })}
+                      <td style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(tOv), color: csiTextColor(tOv), fontWeight: 700, borderLeft: '2px solid #e5e7eb' }}>
+                        {overallAvg !== null ? <>{fmtScore(overallAvg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={overallN.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {heatData.length > 1 && (
+                  <tr style={{ borderTop: '2px solid #e5e7eb', background: '#f9fafb' }}>
+                    <td style={{ padding: '3px 10px 3px 4px', fontSize: 11, fontWeight: 700, color: '#111827' }}>All {analysisDimLabel}s</td>
+                    {groups.map(g => {
+                      const avg = scoreAvg(filteredRows, g.attrs, st.attrCol, scoreCol, transform);
+                      const n   = filteredRows.filter(r => g.attrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
+                      const t   = norm(avg);
+                      return <td key={g.key} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: 700 }}>{avg !== null ? <>{fmtScore(avg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : '—'}</td>;
+                    })}
+                    {(gAvgVal => (
+                      <td style={{ padding: '3px 10px', textAlign: 'center', fontWeight: 700, background: csiColor(norm(gAvgVal)), color: csiTextColor(norm(gAvgVal)), borderLeft: '2px solid #e5e7eb' }}>
+                        {gAvgVal !== null ? <>{fmtScore(gAvgVal)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={filteredRows.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length.toLocaleString()}</span></> : '—'}
+                      </td>
+                    ))(scoreAvg(filteredRows, allIncludedAttrs, st.attrCol, scoreCol, transform))}
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+          <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <button onClick={() => { const data = heatData.map(row => { const obj: Record<string,unknown> = { [analysisDimCol]: row.label }; groups.forEach((g, gi) => { obj[g.key] = fmtScore(row.groups[gi].avg) ?? ''; obj[`${g.key}_n`] = row.groups[gi].n; }); const dr = filteredRows.filter(r => r[analysisDimCol] === row.label); obj.overall = fmtScore(scoreAvg(dr, allIncludedAttrs, st.attrCol, scoreCol, transform)) ?? ''; obj.overall_n = dr.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length; return obj; }); exportCSV(data, `${st.id}-${analysisDimCol}.csv`); }} style={exportBtn}>Download CSV</button>
+            <button onClick={() => captureChart(refTable, `${st.id}-heatmap-${analysisDimCol}.png`)} style={exportBtn}>Download image (table)</button>
+          </div>
+        </div>
+
+        {/* Right: vertical grouped bar chart */}
+        <div ref={refChart} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 10 }}>
+            {usePillarGrouping ? `Score by Pillar — ${analysisDimLabel}` : `Score by Attribute — ${analysisDimLabel}`}
+          </div>
+          {heatData.length === 0 || !analysisDimCol ? (
+            <p style={{ fontSize: 13, color: '#9ca3af' }}>No data for this breakdown.</p>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {chartDimVals.map((dv, i) => (
+                  <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 2, background: pickColor(i), flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, color: '#6b7280' }}>{dv}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <div key={`${st.id}-${analysisMode}`} style={{ position: 'relative', paddingLeft: 44, paddingBottom: 52, paddingTop: 8, minWidth: 'max-content', animation: 'fadeUp 0.3s ease' }}>
+                  {yTicks.map(v => {
+                    const px = ((v - yFloor) / yRange) * CHART_H;
+                    return (
+                      <div key={v} style={{ position: 'absolute', left: 0, right: 0, bottom: 52 + px, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+                        <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: '#9ca3af', paddingRight: 6 }}>{fmtTick(v)}</span>
+                        <div style={{ flex: 1, borderTop: v === yTicks[0] ? '2px solid #e5e7eb' : '1px solid #f0f0f0' }} />
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', height: CHART_H }}>
+                    {groups.map((g, gi) => (
+                      <div key={g.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: CHART_H }}>
+                          {chartDimVals.map((dv, di) => {
+                            const avg  = heatData.find(r => r.label === dv)?.groups[gi].avg ?? null;
+                            const barH = avg !== null ? Math.max(4, ((avg - yFloor) / yRange) * CHART_H) : 0;
+                            return (
+                              <div key={dv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: BAR_W }}>
+                                {avg !== null && <span style={{ fontSize: 9, color: '#374151', fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap' }}>{fmtScore(avg)}</span>}
+                                <div className="bar-animated" title={`${dv} · ${g.label}: ${fmtScore(avg) ?? '—'}`} style={{ width: BAR_W, height: barH, background: pickColor(di), borderRadius: '3px 3px 0 0', transformOrigin: 'bottom' }} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ marginTop: 6, textAlign: 'center', fontSize: 10, color: g.color, fontWeight: 700, maxWidth: BAR_W * chartDimVals.length + 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {g.label}
+                          {usePillarGrouping && <span style={{ display: 'block', fontSize: 8, color: '#9ca3af', fontWeight: 400 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                <button onClick={() => captureChart(refChart, `${st.id}-barchart-${analysisDimCol}.png`)} style={exportBtn}>Download image (chart)</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Interpretation */}
+      <InsightBox text={interpretScoreData(withOverall, analysisDimLabel, scoreName)} />
+
+    </div>
+  );
+}
+
+// ==========================================================================
 //  Main component
 // ==========================================================================
 export default function DataAnalysisClient() {
@@ -458,11 +797,9 @@ export default function DataAnalysisClient() {
     columns: string[]; rows: Row[]; delimiter: string;
   } | null>(null);
 
-  // Chart refs for image export
+  // Chart refs for image export (analysis refs live in ParadigmSection)
   const refParticip                 = useRef<HTMLDivElement>(null);
   const refHeatmap                  = useRef<HTMLDivElement>(null);
-  const refAnalysisTable            = useRef<HTMLDivElement>(null);
-  const refAnalysisChart            = useRef<HTMLDivElement>(null);
 
   // Filters: column → Set of selected values
   const [filters, setFilters]       = useState<Record<string, Set<string>>>({});
@@ -1389,325 +1726,27 @@ export default function DataAnalysisClient() {
                 )}
 
                 {/* ---- Per-paradigm sections ---- */}
-                {SCORE_TYPES.filter(st => selectedParadigms.has(st.id) && columns.includes(st.attrCol)).map(st => {
-                  const pm       = pillarMaps[st.id] ?? {};
-                  const included = includedAttrsSets[st.id] ?? new Set<string>();
-                  const allAttrs = distinctSorted(allRows, st.attrCol);
-                  const isOpen   = openPillarConfigs.has(st.id);
-                  const updatePM = (newPm: Record<string, number>) => setPillarMaps(prev => ({ ...prev, [st.id]: newPm }));
-                  const updateIn = (newSet: Set<string>) => setIncludedAttrsSets(prev => ({ ...prev, [st.id]: newSet }));
+                {SCORE_TYPES.filter(st => selectedParadigms.has(st.id) && columns.includes(st.attrCol)).map(st => (
+                  <ParadigmSection
+                    key={st.id}
+                    st={st}
+                    isCsw={isCsw}
+                    pillarMaps={pillarMaps}
+                    includedAttrsSets={includedAttrsSets}
+                    openPillarConfigs={openPillarConfigs}
+                    filteredRows={filteredRows}
+                    allRows={allRows}
+                    analysisDimCol={analysisDimCol}
+                    analysisDimLabel={analysisDimLabel}
+                    dimValues={dimValues}
+                    analysisMode={analysisMode}
+                    selectedParadigms={selectedParadigms}
+                    setPillarMaps={setPillarMaps}
+                    setIncludedAttrsSets={setIncludedAttrsSets}
+                    setOpenPillarConfigs={setOpenPillarConfigs}
+                  />
+                ))}
 
-                  // CS crosswalk: raw score (0-4) ÷ 4 → 0-1. Others: impacter score 200-800.
-                  const usePillarGrouping = st.id === 'crosswalk' && isCsw;
-                  const scoreCol  = usePillarGrouping ? st.rawCol : st.impacterCol;
-                  const transform = usePillarGrouping ? cswTransform : undefined;
-                  const scoreName = st.label;
-
-                  // Pillar buckets (CS crosswalk only)
-                  const pGroups4: Record<1|2|3|4, string[]> = { 1: [], 2: [], 3: [], 4: [] };
-                  if (usePillarGrouping) {
-                    for (const attr of Array.from(included)) {
-                      const p = (pm[attr] ?? 1) as 1|2|3|4;
-                      if (p >= 1 && p <= 4) pGroups4[p].push(attr);
-                    }
-                  }
-
-                  // Groups: pillar-based for CS crosswalk, one-per-attribute for others
-                  const activeAttrs = allAttrs.filter(a => included.has(a));
-                  const attrList = activeAttrs.length > 0 ? activeAttrs : allAttrs;
-                  const groups: ParadigmGroup[] = usePillarGrouping
-                    ? ([1,2,3,4] as const)
-                        .filter(p => pGroups4[p].length > 0)
-                        .map(p => ({ key: `pillar-${p}`, label: `Pillar ${p}`, attrs: pGroups4[p], color: PILLAR_COLORS[p - 1] }))
-                    : attrList.slice(0, 20).map((a, i) => ({
-                        key: a, label: formatAttrLabel(a), attrs: [a], color: PILLAR_COLORS[i % PILLAR_COLORS.length],
-                      }));
-
-                  // Heatmap data
-                  const heatData = analysisDimCol ? dimValues.map(dv => {
-                    const dimRows = filteredRows.filter(r => r[analysisDimCol] === dv);
-                    return {
-                      label: dv,
-                      groups: groups.map(g => {
-                        const avg = scoreAvg(dimRows, g.attrs, st.attrCol, scoreCol, transform);
-                        const n   = dimRows.filter(r => g.attrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
-                        return { avg, n };
-                      }),
-                    };
-                  }) : [];
-
-                  const allVals = heatData.flatMap(r => r.groups.map(g => g.avg)).filter((v): v is number => v !== null);
-                  const dataMin = allVals.length ? Math.min(...allVals) : 0;
-                  const dataMax = allVals.length ? Math.max(...allVals) : (usePillarGrouping ? 1 : 800);
-                  const norm = (v: number | null) => {
-                    if (v === null) return 0;
-                    const range = dataMax - dataMin;
-                    return 0.1 + (range > 0.001 ? Math.max(0, Math.min(1, (v - dataMin) / range)) : 0.5) * 0.9;
-                  };
-                  const fmtScore = (v: number | null) =>
-                    v === null ? null : usePillarGrouping ? v.toFixed(3) : Math.round(v).toString();
-
-                  const allIncludedAttrs = groups.flatMap(g => g.attrs);
-
-                  // For interpretation
-                  const withOverall = heatData.map(row => {
-                    const dimRows2 = filteredRows.filter(r => r[analysisDimCol] === row.label);
-                    return { label: row.label, overall: scoreAvg(dimRows2, allIncludedAttrs, st.attrCol, scoreCol, transform) };
-                  });
-
-                  // Pre-compute bar chart layout (avoids IIFE in JSX)
-                  const chartDimVals = heatData.map(r => r.label);
-                  const CHART_H      = 200;
-                  const BAR_W        = Math.max(14, Math.floor(52 / Math.max(chartDimVals.length, 1)));
-                  const yFloor       = usePillarGrouping
-                    ? (dataMin > 0.15 ? Math.max(0, Math.floor(dataMin * 20) / 20 - 0.05) : 0)
-                    : Math.max(0, Math.floor(dataMin / 50) * 50 - 50);
-                  const yCeil        = usePillarGrouping
-                    ? Math.min(1.0, Math.ceil(dataMax * 20) / 20 + 0.02)
-                    : Math.ceil(dataMax / 50) * 50 + 50;
-                  const yRange       = Math.max(yCeil - yFloor, usePillarGrouping ? 0.01 : 1);
-                  const yStep        = usePillarGrouping ? 0.1 : 100;
-                  const yTicks: number[] = [];
-                  for (let yv = yFloor; yv <= yCeil + yStep * 0.01; yv = Math.round((yv + yStep) * 1000) / 1000) yTicks.push(yv);
-                  const fmtTick      = (v: number) => usePillarGrouping ? v.toFixed(2) : Math.round(v).toString();
-
-                  return (
-                    <div key={st.id} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                      {/* Section divider (only when multiple paradigms selected) */}
-                      {SCORE_TYPES.filter(s => selectedParadigms.has(s.id)).length > 1 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ height: 2, flex: 1, background: '#e5e7eb' }} />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#111827', padding: '0 4px' }}>{scoreName}</span>
-                          <div style={{ height: 2, flex: 1, background: '#e5e7eb' }} />
-                        </div>
-                      )}
-
-                      {/* Pillar config — CS crosswalk only */}
-                      {usePillarGrouping && allAttrs.length > 0 && (
-                        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12 }}>
-                          <button
-                            onClick={() => setOpenPillarConfigs(prev => { const s = new Set(prev); if (s.has(st.id)) s.delete(st.id); else s.add(st.id); return s; })}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '13px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#111827' }}
-                          >
-                            <span>Configure Pillars</span>
-                            <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>
-                              {Array.from(included).length} of {allAttrs.length} attributes included {isOpen ? '▲' : '▼'}
-                            </span>
-                          </button>
-                          {isOpen && (
-                            <div style={{ padding: '0 18px 18px', borderTop: '1px solid #f3f4f6' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginTop: 14 }}>
-                                {([1, 2, 3, 4] as const).map(p => {
-                                  const attrs = allAttrs.filter(a => (pm[a] ?? 1) === p);
-                                  const color = PILLAR_COLORS[p - 1];
-                                  return (
-                                    <div key={p} style={{ border: `1.5px solid ${color}44`, borderRadius: 10, overflow: 'hidden' }}>
-                                      <div style={{ background: color, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>Pillar {p}</span>
-                                        <div style={{ display: 'flex', gap: 5 }}>
-                                          <button onClick={() => updateIn(new Set([...Array.from(included), ...attrs]))} style={{ fontSize: 10, color: 'white', background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 4, padding: '2px 7px', cursor: 'pointer' }}>All</button>
-                                          <button onClick={() => { const s = new Set(included); attrs.forEach(a => s.delete(a)); updateIn(s); }} style={{ fontSize: 10, color: 'white', background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: 4, padding: '2px 7px', cursor: 'pointer' }}>None</button>
-                                        </div>
-                                      </div>
-                                      <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                        {attrs.length === 0 ? (
-                                          <span style={{ fontSize: 11, color: '#9ca3af' }}>No attributes assigned</span>
-                                        ) : attrs.map(a => (
-                                          <label key={a} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-                                            <input type="checkbox" checked={included.has(a)} onChange={() => { const s = new Set(included); if (s.has(a)) s.delete(a); else s.add(a); updateIn(s); }} style={{ flexShrink: 0 }} />
-                                            <span style={{ fontSize: 11, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={a}>{formatAttrLabel(a)}</span>
-                                            <span style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-                                              {([1, 2, 3, 4] as const).filter(pp => pp !== p).map(pp => (
-                                                <button key={pp} onClick={e => { e.preventDefault(); updatePM({ ...pm, [a]: pp }); }} title={`Move to Pillar ${pp}`} style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, border: `1px solid ${PILLAR_COLORS[pp - 1]}`, color: PILLAR_COLORS[pp - 1], background: 'white', cursor: 'pointer' }}>P{pp}</button>
-                                              ))}
-                                            </span>
-                                          </label>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Attribute inclusion config — Harvard / CASEL / non-CS crosswalk */}
-                      {!usePillarGrouping && allAttrs.length > 0 && (
-                        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12 }}>
-                          <button
-                            onClick={() => setOpenPillarConfigs(prev => { const s = new Set(prev); if (s.has(st.id)) s.delete(st.id); else s.add(st.id); return s; })}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '13px 18px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#111827' }}
-                          >
-                            <span>Attributes</span>
-                            <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>
-                              {Array.from(included).length} of {allAttrs.length} shown {isOpen ? '▲' : '▼'}
-                            </span>
-                          </button>
-                          {isOpen && (
-                            <div style={{ padding: '0 18px 18px', borderTop: '1px solid #f3f4f6' }}>
-                              <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 10 }}>
-                                <button onClick={() => updateIn(new Set(allAttrs))} style={{ fontSize: 11, padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', cursor: 'pointer', color: '#374151' }}>Select all</button>
-                                <button onClick={() => updateIn(new Set())} style={{ fontSize: 11, padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: 'white', cursor: 'pointer', color: '#374151' }}>Clear all</button>
-                              </div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                {allAttrs.map((a, i) => (
-                                  <label key={a} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '4px 10px', border: `1.5px solid ${included.has(a) ? PILLAR_COLORS[i % PILLAR_COLORS.length] : '#e5e7eb'}`, borderRadius: 20, background: included.has(a) ? `${PILLAR_COLORS[i % PILLAR_COLORS.length]}18` : 'white' }}>
-                                    <input type="checkbox" checked={included.has(a)} onChange={() => { const s = new Set(included); if (s.has(a)) s.delete(a); else s.add(a); updateIn(s); }} style={{ display: 'none' }} />
-                                    <span style={{ fontSize: 11, color: included.has(a) ? PILLAR_COLORS[i % PILLAR_COLORS.length] : '#6b7280', fontWeight: included.has(a) ? 600 : 400 }}>{formatAttrLabel(a)}</span>
-                                  </label>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Two-column grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
-
-                        {/* Left: heatmap table */}
-                        <div ref={refAnalysisTable} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', overflowX: 'auto' }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Heatmap — {analysisDimLabel}</div>
-                          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>colour scaled to data range{usePillarGrouping ? ' · 3dp' : ' · integer'}</div>
-                          {!analysisDimCol ? (
-                            <p style={{ fontSize: 13, color: '#9ca3af' }}>No {analysisDimLabel} column found.</p>
-                          ) : heatData.length === 0 ? (
-                            <p style={{ fontSize: 13, color: '#9ca3af' }}>No data for this breakdown.</p>
-                          ) : (
-                            <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: '100%' }}>
-                              <thead>
-                                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                                  <th style={{ padding: '3px 10px 6px 4px', textAlign: 'left', color: '#6b7280', fontWeight: 600, whiteSpace: 'nowrap' }}>{analysisDimLabel}</th>
-                                  {groups.map(g => (
-                                    <th key={g.key} style={{ padding: '3px 10px 6px', textAlign: 'center', color: g.color, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80 }}>
-                                      {g.label}
-                                      {usePillarGrouping && <span style={{ display: 'block', fontSize: 9, fontWeight: 400, color: '#9ca3af', marginTop: 1 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
-                                    </th>
-                                  ))}
-                                  <th style={{ padding: '3px 10px 6px', textAlign: 'center', color: '#374151', fontWeight: 700, whiteSpace: 'nowrap', borderLeft: '2px solid #e5e7eb' }}>Overall</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {heatData.map(row => {
-                                  const dimRows3 = filteredRows.filter(r => r[analysisDimCol] === row.label);
-                                  const overallAvg = scoreAvg(dimRows3, allIncludedAttrs, st.attrCol, scoreCol, transform);
-                                  const overallN   = dimRows3.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
-                                  const tOv = norm(overallAvg);
-                                  return (
-                                    <tr key={row.label} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                      <td style={{ padding: '3px 10px 3px 4px', color: '#374151', whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.label}>{row.label}</td>
-                                      {row.groups.map(({ avg, n }, gi) => {
-                                        const t = norm(avg);
-                                        return (
-                                          <td key={gi} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: avg !== null ? 600 : 400 }}>
-                                            {avg !== null ? <>{fmtScore(avg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
-                                          </td>
-                                        );
-                                      })}
-                                      <td style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(tOv), color: csiTextColor(tOv), fontWeight: 700, borderLeft: '2px solid #e5e7eb' }}>
-                                        {overallAvg !== null ? <>{fmtScore(overallAvg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={overallN.toLocaleString()}</span></> : <span style={{ color: '#d1d5db' }}>—</span>}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                                {heatData.length > 1 && (
-                                  <tr style={{ borderTop: '2px solid #e5e7eb', background: '#f9fafb' }}>
-                                    <td style={{ padding: '3px 10px 3px 4px', fontSize: 11, fontWeight: 700, color: '#111827' }}>All {analysisDimLabel}s</td>
-                                    {groups.map(g => {
-                                      const avg = scoreAvg(filteredRows, g.attrs, st.attrCol, scoreCol, transform);
-                                      const n   = filteredRows.filter(r => g.attrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length;
-                                      const t   = norm(avg);
-                                      return <td key={g.key} style={{ padding: '3px 10px', textAlign: 'center', background: csiColor(t), color: csiTextColor(t), fontWeight: 700 }}>{avg !== null ? <>{fmtScore(avg)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={n.toLocaleString()}</span></> : '—'}</td>;
-                                    })}
-                                    {(gAvgVal => (
-                                      <td style={{ padding: '3px 10px', textAlign: 'center', fontWeight: 700, background: csiColor(norm(gAvgVal)), color: csiTextColor(norm(gAvgVal)), borderLeft: '2px solid #e5e7eb' }}>
-                                        {gAvgVal !== null ? <>{fmtScore(gAvgVal)}<span style={{ display: 'block', fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 1 }}>n={filteredRows.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length.toLocaleString()}</span></> : '—'}
-                                      </td>
-                                    ))(scoreAvg(filteredRows, allIncludedAttrs, st.attrCol, scoreCol, transform))}
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          )}
-                          <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                            <button onClick={() => { const data = heatData.map(row => { const obj: Record<string,unknown> = { [analysisDimCol]: row.label }; groups.forEach((g, gi) => { obj[g.key] = fmtScore(row.groups[gi].avg) ?? ''; obj[`${g.key}_n`] = row.groups[gi].n; }); const dr = filteredRows.filter(r => r[analysisDimCol] === row.label); obj.overall = fmtScore(scoreAvg(dr, allIncludedAttrs, st.attrCol, scoreCol, transform)) ?? ''; obj.overall_n = dr.filter(r => allIncludedAttrs.includes(r[st.attrCol]) && !isNaN(parseFloat(r[scoreCol]))).length; return obj; }); exportCSV(data, `${st.id}-${analysisDimCol}.csv`); }} style={exportBtn}>Download CSV</button>
-                            <button onClick={() => captureChart(refAnalysisTable, `${st.id}-heatmap-${analysisDimCol}.png`)} style={exportBtn}>Download image (table)</button>
-                          </div>
-                        </div>
-
-                        {/* Right: vertical grouped bar chart */}
-                        <div ref={refAnalysisChart} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px' }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 10 }}>
-                            {usePillarGrouping ? `Score by Pillar — ${analysisDimLabel}` : `Score by Attribute — ${analysisDimLabel}`}
-                          </div>
-                          {heatData.length === 0 || !analysisDimCol ? (
-                            <p style={{ fontSize: 13, color: '#9ca3af' }}>No data for this breakdown.</p>
-                          ) : (
-                            <div>
-                              {/* Legend: dim values */}
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                                {chartDimVals.map((dv, i) => (
-                                  <div key={dv} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <div style={{ width: 10, height: 10, borderRadius: 2, background: pickColor(i), flexShrink: 0 }} />
-                                    <span style={{ fontSize: 10, color: '#6b7280' }}>{dv}</span>
-                                  </div>
-                                ))}
-                              </div>
-                              <div style={{ overflowX: 'auto' }}>
-                                <div key={`${st.id}-${analysisMode}`} style={{ position: 'relative', paddingLeft: 44, paddingBottom: 52, paddingTop: 8, minWidth: 'max-content', animation: 'fadeUp 0.3s ease' }}>
-                                  {/* Y-axis gridlines */}
-                                  {yTicks.map(v => {
-                                    const px = ((v - yFloor) / yRange) * CHART_H;
-                                    return (
-                                      <div key={v} style={{ position: 'absolute', left: 0, right: 0, bottom: 52 + px, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
-                                        <span style={{ width: 40, textAlign: 'right', fontSize: 9, color: '#9ca3af', paddingRight: 6 }}>{fmtTick(v)}</span>
-                                        <div style={{ flex: 1, borderTop: v === yTicks[0] ? '2px solid #e5e7eb' : '1px solid #f0f0f0' }} />
-                                      </div>
-                                    );
-                                  })}
-                                  {/* Group columns */}
-                                  <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end', height: CHART_H }}>
-                                    {groups.map((g, gi) => (
-                                      <div key={g.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: CHART_H }}>
-                                          {chartDimVals.map((dv, di) => {
-                                            const avg  = heatData.find(r => r.label === dv)?.groups[gi].avg ?? null;
-                                            const barH = avg !== null ? Math.max(4, ((avg - yFloor) / yRange) * CHART_H) : 0;
-                                            return (
-                                              <div key={dv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: BAR_W }}>
-                                                {avg !== null && <span style={{ fontSize: 9, color: '#374151', fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap' }}>{fmtScore(avg)}</span>}
-                                                <div className="bar-animated" title={`${dv} · ${g.label}: ${fmtScore(avg) ?? '—'}`} style={{ width: BAR_W, height: barH, background: pickColor(di), borderRadius: '3px 3px 0 0', transformOrigin: 'bottom' }} />
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                        <div style={{ marginTop: 6, textAlign: 'center', fontSize: 10, color: g.color, fontWeight: 700, maxWidth: BAR_W * chartDimVals.length + 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                          {g.label}
-                                          {usePillarGrouping && <span style={{ display: 'block', fontSize: 8, color: '#9ca3af', fontWeight: 400 }}>{g.attrs.length} attr{g.attrs.length !== 1 ? 's' : ''}</span>}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              <div data-no-capture="true" style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                                <button onClick={() => captureChart(refAnalysisChart, `${st.id}-barchart-${analysisDimCol}.png`)} style={exportBtn}>Download image (chart)</button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                      </div>
-
-                      {/* Interpretation */}
-                      <InsightBox text={interpretScoreData(withOverall, analysisDimLabel, scoreName)} />
-
-                    </div>
-                  );
-                })}
 
               </>
             )}
