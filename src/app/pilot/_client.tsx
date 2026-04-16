@@ -1532,7 +1532,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           </div>
           <h1 className="font-bold leading-tight mb-6 text-white" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)' }}>
             Hear from students.<br />
-            <span style={{ color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>Turn their voice into clear action.</span>
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>Turn their voice into action.</span>
           </h1>
           <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
             A structured pilot delivers authentic student voice data, scored, analyzed, and ready for action. IMPACTER captures open-ended responses and evaluates them against rubric-defined competency levels at scale, producing clear, decision-grade insight into student experience and how they demonstrate future-ready skills.
