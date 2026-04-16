@@ -1531,17 +1531,17 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             Pilot Program
           </div>
           <h1 className="font-bold leading-tight mb-6 text-white" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)' }}>
-            Hear every voice.<br />
-            <span style={{ color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>Know what it means.</span>
+            Hear from students.<br />
+            <span style={{ color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>Turn their voice into clear action.</span>
           </h1>
           <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
-            A structured pilot gives you real, authentic voice data — scored, analyzed, and ready for action — in about a week. No survey scales. No guesswork. Just the visibility you need to understand what&apos;s actually happening across your schools and make decisions with evidence behind them.
+            A structured pilot delivers authentic student voice data, scored, analyzed, and ready for action. IMPACTER captures open-ended responses and evaluates them against rubric-defined competency levels at scale, producing clear, decision-grade insight into student experience and how they demonstrate future-ready skills.
           </p>
           {/* CTA + chips */}
           <div className="mt-10 flex flex-col items-center gap-5">
             {/* Frosted stat chips */}
             <div className="flex items-center justify-center gap-6 flex-wrap">
-              {['No app download', 'Results in days', 'Multilingual'].map(label => (
+              {['No app download', 'Results in days', 'Multilingual', 'COPPA & FERPA Compliant'].map(label => (
                 <div key={label} className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
                   <svg className="w-3.5 h-3.5 shrink-0" style={{ color: '#e07b54' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
                   {label}
@@ -3476,34 +3476,6 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           </div>{/* end scrollable body */}
         </div>
       )}
-
-      {/* ── What makes this different ────────────────────────────────────────── */}
-      <section className="py-20" style={{ background: 'linear-gradient(135deg, #f4f7fc 0%, #eef3fb 100%)' }}>
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="font-semibold uppercase tracking-widest mb-6" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>What makes this different</h2>
-          <p className="font-bold leading-snug mb-4 text-gray-900" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)' }}>
-            Surveys tell you what students select.
-          </p>
-          <p className="font-bold leading-snug mb-6" style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', color: '#e07b54' }}>
-            We measure what they actually say.
-          </p>
-          <p className="text-base leading-relaxed text-gray-500 mb-10">
-            IMPACTER captures open-ended, authentic language and scores it against rubric-defined competency levels — at scale. The result is decision-grade data on how respondents are actually experiencing your schools and demonstrating future-ready competencies.
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              ['200–800', 'rubric-aligned score'],
-              ['< 1 week', 'time to first insight'],
-              ['0 PII needed', 'privacy-first by design'],
-            ].map(([val, label]) => (
-              <div key={label} className="bg-white rounded-2xl p-5 shadow-sm" style={{ border: '1px solid #e8edf5' }}>
-                <p className="text-xl font-bold mb-1" style={{ color: '#1a2744' }}>{val}</p>
-                <p className="text-xs leading-tight text-gray-400">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <footer className="py-8 text-center" style={{ background: '#1a2744', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
