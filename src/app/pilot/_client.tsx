@@ -952,7 +952,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
             {/* Intro */}
             <div style={{ borderLeft: '3px solid #4a6fa5', paddingLeft: 16, marginBottom: 32 }}>
               <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, margin: 0 }}>
-                Thank you for your interest in the <strong>{name}</strong>. Below is a complete overview of the questions available for this assessment — what they measure, how they&apos;re structured, and the different ways you can make them your own.
+                Thank you for your interest in the <strong>{name}</strong>. Below is a complete overview of the questions available for this assessment: what they measure, how they&apos;re structured, and the different ways you can make them your own.
               </p>
             </div>
 
