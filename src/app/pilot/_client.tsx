@@ -1237,6 +1237,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
   const [demoPanel, setDemoPanel] = useState(0);
   const [demoPaused, setDemoPaused] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   const scrollBodyRef = useRef<HTMLDivElement>(null);
 
@@ -1980,19 +1981,34 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               <p className="font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>Sample report insights</p>
               <h2 className="text-xl font-bold text-gray-900">What you can&apos;t get from a survey.</h2>
             </div>
-            <button
-              onClick={() => setCsvOpen(true)}
-              className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-opacity"
-              style={{ color: 'white', background: '#2d7a5f', fontSize: 13, boxShadow: '0 2px 10px rgba(45,122,95,0.35)', border: 'none', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-            >
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
-              </svg>
-              View Sample CSV
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setReportOpen(true)}
+                className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-opacity"
+                style={{ color: '#1a2a44', background: 'white', fontSize: 13, boxShadow: '0 2px 10px rgba(0,0,0,0.10)', border: '1.5px solid #e2e8f0', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.82')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              >
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
+                </svg>
+                View Sample Report
+              </button>
+              <button
+                onClick={() => setCsvOpen(true)}
+                className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-opacity"
+                style={{ color: 'white', background: '#2d7a5f', fontSize: 13, boxShadow: '0 2px 10px rgba(45,122,95,0.35)', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              >
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
+                </svg>
+                View Sample CSV
+              </button>
+            </div>
           </div>
 
           {/* 2×2 interactive grid */}
@@ -2263,6 +2279,29 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               className="flex-1 w-full border-0"
               allow="camera; microphone; autoplay"
               title={previewModal.label}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Sample Report modal ──────────────────────────────────────────────── */}
+      {reportOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 55, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          onClick={e => { if (e.target === e.currentTarget) setReportOpen(false); }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.6)', backdropFilter: 'blur(6px)' }} onClick={() => setReportOpen(false)} />
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 900, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4a6fa5', margin: '0 0 2px' }}>Sample Report</p>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a2744', margin: 0 }}>Sample Behavioral Health Report</h2>
+              </div>
+              <button onClick={() => setReportOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20, lineHeight: 1, padding: '2px 4px' }}>✕</button>
+            </div>
+            <iframe
+              src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Sample%20BHS%20Report,%20District%20(1).pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvU2FtcGxlIEJIUyBSZXBvcnQsIERpc3RyaWN0ICgxKS5wZGYiLCJpYXQiOjE3NzY0MTk0OTksImV4cCI6MjA5MTc3OTQ5OX0.aZhEYSyyUVIEfcbSk-wwLtEqDeRqCd5MPBiwKygQ71U"
+              style={{ flex: 1, width: '100%', border: 'none' }}
+              title="Sample Behavioral Health Report"
             />
           </div>
         </div>
