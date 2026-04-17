@@ -1588,7 +1588,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72 }} />
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="text-xs font-semibold hidden sm:inline-block" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.85)', letterSpacing: '0.1em', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 20, padding: '4px 12px' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e07b54', display: 'inline-block', flexShrink: 0 }} />
             Pilot Program
           </span>
           <button
@@ -1615,10 +1616,6 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           })}
         </svg>
         <div className="max-w-3xl mx-auto px-6 py-12 text-center relative w-full">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold mb-6 tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: '#e07b54' }}></span>
-            Pilot Program
-          </div>
           <h1 className="font-bold leading-tight mb-6 text-white" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)' }}>
             Hear from students.<br />
             <span style={{ color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>Turn their voice into action.</span>
