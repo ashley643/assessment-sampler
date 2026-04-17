@@ -1584,14 +1584,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
       <nav className="px-6 py-0 flex items-center justify-between" style={{ background: '#1a2744', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 30 }}>
-        <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
-          <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72 }} />
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <a href="https://impacterpathway.com" target="_blank" rel="noopener noreferrer">
+            <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72 }} />
+          </a>
+          <span className="hidden sm:inline-block text-xs font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em' }}>Pilot Program</span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.85)', letterSpacing: '0.1em', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 20, padding: '4px 12px' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e07b54', display: 'inline-block', flexShrink: 0 }} />
-            Pilot Program
-          </span>
           <button
             onClick={() => setDemoOpen(true)}
             style={{ background: 'linear-gradient(135deg, #2e5fa3 0%, #6a5ab0 50%, #cc6648 100%)', color: 'white', border: 'none', borderRadius: 8, padding: '7px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.01em', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}
