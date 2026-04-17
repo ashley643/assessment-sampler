@@ -1566,9 +1566,9 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           <h2 className="font-semibold uppercase tracking-widest mb-10" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>How it works</h2>
           <div className="flex items-start justify-center">
             {[
-              { n: '1', color: '#e07b54', title: 'Create a custom assessment' },
-              { n: '2', color: '#2d7a5f', title: 'Share a link with your students' },
-              { n: '3', color: '#4a6fa5', title: 'Receive custom insights & recommendations' },
+              { n: '1', color: '#e07b54', title: 'Create an engaging, voice-based assessment' },
+              { n: '2', color: '#2d7a5f', title: 'Share a link — students respond in minutes' },
+              { n: '3', color: '#4a6fa5', title: 'Receive insights & personalized recommendations' },
             ].map(({ n, color, title }, i) => (
               <>
                 <div key={n} className="flex flex-col items-center" style={{ width: 160 }}>
