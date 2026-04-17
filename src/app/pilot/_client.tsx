@@ -876,10 +876,15 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     if (!el) return;
     const win = window.open('', '_blank', 'width=900,height=1100');
     if (!win) return;
-    win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Assessment Library — Impacter Pathway</title><style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"DM Sans",Arial,sans-serif;color:#1a2744;margin:0;padding:40px 48px;max-width:720px;line-height:1.5}a{color:#4a6fa5}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>' + el.innerHTML + '</body></html>');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Assessment Library — Impacter Pathway</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#1a2744;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:0}.lib-page{padding:48px 56px;page-break-after:always;break-after:page}.lib-section{page-break-before:always;break-before:page;padding:48px 56px}a{color:#4a6fa5;text-decoration:none}strong{font-weight:700}</style></head><body>${el.innerHTML}</body></html>`);
     win.document.close();
     win.focus();
-    setTimeout(() => { win.print(); }, 500);
+    const doPrint = () => { setTimeout(() => win.print(), 300); };
+    if ((win.document as Document & { fonts?: { ready: Promise<unknown> } }).fonts) {
+      (win.document as Document & { fonts: { ready: Promise<unknown> } }).fonts.ready.then(doPrint);
+    } else {
+      setTimeout(doPrint, 900);
+    }
   }
 
   function scrollTo(id: string) {
@@ -994,17 +999,36 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
 
         {/* Scrollable doc */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', background: '#f4f7fc' }}>
-          <div id="lib-doc" style={{ background: 'white', borderRadius: 12, padding: '40px 48px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 680, margin: '0 auto' }}>
+          <div id="lib-doc" style={{ background: 'white', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 700, margin: '0 auto', overflow: 'hidden' }}>
 
-            {/* Cover */}
-            <div id="lib-top" style={{ textAlign: 'center', padding: '48px 40px', borderRadius: 10, background: '#1a2744', marginBottom: 36 }}>
-              <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72, marginBottom: 20, objectFit: 'contain' }} />
-              <h1 style={{ fontSize: 28, fontWeight: 900, color: 'white', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Assessment Library</h1>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>A complete overview of available assessments, questions, and customization options.</p>
+            {/* Cover — lib-page class gives it its own printed page */}
+            <div id="lib-top" className="lib-page" style={{ background: '#1a2744', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 640 }}>
+              {/* Top: logo */}
+              <div>
+                <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 64, objectFit: 'contain' }} />
+              </div>
+              {/* Center: title block */}
+              <div style={{ padding: '40px 0 32px' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Impacter Pathway</p>
+                <h1 style={{ fontSize: 38, fontWeight: 900, color: 'white', lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 20 }}>Assessment Library</h1>
+                <div style={{ width: 48, height: 3, background: '#e07b54', borderRadius: 2, marginBottom: 24 }} />
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, maxWidth: 480, marginBottom: 16 }}>
+                  Impacter Pathway captures structured student, family, and staff voice — open-ended responses that reveal what traditional surveys can&apos;t: social-emotional competencies, behavioral health signals, and community insight.
+                </p>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, maxWidth: 480 }}>
+                  This document is a reference guide for school and district teams. It includes the full question set for each available assessment, standard and customizable question options, and guidance on how each can be tailored to your community.
+                </p>
+              </div>
+              {/* Bottom: assessment type chips */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {['Learner Portrait', 'Behavioral Health Screener', 'Community Schools Survey'].map(t => (
+                  <span key={t} style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.8)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '5px 14px' }}>{t}</span>
+                ))}
+              </div>
             </div>
 
-            {/* TOC */}
-            <div style={{ marginBottom: 48 }}>
+            {/* TOC — its own printed page */}
+            <div className="lib-page" style={{ background: 'white' }}>
               <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a6fa5', marginBottom: 16 }}>Table of Contents</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 32px' }}>
                 <div>
@@ -1028,7 +1052,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
               const optionalQs = allQs.filter(q => !q.def);
               const attrOrder = Array.from(new Set(allQs.map(q => q.attribute)));
               return (
-                <div key={lpa.id} id={`lib-${lpa.id}`} className="page-break" style={{ marginBottom: 0, paddingBottom: 8 }}>
+                <div key={lpa.id} id={`lib-${lpa.id}`} className="lib-section">
                   {assessmentHeader(lpa.name, lpa.grades)}
                   {lpOpts(isLittles)}
                   {[
@@ -1051,14 +1075,13 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                   ))}
                   {orangeNote()}
                   {backToTop()}
-                  <div style={{ borderBottom: '2px solid #e5e7eb', marginTop: 32, marginBottom: 32 }} />
                 </div>
               );
             })}
 
             {/* ── BH screeners ── */}
             {BH_SCREENERS.map(bh => (
-              <div key={bh.id} id={`lib-${bh.id}`} className="page-break" style={{ marginBottom: 0, paddingBottom: 8 }}>
+              <div key={bh.id} id={`lib-${bh.id}`} className="lib-section">
                 {assessmentHeader(bh.name, bh.grades)}
                 {divider('Assessment Questions')}
                 {bh.questions.map((q, i) => (
@@ -1069,7 +1092,6 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                 ))}
                 {orangeNote()}
                 {backToTop()}
-                <div style={{ borderBottom: '2px solid #e5e7eb', marginTop: 32, marginBottom: 32 }} />
               </div>
             ))}
 
@@ -1082,8 +1104,8 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                 optional: CS_QUESTIONS.filter(q => q.age === key && q.p === p && !q.def),
               }));
               return (
-                <div key={key} id={csId} className="page-break" style={{ marginBottom: 0, paddingBottom: 8 }}>
-                  {assessmentHeader(`Community Schools Survey — ${label}`, 'Community Schools Assessment')}
+                <div key={key} id={csId} className="lib-section">
+                  {assessmentHeader(`Community Schools Survey for ${label}`, 'Community Schools Assessment')}
                   {csOpts()}
                   {([
                     { secLabel: 'Standard Questions',     getQs: (d: typeof qsByPillar[0]) => d.standard },
@@ -1109,7 +1131,6 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                   ))}
                   {orangeNote()}
                   {backToTop()}
-                  <div style={{ borderBottom: '2px solid #e5e7eb', marginTop: 32, marginBottom: 32 }} />
                 </div>
               );
             })}
@@ -1127,7 +1148,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
   const lpA = LP_ASSESSMENTS.find(a => a.id === id);
   const bhS = BH_SCREENERS.find(s => s.id === id);
   const csLabel: Record<string, string> = { 'Elementary School': 'Elementary School', 'Middle School': 'Middle School', 'High School': 'High School', 'Parent': 'Parent / Family', 'Staff': 'Staff' };
-  const name = lpA?.name ?? bhS?.name ?? (csKey ? `Community Schools Survey — ${csLabel[csKey] ?? csKey}` : '');
+  const name = lpA?.name ?? bhS?.name ?? (csKey ? `Community Schools Survey for ${csLabel[csKey] ?? csKey}` : '');
   const grades = lpA?.grades ?? bhS?.grades ?? (csKey ? 'Community Schools Assessment' : '');
   const isLittles = id === 'lp-littles';
 
