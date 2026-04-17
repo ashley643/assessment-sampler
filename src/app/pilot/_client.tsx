@@ -1619,11 +1619,11 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             Hear from students.<br />
             <span style={{ color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>Turn their voice into action.</span>
           </h1>
-          <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
+          <p className="text-lg max-w-2xl mx-auto leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.75)' }}>
             An Impacter Pathway pilot captures voice-based responses and evaluates them against rubric-defined competency levels at scale, producing clear, decision-grade insight into student experience and demonstration of future-ready skills.
           </p>
           {/* CTA + chips */}
-          <div className="mt-10 flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center gap-8">
             {/* Frosted stat chips */}
             <div className="flex items-center justify-center gap-6 flex-wrap">
               {['No app download', 'Results in days', 'Multilingual', 'COPPA & FERPA compliant'].map(label => (
