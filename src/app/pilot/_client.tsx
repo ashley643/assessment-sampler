@@ -876,7 +876,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     if (!el) return;
     const win = window.open('', '_blank', 'width=900,height=1100');
     if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Assessment Library — Impacter Pathway</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#1a2744;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:0}.lib-page{padding:48px 56px;page-break-after:always;break-after:page}.lib-section{page-break-before:always;break-before:page;padding:48px 56px}a{color:#4a6fa5;text-decoration:none}strong{font-weight:700}</style></head><body>${el.innerHTML}</body></html>`);
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Assessment Library — Impacter Pathway</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#1a2744;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:0}.lib-page{page-break-after:always;break-after:page}.lib-section{page-break-before:always;break-before:page}a{color:#4a6fa5;text-decoration:none}strong{font-weight:700}</style></head><body>${el.innerHTML}</body></html>`);
     win.document.close();
     win.focus();
     const doPrint = () => { setTimeout(() => win.print(), 300); };
@@ -1002,7 +1002,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
           <div id="lib-doc" style={{ background: 'white', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 700, margin: '0 auto', overflow: 'hidden' }}>
 
             {/* Cover — lib-page class gives it its own printed page */}
-            <div id="lib-top" className="lib-page" style={{ background: '#1a2744', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 640 }}>
+            <div id="lib-top" className="lib-page" style={{ background: '#1a2744', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 640, padding: '48px 56px' }}>
               {/* Top: logo */}
               <div>
                 <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 64, objectFit: 'contain' }} />
@@ -1028,7 +1028,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* TOC — its own printed page */}
-            <div className="lib-page" style={{ background: 'white' }}>
+            <div className="lib-page" style={{ background: 'white', padding: '48px 56px' }}>
               <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a6fa5', marginBottom: 16 }}>Table of Contents</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 32px' }}>
                 <div>
@@ -1052,7 +1052,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
               const optionalQs = allQs.filter(q => !q.def);
               const attrOrder = Array.from(new Set(allQs.map(q => q.attribute)));
               return (
-                <div key={lpa.id} id={`lib-${lpa.id}`} className="lib-section">
+                <div key={lpa.id} id={`lib-${lpa.id}`} className="lib-section" style={{ padding: '48px 56px' }}>
                   {assessmentHeader(lpa.name, lpa.grades)}
                   {lpOpts(isLittles)}
                   {[
@@ -1081,7 +1081,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
 
             {/* ── BH screeners ── */}
             {BH_SCREENERS.map(bh => (
-              <div key={bh.id} id={`lib-${bh.id}`} className="lib-section">
+              <div key={bh.id} id={`lib-${bh.id}`} className="lib-section" style={{ padding: '48px 56px' }}>
                 {assessmentHeader(bh.name, bh.grades)}
                 {divider('Assessment Questions')}
                 {bh.questions.map((q, i) => (
@@ -1104,7 +1104,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                 optional: CS_QUESTIONS.filter(q => q.age === key && q.p === p && !q.def),
               }));
               return (
-                <div key={key} id={csId} className="lib-section">
+                <div key={key} id={csId} className="lib-section" style={{ padding: '48px 56px' }}>
                   {assessmentHeader(`Community Schools Survey for ${label}`, 'Community Schools Assessment')}
                   {csOpts()}
                   {([
