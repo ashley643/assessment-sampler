@@ -863,10 +863,13 @@ function getCrosswalks(qId: string): string[] {
 }
 
 function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void }) {
+  const isCS = id.startsWith('cs-');
+  const csKey = isCS ? id.slice(3) as AgeGroup : null;
   const lpA = LP_ASSESSMENTS.find(a => a.id === id);
   const bhS = BH_SCREENERS.find(s => s.id === id);
-  const name = lpA?.name ?? bhS?.name ?? '';
-  const grades = lpA?.grades ?? bhS?.grades ?? '';
+  const csLabel: Record<string, string> = { 'Elementary School': 'Elementary School', 'Middle School': 'Middle School', 'High School': 'High School', 'Parent': 'Parent / Family', 'Staff': 'Staff' };
+  const name = lpA?.name ?? bhS?.name ?? (csKey ? `Community Schools Survey — ${csLabel[csKey] ?? csKey}` : '');
+  const grades = lpA?.grades ?? bhS?.grades ?? (csKey ? 'Community Schools Assessment' : '');
   const isLittles = id === 'lp-littles';
 
   function downloadPDF() {
@@ -884,6 +887,9 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
   const standardLPQs = allLPQs.filter(q => q.def);
   const optionalLPQs = allLPQs.filter(q => !q.def);
   const lpAttrOrder = Array.from(new Set(allLPQs.map(q => q.attribute)));
+  const csQsByPillar = csKey ? ([1,2,3,4] as const).map(p => ({
+    pillar: p, label: PILLARS[p], standard: CS_QUESTIONS.filter(q => q.age === csKey && q.p === p && q.def), optional: CS_QUESTIONS.filter(q => q.age === csKey && q.p === p && !q.def),
+  })) : [];
 
   const divider = (label: string) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -901,9 +907,9 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
         </div>
         {cws.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-            <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 600 }}>Also measures:</span>
-            {cws.map(cw => <span key={cw} style={{ fontSize: 9, fontWeight: 600, background: '#eff6ff', color: '#3b6fce', borderRadius: 20, padding: '2px 7px', border: '1px solid #bfdbfe' }}>{cw}</span>)}
+          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, alignItems: 'center', overflow: 'hidden' }}>
+            <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 600, whiteSpace: 'nowrap' }}>Also measures:</span>
+            {cws.map(cw => <span key={cw} style={{ fontSize: 8, fontWeight: 600, background: '#f3f4f6', color: '#6b7280', borderRadius: 20, padding: '2px 6px', border: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>{cw}</span>)}
           </div>
         )}
       </div>
@@ -935,10 +941,13 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
           <div id="sfl-doc" style={{ background: 'white', borderRadius: 12, padding: '40px 48px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 660, margin: '0 auto' }}>
 
             {/* Document header */}
-            <div style={{ borderBottom: '2px solid #1a2744', paddingBottom: 20, marginBottom: 28 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 8px' }}>Impacter Pathway</p>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2744', margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h1>
-              <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{grades}</p>
+            <div style={{ borderBottom: '2px solid #1a2744', paddingBottom: 20, marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 8px' }}>Impacter Pathway</p>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2744', margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h1>
+                <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{grades}</p>
+              </div>
+              <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 64, objectFit: 'contain', flexShrink: 0 }} />
             </div>
 
             {/* Intro */}
@@ -951,36 +960,14 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
             {/* LP content */}
             {lpA && (
               <>
-                {[
-                  { label: 'Standard Questions', qs: standardLPQs },
-                  { label: 'Available to Add', qs: optionalLPQs },
-                ].filter(s => s.qs.length > 0).map(section => (
-                  <div key={section.label} style={{ marginBottom: 28 }}>
-                    {divider(section.label)}
-                    {isLittles
-                      ? section.qs.map(q => qRow(q))
-                      : lpAttrOrder.map(attr => {
-                          const qs = section.qs.filter(q => q.attribute === attr);
-                          if (!qs.length) return null;
-                          return (
-                            <div key={attr} style={{ marginBottom: 18 }}>
-                              <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#1a2744', background: '#f1f5f9', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>{attr}</span>
-                              {qs.map(q => qRow(q))}
-                            </div>
-                          );
-                        })
-                    }
-                  </div>
-                ))}
-
-                {/* Options */}
-                <div style={{ marginBottom: 24 }}>
+                {/* Options — shown first */}
+                <div style={{ marginBottom: 28 }}>
                   {divider('Your Options')}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     {[
                       { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our curated set of recommended prompts, ready to deploy as-is.' },
-                      { label: 'Customize',       color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick 3 prompts from the full question library.' : 'Choose up to 6 attributes and handpick your prompts from each.' },
-                      { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design fully custom questions with your team." },
+                      { label: 'Semi-Custom',     color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick 3 prompts from the question bank.' : 'Choose up to 6 add-on questions from the question bank.' },
+                      { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design fully custom questions with your team." },
                     ].map(opt => (
                       <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
                         <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{opt.label}</p>
@@ -989,6 +976,25 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                     ))}
                   </div>
                 </div>
+
+                {[
+                  { label: 'Standard Questions', qs: standardLPQs },
+                  { label: 'From the Question Bank', qs: optionalLPQs },
+                ].filter(s => s.qs.length > 0).map(section => (
+                  <div key={section.label} style={{ marginBottom: 28 }}>
+                    {divider(section.label)}
+                    {lpAttrOrder.map(attr => {
+                      const qs = section.qs.filter(q => q.attribute === attr);
+                      if (!qs.length) return null;
+                      return (
+                        <div key={attr} style={{ marginBottom: 18 }}>
+                          <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>{attr}</span>
+                          {qs.map(q => qRow(q))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </>
             )}
 
@@ -1003,6 +1009,58 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* CS content */}
+            {isCS && (
+              <>
+                {/* Options */}
+                <div style={{ marginBottom: 28 }}>
+                  {divider('Your Options')}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                    {[
+                      { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our recommended question per pillar, ready to deploy as-is.' },
+                      { label: 'Semi-Custom',     color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per pillar from our question bank.' },
+                      { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design fully custom questions with your team." },
+                    ].map(opt => (
+                      <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
+                        <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{opt.label}</p>
+                        <p style={{ fontSize: 12, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Standard questions by pillar */}
+                <div style={{ marginBottom: 28 }}>
+                  {divider('Standard Questions')}
+                  {csQsByPillar.map(({ pillar, label: pillarLabel, standard }) => (
+                    <div key={pillar} style={{ marginBottom: 18 }}>
+                      <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
+                      {standard.map(q => (
+                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10 }}>
+                          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* From the question bank */}
+                <div style={{ marginBottom: 28 }}>
+                  {divider('From the Question Bank')}
+                  {csQsByPillar.map(({ pillar, label: pillarLabel, optional }) => optional.length > 0 && (
+                    <div key={pillar} style={{ marginBottom: 18 }}>
+                      <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
+                      {optional.map(q => (
+                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10 }}>
+                          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Custom note */}
@@ -3058,8 +3116,12 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                     return (
                       <div key={key} className="border border-gray-200 rounded-2xl overflow-hidden">
                         {/* Section header */}
-                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-200" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <p className="text-sm font-semibold text-gray-800">{label}</p>
+                          <button onClick={() => setSflId(`cs-${key}`)} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#4a6fa5', background: 'white', border: '1px solid #c5d5e8', borderRadius: 8, padding: '5px 11px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                            Save for later
+                          </button>
                         </div>
 
                         <div className="p-5 space-y-5">
