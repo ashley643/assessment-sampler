@@ -54,11 +54,11 @@ function scoreColor(score: number): { bg: string; text: string } {
 
 // ── Report insight chart data ────────────────────────────────────────────────
 const BH_DOMAIN_DATA = [
-  { domain: 'Reflective Growth',     female: 624, male: 548 },
-  { domain: 'Relational Awareness',  female: 591, male: 469 },
-  { domain: 'Emotional Resilience',  female: 558, male: 501 },
-  { domain: 'Self-Insight',          female: 607, male: 542 },
-  { domain: 'Conflict Resolution',   female: 572, male: 473 },
+  { domain: 'Reflective Growth',    female: 624, male: 548, ling: { marker: '"used to / now" contrast',   fPct: '12%', mPct: '5%'  } },
+  { domain: 'Relational Awareness', female: 591, male: 469, ling: { marker: '"we / together / each other"', fPct: '18%', mPct: '6%'  } },
+  { domain: 'Emotional Resilience', female: 558, male: 501, ling: { marker: '"still / kept going" markers',  fPct: '9%',  mPct: '5%'  } },
+  { domain: 'Self-Insight',         female: 607, male: 542, ling: { marker: '"I realized / I noticed"',      fPct: '14%', mPct: '6%'  } },
+  { domain: 'Conflict Resolution',  female: 572, male: 473, ling: { marker: '"instead / different way"',     fPct: '11%', mPct: '3%'  } },
 ];
 
 // 42 dots — smaller radius, heavy concentration in the high-high (Purpose/Self-Control) zone
@@ -82,11 +82,11 @@ const WELLNESS_DOTS = [
 
 // Risk heatmap: rows × grade columns (6th, 7th, 8th) — % frequency 0.00–7.25
 const RISK_ROWS = [
-  { pattern: 'Hopelessness',         g6: 6.43, g7: 4.21, g8: 5.87 },
-  { pattern: 'Withdrawal cues',      g6: 3.18, g7: 5.62, g8: 4.09 },
-  { pattern: 'Avoidance signals',    g6: 2.74, g7: 3.91, g8: 5.33 },
-  { pattern: 'Self-doubt language',  g6: 4.56, g7: 6.88, g8: 7.12 },
-  { pattern: 'Help-seeking absence', g6: 1.93, g7: 2.47, g8: 3.85 },
+  { pattern: 'Hopelessness',         g6: 6.43, g7: 4.21, g8: 5.87, ling: '"nothing ever changes / always like this"',  gradeRank: '6th > 8th > 7th' },
+  { pattern: 'Withdrawal cues',      g6: 3.18, g7: 5.62, g8: 4.09, ling: '"stopped / don\'t bother / gave up"',         gradeRank: '7th > 8th > 6th' },
+  { pattern: 'Avoidance signals',    g6: 2.74, g7: 3.91, g8: 5.33, ling: '"don\'t want to / just skip it"',             gradeRank: '8th > 7th > 6th' },
+  { pattern: 'Self-doubt language',  g6: 4.56, g7: 6.88, g8: 7.12, ling: '"probably wrong / not smart enough"',         gradeRank: '8th > 7th > 6th' },
+  { pattern: 'Help-seeking absence', g6: 1.93, g7: 2.47, g8: 3.85, ling: '"figured it out alone / didn\'t ask"',        gradeRank: '8th > 7th > 6th' },
 ];
 
 const PROTECTIVE_DATA = [
@@ -1962,8 +1962,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
             {/* ── Card 1: BH Gender Gap ── */}
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Domain Analysis</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}>Girls outscore boys by up to <span style={{ color: '#4a6fa5' }}>122 pts</span> — gap widest in relational skills.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Domain Analysis</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 14 }}>Scores by domain — female vs. male respondents</p>
               <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 11, color: '#6b7280' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#4a6fa5' }} />Female</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#d1dff0' }} />Male</span>
@@ -1980,11 +1980,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   const gapX2 = 160 + scaleW(d.female);
                   const gapMid = (gapX1 + gapX2) / 2;
                   return (
-                    <g key={d.domain}
-                      onMouseEnter={() => setBhHover(i)}
-                      onMouseLeave={() => setBhHover(null)}
-                      style={{ cursor: 'pointer' }}
-                    >
+                    <g key={d.domain} onMouseEnter={() => setBhHover(i)} onMouseLeave={() => setBhHover(null)} style={{ cursor: 'pointer' }}>
                       {isHov && <rect x="0" y={yCenter - 19} width="440" height="38" rx="6" fill="#f0f5ff" />}
                       <text x="156" y={yCenter + 3} textAnchor="end" fontSize="11" fill={isHov ? '#1a2a44' : '#6b7280'} fontWeight={isHov ? '600' : '400'}>{d.domain}</text>
                       <rect x="160" y={yCenter - 14} width={scaleW(d.male)} height={28} rx="4" fill={isHov ? '#c8d9f0' : '#e0eaf8'} />
@@ -1993,7 +1989,6 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       <text x={164 + scaleW(d.male)} y={yCenter + 12} fontSize="10" fill="#9ab4d0" fontWeight="600">{d.male}</text>
                       {gap === maxGap && (
                         <g>
-                          {/* Bracket drawn inside the female bar's gap portion — no overflow */}
                           <line x1={gapX1} y1={yCenter - 13} x2={gapX2} y2={yCenter - 13} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
                           <line x1={gapX1} y1={yCenter - 14} x2={gapX1} y2={yCenter - 9} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
                           <line x1={gapX2} y1={yCenter - 14} x2={gapX2} y2={yCenter - 9} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
@@ -2001,11 +1996,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                         </g>
                       )}
                       {isHov && (
-                        <g transform={`translate(160, ${Math.max(-30, yCenter - 56)})`}>
-                          <rect x="0" y="0" width="250" height="44" rx="7" fill="#1a2a44" />
-                          <polygon points="110,44 120,52 130,44" fill="#1a2a44" />
-                          <text x="125" y="17" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.65)">{d.domain}</text>
-                          <text x="125" y="34" textAnchor="middle" fontSize="12" fill="white" fontWeight="700">♀ {d.female} · ♂ {d.male} · gap +{gap}</text>
+                        <g transform={`translate(160, ${Math.max(-30, yCenter - 72)})`}>
+                          <rect x="0" y="0" width="265" height="58" rx="7" fill="#1a2a44" />
+                          <polygon points="110,58 120,66 130,58" fill="#1a2a44" />
+                          <text x="132" y="15" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.5)">{d.domain} · gap +{gap} pts</text>
+                          <line x1="10" y1="21" x2="255" y2="21" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                          <text x="132" y="34" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.75)">Linguistic indicator: {d.ling.marker}</text>
+                          <text x="132" y="50" textAnchor="middle" fontSize="10" fill="white" fontWeight="700">♀ {d.ling.fPct} · ♂ {d.ling.mPct} frequency</text>
                         </g>
                       )}
                     </g>
@@ -2013,13 +2010,16 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 })}
                 <line x1="160" y1="0" x2="160" y2="205" stroke="#e5e7eb" strokeWidth="1" />
               </svg>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 12 }}>
+                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Girls score higher than boys across all five domains. The largest gap is in Relational Awareness (122 points) and the smallest in Emotional Resilience (57 points).</p>
+              </div>
             </div>
 
 
             {/* ── Card 2: Risk Language Heatmap ── */}
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px', position: 'relative' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Risk Signals</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 16 }}>8th grade <span style={{ color: '#e07b54' }}>self-doubt language</span> peaks at 7.12% — highest signal in cohort.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Risk Signals</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Risk language frequency by pattern and grade — % of spoken words</p>
               <div>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', fontSize: 13 }}>
                   <thead>
@@ -2033,27 +2033,30 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   <tbody>
                     {RISK_ROWS.map((row, r) => {
                       const vals = [row.g6, row.g7, row.g8];
+                      const isRowHov = hmHover?.r === r && hmHover?.c === -1;
                       return (
                         <tr key={r}>
-                          <td style={{ paddingTop: 5, paddingBottom: 5, paddingRight: 16, fontWeight: 500, color: hmHover?.r === r ? '#1a2a44' : '#374151', fontSize: 12 }}>{row.pattern}</td>
+                          <td style={{ paddingTop: 5, paddingBottom: 5, paddingRight: 16, fontWeight: 500, color: isRowHov ? '#1a2a44' : '#374151', fontSize: 12, position: 'relative', cursor: 'pointer' }}
+                            onMouseEnter={() => setHmHover({ r, c: -1 })}
+                            onMouseLeave={() => setHmHover(null)}
+                          >
+                            {row.pattern}
+                            {isRowHov && (
+                              <div style={{ position: 'absolute', left: 0, bottom: '100%', marginBottom: 6, background: '#1a2a44', color: 'white', borderRadius: 8, padding: '9px 13px', fontSize: 11, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none', minWidth: 240 }}>
+                                <div style={{ fontWeight: 700, marginBottom: 4, color: '#93c5fd' }}>{row.pattern}</div>
+                                <div style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>e.g. {row.ling}</div>
+                                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>Grade rank: {row.gradeRank}</div>
+                                <div style={{ position: 'absolute', top: '100%', left: 20, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #1a2a44' }} />
+                              </div>
+                            )}
+                          </td>
                           {vals.map((v, c) => {
                             const intensity = v / 7.25;
-                            const isCell = hmHover?.r === r && hmHover?.c === c;
-                            const bg = isCell ? `rgba(224,123,84,${0.3 + intensity * 0.55})` : `rgba(74,111,165,${0.1 + intensity * 0.72})`;
+                            const bg = `rgba(74,111,165,${0.1 + intensity * 0.72})`;
                             const textCol = intensity > 0.5 ? '#1e3a5f' : '#6b7280';
                             return (
-                              <td key={c} style={{ paddingTop: 5, paddingBottom: 5, paddingLeft: 8, paddingRight: 8, textAlign: 'center', fontWeight: 700, fontSize: 13, background: bg, color: isCell ? '#7a2a0a' : textCol, borderRadius: 5, cursor: 'pointer', transition: 'background 0.15s', position: 'relative' }}
-                                onMouseEnter={() => setHmHover({ r, c })}
-                                onMouseLeave={() => setHmHover(null)}
-                              >
+                              <td key={c} style={{ paddingTop: 5, paddingBottom: 5, paddingLeft: 8, paddingRight: 8, textAlign: 'center', fontWeight: 700, fontSize: 13, background: bg, color: textCol, borderRadius: 5 }}>
                                 {v.toFixed(2)}%
-                                {isCell && (
-                                  <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8, background: '#1a2a44', color: 'white', borderRadius: 7, padding: '7px 12px', fontSize: 11, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }}>
-                                    <div style={{ fontWeight: 700, marginBottom: 2 }}>{row.pattern}</div>
-                                    <div style={{ color: 'rgba(255,255,255,0.7)' }}>{['6th','7th','8th'][c]} Grade · {v.toFixed(2)}% frequency</div>
-                                    <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #1a2a44' }} />
-                                  </div>
-                                )}
                               </td>
                             );
                           })}
@@ -2063,35 +2066,25 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   </tbody>
                 </table>
               </div>
-              <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 12 }}>% of total spoken words flagged per pattern per grade.</p>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 14 }}>
+                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Self-doubt language is the highest-frequency risk signal overall, peaking in 8th grade at 7.12%, nearly twice the 6th grade rate of 4.56%.</p>
+              </div>
             </div>
 
             {/* ── Card 3: CS Pillars ── */}
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Pillar Scores</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}>Student supports lead. <span style={{ color: '#7c5cbf' }}>Collaborative leadership</span> is the gap — and the lever.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Pillar Scores</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 14 }}>District average score by pillar (0–1 scale)</p>
               <svg viewBox="0 0 440 210" style={{ width: '100%', overflow: 'visible' }}>
-                {/* Bars first so tooltip always paints on top */}
                 {PARTHENON_PILLARS.map((p, i) => {
-                  const pillarW = 84;
-                  const gapW = 16;
-                  const totalW = 4 * pillarW + 3 * gapW;
-                  const startX = (440 - totalW) / 2;
+                  const pillarW = 84; const gapW = 16;
+                  const startX = (440 - (4 * pillarW + 3 * gapW)) / 2;
                   const x = startX + i * (pillarW + gapW);
-                  const maxH = 148;
-                  const h = (p.height / 100) * maxH;
-                  const y = 162 - h;
+                  const maxH = 148; const h = (p.height / 100) * maxH; const y = 162 - h;
                   const isHov = csHover === i;
                   return (
-                    <g key={p.label}
-                      onMouseEnter={() => setCsHover(i)}
-                      onMouseLeave={() => setCsHover(null)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <rect x={x} y={y} width={pillarW} height={h} rx="5"
-                        fill={p.color} fillOpacity={isHov ? 1 : 0.72}
-                        style={{ transition: 'fill-opacity 0.15s' }}
-                      />
+                    <g key={p.label} onMouseEnter={() => setCsHover(i)} onMouseLeave={() => setCsHover(null)} style={{ cursor: 'pointer' }}>
+                      <rect x={x} y={y} width={pillarW} height={h} rx="5" fill={p.color} fillOpacity={isHov ? 1 : 0.72} style={{ transition: 'fill-opacity 0.15s' }} />
                       <text x={x + pillarW / 2} y={y + h / 2 - 5} textAnchor="middle" fontSize="19" fontWeight="800" fill="white">{p.score}</text>
                       <text x={x + pillarW / 2} y={y + h / 2 + 12} textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.6)">avg</text>
                       <rect x={x - 5} y={y - 8} width={pillarW + 10} height={8} rx="2" fill={p.color} fillOpacity={isHov ? 1 : 0.88} />
@@ -2101,45 +2094,44 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   );
                 })}
                 <rect x="10" y="162" width="420" height="4" rx="2" fill="#e5e7eb" />
-                {/* Tooltip rendered last so it's always above all bars */}
                 {csHover !== null && (() => {
                   const p = PARTHENON_PILLARS[csHover];
-                  const pillarW = 84;
-                  const gapW = 16;
+                  const pillarW = 84; const gapW = 16;
                   const startX = (440 - (4 * pillarW + 3 * gapW)) / 2;
                   const x = startX + csHover * (pillarW + gapW);
-                  const h = (p.height / 100) * 148;
-                  const y = 162 - h;
-                  const tipW = 196;
-                  const tipH = 90;
+                  const h = (p.height / 100) * 148; const y = 162 - h;
+                  const tipW = 200; const tipH = 74;
                   const rawX = x + pillarW / 2 - tipW / 2;
                   const tipX = Math.max(4, Math.min(440 - tipW - 4, rawX));
                   const tipY = y - tipH - 10;
                   const arrowX = x + pillarW / 2 - tipX;
+                  const leader = p.schools.find(s => s.leads)!;
+                  const trailer = [...p.schools].sort((a, b) => a.score - b.score)[0];
                   return (
                     <g transform={`translate(${tipX}, ${tipY})`} style={{ pointerEvents: 'none' }}>
                       <rect x="0" y="0" width={tipW} height={tipH} rx="8" fill="#1a2a44" />
                       <polygon points={`${arrowX - 6},${tipH} ${arrowX},${tipH + 8} ${arrowX + 6},${tipH}`} fill="#1a2a44" />
-                      <text x={tipW / 2} y="15" textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.4)" fontWeight="700" letterSpacing="0.08em">{p.label.toUpperCase()}</text>
-                      <line x1="10" y1="21" x2={tipW - 10} y2="21" stroke="rgba(255,255,255,0.09)" strokeWidth="1" />
-                      {p.schools.map((s, si) => (
-                        <g key={si}>
-                          {s.leads && <rect x="8" y={28 + si * 20} width={tipW - 16} height="17" rx="3" fill={`${p.color}22`} />}
-                          <text x="14" y={41 + si * 20} fontSize="10.5" fill={s.leads ? 'white' : 'rgba(255,255,255,0.55)'} fontWeight={s.leads ? '600' : '400'}>{s.name}</text>
-                          <text x={tipW - 14} y={41 + si * 20} textAnchor="end" fontSize="11" fill={s.leads ? p.color : 'rgba(255,255,255,0.4)'} fontWeight={s.leads ? '800' : '400'}>{s.score.toFixed(2)}</text>
-                          {s.leads && <text x={tipW - 8} y={41 + si * 20} fontSize="9.5" fill="#fbbf24">★</text>}
-                        </g>
-                      ))}
+                      <text x={tipW / 2} y="14" textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.4)" fontWeight="700" letterSpacing="0.08em">{p.label.toUpperCase()}</text>
+                      <line x1="10" y1="20" x2={tipW - 10} y2="20" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                      <text x="14" y="37" fontSize="11" fill="#4ade80" fontWeight="700">↑ {leader.name}</text>
+                      <text x={tipW - 14} y="37" textAnchor="end" fontSize="11" fill="#4ade80" fontWeight="700">{leader.score.toFixed(2)}</text>
+                      <text x="14" y="58" fontSize="11" fill="#fb923c" fontWeight="700">↓ {trailer.name}</text>
+                      <text x={tipW - 14} y="58" textAnchor="end" fontSize="11" fill="#fb923c" fontWeight="700">{trailer.score.toFixed(2)}</text>
+                      <line x1="10" y1="64" x2={tipW - 10} y2="64" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                      <text x={tipW / 2} y={tipH - 6} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">{p.insight}</text>
                     </g>
                   );
                 })()}
               </svg>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 12 }}>
+                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Integrated Student Supports and Expanded Learning Time are the strongest pillars district-wide. Collaborative Leadership has the lowest average score at 0.82 and represents the clearest area for investment.</p>
+              </div>
             </div>
 
             {/* ── Card 4: Voice Tone Analysis ── */}
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Voice Tone Analysis</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2a44', lineHeight: 1.35, marginBottom: 14 }}><span style={{ color: '#e07b54' }}>Staff voice</span> carries the most constructive language — 44% vs. 22% from families.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Voice Tone Analysis</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 14 }}>Affirming vs. constructive voice tone by stakeholder group</p>
               <svg viewBox="0 0 440 185" style={{ width: '100%', overflow: 'visible' }}>
                 <line x1="220" y1="0" x2="220" y2="185" stroke="#e5e7eb" strokeWidth="1.5" strokeDasharray="4 3" />
                 <text x="95" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">← CONSTRUCTIVE</text>
@@ -2151,11 +2143,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   const conW = (d.concern / 100) * maxHalf;
                   const isHov = toneHover === i;
                   return (
-                    <g key={d.group}
-                      onMouseEnter={() => setToneHover(i)}
-                      onMouseLeave={() => setToneHover(null)}
-                      style={{ cursor: 'pointer' }}
-                    >
+                    <g key={d.group} onMouseEnter={() => setToneHover(i)} onMouseLeave={() => setToneHover(null)} style={{ cursor: 'pointer' }}>
                       {isHov && <rect x="0" y={rowY - 2} width="440" height="46" rx="6" fill="#f8f9fc" />}
                       <text x="220" y={rowY + 8} textAnchor="middle" fontSize="12" fill={isHov ? '#1a2a44' : '#374151'} fontWeight="700">{d.group}</text>
                       <rect x={220 - conW} y={rowY + 14} width={conW} height={22} rx="4" fill="#e07b54" fillOpacity={isHov ? 0.88 : 0.62} />
@@ -2163,19 +2151,22 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       <rect x="220" y={rowY + 14} width={affW} height={22} rx="4" fill="#2d7a5f" fillOpacity={isHov ? 0.88 : 0.62} />
                       <text x={220 + affW + 5} y={rowY + 29} textAnchor="start" fontSize="11" fill="#1a5f44" fontWeight="600">{d.affirming}%</text>
                       {isHov && (
-                        <g transform={`translate(${220 - 85}, ${rowY - 62})`}>
-                          <rect x="0" y="0" width="170" height="52" rx="7" fill="#1a2a44" />
-                          <polygon points="79,52 85,60 91,52" fill="#1a2a44" />
-                          <text x="85" y="18" textAnchor="middle" fontSize="12" fill="white" fontWeight="700">{d.group}</text>
-                          <text x="85" y="34" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,0.7)">Constructive {d.concern}% · Aff. {d.affirming}%</text>
-                          <text x="85" y="48" textAnchor="middle" fontSize="9.5" fill="#f59e0b">↑ {d.signal}</text>
+                        <g transform={`translate(${220 - 90}, ${rowY - 68})`}>
+                          <rect x="0" y="0" width="180" height="58" rx="7" fill="#1a2a44" />
+                          <polygon points="84,58 90,66 96,58" fill="#1a2a44" />
+                          <text x="90" y="16" textAnchor="middle" fontSize="11" fill="white" fontWeight="700">{d.group}</text>
+                          <line x1="10" y1="22" x2="170" y2="22" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                          <text x="90" y="36" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.65)">Top signal: {d.signal}</text>
+                          <text x="90" y="51" textAnchor="middle" fontSize="10" fill="#fbbf24">Constructive {d.concern}% · Neutral {d.neutral}%</text>
                         </g>
                       )}
                     </g>
                   );
                 })}
               </svg>
-              <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Voice semantics — invisible in traditional survey data.</p>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 8 }}>
+                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Staff responses carry the highest share of constructive language at 44%, while families show the most affirming tone at 68%, pointing to different priorities and concerns across stakeholder groups.</p>
+              </div>
             </div>
 
           </div>
