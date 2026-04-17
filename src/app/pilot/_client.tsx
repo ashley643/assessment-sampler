@@ -2010,8 +2010,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 })}
                 <line x1="160" y1="0" x2="160" y2="205" stroke="#e5e7eb" strokeWidth="1" />
               </svg>
-              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 12 }}>
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Girls score higher than boys across all five domains. The largest gap is in Relational Awareness (122 points) and the smallest in Emotional Resilience (57 points).</p>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '9px 13px', marginTop: 12, borderLeft: '3px solid #4a6fa5' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4a6fa5', margin: '0 0 3px 0' }}>Insight</p>
+                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Girls outscore boys in all five domains; the gap is widest in Relational Awareness (122 pts) and narrowest in Emotional Resilience (57 pts).</p>
+              </div>
+              <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Launch peer Reflection Circles where mixed-gender student pairs listen to each other's recorded voice responses to the same prompt, then discuss what surprised them — building mutual empathy and making the gender gap visible to students in a constructive, non-confrontational way.</p>
               </div>
             </div>
 
@@ -2066,8 +2071,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   </tbody>
                 </table>
               </div>
-              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 14 }}>
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Self-doubt language is the highest-frequency risk signal overall, peaking in 8th grade at 7.12%, nearly twice the 6th grade rate of 4.56%.</p>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '9px 13px', marginTop: 14, borderLeft: '3px solid #4a6fa5' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4a6fa5', margin: '0 0 3px 0' }}>Insight</p>
+                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Self-doubt language peaks in 8th grade at 7.12%, nearly double the 6th grade rate — the steepest grade-level climb of any risk pattern.</p>
+              </div>
+              <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Run a Language Reframe Lab in advisory: students anonymously submit self-limiting phrases flagged in their voice responses, the class rewrites them together using asset-based language, and the new versions rotate as a hallway gallery — making metacognitive self-talk a shared, visible practice.</p>
               </div>
             </div>
 
@@ -2121,8 +2131,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   );
                 })()}
               </svg>
-              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 12 }}>
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Integrated Student Supports and Expanded Learning Time are the strongest pillars district-wide. Collaborative Leadership has the lowest average score at 0.82 and represents the clearest area for investment.</p>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '9px 13px', marginTop: 12, borderLeft: '3px solid #4a6fa5' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4a6fa5', margin: '0 0 3px 0' }}>Insight</p>
+                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Collaborative Leadership is the weakest pillar district-wide at 0.82, trailing Integrated Student Supports by 0.13 points.</p>
+              </div>
+              <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Host a quarterly Voice-to-Policy Sprint where student and staff voice data is presented side by side to a mixed team, who spend 90 minutes co-designing one concrete policy change — giving both groups visible proof that their voice shaped a real decision.</p>
               </div>
             </div>
 
@@ -2163,8 +2178,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   );
                 })}
               </svg>
-              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '10px 14px', marginTop: 8 }}>
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Staff responses carry the highest share of constructive language at 44%, while families show the most affirming tone at 68%, pointing to different priorities and concerns across stakeholder groups.</p>
+              <div style={{ background: '#eef4ff', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #4a6fa5' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4a6fa5', margin: '0 0 3px 0' }}>Insight</p>
+                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Families lead in affirming tone (68%) while staff carry the most constructive language (44%), signaling distinct — and rarely bridged — priorities across groups.</p>
+              </div>
+              <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Design a Same Prompt, Different Lens workshop where families and staff respond to an identical school climate question via voice, then hear each other's anonymized responses in a facilitated session — surfacing shared ground and hidden tension in ways no written survey can capture.</p>
               </div>
             </div>
 
