@@ -2027,6 +2027,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       <text x={164 + scaleW(d.male)} y={yCenter + 12} fontSize="10" fill="#9ab4d0" fontWeight="600">{d.male}</text>
                       {gap === maxGap && (
                         <g>
+                          <rect x="2" y={yCenter - 17} width="436" height="34" rx="5" fill="rgba(251,191,36,0.06)" stroke="#fbbf24" strokeWidth="1.5" />
+                          <text x="8" y={yCenter - 21} fontSize="8" fill="#f59e0b" fontWeight="700" letterSpacing="0.04em">WIDEST GAP</text>
                           <line x1={gapX1} y1={yCenter - 13} x2={gapX2} y2={yCenter - 13} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
                           <line x1={gapX1} y1={yCenter - 14} x2={gapX1} y2={yCenter - 9} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
                           <line x1={gapX2} y1={yCenter - 14} x2={gapX2} y2={yCenter - 9} stroke="rgba(251,191,36,0.9)" strokeWidth="1.5" />
