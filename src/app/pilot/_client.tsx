@@ -1941,11 +1941,11 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
     const out: Array<{ key: AgeGroup; label: string }> = [];
     const bands = getGradeBands(form.gradeLevels);
     if (bands.has('Lower Elementary (TK–2)') || bands.has('Elementary (3rd–5th)'))
-      out.push({ key: 'Elementary School', label: 'Elementary School' });
-    if (bands.has('Middle School (6th–8th)'))  out.push({ key: 'Middle School',   label: 'Middle School' });
-    if (bands.has('High School (9th–12th)'))   out.push({ key: 'High School',     label: 'High School' });
-    if (form.respondents.includes('Families / Parents')) out.push({ key: 'Parent', label: 'Parent / Family' });
-    if (form.respondents.includes('Staff'))              out.push({ key: 'Staff',  label: 'Staff' });
+      out.push({ key: 'Elementary School', label: 'Community Schools Survey for Elementary School' });
+    if (bands.has('Middle School (6th–8th)'))  out.push({ key: 'Middle School', label: 'Community Schools Survey for Middle School' });
+    if (bands.has('High School (9th–12th)'))   out.push({ key: 'High School',   label: 'Community Schools Survey for High School' });
+    if (form.respondents.includes('Families / Parents')) out.push({ key: 'Parent', label: 'Community Schools Survey for Parent / Family' });
+    if (form.respondents.includes('Staff'))              out.push({ key: 'Staff',  label: 'Community Schools Survey for Staff' });
     return out;
   }
 
