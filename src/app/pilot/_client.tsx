@@ -997,10 +997,10 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
           <div id="lib-doc" style={{ background: 'white', borderRadius: 12, padding: '40px 48px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 680, margin: '0 auto' }}>
 
             {/* Cover */}
-            <div id="lib-top" style={{ textAlign: 'center', padding: '40px 0 36px', borderBottom: '2px solid #1a2744', marginBottom: 36 }}>
+            <div id="lib-top" style={{ textAlign: 'center', padding: '48px 40px', borderRadius: 10, background: '#1a2744', marginBottom: 36 }}>
               <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72, marginBottom: 20, objectFit: 'contain' }} />
-              <h1 style={{ fontSize: 28, fontWeight: 900, color: '#1a2744', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Assessment Library</h1>
-              <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>A complete overview of available assessments, questions, and customization options.</p>
+              <h1 style={{ fontSize: 28, fontWeight: 900, color: 'white', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Assessment Library</h1>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>A complete overview of available assessments, questions, and customization options.</p>
             </div>
 
             {/* TOC */}
