@@ -1034,7 +1034,6 @@ function IntroVideoPlayer({ src }: { src: string }) {
     if (!container) return;
     const video = document.createElement('video');
     video.setAttribute('playsinline', '');
-    video.setAttribute('muted', '');
     video.setAttribute('autoplay', '');
     video.muted = true;
     video.src = src;
@@ -1044,13 +1043,20 @@ function IntroVideoPlayer({ src }: { src: string }) {
     video.onended = () => { if (mutedRef.current) { video.play().catch(() => {}); } else { setPaused(true); } };
     container.appendChild(video);
     ref.current = video;
-    video.play().catch(() => {});
-    return () => { if (container.contains(video)) container.removeChild(video); };
+    const tryPlay = () => video.play().catch(() => {});
+    video.addEventListener('canplay', tryPlay, { once: true });
+    tryPlay();
+    const retryOnInteract = () => { if (video.paused) video.play().catch(() => {}); };
+    document.addEventListener('click', retryOnInteract, { once: true });
+    return () => {
+      document.removeEventListener('click', retryOnInteract);
+      if (container.contains(video)) container.removeChild(video);
+    };
   }, [src]);
 
   function toggle() {
     const el = ref.current; if (!el) return;
-    if (muted) { el.currentTime = 0; el.muted = false; mutedRef.current = false; setMuted(false); el.play(); setPaused(false); }
+    if (muted) { el.currentTime = 0; el.muted = false; el.volume = 1; mutedRef.current = false; setMuted(false); el.play(); setPaused(false); }
     else if (el.paused) { el.play(); setPaused(false); }
     else { el.pause(); setPaused(true); }
   }
@@ -1105,7 +1111,6 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
     if (!container || isAudio) return;
     const video = document.createElement('video');
     video.setAttribute('playsinline', '');
-    video.setAttribute('muted', '');
     video.setAttribute('autoplay', '');
     video.muted = true;
     video.src = src;
@@ -1115,13 +1120,15 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
     video.onended = () => { if (mutedRef.current) { video.play().catch(() => {}); } else { setPaused(true); } };
     container.appendChild(video);
     ref.current = video;
-    video.play().catch(() => {});
+    const tryPlay = () => video.play().catch(() => {});
+    video.addEventListener('canplay', tryPlay, { once: true });
+    tryPlay();
     return () => { if (container.contains(video)) container.removeChild(video); };
   }, [src, isAudio]);
 
   function toggle() {
     const el = ref.current; if (!el) return;
-    if (muted && !isAudio) { el.currentTime = 0; el.muted = false; mutedRef.current = false; setMuted(false); el.play(); setPaused(false); }
+    if (muted && !isAudio) { el.currentTime = 0; el.muted = false; el.volume = 1; mutedRef.current = false; setMuted(false); el.play(); setPaused(false); }
     else if (el.paused) { el.play(); setPaused(false); }
     else { el.pause(); setPaused(true); }
   }
@@ -1233,7 +1240,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
   const [previewIndex, setPreviewIndex] = useState(0);
   const [panelIndex, setPanelIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
-  const [promptPaused, setPromptPaused] = useState(true);
+  const [promptPaused, setPromptPaused] = useState(false);
   const [responsePaused, setResponsePaused] = useState(false);
   const [responseEnded, setResponseEnded] = useState(false);
   const [promptHovered, setPromptHovered] = useState(false);
@@ -1693,6 +1700,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   onLoadedMetadata={() => setPromptDuration(promptVideoRef.current?.duration ?? 0)}
                   onTimeUpdate={() => setPromptCurrentTime(promptVideoRef.current?.currentTime ?? 0)}
                   onEnded={() => setPromptPaused(true)}
+                  onCanPlay={() => {
+                    const v = promptVideoRef.current;
+                    if (!v) return;
+                    v.muted = true;
+                    v.play().catch(() => {});
+                    setPromptPaused(false);
+                  }}
                 />
                 {/* VideoAsk-style top chrome */}
                 <VideoChrome
