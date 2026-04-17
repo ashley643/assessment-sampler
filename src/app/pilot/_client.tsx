@@ -1240,7 +1240,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
   const [previewIndex, setPreviewIndex] = useState(0);
   const [panelIndex, setPanelIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
-  const [promptPaused, setPromptPaused] = useState(true);
+  const [promptPaused, setPromptPaused] = useState(false);
   const [responsePaused, setResponsePaused] = useState(false);
   const [responseEnded, setResponseEnded] = useState(false);
   const [promptHovered, setPromptHovered] = useState(false);
@@ -1700,6 +1700,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   onLoadedMetadata={() => setPromptDuration(promptVideoRef.current?.duration ?? 0)}
                   onTimeUpdate={() => setPromptCurrentTime(promptVideoRef.current?.currentTime ?? 0)}
                   onEnded={() => setPromptPaused(true)}
+                  onCanPlay={() => {
+                    const v = promptVideoRef.current;
+                    if (!v) return;
+                    v.muted = true;
+                    v.play().catch(() => {});
+                    setPromptPaused(false);
+                  }}
                 />
                 {/* VideoAsk-style top chrome */}
                 <VideoChrome
