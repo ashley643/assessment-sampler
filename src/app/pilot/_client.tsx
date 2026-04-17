@@ -1020,23 +1020,37 @@ function VideoChrome({ curT, dur, fmt }: { curT: number; dur: number; fmt: (t: n
 }
 
 function IntroVideoPlayer({ src }: { src: string }) {
-  const ref = useRef<HTMLVideoElement>(null);
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mutedRef = useRef(true);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(true);
   const [curT, setCurT] = useState(0);
   const [dur, setDur] = useState(0);
   const [hov, setHov] = useState(false);
 
-  const videoRef = (el: HTMLVideoElement | null) => {
-    (ref as React.MutableRefObject<HTMLVideoElement | null>).current = el;
-    if (el) { el.muted = true; el.defaultMuted = true; }
-  };
-
-  useEffect(() => { const el = ref.current; if (!el) return; el.play().catch(() => {}); }, []);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const video = document.createElement('video');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('muted', '');
+    video.setAttribute('autoplay', '');
+    video.muted = true;
+    video.src = src;
+    video.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    video.onloadedmetadata = () => setDur(video.duration);
+    video.ontimeupdate = () => setCurT(video.currentTime);
+    video.onended = () => { if (mutedRef.current) { video.play().catch(() => {}); } else { setPaused(true); } };
+    container.appendChild(video);
+    ref.current = video;
+    video.play().catch(() => {});
+    return () => { if (container.contains(video)) container.removeChild(video); };
+  }, [src]);
 
   function toggle() {
     const el = ref.current; if (!el) return;
-    if (muted) { el.currentTime = 0; el.muted = false; setMuted(false); el.play(); setPaused(false); }
+    if (muted) { el.currentTime = 0; el.muted = false; mutedRef.current = false; setMuted(false); el.play(); setPaused(false); }
     else if (el.paused) { el.play(); setPaused(false); }
     else { el.pause(); setPaused(true); }
   }
@@ -1049,12 +1063,7 @@ function IntroVideoPlayer({ src }: { src: string }) {
         style={{ flex: '0 0 60%', position: 'relative', background: '#000', overflow: 'hidden', cursor: 'pointer' }}
         onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
-        <video ref={videoRef} src={src} playsInline autoPlay
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
-          onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
-          onEnded={() => { if (muted) { ref.current?.play(); } else { setPaused(true); } }}
-        />
+        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
         <VideoChrome curT={curT} dur={dur} fmt={fmt} />
         {muted && (
           <div style={{ position: 'absolute', bottom: 32, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
@@ -1081,7 +1090,9 @@ function IntroVideoPlayer({ src }: { src: string }) {
 }
 
 function CSVideoPlayer({ src, question, pillar }: { src: string; question: string; pillar: string }) {
-  const ref = useRef<HTMLVideoElement>(null);
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mutedRef = useRef(true);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(true);
   const [curT, setCurT] = useState(0);
@@ -1089,16 +1100,28 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
   const [hov, setHov] = useState(false);
   const isAudio = /\.mp3($|\?)/.test(src);
 
-  const videoRef = (el: HTMLVideoElement | null) => {
-    (ref as React.MutableRefObject<HTMLVideoElement | null>).current = el;
-    if (el && !isAudio) { el.muted = true; el.defaultMuted = true; }
-  };
-
-  useEffect(() => { const el = ref.current; if (!el || isAudio) return; el.play().catch(() => {}); }, [isAudio]);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || isAudio) return;
+    const video = document.createElement('video');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('muted', '');
+    video.setAttribute('autoplay', '');
+    video.muted = true;
+    video.src = src;
+    video.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    video.onloadedmetadata = () => setDur(video.duration);
+    video.ontimeupdate = () => setCurT(video.currentTime);
+    video.onended = () => { if (mutedRef.current) { video.play().catch(() => {}); } else { setPaused(true); } };
+    container.appendChild(video);
+    ref.current = video;
+    video.play().catch(() => {});
+    return () => { if (container.contains(video)) container.removeChild(video); };
+  }, [src, isAudio]);
 
   function toggle() {
     const el = ref.current; if (!el) return;
-    if (muted && !isAudio) { el.currentTime = 0; el.muted = false; setMuted(false); el.play(); setPaused(false); }
+    if (muted && !isAudio) { el.currentTime = 0; el.muted = false; mutedRef.current = false; setMuted(false); el.play(); setPaused(false); }
     else if (el.paused) { el.play(); setPaused(false); }
     else { el.pause(); setPaused(true); }
   }
@@ -1111,13 +1134,7 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
         style={{ flex: '0 0 60%', position: 'relative', background: '#000', overflow: 'hidden', cursor: 'pointer' }}
         onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
-        <video ref={videoRef} src={src} playsInline autoPlay
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: isAudio ? 0 : 1 }}
-          onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
-          onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
-          onEnded={() => { if (muted && !isAudio) { ref.current?.play(); } else { setPaused(true); } }}
-        />
-        {isAudio && (
+        {isAudio ? (
           <div style={{ position: 'absolute', inset: 0, background: '#03568C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -1125,6 +1142,8 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
               <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
             </svg>
           </div>
+        ) : (
+          <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
         )}
         <VideoChrome curT={curT} dur={dur} fmt={fmt} />
         {muted && !isAudio && (
