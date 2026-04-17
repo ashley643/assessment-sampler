@@ -943,7 +943,6 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
             {/* Document header */}
             <div style={{ background: '#1a2744', borderRadius: 10, padding: '24px 28px', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' }}>Impacter Pathway</p>
                 <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h1>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>{grades}</p>
               </div>
