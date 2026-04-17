@@ -862,6 +862,270 @@ function getCrosswalks(qId: string): string[] {
   return LP_ATTRIBUTES.filter(a => a.group === 'portrait' && a.questionIds.includes(qId)).map(a => a.name);
 }
 
+const CS_ALL_GROUPS: Array<{ key: AgeGroup; label: string }> = [
+  { key: 'Elementary School', label: 'Elementary School' },
+  { key: 'Middle School',     label: 'Middle School' },
+  { key: 'High School',       label: 'High School' },
+  { key: 'Parent',            label: 'Parent / Family' },
+  { key: 'Staff',             label: 'Staff' },
+];
+
+function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
+  function downloadPDF() {
+    const el = document.getElementById('lib-doc');
+    if (!el) return;
+    const win = window.open('', '_blank', 'width=900,height=1100');
+    if (!win) return;
+    win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Assessment Library — Impacter Pathway</title><style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"DM Sans",Arial,sans-serif;color:#1a2744;margin:0;padding:40px 48px;max-width:720px;line-height:1.5}a{color:#4a6fa5}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>' + el.innerHTML + '</body></html>');
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 500);
+  }
+
+  function scrollTo(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  const divider = (label: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a6fa5', whiteSpace: 'nowrap' }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+    </div>
+  );
+
+  const attrLabel = (label: string) => (
+    <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>{label}</span>
+  );
+
+  const qRow = (q: LPQuestion) => {
+    const cws = getCrosswalks(q.id);
+    return (
+      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12 }}>
+        <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
+        {cws.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, alignItems: 'center', overflow: 'hidden', marginTop: 5 }}>
+            <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 600, whiteSpace: 'nowrap' }}>Also measures:</span>
+            {cws.map(cw => <span key={cw} style={{ fontSize: 8, fontWeight: 600, background: '#f3f4f6', color: '#6b7280', borderRadius: 20, padding: '2px 6px', border: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>{cw}</span>)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const lpOptions = (isLittles: boolean) => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+      {[
+        { label: 'Standard',      color: '#15803d', bg: '#f0fdf4', desc: 'Our curated set of recommended prompts, ready to deploy as-is.' },
+        { label: 'Custom',        color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick one question per competency from our full question bank.' : 'Pick one question per competency from our full question bank.' },
+        { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
+      ].map(opt => (
+        <div key={opt.label} style={{ background: opt.bg, borderRadius: 8, padding: '12px 14px' }}>
+          <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 5px' }}>{opt.label}</p>
+          <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  const csOptions = () => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+      {[
+        { label: 'Standard',      color: '#15803d', bg: '#f0fdf4', desc: 'Our recommended question per pillar, ready to deploy as-is.' },
+        { label: 'Custom',        color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per pillar from our full question bank.' },
+        { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
+      ].map(opt => (
+        <div key={opt.label} style={{ background: opt.bg, borderRadius: 8, padding: '12px 14px' }}>
+          <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 5px' }}>{opt.label}</p>
+          <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  const tocEntry = (label: string, id: string, indent = false) => (
+    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, paddingLeft: indent ? 16 : 0 }}>
+      <a href={`#${id}`} onClick={e => { e.preventDefault(); scrollTo(id); }}
+        style={{ fontSize: indent ? 13 : 14, fontWeight: indent ? 500 : 700, color: indent ? '#374151' : '#1a2744', textDecoration: 'none' }}>
+        {label}
+      </a>
+      <div style={{ flex: 1, borderBottom: '1px dotted #d1d5db' }} />
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.65)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 820, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+
+        {/* Modal header */}
+        <div style={{ padding: '16px 24px', background: '#1a2744', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>Impacter Pathway</p>
+            <h2 style={{ color: 'white', fontSize: 15, fontWeight: 700, margin: '2px 0 0', lineHeight: 1.3 }}>Assessment Library</h2>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={downloadPDF} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'white', background: '#e07b54', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PDF
+            </button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: 20, lineHeight: 1, padding: '2px 6px' }}>✕</button>
+          </div>
+        </div>
+
+        {/* Scrollable document */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', background: '#f4f7fc' }}>
+          <div id="lib-doc" style={{ background: 'white', borderRadius: 12, padding: '40px 48px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 680, margin: '0 auto' }}>
+
+            {/* Cover */}
+            <div style={{ textAlign: 'center', padding: '40px 0 36px', borderBottom: '2px solid #1a2744', marginBottom: 36 }}>
+              <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72, marginBottom: 20, objectFit: 'contain' }} />
+              <h1 style={{ fontSize: 28, fontWeight: 900, color: '#1a2744', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Assessment Library</h1>
+              <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>A complete overview of available assessments, questions, and customization options.</p>
+            </div>
+
+            {/* TOC */}
+            <div style={{ marginBottom: 40 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a6fa5', marginBottom: 16 }}>Table of Contents</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 32px' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Learner Portrait</div>
+                  {LP_ASSESSMENTS.map(a => tocEntry(a.name, `lib-${a.id}`, true))}
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: 16, marginBottom: 8 }}>Behavioral Health</div>
+                  {BH_SCREENERS.map(s => tocEntry(s.name, `lib-${s.id}`, true))}
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Community Schools</div>
+                  {CS_ALL_GROUPS.map(g => tocEntry(g.label, `lib-cs-${g.key.toLowerCase().replace(' ', '-')}`, true))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── LEARNER PORTRAIT ── */}
+            <div id="lib-lp" className="page-break" style={{ borderRadius: 10, background: '#1a2744', padding: '16px 20px', marginBottom: 28 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Assessment Type</p>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>Learner Portrait</h2>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>Open-ended voice interviews that surface human skill competencies, strengths, and growth areas.</p>
+            </div>
+
+            {LP_ASSESSMENTS.map(lpa => {
+              const isLittles = lpa.id === 'lp-littles';
+              const allQs = LP_QUESTIONS.filter(q => q.band === lpa.id);
+              const standardQs = allQs.filter(q => q.def);
+              const optionalQs = allQs.filter(q => !q.def);
+              const attrOrder = Array.from(new Set(allQs.map(q => q.attribute)));
+              return (
+                <div key={lpa.id} id={`lib-${lpa.id}`} style={{ marginBottom: 36 }}>
+                  <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 12, marginBottom: 18 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a2744', margin: '0 0 2px' }}>{lpa.name}</h3>
+                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{lpa.grades}</p>
+                  </div>
+                  {lpOptions(isLittles)}
+                  {[
+                    { label: 'Standard Questions', qs: standardQs },
+                    { label: 'From the Question Bank', qs: optionalQs },
+                  ].filter(s => s.qs.length > 0).map(sec => (
+                    <div key={sec.label} style={{ marginBottom: 20 }}>
+                      {divider(sec.label)}
+                      {attrOrder.map(attr => {
+                        const qs = sec.qs.filter(q => q.attribute === attr);
+                        if (!qs.length) return null;
+                        return (
+                          <div key={attr} style={{ marginBottom: 16 }}>
+                            {attrLabel(attr)}
+                            {qs.map(q => qRow(q))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {/* ── BEHAVIORAL HEALTH ── */}
+            <div id="lib-bh" className="page-break" style={{ borderRadius: 10, background: '#1a2744', padding: '16px 20px', marginBottom: 28, marginTop: 16 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Assessment Type</p>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>Behavioral Health Screeners</h2>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>A voice-based approach to identifying students who may benefit from counseling or intervention.</p>
+            </div>
+
+            {BH_SCREENERS.map(bh => (
+              <div key={bh.id} id={`lib-${bh.id}`} style={{ marginBottom: 36 }}>
+                <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 12, marginBottom: 18 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a2744', margin: '0 0 2px' }}>{bh.name}</h3>
+                  <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{bh.grades}</p>
+                </div>
+                {divider('Assessment Questions')}
+                {bh.questions.map((q, i) => (
+                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12 }}>
+                    <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 8 }}>{q.pillar}</span>
+                    <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* ── COMMUNITY SCHOOLS ── */}
+            <div id="lib-cs" className="page-break" style={{ borderRadius: 10, background: '#1a2744', padding: '16px 20px', marginBottom: 28, marginTop: 16 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Assessment Type</p>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>Community Schools Survey</h2>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>Structured voice from students, families, and staff to inform continuous improvement and community planning.</p>
+            </div>
+
+            {CS_ALL_GROUPS.map(({ key, label }) => {
+              const csId = `lib-cs-${key.toLowerCase().replace(' ', '-')}`;
+              const qsByPillar = ([1,2,3,4] as const).map(p => ({
+                p, pillarLabel: PILLARS[p],
+                standard: CS_QUESTIONS.filter(q => q.age === key && q.p === p && q.def),
+                optional: CS_QUESTIONS.filter(q => q.age === key && q.p === p && !q.def),
+              }));
+              return (
+                <div key={key} id={csId} style={{ marginBottom: 36 }}>
+                  <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 12, marginBottom: 18 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a2744', margin: '0 0 2px' }}>Community Schools Survey — {label}</h3>
+                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>Community Schools Assessment</p>
+                  </div>
+                  {csOptions()}
+                  {[
+                    { secLabel: 'Standard Questions',        getQs: (d: typeof qsByPillar[0]) => d.standard },
+                    { secLabel: 'From the Question Bank',    getQs: (d: typeof qsByPillar[0]) => d.optional },
+                  ].map(sec => (
+                    <div key={sec.secLabel} style={{ marginBottom: 20 }}>
+                      {divider(sec.secLabel)}
+                      {qsByPillar.map(d => {
+                        const qs = sec.getQs(d);
+                        if (!qs.length) return null;
+                        return (
+                          <div key={d.p} style={{ marginBottom: 16 }}>
+                            {attrLabel(`Pillar ${d.p}: ${d.pillarLabel}`)}
+                            {qs.map(q => (
+                              <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10 }}>
+                                <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {/* Custom note */}
+            <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px' }}>
+              <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.65 }}>
+                <strong>Not seeing exactly what you need?</strong> We also offer fully custom question design, built from scratch around your school&apos;s specific goals, context, and community. Reach out at <a href="mailto:info@impacterpathway.com" style={{ color: '#92400e' }}>info@impacterpathway.com</a>
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void }) {
   const isCS = id.startsWith('cs-');
   const csKey = isCS ? id.slice(3) as AgeGroup : null;
@@ -1485,6 +1749,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
   const [csvOpen, setCsvOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [sflId, setSflId] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
   const scrollBodyRef = useRef<HTMLDivElement>(null);
 
@@ -2263,6 +2528,18 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
                 </svg>
                 View Sample CSV
+              </button>
+              <button
+                onClick={() => setLibraryOpen(true)}
+                className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-opacity"
+                style={{ color: '#1a2744', background: 'white', fontSize: 13, border: '1px solid #c5d5e8', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f0f5fb')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'white')}
+              >
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                View Assessment Library
               </button>
             </div>
           </div>
@@ -3657,6 +3934,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       </footer>
 
       {sflId && <SaveForLaterModal id={sflId} onClose={() => setSflId(null)} />}
+      {libraryOpen && <AssessmentLibraryModal onClose={() => setLibraryOpen(false)} />}
     </div>
   );
 }
