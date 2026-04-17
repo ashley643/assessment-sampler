@@ -1685,7 +1685,6 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           <div className="mb-8 text-center">
             <h2 className="font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>See it in action</h2>
             <p className="text-base font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
-            <p className="text-base font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
           </div>
 
           {/* Fake player shell */}
