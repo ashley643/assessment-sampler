@@ -1254,7 +1254,9 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
   const [responseDuration, setResponseDuration] = useState(0);
   const [wordIdx, setWordIdx] = useState(-1);
   const [currentScore, setCurrentScore] = useState(DEMO_PANELS[0].scoreTimeline[0].score);
-  const promptVideoRef = useRef<HTMLVideoElement>(null);
+  const promptVideoRef = useRef<HTMLVideoElement | null>(null);
+  const promptContainerRef = useRef<HTMLDivElement>(null);
+  const promptMutedRef = useRef(true);
   const responseVideoRef = useRef<HTMLVideoElement>(null);
   const panel = DEMO_PANELS[panelIndex];
   const [bhHover, setBhHover] = useState<number | null>(null);
@@ -1294,10 +1296,30 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
     setSimShown(false);
     setPromptPaused(false);
     setPromptMuted(true);
+    promptMutedRef.current = true;
     setPromptCurrentTime(0);
     setResponsePaused(true);
     setResponseCurrentTime(0);
     setCurrentScore(200);
+  }, [panelIndex]);
+
+  useEffect(() => {
+    const container = promptContainerRef.current;
+    if (!container) return;
+    const src = DEMO_PANELS[panelIndex].questionUrl;
+    const video = document.createElement('video');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('autoplay', '');
+    video.muted = true;
+    video.src = src;
+    video.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    video.onloadedmetadata = () => setPromptDuration(video.duration);
+    video.ontimeupdate = () => setPromptCurrentTime(video.currentTime);
+    video.onended = () => setPromptPaused(true);
+    container.appendChild(video);
+    promptVideoRef.current = video;
+    video.play().catch(() => {});
+    return () => { if (container.contains(video)) container.removeChild(video); };
   }, [panelIndex]);
 
   function set(field: keyof FormData, value: FormData[keyof FormData]) {
@@ -1689,28 +1711,12 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 onClick={() => {
                   const v = promptVideoRef.current;
                   if (!v) return;
-                  if (promptMuted) { v.currentTime = 0; v.muted = false; v.volume = 1; setPromptMuted(false); v.play(); setPromptPaused(false); }
+                  if (promptMutedRef.current) { v.currentTime = 0; v.muted = false; v.volume = 1; promptMutedRef.current = false; setPromptMuted(false); v.play(); setPromptPaused(false); }
                   else if (v.paused) { v.play(); setPromptPaused(false); }
                   else { v.pause(); setPromptPaused(true); }
                 }}
               >
-                <video
-                  key={panel.questionUrl}
-                  ref={promptVideoRef}
-                  src={panel.questionUrl}
-                  playsInline
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onLoadedMetadata={() => setPromptDuration(promptVideoRef.current?.duration ?? 0)}
-                  onTimeUpdate={() => setPromptCurrentTime(promptVideoRef.current?.currentTime ?? 0)}
-                  onEnded={() => setPromptPaused(true)}
-                  onCanPlay={() => {
-                    const v = promptVideoRef.current;
-                    if (!v) return;
-                    v.muted = true;
-                    v.play().catch(() => {});
-                    setPromptPaused(false);
-                  }}
-                />
+                <div ref={promptContainerRef} style={{ width: '100%', height: '100%' }} />
                 {/* Question text overlaid on video */}
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, padding: '16px 22px 0', pointerEvents: 'none', zIndex: 2, background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }}>
                   <p style={{ color: 'white', fontSize: 22, fontWeight: 800, lineHeight: 1.35, margin: 0, textShadow: '0 2px 16px rgba(0,0,0,0.6)', fontFamily: "'Apercu Pro', 'Apercu', 'DM Sans', sans-serif" }}>
