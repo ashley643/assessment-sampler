@@ -2028,7 +2028,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               <button
                 onClick={() => setReportOpen(true)}
                 className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-opacity"
-                style={{ color: '#1a2a44', background: 'white', fontSize: 13, boxShadow: '0 2px 10px rgba(0,0,0,0.10)', border: '1.5px solid #e2e8f0', cursor: 'pointer' }}
+                style={{ color: 'white', background: '#f97316', fontSize: 13, boxShadow: '0 2px 10px rgba(249,115,22,0.3)', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.82')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
