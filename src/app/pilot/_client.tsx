@@ -965,7 +965,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     {[
                       { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our curated set of recommended prompts, ready to deploy as-is.' },
-                      { label: 'Custom',          color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick one question per pillar from our full question bank.' : 'Pick one question per pillar from our full question bank.' },
+                      { label: 'Custom',          color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick one question per competency from our full question bank.' : 'Pick one question per competency from our full question bank.' },
                       { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
                     ].map(opt => (
                       <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
