@@ -2016,7 +2016,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Launch peer Reflection Circles where mixed-gender student pairs listen to each other's recorded voice responses to the same prompt, then discuss what surprised them — building mutual empathy and making the gender gap visible to students in a constructive, non-confrontational way.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Host a Male Mentorship Speaker Series where male students hear from coaches, counselors, and community figures who model relational language, emotional naming, and conflict navigation openly.</p>
               </div>
             </div>
 
@@ -2026,7 +2026,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Risk Signals</p>
               <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Risk language frequency by pattern and grade, % of spoken words</p>
               <div>
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', fontSize: 13 }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 7px', fontSize: 13 }}>
                   <thead>
                     <tr>
                       <th style={{ textAlign: 'left', paddingBottom: 10, paddingRight: 16, fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Pattern</th>
@@ -2041,7 +2041,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       const isRowHov = hmHover?.r === r && hmHover?.c === -1;
                       return (
                         <tr key={r}>
-                          <td style={{ paddingTop: 5, paddingBottom: 5, paddingRight: 16, fontWeight: 500, color: isRowHov ? '#1a2a44' : '#374151', fontSize: 12, position: 'relative', cursor: 'pointer' }}
+                          <td style={{ paddingTop: 9, paddingBottom: 9, paddingRight: 16, fontWeight: 500, color: isRowHov ? '#1a2a44' : '#374151', fontSize: 12, position: 'relative', cursor: 'pointer' }}
                             onMouseEnter={() => setHmHover({ r, c: -1 })}
                             onMouseLeave={() => setHmHover(null)}
                           >
@@ -2060,7 +2060,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                             const bg = `rgba(74,111,165,${0.1 + intensity * 0.72})`;
                             const textCol = intensity > 0.5 ? '#1e3a5f' : '#6b7280';
                             return (
-                              <td key={c} style={{ paddingTop: 5, paddingBottom: 5, paddingLeft: 8, paddingRight: 8, textAlign: 'center', fontWeight: 700, fontSize: 13, background: bg, color: textCol, borderRadius: 5 }}>
+                              <td key={c} style={{ paddingTop: 9, paddingBottom: 9, paddingLeft: 8, paddingRight: 8, textAlign: 'center', fontWeight: 700, fontSize: 13, background: bg, color: textCol, borderRadius: 5 }}>
                                 {v.toFixed(2)}%
                               </td>
                             );
@@ -2077,7 +2077,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Run a Language Reframe Lab in advisory: students anonymously submit self-limiting phrases flagged in their voice responses, the class rewrites them together using asset-based language, and the new versions rotate as a hallway gallery — making metacognitive self-talk a shared, visible practice.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Build an 8th Grade Transition Intensive — a school counselor-led workshop series for 8th graders focused on identity, confidence, and high school readiness, addressing the self-doubt spike directly before the transition.</p>
               </div>
             </div>
 
@@ -2137,7 +2137,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Host a quarterly Voice-to-Policy Sprint where student and staff voice data is presented side by side to a mixed team, who spend 90 minutes co-designing one concrete policy change — giving both groups visible proof that their voice shaped a real decision.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Launch a Student-Staff Leadership Council where student representatives and staff meet monthly to co-create one campus decision per quarter, building shared ownership of school direction from the ground up.</p>
               </div>
             </div>
 
@@ -2180,11 +2180,11 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </svg>
               <div style={{ background: '#eef4ff', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #4a6fa5' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4a6fa5', margin: '0 0 3px 0' }}>Insight</p>
-                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Families lead in affirming tone (68%) while staff carry the most constructive language (44%), signaling distinct — and rarely bridged — priorities across groups.</p>
+                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Families lead in affirming tone (68%) while staff carry the most constructive language (44%), primarily around workload concerns.</p>
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Design a Same Prompt, Different Lens workshop where families and staff respond to an identical school climate question via voice, then hear each other's anonymized responses in a facilitated session — surfacing shared ground and hidden tension in ways no written survey can capture.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Conduct a Staff Workload Audit where site administrators inventory current staff responsibilities and identify tasks that can be redistributed, automated, or eliminated, reducing the burden that drives constructive tone.</p>
               </div>
             </div>
 
