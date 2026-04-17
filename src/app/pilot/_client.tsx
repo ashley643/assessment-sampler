@@ -1027,7 +1027,12 @@ function IntroVideoPlayer({ src }: { src: string }) {
   const [dur, setDur] = useState(0);
   const [hov, setHov] = useState(false);
 
-  useEffect(() => { const el = ref.current; if (!el) return; el.muted = true; el.play().catch(() => {}); }, []);
+  const videoRef = (el: HTMLVideoElement | null) => {
+    (ref as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+    if (el) { el.muted = true; el.defaultMuted = true; }
+  };
+
+  useEffect(() => { const el = ref.current; if (!el) return; el.play().catch(() => {}); }, []);
 
   function toggle() {
     const el = ref.current; if (!el) return;
@@ -1044,7 +1049,7 @@ function IntroVideoPlayer({ src }: { src: string }) {
         style={{ flex: '0 0 60%', position: 'relative', background: '#000', overflow: 'hidden', cursor: 'pointer' }}
         onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
-        <video ref={ref} src={src} playsInline muted
+        <video ref={videoRef} src={src} playsInline autoPlay
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
           onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
@@ -1084,7 +1089,12 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
   const [hov, setHov] = useState(false);
   const isAudio = /\.mp3($|\?)/.test(src);
 
-  useEffect(() => { const el = ref.current; if (!el || isAudio) return; el.muted = true; el.play().catch(() => {}); }, [isAudio]);
+  const videoRef = (el: HTMLVideoElement | null) => {
+    (ref as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+    if (el && !isAudio) { el.muted = true; el.defaultMuted = true; }
+  };
+
+  useEffect(() => { const el = ref.current; if (!el || isAudio) return; el.play().catch(() => {}); }, [isAudio]);
 
   function toggle() {
     const el = ref.current; if (!el) return;
@@ -1101,7 +1111,7 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
         style={{ flex: '0 0 60%', position: 'relative', background: '#000', overflow: 'hidden', cursor: 'pointer' }}
         onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
-        <video ref={ref} src={src} playsInline muted
+        <video ref={videoRef} src={src} playsInline autoPlay
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: isAudio ? 0 : 1 }}
           onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
           onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
