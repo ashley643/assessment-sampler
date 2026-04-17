@@ -1065,7 +1065,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
             {/* Custom note */}
             <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px' }}>
               <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.65 }}>
-                <strong>Not seeing exactly what you need?</strong> We also offer fully custom question design — built from scratch around your school&apos;s specific goals, context, and community. Reach out to talk through what&apos;s possible at <a href="mailto:info@impacterpathway.com" style={{ color: '#92400e' }}>info@impacterpathway.com</a>
+                We also offer fully custom question design, built from scratch around your school&apos;s specific goals, context, and community. Reach out to talk through what&apos;s possible at <a href="mailto:info@impacterpathway.com" style={{ color: '#92400e' }}>info@impacterpathway.com</a>
               </p>
             </div>
 
