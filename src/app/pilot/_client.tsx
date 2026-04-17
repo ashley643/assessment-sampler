@@ -141,7 +141,7 @@ const PARTHENON_PILLARS = [
 const VOICE_TONE = [
   { group: 'Families',  affirming: 68, concern: 22, neutral: 10, constructiveSignal: 'school safety concerns', affirmingSignal: 'belonging & partnership' },
   { group: 'Students',  affirming: 54, concern: 31, neutral: 15, constructiveSignal: 'fairness & being heard', affirmingSignal: 'safety & connection' },
-  { group: 'Staff',     affirming: 41, concern: 44, neutral: 15, constructiveSignal: 'workload & systemic gaps', affirmingSignal: 'student growth & pride' },
+  { group: 'Staff',     affirming: 61, concern: 28, neutral: 11, constructiveSignal: 'workload concerns', affirmingSignal: 'student growth/pride' },
 ];
 
 // ── VideoAsk previews ────────────────────────────────────────────────────────
@@ -2044,7 +2044,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Host a Male Mentorship Speaker Series where male students hear from coaches, counselors, and community figures who model relational language, emotional naming, and conflict navigation openly.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Host a <strong>Male Mentorship Speaker Series</strong> where male students hear from coaches, counselors, and community figures who model relational language, emotional naming, and conflict navigation openly.</p>
               </div>
             </div>
 
@@ -2053,7 +2053,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px', position: 'relative' }}>
               <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Risk Signals</p>
               <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Risk language frequency by pattern and grade, % of spoken words</p>
-              <div>
+              <div style={{ position: 'relative' }}>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 7px', fontSize: 13 }}>
                   <thead>
                     <tr>
@@ -2070,21 +2070,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       const isSelfDoubt = r === 3;
                       const yellowBorder = '2px solid #fbbf24';
                       return (
-                        <tr key={r}>
-                          <td style={{ paddingTop: 9, paddingBottom: 9, paddingRight: 16, fontWeight: isSelfDoubt ? 700 : 500, color: isRowHov ? '#1a2a44' : isSelfDoubt ? '#92400e' : '#374151', fontSize: 12, position: 'relative', cursor: 'pointer', borderTop: isSelfDoubt ? yellowBorder : undefined, borderBottom: isSelfDoubt ? yellowBorder : undefined, borderLeft: isSelfDoubt ? yellowBorder : undefined, borderRadius: isSelfDoubt ? '5px 0 0 5px' : undefined }}
-                            onMouseEnter={() => setHmHover({ r, c: -1 })}
-                            onMouseLeave={() => setHmHover(null)}
-                          >
+                        <tr key={r} style={{ cursor: 'pointer' }}
+                          onMouseEnter={() => setHmHover({ r, c: -1 })}
+                          onMouseLeave={() => setHmHover(null)}
+                        >
+                          <td style={{ paddingTop: 9, paddingBottom: 9, paddingRight: 16, paddingLeft: isSelfDoubt ? 10 : 0, fontWeight: isSelfDoubt ? 700 : 500, color: isRowHov ? '#1a2a44' : isSelfDoubt ? '#92400e' : '#374151', fontSize: 12, borderTop: isSelfDoubt ? yellowBorder : undefined, borderBottom: isSelfDoubt ? yellowBorder : undefined, borderLeft: isSelfDoubt ? yellowBorder : undefined, borderRadius: isSelfDoubt ? '5px 0 0 5px' : undefined }}>
                             {row.pattern}
                             {isSelfDoubt && <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em', verticalAlign: 'middle' }}>↑ PEAK</span>}
-                            {isRowHov && (
-                              <div style={{ position: 'absolute', left: 0, bottom: '100%', marginBottom: 6, background: '#1a2a44', color: 'white', borderRadius: 8, padding: '9px 13px', fontSize: 11, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none', minWidth: 240 }}>
-                                <div style={{ fontWeight: 700, marginBottom: 4, color: '#93c5fd' }}>{row.pattern}</div>
-                                <div style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>e.g. {row.ling}</div>
-                                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>Grade rank: {row.gradeRank}</div>
-                                <div style={{ position: 'absolute', top: '100%', left: 20, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #1a2a44' }} />
-                              </div>
-                            )}
                           </td>
                           {vals.map((v, c) => {
                             const intensity = v / 7.25;
@@ -2102,6 +2094,18 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                     })}
                   </tbody>
                 </table>
+                {hmHover && hmHover.c === -1 && (() => {
+                  const row = RISK_ROWS[hmHover.r];
+                  const tipTop = -35 + hmHover.r * 39;
+                  return (
+                    <div style={{ position: 'absolute', left: 0, right: 0, top: tipTop, background: '#1a2a44', color: 'white', borderRadius: 8, padding: '9px 14px', fontSize: 11, zIndex: 10, pointerEvents: 'none' }}>
+                      <div style={{ fontWeight: 700, marginBottom: 4, color: '#93c5fd' }}>{row.pattern}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 3 }}>e.g. {row.ling}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>Grade rank: {row.gradeRank}</div>
+                      <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #1a2a44' }} />
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{ background: '#eef4ff', borderRadius: 8, padding: '9px 13px', marginTop: 14, borderLeft: '3px solid #4a6fa5' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4a6fa5', margin: '0 0 3px 0' }}>Insight</p>
@@ -2109,7 +2113,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Build an 8th Grade Transition Intensive: a school counselor-led workshop series for 8th graders focused on identity, confidence, and high school readiness, addressing the self-doubt spike directly before the transition.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Build an <strong>8th Grade Transition Intensive</strong>: a school counselor-led workshop series for 8th graders focused on identity, confidence, and high school readiness, addressing the self-doubt spike directly before the transition.</p>
               </div>
             </div>
 
@@ -2169,7 +2173,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Launch a Student-Staff Leadership Council where student representatives and staff meet monthly to co-create one campus decision per quarter, building shared ownership of school direction from the ground up.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Launch a <strong>Student-Staff Leadership Council</strong> where student representatives and staff meet monthly to co-create one campus decision per quarter, building shared ownership of school direction from the ground up.</p>
               </div>
             </div>
 
@@ -2192,22 +2196,22 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       {isHov && <rect x="0" y={rowY - 2} width="440" height="46" rx="6" fill="#f8f9fc" />}
                       <text x="220" y={rowY + 8} textAnchor="middle" fontSize="12" fill={isHov ? '#1a2a44' : '#374151'} fontWeight="700">{d.group}</text>
                       <rect x={220 - conW} y={rowY + 14} width={conW} height={22} rx="4" fill="#e07b54" fillOpacity={isHov ? 0.88 : 0.62} />
+                      {i === 2 && <rect x={220 - conW - 2} y={rowY + 12} width={conW + 4} height={26} rx="5" fill="none" stroke="#fbbf24" strokeWidth="1.5" />}
+                      {i === 2 && <text x={220 - conW / 2} y={rowY + 9} textAnchor="middle" fontSize="8" fill="#f59e0b" fontWeight="700" letterSpacing="0.04em">↑ HIGHEST</text>}
                       <text x={220 - conW - 5} y={rowY + 29} textAnchor="end" fontSize="11" fill="#c0502a" fontWeight="600">{d.concern}%</text>
                       <rect x="220" y={rowY + 14} width={affW} height={22} rx="4" fill="#2d7a5f" fillOpacity={isHov ? 0.88 : 0.62} />
                       <text x={220 + affW + 5} y={rowY + 29} textAnchor="start" fontSize="11" fill="#1a5f44" fontWeight="600">{d.affirming}%</text>
                       {isHov && (
-                        <g transform={`translate(${220 - 110}, ${rowY - 78})`}>
-                          <rect x="0" y="0" width="220" height="68" rx="7" fill="#1a2a44" />
-                          <polygon points="104,68 110,76 116,68" fill="#1a2a44" />
+                        <g transform={`translate(${220 - 110}, ${rowY - 66})`}>
+                          <rect x="0" y="0" width="220" height="56" rx="7" fill="#1a2a44" />
+                          <polygon points="104,56 110,64 116,56" fill="#1a2a44" />
                           <text x="110" y="16" textAnchor="middle" fontSize="11" fill="white" fontWeight="700">{d.group}</text>
                           <line x1="10" y1="22" x2="210" y2="22" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                          <line x1="110" y1="22" x2="110" y2="62" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-                          <text x="55" y="34" textAnchor="middle" fontSize="8.5" fill="#fb923c" fontWeight="700" letterSpacing="0.05em">CONSTRUCTIVE</text>
-                          <text x="55" y="47" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.75)">{d.constructiveSignal}</text>
-                          <text x="55" y="60" textAnchor="middle" fontSize="10" fill="#fb923c" fontWeight="700">{d.concern}%</text>
-                          <text x="165" y="34" textAnchor="middle" fontSize="8.5" fill="#4ade80" fontWeight="700" letterSpacing="0.05em">AFFIRMING</text>
-                          <text x="165" y="47" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.75)">{d.affirmingSignal}</text>
-                          <text x="165" y="60" textAnchor="middle" fontSize="10" fill="#4ade80" fontWeight="700">{d.affirming}%</text>
+                          <line x1="110" y1="22" x2="110" y2="52" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                          <text x="55" y="33" textAnchor="middle" fontSize="8" fill="#fb923c" fontWeight="700" letterSpacing="0.05em">TOP CONSTRUCTIVE</text>
+                          <text x="55" y="47" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.8)">{d.constructiveSignal}</text>
+                          <text x="165" y="33" textAnchor="middle" fontSize="8" fill="#4ade80" fontWeight="700" letterSpacing="0.05em">TOP AFFIRMING</text>
+                          <text x="165" y="47" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.8)">{d.affirmingSignal}</text>
                         </g>
                       )}
                     </g>
@@ -2220,7 +2224,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Conduct a Staff Workload Audit where site administrators inventory current staff responsibilities and identify tasks that can be redistributed, automated, or eliminated, reducing the burden that drives constructive tone.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Conduct a <strong>Staff Workload Audit</strong> where site administrators inventory current staff responsibilities and identify tasks that can be redistributed, automated, or eliminated, reducing the burden that drives constructive tone.</p>
               </div>
             </div>
 
