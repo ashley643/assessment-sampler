@@ -1567,7 +1567,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
           <div className="flex items-start justify-center">
             {[
               { n: '1', color: '#e07b54', title: 'Create an engaging, voice-based assessment' },
-              { n: '2', color: '#2d7a5f', title: 'Send students a link to capture their authentic voice' },
+              { n: '2', color: '#2d7a5f', title: 'Send students a link to capture their authentic perspective' },
               { n: '3', color: '#4a6fa5', title: 'Receive insights & personalized recommendations' },
             ].map(({ n, color, title }, i) => (
               <>
