@@ -1963,7 +1963,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             {/* ── Card 1: BH Gender Gap ── */}
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
               <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Domain Analysis</p>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 14 }}>Scores by domain — female vs. male respondents</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 14 }}>Scores by domain, female vs. male respondents</p>
               <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 11, color: '#6b7280' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#4a6fa5' }} />Female</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 11, height: 9, borderRadius: 2, display: 'inline-block', background: '#d1dff0' }} />Male</span>
@@ -1996,13 +1996,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                         </g>
                       )}
                       {isHov && (
-                        <g transform={`translate(160, ${Math.max(-30, yCenter - 72)})`}>
-                          <rect x="0" y="0" width="265" height="58" rx="7" fill="#1a2a44" />
-                          <polygon points="110,58 120,66 130,58" fill="#1a2a44" />
-                          <text x="132" y="15" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.5)">{d.domain} · gap +{gap} pts</text>
-                          <line x1="10" y1="21" x2="255" y2="21" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                          <text x="132" y="34" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.75)">Linguistic indicator: {d.ling.marker}</text>
-                          <text x="132" y="50" textAnchor="middle" fontSize="10" fill="white" fontWeight="700">♀ {d.ling.fPct} · ♂ {d.ling.mPct} frequency</text>
+                        <g transform={`translate(160, ${Math.max(-30, yCenter - 70)})`}>
+                          <rect x="0" y="0" width="240" height="56" rx="7" fill="#1a2a44" />
+                          <polygon points="100,56 110,64 120,56" fill="#1a2a44" />
+                          <text x="120" y="15" textAnchor="middle" fontSize="10" fill="#93c5fd" fontWeight="700">{d.domain}</text>
+                          <line x1="10" y1="21" x2="230" y2="21" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                          <text x="120" y="34" textAnchor="middle" fontSize="10" fill="white" fontWeight="700">Gap: +{gap} pts</text>
+                          <text x="120" y="49" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.65)">e.g. {d.ling.marker}</text>
                         </g>
                       )}
                     </g>
@@ -2019,7 +2019,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             {/* ── Card 2: Risk Language Heatmap ── */}
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px', position: 'relative' }}>
               <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Behavioral Health · Risk Signals</p>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Risk language frequency by pattern and grade — % of spoken words</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 16 }}>Risk language frequency by pattern and grade, % of spoken words</p>
               <div>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', fontSize: 13 }}>
                   <thead>
@@ -2100,7 +2100,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   const startX = (440 - (4 * pillarW + 3 * gapW)) / 2;
                   const x = startX + csHover * (pillarW + gapW);
                   const h = (p.height / 100) * 148; const y = 162 - h;
-                  const tipW = 200; const tipH = 74;
+                  const tipW = 200; const tipH = 64;
                   const rawX = x + pillarW / 2 - tipW / 2;
                   const tipX = Math.max(4, Math.min(440 - tipW - 4, rawX));
                   const tipY = y - tipH - 10;
@@ -2115,10 +2115,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       <line x1="10" y1="20" x2={tipW - 10} y2="20" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
                       <text x="14" y="37" fontSize="11" fill="#4ade80" fontWeight="700">↑ {leader.name}</text>
                       <text x={tipW - 14} y="37" textAnchor="end" fontSize="11" fill="#4ade80" fontWeight="700">{leader.score.toFixed(2)}</text>
-                      <text x="14" y="58" fontSize="11" fill="#fb923c" fontWeight="700">↓ {trailer.name}</text>
-                      <text x={tipW - 14} y="58" textAnchor="end" fontSize="11" fill="#fb923c" fontWeight="700">{trailer.score.toFixed(2)}</text>
-                      <line x1="10" y1="64" x2={tipW - 10} y2="64" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                      <text x={tipW / 2} y={tipH - 6} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.35)">{p.insight}</text>
+                      <text x="14" y="55" fontSize="11" fill="#fb923c" fontWeight="700">↓ {trailer.name}</text>
+                      <text x={tipW - 14} y="55" textAnchor="end" fontSize="11" fill="#fb923c" fontWeight="700">{trailer.score.toFixed(2)}</text>
                     </g>
                   );
                 })()}
@@ -2157,7 +2155,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                           <text x="90" y="16" textAnchor="middle" fontSize="11" fill="white" fontWeight="700">{d.group}</text>
                           <line x1="10" y1="22" x2="170" y2="22" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
                           <text x="90" y="36" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.65)">Top signal: {d.signal}</text>
-                          <text x="90" y="51" textAnchor="middle" fontSize="10" fill="#fbbf24">Constructive {d.concern}% · Neutral {d.neutral}%</text>
+                          <text x="46" y="51" textAnchor="middle" fontSize="10" fill="#fb923c" fontWeight="700">Constructive {d.concern}%</text>
+                          <text x="140" y="51" textAnchor="middle" fontSize="10" fill="#4ade80" fontWeight="700">Affirming {d.affirming}%</text>
                         </g>
                       )}
                     </g>
