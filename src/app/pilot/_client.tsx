@@ -903,7 +903,6 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
     return (
       <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
-          {q.def && !isLittles && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 700, background: '#dcfce7', color: '#15803d', borderRadius: 20, padding: '2px 8px', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>Standard</span>}
           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
         </div>
         {cws.length > 0 && (
