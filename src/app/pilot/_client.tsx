@@ -1711,13 +1711,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                     setPromptPaused(false);
                   }}
                 />
-                {/* VideoAsk-style top chrome */}
-                <VideoChrome
-                  curT={promptCurrentTime} dur={promptDuration}
-                  fmt={t => { const m = Math.floor(t/60), s = Math.floor(t%60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }}
-                />
                 {/* Question text overlaid on video */}
-                <div style={{ position: 'absolute', top: 36, left: 0, right: 0, bottom: 0, padding: '16px 22px 0', pointerEvents: 'none', zIndex: 2, background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, padding: '16px 22px 0', pointerEvents: 'none', zIndex: 2, background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }}>
                   <p style={{ color: 'white', fontSize: 22, fontWeight: 800, lineHeight: 1.35, margin: 0, textShadow: '0 2px 16px rgba(0,0,0,0.6)', fontFamily: "'Apercu Pro', 'Apercu', 'DM Sans', sans-serif" }}>
                     {panel.promptText}
                   </p>
