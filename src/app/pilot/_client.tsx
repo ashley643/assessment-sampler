@@ -1241,6 +1241,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
   const [panelIndex, setPanelIndex] = useState(0);
   const [simShown, setSimShown] = useState(false);
   const [promptPaused, setPromptPaused] = useState(false);
+  const [promptMuted, setPromptMuted] = useState(true);
   const [responsePaused, setResponsePaused] = useState(false);
   const [responseEnded, setResponseEnded] = useState(false);
   const [promptHovered, setPromptHovered] = useState(false);
@@ -1291,7 +1292,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
     setWordIdx(-1);
     setResponseEnded(false);
     setSimShown(false);
-    setPromptPaused(true);
+    setPromptPaused(false);
+    setPromptMuted(true);
     setPromptCurrentTime(0);
     setResponsePaused(true);
     setResponseCurrentTime(0);
@@ -1687,7 +1689,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 onClick={() => {
                   const v = promptVideoRef.current;
                   if (!v) return;
-                  if (v.paused) { v.play(); setPromptPaused(false); }
+                  if (promptMuted) { v.currentTime = 0; v.muted = false; v.volume = 1; setPromptMuted(false); v.play(); setPromptPaused(false); }
+                  else if (v.paused) { v.play(); setPromptPaused(false); }
                   else { v.pause(); setPromptPaused(true); }
                 }}
               >
@@ -1719,8 +1722,13 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                     {panel.promptText}
                   </p>
                 </div>
+                {promptMuted && (
+                  <div style={{ position: 'absolute', bottom: 36, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
+                    <span style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '4px 12px', letterSpacing: '0.03em' }}>Tap for sound</span>
+                  </div>
+                )}
                 {/* Play/pause indicator */}
-                {(promptPaused || promptHovered) && (
+                {(!promptMuted && (promptPaused || promptHovered)) && (
                   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', zIndex: 3, pointerEvents: 'none' }}>
                     {promptPaused
                       ? <svg width="24" height="24" viewBox="0 0 24 24" fill="#03568C"><path d="M8 5v14l11-7z"/></svg>
