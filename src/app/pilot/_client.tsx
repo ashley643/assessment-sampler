@@ -1681,9 +1681,10 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
       {/* ── See it in action ─────────────────────────────────────────────────── */}
       <section className="py-16" style={{ background: '#f4f7fc' }}>
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-4xl mx-auto px-6">
           <div className="mb-8 text-center">
             <h2 className="font-semibold uppercase tracking-widest mb-1" style={{ color: '#4a6fa5', fontSize: '1.1rem' }}>See it in action</h2>
+            <p className="text-base font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
             <p className="text-base font-semibold text-gray-900">Real assessments from Impacter Pathway partners</p>
           </div>
 
