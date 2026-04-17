@@ -2286,10 +2286,10 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
       {/* ── Sample Report modal ──────────────────────────────────────────────── */}
       {reportOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 55, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 55, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}
           onClick={e => { if (e.target === e.currentTarget) setReportOpen(false); }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.6)', backdropFilter: 'blur(6px)' }} onClick={() => setReportOpen(false)} />
-          <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 900, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 860, height: 'calc(100vh - 24px)', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div>
                 <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4a6fa5', margin: '0 0 2px' }}>Sample Report</p>
