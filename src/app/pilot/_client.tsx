@@ -1021,11 +1021,20 @@ function VideoChrome({ curT, dur, fmt }: { curT: number; dur: number; fmt: (t: n
 
 function IntroVideoPlayer({ src }: { src: string }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const [paused, setPaused] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [curT, setCurT] = useState(0);
   const [dur, setDur] = useState(0);
   const [hov, setHov] = useState(false);
-  function toggle() { const el = ref.current; if (!el) return; if (el.paused) { el.play(); setPaused(false); } else { el.pause(); setPaused(true); } }
+
+  useEffect(() => { const el = ref.current; if (!el) return; el.muted = true; el.play().catch(() => {}); }, []);
+
+  function toggle() {
+    const el = ref.current; if (!el) return;
+    if (muted) { el.currentTime = 0; el.muted = false; setMuted(false); el.play(); setPaused(false); }
+    else if (el.paused) { el.play(); setPaused(false); }
+    else { el.pause(); setPaused(true); }
+  }
   function fmt(t: number) { const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2, '0')}`; }
 
   return (
@@ -1035,15 +1044,20 @@ function IntroVideoPlayer({ src }: { src: string }) {
         style={{ flex: '0 0 60%', position: 'relative', background: '#000', overflow: 'hidden', cursor: 'pointer' }}
         onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
-        <video ref={ref} src={src} playsInline
+        <video ref={ref} src={src} playsInline muted
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
           onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
-          onEnded={() => setPaused(true)}
+          onEnded={() => { if (muted) { ref.current?.play(); } else { setPaused(true); } }}
         />
         <VideoChrome curT={curT} dur={dur} fmt={fmt} />
+        {muted && (
+          <div style={{ position: 'absolute', bottom: 32, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+            <span style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', fontSize: 10, fontWeight: 600, borderRadius: 20, padding: '3px 10px', letterSpacing: '0.03em' }}>Tap for sound</span>
+          </div>
+        )}
         {/* Play/pause button */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity 0.15s', opacity: (paused && !muted) || hov ? 1 : 0, pointerEvents: 'none' }}>
           {paused
             ? <svg width="18" height="18" viewBox="0 0 24 24" fill="#03568C"><path d="M8 5v14l11-7z"/></svg>
             : <svg width="16" height="16" viewBox="0 0 24 24" fill="#03568C"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
@@ -1063,12 +1077,21 @@ function IntroVideoPlayer({ src }: { src: string }) {
 
 function CSVideoPlayer({ src, question, pillar }: { src: string; question: string; pillar: string }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const [paused, setPaused] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [curT, setCurT] = useState(0);
   const [dur, setDur] = useState(0);
   const [hov, setHov] = useState(false);
   const isAudio = /\.mp3($|\?)/.test(src);
-  function toggle() { const el = ref.current; if (!el) return; if (el.paused) { el.play(); setPaused(false); } else { el.pause(); setPaused(true); } }
+
+  useEffect(() => { const el = ref.current; if (!el || isAudio) return; el.muted = true; el.play().catch(() => {}); }, [isAudio]);
+
+  function toggle() {
+    const el = ref.current; if (!el) return;
+    if (muted && !isAudio) { el.currentTime = 0; el.muted = false; setMuted(false); el.play(); setPaused(false); }
+    else if (el.paused) { el.play(); setPaused(false); }
+    else { el.pause(); setPaused(true); }
+  }
   function fmt(t: number) { const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2, '0')}`; }
 
   return (
@@ -1078,11 +1101,11 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
         style={{ flex: '0 0 60%', position: 'relative', background: '#000', overflow: 'hidden', cursor: 'pointer' }}
         onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={toggle}
       >
-        <video ref={ref} src={src} playsInline
+        <video ref={ref} src={src} playsInline muted
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: isAudio ? 0 : 1 }}
           onLoadedMetadata={() => setDur(ref.current?.duration ?? 0)}
           onTimeUpdate={() => setCurT(ref.current?.currentTime ?? 0)}
-          onEnded={() => setPaused(true)}
+          onEnded={() => { if (muted && !isAudio) { ref.current?.play(); } else { setPaused(true); } }}
         />
         {isAudio && (
           <div style={{ position: 'absolute', inset: 0, background: '#03568C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1094,12 +1117,17 @@ function CSVideoPlayer({ src, question, pillar }: { src: string; question: strin
           </div>
         )}
         <VideoChrome curT={curT} dur={dur} fmt={fmt} />
+        {muted && !isAudio && (
+          <div style={{ position: 'absolute', bottom: 32, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
+            <span style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', color: 'white', fontSize: 10, fontWeight: 600, borderRadius: 20, padding: '3px 10px', letterSpacing: '0.03em' }}>Tap for sound</span>
+          </div>
+        )}
         {/* Question text overlaid on video */}
         <div style={{ position: 'absolute', top: 32, left: 0, right: 0, bottom: 0, padding: '10px 14px 0', pointerEvents: 'none', zIndex: 2, background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }}>
           <p style={{ fontSize: 16, fontWeight: 800, color: 'white', lineHeight: 1.35, margin: 0, textShadow: '0 1px 10px rgba(0,0,0,0.6)', fontFamily: "'Apercu Pro', 'Apercu', 'DM Sans', sans-serif" }}>{question}</p>
         </div>
         {/* Play/pause button */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity 0.15s', opacity: paused || hov ? 1 : 0, pointerEvents: 'none', zIndex: 3 }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity 0.15s', opacity: (paused && !muted) || hov ? 1 : 0, pointerEvents: 'none', zIndex: 3 }}>
           {paused
             ? <svg width="18" height="18" viewBox="0 0 24 24" fill="#03568C"><path d="M8 5v14l11-7z"/></svg>
             : <svg width="16" height="16" viewBox="0 0 24 24" fill="#03568C"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
