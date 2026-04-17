@@ -966,8 +966,8 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     {[
                       { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our curated set of recommended prompts, ready to deploy as-is.' },
-                      { label: 'Semi-Custom',     color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick 3 prompts from the question bank.' : 'Choose up to 6 add-on questions from the question bank.' },
-                      { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design fully custom questions with your team." },
+                      { label: 'Custom',          color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick one question per pillar from our full question bank.' : 'Pick one question per pillar from our full question bank.' },
+                      { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
                     ].map(opt => (
                       <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
                         <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{opt.label}</p>
@@ -1020,8 +1020,8 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     {[
                       { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our recommended question per pillar, ready to deploy as-is.' },
-                      { label: 'Semi-Custom',     color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per pillar from our question bank.' },
-                      { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design fully custom questions with your team." },
+                      { label: 'Custom',          color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per pillar from our full question bank.' },
+                      { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
                     ].map(opt => (
                       <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
                         <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{opt.label}</p>
