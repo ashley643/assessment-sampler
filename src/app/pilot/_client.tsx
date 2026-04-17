@@ -1013,7 +1013,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                 <h1 style={{ fontSize: 38, fontWeight: 900, color: 'white', lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 20 }}>Assessment Library</h1>
                 <div style={{ width: 48, height: 3, background: '#e07b54', borderRadius: 2, marginBottom: 24 }} />
                 <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, maxWidth: 480, marginBottom: 16 }}>
-                  Impacter Pathway captures structured student, family, and staff voice — open-ended responses that reveal what traditional surveys can&apos;t: social-emotional competencies, behavioral health signals, and community insight.
+                  Impacter Pathway captures structured student, family, and staff voice using open-ended video-based prompts that reveal what traditional surveys can&apos;t: the linguistic architecture behind social-emotional competencies, behavioral health signals, and community insight.
                 </p>
                 <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, maxWidth: 480 }}>
                   This document is a reference guide for school and district teams. It includes the full question set for each available assessment, standard and customizable question options, and guidance on how each can be tailored to your community.
