@@ -941,11 +941,11 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
           <div id="sfl-doc" style={{ background: 'white', borderRadius: 12, padding: '40px 48px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 660, margin: '0 auto' }}>
 
             {/* Document header */}
-            <div style={{ borderBottom: '2px solid #1a2744', paddingBottom: 20, marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ background: '#1a2744', borderRadius: 10, padding: '24px 28px', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 8px' }}>Impacter Pathway</p>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2744', margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h1>
-                <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{grades}</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 6px' }}>Impacter Pathway</p>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: 'white', margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h1>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>{grades}</p>
               </div>
               <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 64, objectFit: 'contain', flexShrink: 0 }} />
             </div>
