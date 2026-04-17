@@ -2318,7 +2318,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 20, lineHeight: 1, padding: '2px 4px' }}>✕</button>
             </div>
             <iframe
-              src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Sample%20BHS%20Report,%20District%20(1).pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvU2FtcGxlIEJIUyBSZXBvcnQsIERpc3RyaWN0ICgxKS5wZGYiLCJpYXQiOjE3NzY0MTk0OTksImV4cCI6MjA5MTc3OTQ5OX0.aZhEYSyyUVIEfcbSk-wwLtEqDeRqCd5MPBiwKygQ71U"
+              src="https://juxmpktotvnkvwnmuajz.supabase.co/storage/v1/object/sign/Videos/Sample%20BHS%20Report,%20District%20(1).pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lZThjMWZkOC05MTVkLTQ3MzYtYTE2Mi1lYWM4MDIyZjM1ZGQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJWaWRlb3MvU2FtcGxlIEJIUyBSZXBvcnQsIERpc3RyaWN0ICgxKS5wZGYiLCJpYXQiOjE3NzY0MTk0OTksImV4cCI6MjA5MTc3OTQ5OX0.aZhEYSyyUVIEfcbSk-wwLtEqDeRqCd5MPBiwKygQ71U#navpanes=0&toolbar=0"
               style={{ flex: 1, width: '100%', border: 'none' }}
               title="Sample Behavioral Health Report"
             />
