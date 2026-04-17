@@ -2281,7 +2281,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                 <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4a6fa5', margin: '0 0 4px' }}>Raw data export</p>
                 <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a2744', margin: '0 0 4px', letterSpacing: '-0.2px' }}>Every response, as a structured CSV</h2>
                 <p style={{ fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
-                  In addition to the synthesized insights and charts in your dashboard, you can export the full dataset at any time.
+                  In addition to the synthesized insights and charts, you can export the full dataset at any time.
                 </p>
               </div>
               <button onClick={() => setCsvOpen(false)}
@@ -2290,8 +2290,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             {/* Callout */}
             <div style={{ margin: '16px 28px 0', padding: '12px 16px', background: '#f0f5ff', borderRadius: 10, borderLeft: '3px solid #4a6fa5', flexShrink: 0 }}>
               <p style={{ margin: 0, fontSize: 13, color: '#1a2744', lineHeight: 1.55 }}>
-                <strong>You get both.</strong> Your dashboard surfaces synthesized insights, flags, and charts automatically.
-                The CSV gives you full flexibility to slice the data in your own tools — filter by school, grade, score range, or any dimension you need.
+                <strong>You get both.</strong> Your report surfaces synthesized insights, flags, and charts automatically. The CSV gives you full flexibility to slice the data in your own tools. Filter by school, grade, score range, or any dimension you need.
               </p>
             </div>
             {/* Table */}
