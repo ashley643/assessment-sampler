@@ -912,13 +912,9 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     );
   };
 
-  const lpOptions = (isLittles: boolean) => (
+  const optionsGrid = (opts: Array<{ label: string; color: string; bg: string; desc: string }>) => (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
-      {[
-        { label: 'Standard',      color: '#15803d', bg: '#f0fdf4', desc: 'Our curated set of recommended prompts, ready to deploy as-is.' },
-        { label: 'Custom',        color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick one question per competency from our full question bank.' : 'Pick one question per competency from our full question bank.' },
-        { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
-      ].map(opt => (
+      {opts.map(opt => (
         <div key={opt.label} style={{ background: opt.bg, borderRadius: 8, padding: '12px 14px' }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 5px' }}>{opt.label}</p>
           <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
@@ -927,37 +923,61 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 
-  const csOptions = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
-      {[
-        { label: 'Standard',      color: '#15803d', bg: '#f0fdf4', desc: 'Our recommended question per pillar, ready to deploy as-is.' },
-        { label: 'Custom',        color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per pillar from our full question bank.' },
-        { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
-      ].map(opt => (
-        <div key={opt.label} style={{ background: opt.bg, borderRadius: 8, padding: '12px 14px' }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 5px' }}>{opt.label}</p>
-          <p style={{ fontSize: 11, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
-        </div>
-      ))}
+  const assessmentHeader = (name: string, grades: string) => (
+    <div style={{ background: '#1a2744', borderRadius: 10, padding: '20px 24px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div>
+        <h3 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: '0 0 3px', lineHeight: 1.2 }}>{name}</h3>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>{grades}</p>
+      </div>
+      <img src="/Logo_Transparent_Background.png" alt="" style={{ height: 52, objectFit: 'contain', flexShrink: 0 }} />
     </div>
   );
 
-  const tocEntry = (label: string, id: string, indent = false) => (
-    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, paddingLeft: indent ? 16 : 0 }}>
+  const orangeNote = () => (
+    <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px', marginTop: 20 }}>
+      <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.65 }}>
+        <strong>Not seeing exactly what you need?</strong> We also offer fully custom question design, built from scratch around your school&apos;s specific goals, context, and community. Reach out at <a href="mailto:info@impacterpathway.com" style={{ color: '#92400e' }}>info@impacterpathway.com</a>
+      </p>
+    </div>
+  );
+
+  const backToTop = () => (
+    <div style={{ textAlign: 'right', marginTop: 20, paddingTop: 12, borderTop: '1px solid #e5e7eb' }}>
+      <a href="#lib-top" onClick={e => { e.preventDefault(); scrollTo('lib-top'); }}
+        style={{ fontSize: 11, fontWeight: 600, color: '#4a6fa5', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        ↑ Back to top
+      </a>
+    </div>
+  );
+
+  const tocEntry = (label: string, id: string) => (
+    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, paddingLeft: 16 }}>
       <a href={`#${id}`} onClick={e => { e.preventDefault(); scrollTo(id); }}
-        style={{ fontSize: indent ? 13 : 14, fontWeight: indent ? 500 : 700, color: indent ? '#374151' : '#1a2744', textDecoration: 'none' }}>
+        style={{ fontSize: 13, fontWeight: 500, color: '#374151', textDecoration: 'none' }}>
         {label}
       </a>
       <div style={{ flex: 1, borderBottom: '1px dotted #d1d5db' }} />
     </div>
   );
 
+  const lpOpts = (isLittles: boolean) => optionsGrid([
+    { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our curated set of recommended prompts, ready to deploy as-is.' },
+    { label: 'Custom',         color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per competency from our full question bank.' },
+    { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
+  ]);
+
+  const csOpts = () => optionsGrid([
+    { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our recommended question per pillar, ready to deploy as-is.' },
+    { label: 'Custom',         color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per pillar from our full question bank.' },
+    { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
+  ]);
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.65)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
       <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 820, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
 
-        {/* Modal header */}
+        {/* Modal chrome */}
         <div style={{ padding: '16px 24px', background: '#1a2744', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>Impacter Pathway</p>
@@ -972,41 +992,35 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Scrollable document */}
+        {/* Scrollable doc */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', background: '#f4f7fc' }}>
           <div id="lib-doc" style={{ background: 'white', borderRadius: 12, padding: '40px 48px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 680, margin: '0 auto' }}>
 
             {/* Cover */}
-            <div style={{ textAlign: 'center', padding: '40px 0 36px', borderBottom: '2px solid #1a2744', marginBottom: 36 }}>
+            <div id="lib-top" style={{ textAlign: 'center', padding: '40px 0 36px', borderBottom: '2px solid #1a2744', marginBottom: 36 }}>
               <img src="/Logo_Transparent_Background.png" alt="Impacter Pathway" style={{ height: 72, marginBottom: 20, objectFit: 'contain' }} />
               <h1 style={{ fontSize: 28, fontWeight: 900, color: '#1a2744', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Assessment Library</h1>
               <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>A complete overview of available assessments, questions, and customization options.</p>
             </div>
 
             {/* TOC */}
-            <div style={{ marginBottom: 40 }}>
+            <div style={{ marginBottom: 48 }}>
               <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a6fa5', marginBottom: 16 }}>Table of Contents</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 32px' }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Learner Portrait</div>
-                  {LP_ASSESSMENTS.map(a => tocEntry(a.name, `lib-${a.id}`, true))}
+                  {LP_ASSESSMENTS.map(a => tocEntry(a.name, `lib-${a.id}`))}
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: 16, marginBottom: 8 }}>Behavioral Health</div>
-                  {BH_SCREENERS.map(s => tocEntry(s.name, `lib-${s.id}`, true))}
+                  {BH_SCREENERS.map(s => tocEntry(s.name, `lib-${s.id}`))}
                 </div>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Community Schools</div>
-                  {CS_ALL_GROUPS.map(g => tocEntry(g.label, `lib-cs-${g.key.toLowerCase().replace(' ', '-')}`, true))}
+                  {CS_ALL_GROUPS.map(g => tocEntry(g.label, `lib-cs-${g.key.toLowerCase().replace(' ', '-')}`))}
                 </div>
               </div>
             </div>
 
-            {/* ── LEARNER PORTRAIT ── */}
-            <div id="lib-lp" className="page-break" style={{ borderRadius: 10, background: '#1a2744', padding: '16px 20px', marginBottom: 28 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Assessment Type</p>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>Learner Portrait</h2>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>Open-ended voice interviews that surface human skill competencies, strengths, and growth areas.</p>
-            </div>
-
+            {/* ── LP assessments ── */}
             {LP_ASSESSMENTS.map(lpa => {
               const isLittles = lpa.id === 'lp-littles';
               const allQs = LP_QUESTIONS.filter(q => q.band === lpa.id);
@@ -1014,14 +1028,11 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
               const optionalQs = allQs.filter(q => !q.def);
               const attrOrder = Array.from(new Set(allQs.map(q => q.attribute)));
               return (
-                <div key={lpa.id} id={`lib-${lpa.id}`} style={{ marginBottom: 36 }}>
-                  <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 12, marginBottom: 18 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a2744', margin: '0 0 2px' }}>{lpa.name}</h3>
-                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{lpa.grades}</p>
-                  </div>
-                  {lpOptions(isLittles)}
+                <div key={lpa.id} id={`lib-${lpa.id}`} className="page-break" style={{ marginBottom: 0, paddingBottom: 8 }}>
+                  {assessmentHeader(lpa.name, lpa.grades)}
+                  {lpOpts(isLittles)}
                   {[
-                    { label: 'Standard Questions', qs: standardQs },
+                    { label: 'Standard Questions',     qs: standardQs },
                     { label: 'From the Question Bank', qs: optionalQs },
                   ].filter(s => s.qs.length > 0).map(sec => (
                     <div key={sec.label} style={{ marginBottom: 20 }}>
@@ -1038,40 +1049,31 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                       })}
                     </div>
                   ))}
+                  {orangeNote()}
+                  {backToTop()}
+                  <div style={{ borderBottom: '2px solid #e5e7eb', marginTop: 32, marginBottom: 32 }} />
                 </div>
               );
             })}
 
-            {/* ── BEHAVIORAL HEALTH ── */}
-            <div id="lib-bh" className="page-break" style={{ borderRadius: 10, background: '#1a2744', padding: '16px 20px', marginBottom: 28, marginTop: 16 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Assessment Type</p>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>Behavioral Health Screeners</h2>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>A voice-based approach to identifying students who may benefit from counseling or intervention.</p>
-            </div>
-
+            {/* ── BH screeners ── */}
             {BH_SCREENERS.map(bh => (
-              <div key={bh.id} id={`lib-${bh.id}`} style={{ marginBottom: 36 }}>
-                <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 12, marginBottom: 18 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a2744', margin: '0 0 2px' }}>{bh.name}</h3>
-                  <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{bh.grades}</p>
-                </div>
+              <div key={bh.id} id={`lib-${bh.id}`} className="page-break" style={{ marginBottom: 0, paddingBottom: 8 }}>
+                {assessmentHeader(bh.name, bh.grades)}
                 {divider('Assessment Questions')}
                 {bh.questions.map((q, i) => (
                   <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12 }}>
-                    <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 8 }}>{q.pillar}</span>
+                    {attrLabel(q.pillar)}
                     <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                   </div>
                 ))}
+                {orangeNote()}
+                {backToTop()}
+                <div style={{ borderBottom: '2px solid #e5e7eb', marginTop: 32, marginBottom: 32 }} />
               </div>
             ))}
 
-            {/* ── COMMUNITY SCHOOLS ── */}
-            <div id="lib-cs" className="page-break" style={{ borderRadius: 10, background: '#1a2744', padding: '16px 20px', marginBottom: 28, marginTop: 16 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Assessment Type</p>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>Community Schools Survey</h2>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>Structured voice from students, families, and staff to inform continuous improvement and community planning.</p>
-            </div>
-
+            {/* ── CS groups ── */}
             {CS_ALL_GROUPS.map(({ key, label }) => {
               const csId = `lib-cs-${key.toLowerCase().replace(' ', '-')}`;
               const qsByPillar = ([1,2,3,4] as const).map(p => ({
@@ -1080,16 +1082,13 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                 optional: CS_QUESTIONS.filter(q => q.age === key && q.p === p && !q.def),
               }));
               return (
-                <div key={key} id={csId} style={{ marginBottom: 36 }}>
-                  <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 12, marginBottom: 18 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a2744', margin: '0 0 2px' }}>Community Schools Survey — {label}</h3>
-                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>Community Schools Assessment</p>
-                  </div>
-                  {csOptions()}
-                  {[
-                    { secLabel: 'Standard Questions',        getQs: (d: typeof qsByPillar[0]) => d.standard },
-                    { secLabel: 'From the Question Bank',    getQs: (d: typeof qsByPillar[0]) => d.optional },
-                  ].map(sec => (
+                <div key={key} id={csId} className="page-break" style={{ marginBottom: 0, paddingBottom: 8 }}>
+                  {assessmentHeader(`Community Schools Survey — ${label}`, 'Community Schools Assessment')}
+                  {csOpts()}
+                  {([
+                    { secLabel: 'Standard Questions',     getQs: (d: typeof qsByPillar[0]) => d.standard },
+                    { secLabel: 'From the Question Bank', getQs: (d: typeof qsByPillar[0]) => d.optional },
+                  ] as const).map(sec => (
                     <div key={sec.secLabel} style={{ marginBottom: 20 }}>
                       {divider(sec.secLabel)}
                       {qsByPillar.map(d => {
@@ -1108,16 +1107,12 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                       })}
                     </div>
                   ))}
+                  {orangeNote()}
+                  {backToTop()}
+                  <div style={{ borderBottom: '2px solid #e5e7eb', marginTop: 32, marginBottom: 32 }} />
                 </div>
               );
             })}
-
-            {/* Custom note */}
-            <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px' }}>
-              <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.65 }}>
-                <strong>Not seeing exactly what you need?</strong> We also offer fully custom question design, built from scratch around your school&apos;s specific goals, context, and community. Reach out at <a href="mailto:info@impacterpathway.com" style={{ color: '#92400e' }}>info@impacterpathway.com</a>
-              </p>
-            </div>
 
           </div>
         </div>
@@ -2528,18 +2523,6 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                   <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
                 </svg>
                 View Sample CSV
-              </button>
-              <button
-                onClick={() => setLibraryOpen(true)}
-                className="inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-opacity"
-                style={{ color: '#1a2744', background: 'white', fontSize: 13, border: '1px solid #c5d5e8', cursor: 'pointer' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#f0f5fb')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'white')}
-              >
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-                View Assessment Library
               </button>
             </div>
           </div>
