@@ -858,6 +858,167 @@ const LP_ATTRIBUTES: LPAttribute[] = [
   { id: 'pog-independent',   name: 'Ability to Work Independently',         group: 'portrait', questionIds: ['el-9','el-10','sec-9','sec-10','el-7','sec-8','sec-5'] },
 ];
 
+function getCrosswalks(qId: string): string[] {
+  return LP_ATTRIBUTES.filter(a => a.group === 'portrait' && a.questionIds.includes(qId)).map(a => a.name);
+}
+
+function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void }) {
+  const lpA = LP_ASSESSMENTS.find(a => a.id === id);
+  const bhS = BH_SCREENERS.find(s => s.id === id);
+  const name = lpA?.name ?? bhS?.name ?? '';
+  const grades = lpA?.grades ?? bhS?.grades ?? '';
+  const isLittles = id === 'lp-littles';
+
+  function downloadPDF() {
+    const el = document.getElementById('sfl-doc');
+    if (!el) return;
+    const win = window.open('', '_blank', 'width=860,height=1000');
+    if (!win) return;
+    win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + name + '</title><style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"DM Sans",Arial,sans-serif;color:#1a2744;margin:0;padding:40px 48px;max-width:700px;line-height:1.5}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>' + el.innerHTML + '</body></html>');
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 500);
+  }
+
+  const allLPQs = lpA ? LP_QUESTIONS.filter(q => q.band === id) : [];
+  const standardLPQs = allLPQs.filter(q => q.def);
+  const optionalLPQs = allLPQs.filter(q => !q.def);
+  const lpAttrOrder = Array.from(new Set(allLPQs.map(q => q.attribute)));
+
+  const divider = (label: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4a6fa5', whiteSpace: 'nowrap' }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+    </div>
+  );
+
+  const qRow = (q: LPQuestion) => {
+    const cws = getCrosswalks(q.id);
+    return (
+      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
+          {q.def && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 700, background: '#dcfce7', color: '#15803d', borderRadius: 20, padding: '2px 8px', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>Standard</span>}
+          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
+        </div>
+        {cws.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+            <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 600 }}>Also measures:</span>
+            {cws.map(cw => <span key={cw} style={{ fontSize: 9, fontWeight: 600, background: '#eff6ff', color: '#3b6fce', borderRadius: 20, padding: '2px 7px', border: '1px solid #bfdbfe' }}>{cw}</span>)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,40,0.65)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 760, maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+
+        {/* Modal header */}
+        <div style={{ padding: '16px 24px', background: '#1a2744', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>Save for Later</p>
+            <h2 style={{ color: 'white', fontSize: 15, fontWeight: 700, margin: '2px 0 0', lineHeight: 1.3 }}>{name}</h2>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={downloadPDF} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'white', background: '#e07b54', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PDF
+            </button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: 20, lineHeight: 1, padding: '2px 6px' }}>✕</button>
+          </div>
+        </div>
+
+        {/* Scrollable document */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', background: '#f4f7fc' }}>
+          <div id="sfl-doc" style={{ background: 'white', borderRadius: 12, padding: '40px 48px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', maxWidth: 660, margin: '0 auto' }}>
+
+            {/* Document header */}
+            <div style={{ borderBottom: '2px solid #1a2744', paddingBottom: 20, marginBottom: 28 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 8px' }}>Impacter Pathway</p>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a2744', margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h1>
+              <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>{grades}</p>
+            </div>
+
+            {/* Intro */}
+            <div style={{ borderLeft: '3px solid #4a6fa5', paddingLeft: 16, marginBottom: 32 }}>
+              <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, margin: 0 }}>
+                Thank you for your interest in the <strong>{name}</strong>. Below is a complete overview of the questions available for this assessment — what they measure, how they&apos;re structured, and the different ways you can make them your own.
+              </p>
+            </div>
+
+            {/* LP content */}
+            {lpA && (
+              <>
+                {[
+                  { label: 'Standard Questions', qs: standardLPQs },
+                  { label: 'Available to Add', qs: optionalLPQs },
+                ].filter(s => s.qs.length > 0).map(section => (
+                  <div key={section.label} style={{ marginBottom: 28 }}>
+                    {divider(section.label)}
+                    {isLittles
+                      ? section.qs.map(q => qRow(q))
+                      : lpAttrOrder.map(attr => {
+                          const qs = section.qs.filter(q => q.attribute === attr);
+                          if (!qs.length) return null;
+                          return (
+                            <div key={attr} style={{ marginBottom: 18 }}>
+                              <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#1a2744', background: '#f1f5f9', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>{attr}</span>
+                              {qs.map(q => qRow(q))}
+                            </div>
+                          );
+                        })
+                    }
+                  </div>
+                ))}
+
+                {/* Options */}
+                <div style={{ marginBottom: 24 }}>
+                  {divider('Your Options')}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                    {[
+                      { label: 'Standard',       color: '#15803d', bg: '#f0fdf4', desc: 'Our curated set of recommended prompts, ready to deploy as-is.' },
+                      { label: 'Customize',       color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick 3 prompts from the full question library.' : 'Choose up to 6 attributes and handpick your prompts from each.' },
+                      { label: 'Build Your Own', color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design fully custom questions with your team." },
+                    ].map(opt => (
+                      <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
+                        <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{opt.label}</p>
+                        <p style={{ fontSize: 12, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* BH content */}
+            {bhS && (
+              <div style={{ marginBottom: 28 }}>
+                {divider('Assessment Questions')}
+                {bhS.questions.map((q, i) => (
+                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14 }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>{q.pillar}</p>
+                    <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Custom note */}
+            <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px' }}>
+              <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.65 }}>
+                <strong>Not seeing exactly what you need?</strong> We also offer fully custom question design — built from scratch around your school&apos;s specific goals, context, and community. Reach out to talk through what&apos;s possible.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface FormData {
   assessmentType: AssessmentId | '';
   // Step 2: Timing
@@ -1267,6 +1428,7 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
   const [demoPaused, setDemoPaused] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [sflId, setSflId] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const scrollBodyRef = useRef<HTMLDivElement>(null);
 
@@ -3032,9 +3194,15 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
                   {screeners.map(s => (
                     <div key={s.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
-                        <p className="text-sm font-semibold text-gray-800">{s.name}</p>
-                        <p className="text-xs text-gray-400">{s.grades}</p>
+                      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{s.name}</p>
+                          <p className="text-xs text-gray-400">{s.grades}</p>
+                        </div>
+                        <button onClick={() => setSflId(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#4a6fa5', background: 'white', border: '1px solid #c5d5e8', borderRadius: 8, padding: '5px 11px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                          Save for later
+                        </button>
                       </div>
                       <div className="p-5 space-y-4">
                         <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>Sample Question</p>
@@ -3126,9 +3294,15 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
 
                     return (
                       <div key={a.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
-                          <p className="text-sm font-semibold text-gray-800">{a.name}</p>
-                          <p className="text-xs text-gray-400">{a.grades}</p>
+                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-200" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800">{a.name}</p>
+                            <p className="text-xs text-gray-400">{a.grades}</p>
+                          </div>
+                          <button onClick={() => setSflId(a.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#4a6fa5', background: 'white', border: '1px solid #c5d5e8', borderRadius: 8, padding: '5px 11px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                            Save for later
+                          </button>
                         </div>
                         <div className="px-5 py-4 space-y-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4a6fa5' }}>Sample Question</p>
@@ -3421,6 +3595,8 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
       <footer className="py-8 text-center" style={{ background: '#1a2744', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>© {new Date().getFullYear()} Impacter Pathway · Schools measure hard skills. We measure the rest.</p>
       </footer>
+
+      {sflId && <SaveForLaterModal id={sflId} onClose={() => setSflId(null)} />}
     </div>
   );
 }
