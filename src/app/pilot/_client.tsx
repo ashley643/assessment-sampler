@@ -139,9 +139,9 @@ const PARTHENON_PILLARS = [
 
 // Linguistic tone divergence by stakeholder
 const VOICE_TONE = [
-  { group: 'Families',  affirming: 68, concern: 22, neutral: 10, signal: 'belonging & partnership' },
-  { group: 'Students',  affirming: 54, concern: 31, neutral: 15, signal: 'safety & being seen' },
-  { group: 'Staff',     affirming: 41, concern: 44, neutral: 15, signal: 'workload & systemic gaps' },
+  { group: 'Families',  affirming: 68, concern: 22, neutral: 10, constructiveSignal: 'school safety concerns', affirmingSignal: 'belonging & partnership' },
+  { group: 'Students',  affirming: 54, concern: 31, neutral: 15, constructiveSignal: 'fairness & being heard', affirmingSignal: 'safety & connection' },
+  { group: 'Staff',     affirming: 41, concern: 44, neutral: 15, constructiveSignal: 'workload & systemic gaps', affirmingSignal: 'student growth & pride' },
 ];
 
 // ── VideoAsk previews ────────────────────────────────────────────────────────
@@ -2067,13 +2067,16 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                     {RISK_ROWS.map((row, r) => {
                       const vals = [row.g6, row.g7, row.g8];
                       const isRowHov = hmHover?.r === r && hmHover?.c === -1;
+                      const isSelfDoubt = r === 3;
+                      const yellowBorder = '2px solid #fbbf24';
                       return (
                         <tr key={r}>
-                          <td style={{ paddingTop: 9, paddingBottom: 9, paddingRight: 16, fontWeight: 500, color: isRowHov ? '#1a2a44' : '#374151', fontSize: 12, position: 'relative', cursor: 'pointer' }}
+                          <td style={{ paddingTop: 9, paddingBottom: 9, paddingRight: 16, fontWeight: isSelfDoubt ? 700 : 500, color: isRowHov ? '#1a2a44' : isSelfDoubt ? '#92400e' : '#374151', fontSize: 12, position: 'relative', cursor: 'pointer', borderTop: isSelfDoubt ? yellowBorder : undefined, borderBottom: isSelfDoubt ? yellowBorder : undefined, borderLeft: isSelfDoubt ? yellowBorder : undefined, borderRadius: isSelfDoubt ? '5px 0 0 5px' : undefined }}
                             onMouseEnter={() => setHmHover({ r, c: -1 })}
                             onMouseLeave={() => setHmHover(null)}
                           >
                             {row.pattern}
+                            {isSelfDoubt && <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em', verticalAlign: 'middle' }}>↑ PEAK</span>}
                             {isRowHov && (
                               <div style={{ position: 'absolute', left: 0, bottom: '100%', marginBottom: 6, background: '#1a2a44', color: 'white', borderRadius: 8, padding: '9px 13px', fontSize: 11, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none', minWidth: 240 }}>
                                 <div style={{ fontWeight: 700, marginBottom: 4, color: '#93c5fd' }}>{row.pattern}</div>
@@ -2087,8 +2090,9 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                             const intensity = v / 7.25;
                             const bg = `rgba(74,111,165,${0.1 + intensity * 0.72})`;
                             const textCol = intensity > 0.5 ? '#1e3a5f' : '#6b7280';
+                            const isLast = c === vals.length - 1;
                             return (
-                              <td key={c} style={{ paddingTop: 9, paddingBottom: 9, paddingLeft: 8, paddingRight: 8, textAlign: 'center', fontWeight: 700, fontSize: 13, background: bg, color: textCol, borderRadius: 5 }}>
+                              <td key={c} style={{ paddingTop: 9, paddingBottom: 9, paddingLeft: 8, paddingRight: 8, textAlign: 'center', fontWeight: 700, fontSize: 13, background: isSelfDoubt && c === 2 ? `rgba(251,191,36,0.18)` : bg, color: isSelfDoubt && c === 2 ? '#92400e' : textCol, borderRadius: 5, borderTop: isSelfDoubt ? yellowBorder : undefined, borderBottom: isSelfDoubt ? yellowBorder : undefined, borderRight: isSelfDoubt && isLast ? yellowBorder : undefined }}>
                                 {v.toFixed(2)}%
                               </td>
                             );
@@ -2101,11 +2105,11 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
               </div>
               <div style={{ background: '#eef4ff', borderRadius: 8, padding: '9px 13px', marginTop: 14, borderLeft: '3px solid #4a6fa5' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4a6fa5', margin: '0 0 3px 0' }}>Insight</p>
-                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Self-doubt language peaks in 8th grade at 7.12%, nearly double the 6th grade rate — the steepest grade-level climb of any risk pattern.</p>
+                <p style={{ fontSize: 12.5, fontStyle: 'italic', color: '#3a5a9a', margin: 0, lineHeight: 1.5 }}>Self-doubt language peaks in 8th grade at 7.12%, nearly double the 6th grade rate. This is the steepest grade-level climb of any risk pattern.</p>
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '9px 13px', marginTop: 8, borderLeft: '3px solid #2d7a5f' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#2d7a5f', margin: '0 0 3px 0' }}>Recommendation</p>
-                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Build an 8th Grade Transition Intensive — a school counselor-led workshop series for 8th graders focused on identity, confidence, and high school readiness, addressing the self-doubt spike directly before the transition.</p>
+                <p style={{ fontSize: 12.5, color: '#1a5f44', margin: 0, lineHeight: 1.55 }}>Build an 8th Grade Transition Intensive: a school counselor-led workshop series for 8th graders focused on identity, confidence, and high school readiness, addressing the self-doubt spike directly before the transition.</p>
               </div>
             </div>
 
@@ -2173,12 +2177,12 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: '24px 22px' }}>
               <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#4a6fa5', marginBottom: 4 }}>Community Schools · Voice Tone Analysis</p>
               <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 14 }}>Affirming vs. constructive voice tone by stakeholder group</p>
-              <svg viewBox="0 0 440 185" style={{ width: '100%', overflow: 'visible' }}>
-                <line x1="220" y1="0" x2="220" y2="185" stroke="#e5e7eb" strokeWidth="1.5" strokeDasharray="4 3" />
+              <svg viewBox="0 0 440 210" style={{ width: '100%', overflow: 'visible' }}>
+                <line x1="220" y1="0" x2="220" y2="210" stroke="#e5e7eb" strokeWidth="1.5" strokeDasharray="4 3" />
                 <text x="95" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">← CONSTRUCTIVE</text>
                 <text x="340" y="13" textAnchor="middle" fontSize="9.5" fill="#9ca3af" fontWeight="600">AFFIRMING →</text>
                 {VOICE_TONE.map((d, i) => {
-                  const rowY = 28 + i * 55;
+                  const rowY = 30 + i * 60;
                   const maxHalf = 190;
                   const affW = (d.affirming / 100) * maxHalf;
                   const conW = (d.concern / 100) * maxHalf;
@@ -2192,14 +2196,18 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
                       <rect x="220" y={rowY + 14} width={affW} height={22} rx="4" fill="#2d7a5f" fillOpacity={isHov ? 0.88 : 0.62} />
                       <text x={220 + affW + 5} y={rowY + 29} textAnchor="start" fontSize="11" fill="#1a5f44" fontWeight="600">{d.affirming}%</text>
                       {isHov && (
-                        <g transform={`translate(${220 - 90}, ${rowY - 68})`}>
-                          <rect x="0" y="0" width="180" height="58" rx="7" fill="#1a2a44" />
-                          <polygon points="84,58 90,66 96,58" fill="#1a2a44" />
-                          <text x="90" y="16" textAnchor="middle" fontSize="11" fill="white" fontWeight="700">{d.group}</text>
-                          <line x1="10" y1="22" x2="170" y2="22" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                          <text x="90" y="36" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.65)">Top signal: {d.signal}</text>
-                          <text x="46" y="51" textAnchor="middle" fontSize="10" fill="#fb923c" fontWeight="700">Constructive {d.concern}%</text>
-                          <text x="140" y="51" textAnchor="middle" fontSize="10" fill="#4ade80" fontWeight="700">Affirming {d.affirming}%</text>
+                        <g transform={`translate(${220 - 110}, ${rowY - 78})`}>
+                          <rect x="0" y="0" width="220" height="68" rx="7" fill="#1a2a44" />
+                          <polygon points="104,68 110,76 116,68" fill="#1a2a44" />
+                          <text x="110" y="16" textAnchor="middle" fontSize="11" fill="white" fontWeight="700">{d.group}</text>
+                          <line x1="10" y1="22" x2="210" y2="22" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                          <line x1="110" y1="22" x2="110" y2="62" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                          <text x="55" y="34" textAnchor="middle" fontSize="8.5" fill="#fb923c" fontWeight="700" letterSpacing="0.05em">CONSTRUCTIVE</text>
+                          <text x="55" y="47" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.75)">{d.constructiveSignal}</text>
+                          <text x="55" y="60" textAnchor="middle" fontSize="10" fill="#fb923c" fontWeight="700">{d.concern}%</text>
+                          <text x="165" y="34" textAnchor="middle" fontSize="8.5" fill="#4ade80" fontWeight="700" letterSpacing="0.05em">AFFIRMING</text>
+                          <text x="165" y="47" textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.75)">{d.affirmingSignal}</text>
+                          <text x="165" y="60" textAnchor="middle" fontSize="10" fill="#4ade80" fontWeight="700">{d.affirming}%</text>
                         </g>
                       )}
                     </g>
