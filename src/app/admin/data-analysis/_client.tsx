@@ -1028,6 +1028,9 @@ export default function DataAnalysisClient() {
     );
   }
 
+  // Needed both in paradigm-select and main render
+  const isCsw = isCommunitySchoolsCrosswalk(allRows);
+
   // ---- Paradigm selection screen (shown once after import) ----------------
   if (showParadigmSelect) {
     const available = SCORE_TYPES.filter(st => columns.includes(st.attrCol));
@@ -1196,8 +1199,7 @@ export default function DataAnalysisClient() {
   // Dimension values (shared across all paradigms for the current mode)
   const dimValues = analysisDimCol ? distinctSorted(filteredRows, analysisDimCol).slice(0, 40) : [];
 
-  // Whether the crosswalk data is community-schools style (pillar grouping + 0-1 scale)
-  const isCsw = isCommunitySchoolsCrosswalk(allRows);
+
 
   // Pre-compute JSX values (avoids IIFEs in render that Terser would inline)
   const statCards: { label: string; value: string; sub: string | null }[] = [
