@@ -139,7 +139,7 @@ const PARTHENON_PILLARS = [
 
 // Linguistic tone divergence by stakeholder
 const VOICE_TONE = [
-  { group: 'Families',  affirming: 68, concern: 22, neutral: 10, constructiveSignal: 'school safety concerns', affirmingSignal: 'belonging & partnership' },
+  { group: 'Families',  affirming: 68, concern: 22, neutral: 10, constructiveSignal: 'more communication', affirmingSignal: 'belonging & partnership' },
   { group: 'Students',  affirming: 54, concern: 31, neutral: 15, constructiveSignal: 'fairness & being heard', affirmingSignal: 'safety & connection' },
   { group: 'Staff',     affirming: 61, concern: 44, neutral: 11, constructiveSignal: 'workload concerns', affirmingSignal: 'student growth/pride' },
 ];
