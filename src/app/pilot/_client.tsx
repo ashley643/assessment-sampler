@@ -919,7 +919,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
   const qRow = (q: LPQuestion) => {
     const cws = getCrosswalks(q.id);
     return (
-      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12 }}>
+      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
         {cws.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, alignItems: 'center', overflow: 'hidden', marginTop: 5 }}>
@@ -953,7 +953,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
   );
 
   const orangeNote = () => (
-    <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px', marginTop: 20 }}>
+    <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px', marginTop: 20, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
       <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.65 }}>
         <strong>Not seeing exactly what you need?</strong> We also offer fully custom question design, built from scratch around your school&apos;s specific goals, context, and community. Reach out at <a href="mailto:info@impacterpathway.com" style={{ color: '#92400e' }}>info@impacterpathway.com</a>
       </p>
@@ -1079,7 +1079,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                         const qs = sec.qs.filter(q => q.attribute === attr);
                         if (!qs.length) return null;
                         return (
-                          <div key={attr} style={{ marginBottom: 16 }}>
+                          <div key={attr} style={{ marginBottom: 16, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                             {attrLabel(attr)}
                             {qs.map(q => qRow(q))}
                           </div>
@@ -1099,7 +1099,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                 {assessmentHeader(bh.name, bh.grades)}
                 {divider('Assessment Questions')}
                 {bh.questions.map((q, i) => (
-                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12 }}>
+                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                     {attrLabel(q.pillar)}
                     <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                   </div>
@@ -1134,7 +1134,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                           <div key={d.p} style={{ marginBottom: 16 }}>
                             {attrLabel(`Pillar ${d.p}: ${d.pillarLabel}`)}
                             {qs.map(q => (
-                              <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10 }}>
+                              <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                                 <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                               </div>
                             ))}
@@ -1209,7 +1209,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
   const qRow = (q: LPQuestion) => {
     const cws = getCrosswalks(q.id);
     return (
-      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14 }}>
+      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
         </div>
@@ -1309,7 +1309,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
               <div style={{ marginBottom: 28 }}>
                 {divider('Assessment Questions')}
                 {bhS.questions.map((q, i) => (
-                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14 }}>
+                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                     <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>{q.pillar}</p>
                     <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                   </div>
@@ -1344,7 +1344,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                     <div key={pillar} style={{ marginBottom: 18 }}>
                       <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
                       {standard.map(q => (
-                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10 }}>
+                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                         </div>
                       ))}
@@ -1359,7 +1359,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                     <div key={pillar} style={{ marginBottom: 18 }}>
                       <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
                       {optional.map(q => (
-                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10 }}>
+                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                         </div>
                       ))}
