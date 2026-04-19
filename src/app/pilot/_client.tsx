@@ -843,7 +843,7 @@ const LP_ATTRIBUTES: LPAttribute[] = [
   { id: 'pog-problem',       name: 'Problem-Solving',                      group: 'portrait', questionIds: ['sec-1','sec-2','el-9','sec-10','sec-11'] },
   { id: 'pog-communication', name: 'Communication',                         group: 'portrait', questionIds: ['el-4','sec-4','el-13','sec-13'] },
   { id: 'pog-character',     name: 'Character',                             group: 'portrait', questionIds: ['sec-7','sec-8','el-13','el-14','sec-13','sec-14','el-15','el-16','sec-15','sec-16','sec-5','sec-6'] },
-  { id: 'pog-perseverance',  name: 'Perseverance/Adaptability',             group: 'portrait', questionIds: ['el-9','sec-9','sec-10','el-7','el-8','el-11'] },
+  { id: 'pog-perseverance',  name: 'Adaptability',                          group: 'portrait', questionIds: ['sec-9','sec-10','el-8','el-11'] },
   { id: 'pog-collaboration', name: 'Collaboration',                         group: 'portrait', questionIds: ['el-12','sec-13','sec-14','el-16','sec-6'] },
   { id: 'pog-global',        name: 'Global Citizenship',                    group: 'portrait', questionIds: ['el-3','el-4','sec-14','sec-6'] },
   { id: 'pog-creativity',    name: 'Creativity',                            group: 'portrait', questionIds: ['el-2','sec-2','sec-12'] },
@@ -1131,7 +1131,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                         const qs = sec.getQs(d);
                         if (!qs.length) return null;
                         return (
-                          <div key={d.p} style={{ marginBottom: 16 }}>
+                          <div key={d.p} style={{ marginBottom: 16, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                             {attrLabel(`Pillar ${d.p}: ${d.pillarLabel}`)}
                             {qs.map(q => (
                               <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
@@ -1275,7 +1275,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                       { label: 'Custom',          color: '#1d4ed8', bg: '#eff6ff', desc: isLittles ? 'Pick one question per competency from our full question bank.' : 'Pick one question per competency from our full question bank.' },
                       { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
                     ].map(opt => (
-                      <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
+                      <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                         <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{opt.label}</p>
                         <p style={{ fontSize: 12, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
                       </div>
@@ -1293,7 +1293,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                       const qs = section.qs.filter(q => q.attribute === attr);
                       if (!qs.length) return null;
                       return (
-                        <div key={attr} style={{ marginBottom: 18 }}>
+                        <div key={attr} style={{ marginBottom: 18, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                           <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>{attr}</span>
                           {qs.map(q => qRow(q))}
                         </div>
@@ -1329,7 +1329,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                       { label: 'Custom',          color: '#1d4ed8', bg: '#eff6ff', desc: 'Pick one question per pillar from our full question bank.' },
                       { label: 'Build Your Own',  color: '#7c3aed', bg: '#faf5ff', desc: "We'll co-design a new assessment with custom questions with your team." },
                     ].map(opt => (
-                      <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px' }}>
+                      <div key={opt.label} style={{ background: opt.bg, borderRadius: 10, padding: '14px 16px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                         <p style={{ fontSize: 10, fontWeight: 800, color: opt.color, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{opt.label}</p>
                         <p style={{ fontSize: 12, color: '#374151', margin: 0, lineHeight: 1.5 }}>{opt.desc}</p>
                       </div>
@@ -1341,7 +1341,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                 <div style={{ marginBottom: 28 }}>
                   {divider('Standard Questions')}
                   {csQsByPillar.map(({ pillar, label: pillarLabel, standard }) => (
-                    <div key={pillar} style={{ marginBottom: 18 }}>
+                    <div key={pillar} style={{ marginBottom: 18, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                       <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
                       {standard.map(q => (
                         <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
@@ -1356,7 +1356,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                 <div style={{ marginBottom: 28 }}>
                   {divider('From the Question Bank')}
                   {csQsByPillar.map(({ pillar, label: pillarLabel, optional }) => optional.length > 0 && (
-                    <div key={pillar} style={{ marginBottom: 18 }}>
+                    <div key={pillar} style={{ marginBottom: 18, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                       <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
                       {optional.map(q => (
                         <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
@@ -1370,7 +1370,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
             )}
 
             {/* Custom note */}
-            <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px' }}>
+            <div style={{ background: '#fef9f0', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
               <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.65 }}>
                 <strong>Not seeing exactly what you need?</strong> We also offer fully custom question design, built from scratch around your school&apos;s specific goals, context, and community. Reach out to talk through what&apos;s possible at <a href="mailto:info@impacterpathway.com" style={{ color: '#92400e' }}>info@impacterpathway.com</a>
               </p>
