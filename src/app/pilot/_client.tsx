@@ -879,7 +879,6 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     e.stopPropagation();
     const el = document.getElementById('lib-doc');
     if (!el) return;
-    document.querySelectorAll<HTMLVideoElement>('video').forEach(v => v.pause());
     if (!(window as any).html2pdf) {
       await new Promise<void>((resolve, reject) => {
         const s = document.createElement('script');
@@ -894,7 +893,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
         margin: [10, 14, 10, 14],
         filename: 'Assessment Library — Impacter Pathway.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY },
+        html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY, ignoreElements: (el: Element) => el.tagName === 'VIDEO' || el.tagName === 'IFRAME' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] },
       })
@@ -927,13 +926,13 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     );
   };
 
-  const qRow = (q: LPQuestion) => {
+  const qRow = (q: LPQuestion, inBank = false) => {
     const cws = getCrosswalks(q.id);
     return (
       <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
-          {q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
+          {inBank && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
         </div>
         {cws.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 5 }}>
@@ -1095,7 +1094,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                         return (
                           <div key={attr} style={{ marginBottom: 16, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                             {attrLabel(attr)}
-                            {qs.map(q => qRow(q))}
+                            {qs.map(q => qRow(q, sec.label === 'From the Question Bank'))}
                           </div>
                         );
                       })}
@@ -1187,7 +1186,6 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
     e.stopPropagation();
     const el = document.getElementById('sfl-doc');
     if (!el) return;
-    document.querySelectorAll<HTMLVideoElement>('video').forEach(v => v.pause());
     if (!(window as any).html2pdf) {
       await new Promise<void>((resolve, reject) => {
         const s = document.createElement('script');
@@ -1202,7 +1200,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
         margin: [12, 16, 12, 16],
         filename: name + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY },
+        html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY, ignoreElements: (el: Element) => el.tagName === 'VIDEO' || el.tagName === 'IFRAME' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] },
       })
@@ -1235,13 +1233,13 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
     );
   };
 
-  const qRow = (q: LPQuestion) => {
+  const qRow = (q: LPQuestion, inBank = false) => {
     const cws = getCrosswalks(q.id);
     return (
       <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
-          {q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
+          {inBank && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
         </div>
         {cws.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
@@ -1325,7 +1323,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                       return (
                         <div key={attr} style={{ marginBottom: 18, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                           <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>{attr}</span>
-                          {qs.map(q => qRow(q))}
+                          {qs.map(q => qRow(q, section.label === 'From the Question Bank'))}
                         </div>
                       );
                     })}
