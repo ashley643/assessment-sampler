@@ -922,7 +922,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
       <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
         {cws.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, alignItems: 'center', overflow: 'hidden', marginTop: 5 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 5 }}>
             <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 600, whiteSpace: 'nowrap' }}>Also measures:</span>
             {cws.map(cw => <span key={cw} style={{ fontSize: 8, fontWeight: 600, background: '#f3f4f6', color: '#6b7280', borderRadius: 20, padding: '2px 6px', border: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>{cw}</span>)}
           </div>
@@ -1214,7 +1214,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
         </div>
         {cws.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, alignItems: 'center', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
             <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 600, whiteSpace: 'nowrap' }}>Also measures:</span>
             {cws.map(cw => <span key={cw} style={{ fontSize: 8, fontWeight: 600, background: '#f3f4f6', color: '#6b7280', borderRadius: 20, padding: '2px 6px', border: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>{cw}</span>)}
           </div>
