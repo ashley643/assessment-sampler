@@ -880,6 +880,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     e.stopPropagation();
     const el = document.getElementById('lib-doc');
     if (!el) return;
+    document.querySelectorAll<HTMLVideoElement>('video').forEach(v => v.pause());
     if (!(window as any).html2pdf) {
       await new Promise<void>((resolve, reject) => {
         const s = document.createElement('script');
@@ -917,11 +918,24 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
     <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>{label}</span>
   );
 
+  const sectionBanner = (label: string) => {
+    const isStd = label === 'Standard Questions';
+    return (
+      <div style={{ background: isStd ? '#f0fdf4' : '#eff6ff', border: `1px solid ${isStd ? '#bbf7d0' : '#bfdbfe'}`, borderRadius: 8, padding: '11px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+        <div style={{ width: 8, height: 8, background: isStd ? '#16a34a' : '#2563eb', borderRadius: '50%', flexShrink: 0 }} />
+        <span style={{ fontSize: 12, fontWeight: 800, color: isStd ? '#15803d' : '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+      </div>
+    );
+  };
+
   const qRow = (q: LPQuestion) => {
     const cws = getCrosswalks(q.id);
     return (
-      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-        <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
+      <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
+          {q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
+        </div>
         {cws.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', marginTop: 5 }}>
             <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 600, whiteSpace: 'nowrap' }}>Also measures:</span>
@@ -1072,10 +1086,10 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                   {lpOpts(isLittles)}
                   {[
                     { label: 'Standard Questions',     qs: standardQs },
-                    { label: 'From the Question Bank', qs: optionalQs },
+                    { label: 'From the Question Bank', qs: allQs },
                   ].filter(s => s.qs.length > 0).map(sec => (
                     <div key={sec.label} style={{ marginBottom: 20 }}>
-                      {divider(sec.label)}
+                      {sectionBanner(sec.label)}
                       {attrOrder.map(attr => {
                         const qs = sec.qs.filter(q => q.attribute === attr);
                         if (!qs.length) return null;
@@ -1122,12 +1136,12 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                 <div key={key} id={csId} className="lib-section" style={{ padding: '48px 56px' }}>
                   {assessmentHeader(`Community Schools Survey for ${label}`, 'Community Schools Assessment')}
                   {csOpts()}
-                  {([
+                  {[
                     { secLabel: 'Standard Questions',     getQs: (d: typeof qsByPillar[0]) => d.standard },
-                    { secLabel: 'From the Question Bank', getQs: (d: typeof qsByPillar[0]) => d.optional },
-                  ] as const).map(sec => (
+                    { secLabel: 'From the Question Bank', getQs: (d: typeof qsByPillar[0]) => [...d.standard, ...d.optional] },
+                  ].map(sec => (
                     <div key={sec.secLabel} style={{ marginBottom: 20 }}>
-                      {divider(sec.secLabel)}
+                      {sectionBanner(sec.secLabel)}
                       {qsByPillar.map(d => {
                         const qs = sec.getQs(d);
                         if (!qs.length) return null;
@@ -1135,8 +1149,11 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                           <div key={d.p} style={{ marginBottom: 16, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                             {attrLabel(`Pillar ${d.p}: ${d.pillarLabel}`)}
                             {qs.map(q => (
-                              <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                                <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                              <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                                  <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                                  {q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1171,6 +1188,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
     e.stopPropagation();
     const el = document.getElementById('sfl-doc');
     if (!el) return;
+    document.querySelectorAll<HTMLVideoElement>('video').forEach(v => v.pause());
     if (!(window as any).html2pdf) {
       await new Promise<void>((resolve, reject) => {
         const s = document.createElement('script');
@@ -1208,12 +1226,23 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
     </div>
   );
 
+  const sectionBanner = (label: string) => {
+    const isStd = label === 'Standard Questions';
+    return (
+      <div style={{ background: isStd ? '#f0fdf4' : '#eff6ff', border: `1px solid ${isStd ? '#bbf7d0' : '#bfdbfe'}`, borderRadius: 8, padding: '11px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+        <div style={{ width: 8, height: 8, background: isStd ? '#16a34a' : '#2563eb', borderRadius: '50%', flexShrink: 0 }} />
+        <span style={{ fontSize: 12, fontWeight: 800, color: isStd ? '#15803d' : '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+      </div>
+    );
+  };
+
   const qRow = (q: LPQuestion) => {
     const cws = getCrosswalks(q.id);
     return (
-      <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
+      <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
+          {q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
         </div>
         {cws.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
@@ -1287,10 +1316,10 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
 
                 {[
                   { label: 'Standard Questions', qs: standardLPQs },
-                  { label: 'From the Question Bank', qs: optionalLPQs },
+                  { label: 'From the Question Bank', qs: allLPQs },
                 ].filter(s => s.qs.length > 0).map(section => (
                   <div key={section.label} style={{ marginBottom: 28 }}>
-                    {divider(section.label)}
+                    {sectionBanner(section.label)}
                     {lpAttrOrder.map(attr => {
                       const qs = section.qs.filter(q => q.attribute === attr);
                       if (!qs.length) return null;
@@ -1341,12 +1370,12 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
 
                 {/* Standard questions by pillar */}
                 <div style={{ marginBottom: 28 }}>
-                  {divider('Standard Questions')}
+                  {sectionBanner('Standard Questions')}
                   {csQsByPillar.map(({ pillar, label: pillarLabel, standard }) => (
                     <div key={pillar} style={{ marginBottom: 18, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                       <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
                       {standard.map(q => (
-                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                        <div key={q.id} style={{ borderLeft: '3px solid #86efac', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                           <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                         </div>
                       ))}
@@ -1356,13 +1385,16 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
 
                 {/* From the question bank */}
                 <div style={{ marginBottom: 28 }}>
-                  {divider('From the Question Bank')}
-                  {csQsByPillar.map(({ pillar, label: pillarLabel, optional }) => optional.length > 0 && (
+                  {sectionBanner('From the Question Bank')}
+                  {csQsByPillar.map(({ pillar, label: pillarLabel, standard, optional }) => (
                     <div key={pillar} style={{ marginBottom: 18, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                       <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
-                      {optional.map(q => (
-                        <div key={q.id} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                      {[...standard, ...optional].map(q => (
+                        <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                            <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
+                            {q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
+                          </div>
                         </div>
                       ))}
                     </div>
