@@ -842,7 +842,7 @@ const LP_ATTRIBUTES: LPAttribute[] = [
   { id: 'pog-critical',      name: 'Critical Thinking',                    group: 'portrait', questionIds: ['el-1','sec-1','sec-2','sec-11','sec-12'] },
   { id: 'pog-problem',       name: 'Problem-Solving',                      group: 'portrait', questionIds: ['sec-1','sec-2','el-9','sec-10','sec-11'] },
   { id: 'pog-communication', name: 'Communication',                         group: 'portrait', questionIds: ['el-4','sec-4','el-13','sec-13'] },
-  { id: 'pog-character',     name: 'Character',                             group: 'portrait', questionIds: ['sec-8','el-13','el-14','sec-13','sec-14','el-15','el-16','sec-15','sec-16','sec-5','sec-6'] },
+  { id: 'pog-character',     name: 'Character',                             group: 'portrait', questionIds: ['sec-7','sec-8','el-13','el-14','sec-13','sec-14','el-15','el-16','sec-15','sec-16','sec-5','sec-6'] },
   { id: 'pog-perseverance',  name: 'Perseverance/Adaptability',             group: 'portrait', questionIds: ['el-9','sec-9','sec-10','el-7','el-8','el-11'] },
   { id: 'pog-collaboration', name: 'Collaboration',                         group: 'portrait', questionIds: ['el-12','sec-13','sec-14','el-16','sec-6'] },
   { id: 'pog-global',        name: 'Global Citizenship',                    group: 'portrait', questionIds: ['el-3','el-4','sec-14','sec-6'] },
@@ -853,7 +853,7 @@ const LP_ATTRIBUTES: LPAttribute[] = [
   { id: 'pog-self-dir',      name: 'Self-Direction',                        group: 'portrait', questionIds: ['el-5','el-6','sec-5','el-10','sec-10','sec-8','el-2'] },
   { id: 'pog-college',       name: 'College and Career Navigation',         group: 'portrait', questionIds: ['el-5','el-6','sec-5','sec-6','el-10'] },
   { id: 'pog-leadership',    name: 'Leadership',                            group: 'portrait', questionIds: ['el-12','sec-11','el-14','sec-6'] },
-  { id: 'pog-interpersonal', name: 'Interpersonal Understanding',           group: 'portrait', questionIds: ['el-3','sec-3','sec-4','el-13','sec-13','sec-14','el-15','el-16'] },
+  { id: 'pog-interpersonal', name: 'Interpersonal Understanding',           group: 'portrait', questionIds: ['el-3','sec-3','sec-4','el-13','sec-13','sec-14','el-15','el-16','sec-15'] },
   { id: 'pog-organization',  name: 'Organization',                          group: 'portrait', questionIds: ['el-8','sec-10'] },
   { id: 'pog-independent',   name: 'Ability to Work Independently',         group: 'portrait', questionIds: ['el-9','el-10','sec-9','sec-10','el-7','sec-8','sec-5'] },
   // ── Cardinal Virtues ────────────────────────────────────────────────────────
@@ -876,20 +876,29 @@ const CS_ALL_GROUPS: Array<{ key: AgeGroup; label: string }> = [
 ];
 
 function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
-  function downloadPDF() {
+  async function downloadPDF() {
     const el = document.getElementById('lib-doc');
     if (!el) return;
-    const win = window.open('', '_blank', 'width=900,height=1100');
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Assessment Library — Impacter Pathway</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#1a2744;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:0}.lib-page{page-break-after:always;break-after:page}.lib-section{page-break-before:always;break-before:page}a{color:#4a6fa5;text-decoration:none}strong{font-weight:700}</style></head><body>${el.innerHTML}</body></html>`);
-    win.document.close();
-    win.focus();
-    const doPrint = () => { setTimeout(() => win.print(), 300); };
-    if ((win.document as Document & { fonts?: { ready: Promise<unknown> } }).fonts) {
-      (win.document as Document & { fonts: { ready: Promise<unknown> } }).fonts.ready.then(doPrint);
-    } else {
-      setTimeout(doPrint, 900);
+    if (!(window as any).html2pdf) {
+      await new Promise<void>((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Failed to load html2pdf'));
+        document.head.appendChild(s);
+      });
     }
+    (window as any).html2pdf()
+      .set({
+        margin: [10, 14, 10, 14],
+        filename: 'Assessment Library — Impacter Pathway.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] },
+      })
+      .from(el)
+      .save();
   }
 
   function scrollTo(id: string) {
@@ -1157,15 +1166,29 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
   const grades = lpA?.grades ?? bhS?.grades ?? (csKey ? 'Community Schools Assessment' : '');
   const isLittles = id === 'lp-littles';
 
-  function downloadPDF() {
+  async function downloadPDF() {
     const el = document.getElementById('sfl-doc');
     if (!el) return;
-    const win = window.open('', '_blank', 'width=860,height=1000');
-    if (!win) return;
-    win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + name + '</title><style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"DM Sans",Arial,sans-serif;color:#1a2744;margin:0;padding:40px 48px;max-width:700px;line-height:1.5}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>' + el.innerHTML + '</body></html>');
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 500);
+    if (!(window as any).html2pdf) {
+      await new Promise<void>((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Failed to load html2pdf'));
+        document.head.appendChild(s);
+      });
+    }
+    (window as any).html2pdf()
+      .set({
+        margin: [12, 16, 12, 16],
+        filename: name + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] },
+      })
+      .from(el)
+      .save();
   }
 
   const allLPQs = lpA ? LP_QUESTIONS.filter(q => q.band === id) : [];
