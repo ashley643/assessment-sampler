@@ -876,7 +876,8 @@ const CS_ALL_GROUPS: Array<{ key: AgeGroup; label: string }> = [
 ];
 
 function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
-  async function downloadPDF() {
+  async function downloadPDF(e: React.MouseEvent) {
+    e.stopPropagation();
     const el = document.getElementById('lib-doc');
     if (!el) return;
     if (!(window as any).html2pdf) {
@@ -893,7 +894,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
         margin: [10, 14, 10, 14],
         filename: 'Assessment Library — Impacter Pathway.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] },
       })
@@ -1166,7 +1167,8 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
   const grades = lpA?.grades ?? bhS?.grades ?? (csKey ? 'Community Schools Assessment' : '');
   const isLittles = id === 'lp-littles';
 
-  async function downloadPDF() {
+  async function downloadPDF(e: React.MouseEvent) {
+    e.stopPropagation();
     const el = document.getElementById('sfl-doc');
     if (!el) return;
     if (!(window as any).html2pdf) {
@@ -1183,7 +1185,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
         margin: [12, 16, 12, 16],
         filename: name + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] },
       })
