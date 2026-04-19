@@ -856,6 +856,11 @@ const LP_ATTRIBUTES: LPAttribute[] = [
   { id: 'pog-interpersonal', name: 'Interpersonal Understanding',           group: 'portrait', questionIds: ['el-3','sec-3','sec-4','el-13','sec-13','sec-14','el-15','el-16'] },
   { id: 'pog-organization',  name: 'Organization',                          group: 'portrait', questionIds: ['el-8','sec-10'] },
   { id: 'pog-independent',   name: 'Ability to Work Independently',         group: 'portrait', questionIds: ['el-9','el-10','sec-9','sec-10','el-7','sec-8','sec-5'] },
+  // ── Cardinal Virtues ────────────────────────────────────────────────────────
+  { id: 'vir-prudence',     name: 'Prudence',    group: 'portrait', questionIds: ['el-1','el-2','el-3','sec-1','sec-3'] },
+  { id: 'vir-fortitude',    name: 'Fortitude',   group: 'portrait', questionIds: ['el-6','el-9','sec-9','sec-10'] },
+  { id: 'vir-temperance',   name: 'Temperance',  group: 'portrait', questionIds: ['el-7','el-8','sec-4','sec-7','sec-8'] },
+  { id: 'vir-justice',      name: 'Justice',     group: 'portrait', questionIds: ['el-13','el-14','el-15','sec-6','sec-14'] },
 ];
 
 function getCrosswalks(qId: string): string[] {
@@ -3072,20 +3077,9 @@ export default function PilotClient({ initialOpen = false }: { initialOpen?: boo
             {/* ── Step 1: Assessment + respondents + grades + goal ── */}
             {step === 1 && (
               <div className="space-y-6">
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Which assessment fits your goals?</h3>
-                    <p className="text-sm text-gray-500 mb-5">Pick the one that matches what you&apos;re trying to learn.</p>
-                  </div>
-                  <button onClick={() => setLibraryOpen(true)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#4a6fa5', background: 'white', border: '1px solid #c5d5e8', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#f0f5fb')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'white')}>
-                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    </svg>
-                    Assessment Library
-                  </button>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Which assessment fits your goals?</h3>
+                  <p className="text-sm text-gray-500 mb-5">Pick the one that matches what you&apos;re trying to learn.</p>
                 </div>
                 <div className="space-y-3">
                   {ASSESSMENT_TYPES.map(({ id, label, description }) => {
