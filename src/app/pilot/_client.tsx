@@ -934,7 +934,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
       <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1 }}>
-            <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: '#9ca3af', whiteSpace: 'nowrap', paddingTop: 2, flexShrink: 0 }}>lp-{q.id}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{q.id.split('-').pop()}</span>
             <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
           </div>
           {inBank && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
@@ -1116,18 +1116,15 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
               <div key={bh.id} id={`lib-${bh.id}`} className="lib-section" style={{ padding: '48px 56px' }}>
                 {assessmentHeader(bh.name, bh.grades)}
                 {divider('Assessment Questions')}
-                {bh.questions.map((q, i) => {
-                  const bhPfx = bh.id === 'bh-littles' ? 'bh-le' : bh.id === 'bh-elementary' ? 'bh-el' : 'bh-sec';
-                  return (
-                    <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                      {attrLabel(q.pillar)}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: '#9ca3af', whiteSpace: 'nowrap', paddingTop: 2, flexShrink: 0 }}>{bhPfx}-{i + 1}</span>
-                        <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
-                      </div>
+                {bh.questions.map((q, i) => (
+                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    {attrLabel(q.pillar)}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{i + 1}</span>
+                      <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
                 {orangeNote()}
                 {backToTop()}
               </div>
@@ -1136,6 +1133,8 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
             {/* ── CS groups ── */}
             {CS_ALL_GROUPS.map(({ key, label }) => {
               const csId = `lib-cs-${key.toLowerCase().replace(' ', '-')}`;
+              const csAllForKey = CS_QUESTIONS.filter(q => q.age === key);
+              const csNum = (q: { id: string }) => csAllForKey.findIndex(q2 => q2.id === q.id) + 1;
               const qsByPillar = ([1,2,3,4] as const).map(p => ({
                 p, pillarLabel: PILLARS[p],
                 standard: CS_QUESTIONS.filter(q => q.age === key && q.p === p && q.def),
@@ -1161,7 +1160,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                               <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1 }}>
-                                    <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: '#9ca3af', whiteSpace: 'nowrap', paddingTop: 2, flexShrink: 0 }}>cs-{q.id}</span>
+                                    <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{csNum(q)}</span>
                                     <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                                   </div>
                                   {sec.secLabel === 'From the Question Bank' && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
@@ -1226,6 +1225,8 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
   const standardLPQs = allLPQs.filter(q => q.def);
   const optionalLPQs = allLPQs.filter(q => !q.def);
   const lpAttrOrder = Array.from(new Set(allLPQs.map(q => q.attribute)));
+  const csAllForKey = csKey ? CS_QUESTIONS.filter(q => q.age === csKey) : [];
+  const csNum = (q: { id: string }) => csAllForKey.findIndex(q2 => q2.id === q.id) + 1;
   const csQsByPillar = csKey ? ([1,2,3,4] as const).map(p => ({
     pillar: p, label: PILLARS[p], standard: CS_QUESTIONS.filter(q => q.age === csKey && q.p === p && q.def), optional: CS_QUESTIONS.filter(q => q.age === csKey && q.p === p && !q.def),
   })) : [];
@@ -1253,7 +1254,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
       <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1 }}>
-            <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: '#9ca3af', whiteSpace: 'nowrap', paddingTop: 2, flexShrink: 0 }}>lp-{q.id}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{q.id.split('-').pop()}</span>
             <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
           </div>
           {inBank && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
@@ -1353,18 +1354,15 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
             {bhS && (
               <div style={{ marginBottom: 28 }}>
                 {divider('Assessment Questions')}
-                {bhS.questions.map((q, i) => {
-                  const bhPfx = bhS.id === 'bh-littles' ? 'bh-le' : bhS.id === 'bh-elementary' ? 'bh-el' : 'bh-sec';
-                  return (
-                    <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                      <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>{q.pillar}</p>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: '#9ca3af', whiteSpace: 'nowrap', paddingTop: 2, flexShrink: 0 }}>{bhPfx}-{i + 1}</span>
-                        <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
-                      </div>
+                {bhS.questions.map((q, i) => (
+                  <div key={i} style={{ borderLeft: '3px solid #dce8f5', paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: '#4a6fa5', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>{q.pillar}</p>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{i + 1}</span>
+                      <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -1397,7 +1395,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                       {standard.map(q => (
                         <div key={q.id} style={{ borderLeft: '3px solid #86efac', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                            <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: '#9ca3af', whiteSpace: 'nowrap', paddingTop: 2, flexShrink: 0 }}>cs-{q.id}</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{csNum(q)}</span>
                             <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                           </div>
                         </div>
@@ -1416,7 +1414,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                         <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1 }}>
-                              <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: '#9ca3af', whiteSpace: 'nowrap', paddingTop: 2, flexShrink: 0 }}>cs-{q.id}</span>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{csNum(q)}</span>
                               <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                             </div>
                             {q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
