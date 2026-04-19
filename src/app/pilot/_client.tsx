@@ -934,7 +934,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
       <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 12, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{q.id.split('-').pop()}</span>
+            {inBank && <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{q.id.split('-').pop()}</span>}
             <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
           </div>
           {inBank && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
@@ -1160,7 +1160,7 @@ function AssessmentLibraryModal({ onClose }: { onClose: () => void }) {
                               <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1 }}>
-                                    <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{csNum(q)}</span>
+                                    {sec.secLabel === 'From the Question Bank' && <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{csNum(q)}</span>}
                                     <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                                   </div>
                                   {sec.secLabel === 'From the Question Bank' && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
@@ -1254,7 +1254,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
       <div key={q.id} style={{ borderLeft: `3px solid ${q.def ? '#86efac' : '#dce8f5'}`, paddingLeft: 14, marginBottom: 14, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: cws.length ? 5 : 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{q.id.split('-').pop()}</span>
+            {inBank && <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{q.id.split('-').pop()}</span>}
             <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.prompt}</p>
           </div>
           {inBank && q.def && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803d', whiteSpace: 'nowrap', marginTop: 3, flexShrink: 0 }}>◆ standard</span>}
@@ -1394,10 +1394,7 @@ function SaveForLaterModal({ id, onClose }: { id: string; onClose: () => void })
                       <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#4a6fa5', background: '#eff6ff', padding: '3px 10px', borderRadius: 6, marginBottom: 10 }}>Pillar {pillar}: {pillarLabel}</span>
                       {standard.map(q => (
                         <div key={q.id} style={{ borderLeft: '3px solid #86efac', paddingLeft: 14, marginBottom: 10, breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                            <span style={{ fontSize: 10, fontWeight: 600, color: '#d1d5db', minWidth: 18, textAlign: 'right', flexShrink: 0, paddingTop: 1 }}>{csNum(q)}</span>
-                            <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
-                          </div>
+                          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, margin: 0 }}>{q.text}</p>
                         </div>
                       ))}
                     </div>
