@@ -50,7 +50,7 @@ const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
   answer_date:        'created_at',
   question:           'node_text',
   response_type:      'media_type',
-  share_url:          'share_url',
+  share_url:          'raw.share_url',
   response_duration:  'media_duration_sec',
 };
 
@@ -329,7 +329,7 @@ export default function VideoAskImportPage() {
   const [sourceColumns] = useState<string[]>([
     'id', 'form_id', 'node_id', 'node_title', 'node_text', 'media_type',
     'media_url', 'share_url', 'transcript', 'created_at', 'contact_email', 'form_share_id',
-    'media_duration_sec',
+    'media_duration_sec', 'raw.share_url', 'raw.input_text',
   ]);
   const [totalSteps, setTotalSteps] = useState<number | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);

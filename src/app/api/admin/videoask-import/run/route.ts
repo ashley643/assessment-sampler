@@ -388,20 +388,26 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
   // Also load source_id → id for rows without URL (text/poll steps) so Sync can dedup them
   const sourceIdToId = new Map<string, number>();
+  // Composite key fallback for existing rows that predate source_id (null source_id, null url)
+  const compositeKeyToId = new Map<string, number>();
   {
     let srcLastId = 0;
     while (true) {
       const { data: srcPage } = await impacter
         .from('student_responses')
-        .select('id, source_id')
-        .not('source_id', 'is', null)
+        .select('id, source_id, student_email, session_name, question_num')
         .is('url', null)
         .gt('id', srcLastId)
         .order('id', { ascending: true })
         .limit(SR_PAGE);
-      const srcRows = (srcPage ?? []) as { id: number; source_id: string }[];
+      const srcRows = (srcPage ?? []) as { id: number; source_id: string | null; student_email: string | null; session_name: string | null; question_num: string | null }[];
       for (const row of srcRows) {
-        if (row.source_id) sourceIdToId.set(String(row.source_id), row.id);
+        if (row.source_id) {
+          sourceIdToId.set(String(row.source_id), row.id);
+        } else {
+          const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
+          if (!compositeKeyToId.has(ck)) compositeKeyToId.set(ck, row.id);
+        }
       }
       if (srcRows.length < SR_PAGE) break;
       srcLastId = srcRows[srcRows.length - 1].id;
@@ -468,6 +474,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         const uuid = extractUuid(mediaUrl);
         const alreadyImported = !!(uuid && importedUuids.has(uuid)) || (!uuid && sourceIdToId.has(String(step.id)));
         if (!updateExisting && alreadyImported) { skipped++; continue; }
+        // Note: compositeKey check happens at sync-split time for updateExisting path
 
         const row: Record<string, unknown> = {};
 
@@ -614,11 +621,19 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   if (updateExisting) {
     const toUpdate    = toInsert.filter(row => {
       const u = extractUuid(String(row.url ?? ''));
-      return (u && uuidToId.has(u)) || (!u && !!row.source_id && sourceIdToId.has(String(row.source_id)));
+      if (u && uuidToId.has(u)) return true;
+      if (!u && row.source_id && sourceIdToId.has(String(row.source_id))) return true;
+      const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
+      if (!u && compositeKeyToId.has(ck)) return true;
+      return false;
     });
     const toInsertNew = toInsert.filter(row => {
       const u = extractUuid(String(row.url ?? ''));
-      return !(u && uuidToId.has(u)) && !(!u && !!row.source_id && sourceIdToId.has(String(row.source_id)));
+      if (u && uuidToId.has(u)) return false;
+      if (!u && row.source_id && sourceIdToId.has(String(row.source_id))) return false;
+      const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
+      if (!u && compositeKeyToId.has(ck)) return false;
+      return true;
     });
 
     // Update existing rows by primary key
@@ -628,8 +643,10 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       const results = await Promise.all(
         toUpdate.slice(i, i + BATCH).map(row => {
           const uuid = extractUuid(String(row.url ?? ''));
+          const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
           const rowId = (uuid ? uuidToId.get(uuid) : undefined)
-            ?? (row.source_id ? sourceIdToId.get(String(row.source_id)) : undefined);
+            ?? (row.source_id ? sourceIdToId.get(String(row.source_id)) : undefined)
+            ?? compositeKeyToId.get(ck);
           if (!rowId) return Promise.resolve({ error: null });
           return impacter.from('student_responses').update(row).eq('id', rowId);
         })
