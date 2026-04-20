@@ -83,7 +83,7 @@ type NodeInfo = {
 
 type NodeRoleValue =
   | { role: 'skip' }
-  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string; crosswalkAttribute?: string; questionNum?: number }
+  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string; crosswalkAttribute?: string; questionNum?: string }
   | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' };
 
 type RunResult = {
@@ -212,12 +212,11 @@ function NodeCard({
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500 whitespace-nowrap">Q#:</span>
             <input
-              type="number"
+              type="text"
               value={role.questionNum ?? ''}
-              onChange={e => onRoleChange({ ...role, questionNum: e.target.value ? Number(e.target.value) : undefined })}
-              placeholder="#"
-              min="1"
-              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400 w-14"
+              onChange={e => onRoleChange({ ...role, questionNum: e.target.value || undefined })}
+              placeholder="e.g. bha_S00_Q01"
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400 w-36"
             />
           </div>
         </div>

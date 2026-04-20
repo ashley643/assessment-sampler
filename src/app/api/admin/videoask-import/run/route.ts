@@ -229,7 +229,7 @@ function djb2(str: string, seed = 5381): number {
 
 // Columns that must be integers in the DB — coerce or null out unparseable values
 // Note: current_grade is TEXT in the DB (holds numbers, "Parent", "Staff", etc.) — not listed here
-const INT_COLUMNS = new Set(['harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score', 'question_num']);
+const INT_COLUMNS = new Set(['harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score']);
 
 function sanitizeRow(row: Record<string, unknown>): void {
   for (const col of INT_COLUMNS) {
@@ -289,7 +289,7 @@ function generateStudentName(
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type NodeRole =
-  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string; crosswalkAttribute?: string; questionNum?: number }
+  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string; crosswalkAttribute?: string; questionNum?: string }
   | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' }
   | { role: 'skip' };
 
