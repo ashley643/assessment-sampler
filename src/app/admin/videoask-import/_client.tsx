@@ -359,6 +359,8 @@ export default function VideoAskImportPage() {
   const [editingLabel, setEditingLabel] = useState('');
 
   const [hideImported, setHideImported] = useState(true);
+  const [addByIdInput, setAddByIdInput] = useState('');
+  const [addByIdMsg, setAddByIdMsg] = useState('');
 
   useEffect(() => {
     document.title = selectedForm
@@ -557,6 +559,24 @@ export default function VideoAskImportPage() {
     setForms(prev => prev.map(f => f.formId === formId ? { ...f, customLabel: label || null } : f));
   }
 
+  async function addFormById() {
+    const id = addByIdInput.trim();
+    if (!id) return;
+    setAddByIdMsg('Adding…');
+    await fetch('/api/admin/videoask-import/discover', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add_form', formId: id }),
+    });
+    setForms(prev => prev.some(f => f.formId === id)
+      ? prev
+      : [...prev, { formId: id, formName: null, customLabel: null, sampleTitle: null, totalSteps: 0, imported: 0, isImported: false }]
+    );
+    setAddByIdInput('');
+    setAddByIdMsg('Added. Click the form to load its steps.');
+    setTimeout(() => setAddByIdMsg(''), 4000);
+  }
+
   async function deleteForm(formId: string, e: React.MouseEvent) {
     e.stopPropagation();
     if (!confirm('Remove this form from the list? It won\'t be deleted from VideoAsk.')) return;
@@ -719,6 +739,28 @@ export default function VideoAskImportPage() {
                 Synced {updateAllProgress.total} forms · {updateAllProgress.totalUpdated} updated, {updateAllProgress.totalInserted} new
                 {updateAllProgress.errors > 0 && ` · ${updateAllProgress.errors} error${updateAllProgress.errors > 1 ? 's' : ''}`}
               </div>
+            )}
+
+            {/* Add form by ID */}
+            <div className="flex items-center gap-2 mb-6">
+              <input
+                type="text"
+                value={addByIdInput}
+                onChange={e => setAddByIdInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addFormById()}
+                placeholder="Add form by ID…"
+                className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
+              />
+              <button
+                onClick={addFormById}
+                disabled={!addByIdInput.trim()}
+                className="px-3 py-2 border border-gray-300 text-sm text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors whitespace-nowrap"
+              >
+                Add
+              </button>
+            </div>
+            {addByIdMsg && (
+              <p className="mb-4 text-xs text-blue-600">{addByIdMsg}</p>
             )}
 
             {formsError && (

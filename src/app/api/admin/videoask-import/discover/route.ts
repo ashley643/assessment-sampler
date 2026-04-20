@@ -184,6 +184,17 @@ export async function PATCH(req: Request) {
     else delete labels[formId];
   } else if (action === 'delete') {
     hidden.add(formId);
+  } else if (action === 'add_form') {
+    // Manually add a form ID that discover missed (e.g. steps have null form_id, or cache gap)
+    const forms = { ...(cache.forms ?? {}) };
+    if (!forms[formId]) forms[formId] = { total: 0, sampleTitle: null, formName: null };
+    // Also un-hide it in case it was previously deleted
+    hidden.delete(formId);
+    const updated = { ...cache, forms, labels, hidden: Array.from(hidden) };
+    await ourDb
+      .from('videoask_import_configs')
+      .upsert({ form_title: CACHE_KEY, column_mappings: updated, static_values: {} }, { onConflict: 'form_title' });
+    return NextResponse.json({ ok: true });
   } else {
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
   }
