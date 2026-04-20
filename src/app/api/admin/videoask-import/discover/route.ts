@@ -184,6 +184,13 @@ export async function PATCH(req: Request) {
     else delete labels[formId];
   } else if (action === 'delete') {
     hidden.add(formId);
+  } else if (action === 'reset_cache') {
+    // Clear cursor positions so the next GET does a full re-scan
+    const updated = { ...cache, lastStepId: '00000000-0000-0000-0000-000000000000', lastSrId: 0 };
+    await ourDb
+      .from('videoask_import_configs')
+      .upsert({ form_title: CACHE_KEY, column_mappings: updated, static_values: {} }, { onConflict: 'form_title' });
+    return NextResponse.json({ ok: true });
   } else if (action === 'add_form') {
     // Manually add a form ID that discover missed (e.g. steps have null form_id, or cache gap)
     const forms = { ...(cache.forms ?? {}) };

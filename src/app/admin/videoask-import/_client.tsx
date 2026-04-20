@@ -392,6 +392,24 @@ export default function VideoAskImportPage() {
     }
   }
 
+  async function resetAndRescan() {
+    setLoadingForms(true);
+    setFormsError('');
+    try {
+      await fetch('/api/admin/videoask-import/discover', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_cache', formId: '__reset__' }),
+      });
+      const res = await fetch('/api/admin/videoask-import/discover');
+      const json = await res.json();
+      if (json.error) { setFormsError(json.error); return; }
+      setForms(json.forms ?? []);
+    } finally {
+      setLoadingForms(false);
+    }
+  }
+
   const loadFormConfig = useCallback(async (form: FormInfo) => {
     setSelectedForm(form);
     setView('configure');
@@ -716,6 +734,14 @@ export default function VideoAskImportPage() {
               >
                 Download CSV
               </a>
+              <button
+                onClick={resetAndRescan}
+                disabled={loadingForms || updatingAll}
+                title="Clear the cursor cache and re-scan all steps from the beginning — use if forms are missing from the list"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                {loadingForms ? 'Scanning…' : 'Reset & Rescan'}
+              </button>
               <button
                 onClick={updateAll}
                 disabled={updatingAll || loadingForms}
