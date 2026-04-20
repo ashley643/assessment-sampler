@@ -36,6 +36,7 @@ const SR_COLUMNS = new Set([
   'harvard_score', 'casel_attribute', 'casel_score', 'url',
   'answer_date', 'source_id',
   'first_name', 'last_name', 'student_email',
+  'share_url', 'response_duration', 'crosswalk_attribute', 'question_num',
 ]);
 
 // ── Alliterative positive student name generation ─────────────────────────
@@ -228,7 +229,7 @@ function djb2(str: string, seed = 5381): number {
 
 // Columns that must be integers in the DB — coerce or null out unparseable values
 // Note: current_grade is TEXT in the DB (holds numbers, "Parent", "Staff", etc.) — not listed here
-const INT_COLUMNS = new Set(['harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score']);
+const INT_COLUMNS = new Set(['harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score', 'question_num']);
 
 function sanitizeRow(row: Record<string, unknown>): void {
   for (const col of INT_COLUMNS) {
@@ -288,7 +289,7 @@ function generateStudentName(
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type NodeRole =
-  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string }
+  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string; crosswalkAttribute?: string; questionNum?: number }
   | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' }
   | { role: 'skip' };
 
@@ -327,7 +328,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       const { data: page, error: stepsErr } = await impacter
         .schema('videoask')
         .from('steps')
-        .select('id, interaction_id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw')
+        .select('id, interaction_id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw, media_duration_sec')
         .eq('form_id', formId)
         .gt('id', lastStepId)
         .order('id', { ascending: true })
@@ -473,8 +474,8 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         // Normalize VideoAsk media_type → human-readable response_type
         if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type), mediaUrl);
 
-        // Fallback: if question not set by mapping, use node_title
-        if (!row.question && step.node_title) row.question = step.node_title;
+        // Fallback: if question not set by mapping, use node_text then node_title
+        if (!row.question) row.question = step.node_text ?? step.node_title ?? null;
 
         // Overlay interaction metadata (only fills gaps — explicit mappings take precedence)
         for (const [col, val] of Object.entries(metadataValues)) {
@@ -483,13 +484,11 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
           }
         }
 
-        // Apply per-node Harvard/CASEL attributes (only if not already set by mappings)
-        if (nodeRole.harvardAttribute && !row.harvard_attribute) {
-          row.harvard_attribute = nodeRole.harvardAttribute;
-        }
-        if (nodeRole.caselAttribute && !row.casel_attribute) {
-          row.casel_attribute = nodeRole.caselAttribute;
-        }
+        // Apply per-node attributes (only if not already set by mappings)
+        if (nodeRole.harvardAttribute && !row.harvard_attribute) row.harvard_attribute = nodeRole.harvardAttribute;
+        if (nodeRole.caselAttribute && !row.casel_attribute) row.casel_attribute = nodeRole.caselAttribute;
+        if (nodeRole.crosswalkAttribute && !row.crosswalk_attribute) row.crosswalk_attribute = nodeRole.crosswalkAttribute;
+        if (nodeRole.questionNum != null && row.question_num == null) row.question_num = nodeRole.questionNum;
 
         // Auto-generate alliterative name — gender-aware, globally unique first name
         if (!row.first_name && !row.last_name && !row.student_email) {
