@@ -386,6 +386,28 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
     lastId = rows[rows.length - 1].id;
   }
 
+  // Also load source_id → id for rows without URL (text/poll steps) so Sync can dedup them
+  const sourceIdToId = new Map<string, number>();
+  {
+    let srcLastId = 0;
+    while (true) {
+      const { data: srcPage } = await impacter
+        .from('student_responses')
+        .select('id, source_id')
+        .not('source_id', 'is', null)
+        .is('url', null)
+        .gt('id', srcLastId)
+        .order('id', { ascending: true })
+        .limit(SR_PAGE);
+      const srcRows = (srcPage ?? []) as { id: number; source_id: string }[];
+      for (const row of srcRows) {
+        if (row.source_id) sourceIdToId.set(String(row.source_id), row.id);
+      }
+      if (srcRows.length < SR_PAGE) break;
+      srcLastId = srcRows[srcRows.length - 1].id;
+    }
+  }
+
   // 3. Build rows to insert (or update)
   const toInsert: Record<string, unknown>[] = [];
   let skipped = 0;
@@ -444,7 +466,7 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
         const mediaUrl = String(step.media_url ?? '');
         const uuid = extractUuid(mediaUrl);
-        const alreadyImported = !!(uuid && importedUuids.has(uuid));
+        const alreadyImported = !!(uuid && importedUuids.has(uuid)) || (!uuid && sourceIdToId.has(String(step.id)));
         if (!updateExisting && alreadyImported) { skipped++; continue; }
 
         const row: Record<string, unknown> = {};
@@ -489,6 +511,9 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
         if (nodeRole.caselAttribute && !row.casel_attribute) row.casel_attribute = nodeRole.caselAttribute;
         if (nodeRole.crosswalkAttribute && !row.crosswalk_attribute) row.crosswalk_attribute = nodeRole.crosswalkAttribute;
         if (nodeRole.questionNum != null && row.question_num == null) row.question_num = nodeRole.questionNum;
+
+        // Always set source_id for dedup of non-URL rows on Sync
+        if (!row.source_id) row.source_id = step.id;
 
         // Auto-generate alliterative name — gender-aware, globally unique first name
         if (!row.first_name && !row.last_name && !row.student_email) {
@@ -554,8 +579,8 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       // Normalize VideoAsk media_type → human-readable response_type
       if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));
 
-      // Fallback: if question not set by mapping, use node_title
-      if (!row.question && step.node_title) row.question = step.node_title;
+      // Fallback: if question not set by mapping, use node_text then node_title
+      if (!row.question) row.question = step.node_text ?? step.node_title ?? null;
 
       // Auto-generate alliterative name — gender-aware, globally unique first name
       if (!row.first_name && !row.last_name && !row.student_email) {
@@ -587,8 +612,14 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
   // 4a. SYNC mode — update existing rows AND insert new ones
   if (updateExisting) {
-    const toUpdate    = toInsert.filter(row => { const u = extractUuid(String(row.url ?? '')); return u && uuidToId.has(u); });
-    const toInsertNew = toInsert.filter(row => { const u = extractUuid(String(row.url ?? '')); return !u || !uuidToId.has(u); });
+    const toUpdate    = toInsert.filter(row => {
+      const u = extractUuid(String(row.url ?? ''));
+      return (u && uuidToId.has(u)) || (!u && !!row.source_id && sourceIdToId.has(String(row.source_id)));
+    });
+    const toInsertNew = toInsert.filter(row => {
+      const u = extractUuid(String(row.url ?? ''));
+      return !(u && uuidToId.has(u)) && !(!u && !!row.source_id && sourceIdToId.has(String(row.source_id)));
+    });
 
     // Update existing rows by primary key
     let updated = 0;
@@ -597,7 +628,8 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
       const results = await Promise.all(
         toUpdate.slice(i, i + BATCH).map(row => {
           const uuid = extractUuid(String(row.url ?? ''));
-          const rowId = uuid ? uuidToId.get(uuid) : undefined;
+          const rowId = (uuid ? uuidToId.get(uuid) : undefined)
+            ?? (row.source_id ? sourceIdToId.get(String(row.source_id)) : undefined);
           if (!rowId) return Promise.resolve({ error: null });
           return impacter.from('student_responses').update(row).eq('id', rowId);
         })

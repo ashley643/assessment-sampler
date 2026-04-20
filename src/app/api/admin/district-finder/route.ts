@@ -96,7 +96,7 @@ export async function GET(req: Request) {
 
     let q = db
       .from('student_responses')
-      .select('id, district_name, school_name, class_name, teacher_name, first_name, last_name, student_email, current_grade, gender, ethnicity, home_language, hispanic, ell, frl, iep, session_name, course_id, response_type, question_num, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, answer_date, source_id');
+      .select('district_name, session_name, school_name, class_name, teacher_name, current_grade, last_name, first_name, student_email, gender, hispanic, ell, frl, iep, ethnicity, home_language, answer_date, course_id, question_num, response_type, question, answer, harvard_attribute, harvard_score, harvard_impacter_score, casel_attribute, casel_score, casel_impacter_score, url, share_url, response_duration, crosswalk_attribute, id');
 
     if (districtName === NO_DISTRICT_EXPORT) {
       q = q.is('district_name', null);
@@ -118,29 +118,83 @@ export async function GET(req: Request) {
       if (pageRows.length < EXPORT_PAGE) break;
       exportFrom += EXPORT_PAGE;
     }
-    if (rows.length === 0) return new Response('\uFEFFid\n', {
-      headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="export.csv"`,
-      },
-    });
 
-    const cols = Object.keys(rows[0]);
     function csvEscape(v: unknown): string {
       if (v == null) return '';
       const s = String(v);
-      // Quote if the value contains comma, double-quote, newline, or carriage-return
       if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
         return `"${s.replace(/"/g, '""')}"`;
       }
       return s;
     }
-    // Prefix with UTF-8 BOM so Excel / Numbers auto-detect encoding instead of
-    // falling back to the system code page (Windows-1252 on most Windows machines),
-    // which would corrupt every multi-byte UTF-8 sequence (e.g. á → Ã¡).
-    const csv = '\uFEFF' + [cols.join(','), ...rows.map(r => cols.map(c => csvEscape(r[c])).join(','))].join('\n');
+    function extractDate(dt: unknown): string { return dt ? String(dt).slice(0, 10) : ''; }
+    function extractTime(dt: unknown): string {
+      if (!dt) return '';
+      const m = String(dt).match(/[T ](\d{2}:\d{2}:\d{2})/);
+      return m ? m[1] : '';
+    }
+    function wc(text: unknown): string {
+      if (!text) return '';
+      const s = String(text).trim();
+      return s ? String(s.split(/\s+/).filter(Boolean).length) : '';
+    }
+
+    const CSV_HEADERS = [
+      'district_name', 'session_name', 'school_name', 'class_name', 'teacher_name',
+      'current_grade', 'hs_grad_year', 'last_name', 'first_name', 'student_email',
+      'gender', 'hispanic', 'ell', 'frl', 'iep', 'ethnicity', 'home_language',
+      'answer_date', 'answer_time', 'course_id', 'question_num', 'type',
+      'question', 'answer', 'harvard_attribute', 'harvard_score', 'harvard_impacter_score',
+      'casel_attribute', 'casel_score', 'casel_impacter_score', 'url', 'share_url',
+      'word_count', 'response_duration', 'crosswalk_attribute', 'crosswalk_score',
+      'crosswalk_impacter_score', 'score_band', 'grade_band', 'initials', 'id',
+    ];
+
+    const lines: string[] = ['\uFEFF' + CSV_HEADERS.join(',')];
+    for (const r of rows) {
+      lines.push([
+        csvEscape(r.district_name),
+        csvEscape(r.session_name),
+        csvEscape(r.school_name),
+        csvEscape(r.class_name),
+        csvEscape(r.teacher_name),
+        csvEscape(r.current_grade),
+        '',
+        csvEscape(r.last_name),
+        csvEscape(r.first_name),
+        csvEscape(r.student_email),
+        csvEscape(r.gender),
+        csvEscape(r.hispanic),
+        csvEscape(r.ell),
+        csvEscape(r.frl),
+        csvEscape(r.iep),
+        csvEscape(r.ethnicity),
+        csvEscape(r.home_language),
+        csvEscape(extractDate(r.answer_date)),
+        csvEscape(extractTime(r.answer_date)),
+        csvEscape(r.course_id),
+        csvEscape(r.question_num),
+        csvEscape(r.response_type),
+        csvEscape(r.question),
+        csvEscape(r.answer),
+        csvEscape(r.harvard_attribute),
+        csvEscape(r.harvard_score),
+        csvEscape(r.harvard_impacter_score),
+        csvEscape(r.casel_attribute),
+        csvEscape(r.casel_score),
+        csvEscape(r.casel_impacter_score),
+        csvEscape(r.url),
+        csvEscape(r.share_url),
+        wc(r.answer),
+        csvEscape(r.response_duration),
+        csvEscape(r.crosswalk_attribute),
+        '', '', '', '', '',
+        csvEscape(r.id),
+      ].join(','));
+    }
+
     const safeName = (schoolName || districtName).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    return new Response(csv, {
+    return new Response(lines.join('\r\n'), {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${safeName}_export.csv"`,
