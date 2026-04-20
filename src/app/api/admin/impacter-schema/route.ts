@@ -20,6 +20,26 @@ export async function GET() {
   }
 
   const studentResponses = await probe('student_responses');
+  const videoaskForms        = await probe('forms', 'videoask');
+  const videoaskInteractions = await probe('interactions', 'videoask');
+
+  // Show raw field keys + sample values for videoask.forms
+  let formsRawSample: Record<string, unknown> | null = null;
+  {
+    const { data } = await (db as any).schema('videoask').from('forms').select('raw').not('raw', 'is', null).limit(1);
+    if (data?.[0]?.raw) {
+      const raw = data[0].raw as Record<string, unknown>;
+      // Show keys + shallow preview of each value
+      formsRawSample = Object.fromEntries(
+        Object.entries(raw).map(([k, v]) => [
+          k,
+          Array.isArray(v) ? `[array len=${(v as unknown[]).length}, sample=${JSON.stringify((v as unknown[])[0]).slice(0, 200)}]`
+            : typeof v === 'object' && v !== null ? JSON.stringify(v).slice(0, 200)
+            : v,
+        ])
+      );
+    }
+  }
 
   // Count total rows
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,6 +93,9 @@ export async function GET() {
     media_rows: mediaRows,
     media_rows_error: mediaErr?.message ?? null,
     videoask_steps: videoaskSteps,
+    videoask_forms: videoaskForms,
+    videoask_forms_raw_sample: formsRawSample,
+    videoask_interactions: videoaskInteractions,
     target_form_count: targetFormCount,
     target_form_error: targetErr?.message ?? null,
     distinct_form_ids: formIdCounts,
