@@ -6,7 +6,15 @@ function getResend() {
 }
 
 const FROM = 'Impacter Pathway <info@impacterpathway.com>';
-const INTERNAL_TO = ['ashley@impacterpathway.com'];
+const INTERNAL_TO = [
+  'ashley@impacterpathway.com',
+  'javier@impacterpathway.com',
+  'lou@impacterpathway.com',
+  'danny@impacterpathway.com',
+  'gabrielle@impacterpathway.com',
+  'rodney@impacterpathway.com',
+  'josh@impacterpathway.com',
+];
 const ADMIN_URL = 'https://try.impacterpathway.com/admin/pilot-submissions';
 
 const TYPE_LABELS: Record<string, string> = {
