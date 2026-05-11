@@ -424,14 +424,18 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
   const hasNodeRoles = nodeRoles && Object.keys(nodeRoles).length > 0;
 
   if (hasNodeRoles) {
-    // ── NODE-ROLE MODE: group by interaction_id ──
+    // ── NODE-ROLE MODE: group by contact_id (falls back to interaction_id) ──
+    // VideoAsk text/poll steps can have a null or different interaction_id than
+    // the video/audio steps in the same session, but contact_id is stable across
+    // all node types for the same respondent.
 
-    // Group steps by interaction_id
+    // Group steps by contact_id (from raw JSONB), falling back to interaction_id
     const byInteraction = new Map<string, Record<string, unknown>[]>();
     for (const step of steps) {
-      const interactionId = String(step.interaction_id ?? '');
-      if (!byInteraction.has(interactionId)) byInteraction.set(interactionId, []);
-      byInteraction.get(interactionId)!.push(step);
+      const raw = (step.raw ?? {}) as Record<string, unknown>;
+      const key = String(raw.contact_id ?? step.interaction_id ?? '');
+      if (!byInteraction.has(key)) byInteraction.set(key, []);
+      byInteraction.get(key)!.push(step);
     }
 
     for (const [interactionId, interactionSteps] of byInteraction) {
@@ -446,7 +450,10 @@ export async function runImportCore(params: RunParams): Promise<RunResult> {
 
         let value: unknown = null;
         if (sourceField === 'transcript') {
-          value = step.transcript ?? null;
+          const raw = (step.raw ?? {}) as Record<string, unknown>;
+          // step.transcript is populated for voice/video transcriptions and some text nodes;
+          // raw.input_text is used by VideoAsk for typed text-input node responses
+          value = step.transcript ?? (typeof raw.input_text === 'string' ? raw.input_text : null) ?? null;
         } else if (sourceField === 'poll_option') {
           const raw = (step.raw ?? {}) as Record<string, unknown>;
           // VideoAsk stores the selected option directly in poll_option_content
