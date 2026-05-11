@@ -1,702 +1,1075 @@
-import { NextResponse } from 'next/server';
-import { getAdminSession } from '@/lib/auth';
-import { getImpacterClient } from '@/lib/impacter-client';
+'use client';
 
-function extractUuid(url: string): string | null {
-  const m = url.match(/\/transcoded\/([0-9a-f-]{36})\//);
-  return m ? m[1] : null;
-}
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 
-// Map VideoAsk internal media_type values to readable response types
-function normalizeResponseType(raw: string, url?: string): string {
-  // No URL = typed/text response regardless of what VideoAsk says
-  if (url !== undefined && url === '') return 'text';
-  switch (raw.toLowerCase()) {
-    case 'standard': {
-      // Derive from URL extension: .mp3 = audio, .mp4 = video
-      const lower = (url ?? '').toLowerCase();
-      if (lower.includes('.mp3')) return 'audio';
-      if (lower.includes('.mp4')) return 'video';
-      return 'video'; // fallback
-    }
-    case 'audio':    return 'audio';
-    case 'text':     return 'text';
-    case 'poll':     return 'poll';
-    case 'file':     return 'file';
-    default:         return raw;
-  }
-}
+const SR_COLUMNS: { col: string; label: string; hint?: string }[] = [
+  { col: 'first_name',      label: 'First Name',           hint: 'auto-generated' },
+  { col: 'last_name',       label: 'Last Name',            hint: 'auto-generated' },
+  { col: 'student_email',   label: 'Student Email',        hint: 'auto-generated' },
+  { col: 'district_name',   label: 'District Name' },
+  { col: 'school_name',     label: 'School Name' },
+  { col: 'class_name',      label: 'Class Name' },
+  { col: 'teacher_name',    label: 'Teacher Name' },
+  { col: 'current_grade',   label: 'Grade' },
+  { col: 'gender',          label: 'Gender' },
+  { col: 'hispanic',        label: 'Hispanic',             hint: 'true/false' },
+  { col: 'ell',             label: 'ELL',                  hint: 'true/false' },
+  { col: 'frl',             label: 'FRL',                  hint: 'true/false' },
+  { col: 'iep',             label: 'IEP',                  hint: 'true/false' },
+  { col: 'ethnicity',       label: 'Ethnicity' },
+  { col: 'home_language',   label: 'Home Language' },
+  { col: 'session_name',    label: 'Session Name' },
+  { col: 'course_id',       label: 'Course ID' },
+  { col: 'response_type',   label: 'Response Type' },
+  { col: 'question',        label: 'Question' },
+  { col: 'answer',          label: 'Answer / Transcript' },
+  { col: 'harvard_attribute', label: 'Harvard Attribute',  hint: 'per node' },
+  { col: 'casel_attribute', label: 'CASEL Attribute',      hint: 'per node' },
+  { col: 'url',               label: 'Media URL' },
+  { col: 'share_url',         label: 'Share URL' },
+  { col: 'answer_date',       label: 'Answer Date' },
+  { col: 'source_id',         label: 'Source ID' },
+  { col: 'response_duration', label: 'Response Duration', hint: 'seconds' },
+  { col: 'crosswalk_attribute', label: 'Crosswalk Attr', hint: 'per node' },
+  { col: 'question_num',      label: 'Question #',        hint: 'per node' },
+];
 
-// The valid student_responses columns we can populate
-const SR_COLUMNS = new Set([
-  'district_name', 'school_name', 'class_name', 'teacher_name',
-  'current_grade', 'gender', 'hispanic', 'ell', 'frl', 'iep',
-  'ethnicity', 'home_language', 'session_name', 'course_id',
-  'response_type', 'question', 'answer', 'harvard_attribute',
-  'harvard_score', 'casel_attribute', 'casel_score', 'url',
-  'answer_date', 'source_id',
-  'first_name', 'last_name', 'student_email',
-  'share_url', 'response_duration', 'crosswalk_attribute', 'question_num',
-]);
+const HARVARD_ATTRIBUTES = [
+  '', 'compassion', 'curiosity', 'grit', 'gratitude', 'growth_mindset', 'perspective_taking', 'purpose', 'self_control',
+];
 
-// ── Alliterative positive student name generation ─────────────────────────
+const CASEL_ATTRIBUTES = [
+  '', 'self_awareness', 'self_management', 'social_awareness',
+  'relationship_skills', 'responsible_decision_making',
+];
 
-// Each first name tagged: 'f' = female-coded, 'm' = male-coded, 'n' = neutral
-type NameEntry = { name: string; g: 'f' | 'm' | 'n' };
-
-const ALLITERATIVE_NAMES: Record<string, { first: NameEntry[]; trait: string[] }> = {
-  A: { first: [
-    {name:'Aaliyah',g:'f'},{name:'Abby',g:'f'},{name:'Ada',g:'f'},{name:'Aliya',g:'f'},{name:'Amy',g:'f'},{name:'Amara',g:'f'},{name:'Aurora',g:'f'},
-    {name:'Adriana',g:'f'},{name:'Aisha',g:'f'},{name:'Alana',g:'f'},{name:'Alyssa',g:'f'},{name:'Amber',g:'f'},{name:'Anaya',g:'f'},{name:'Ariana',g:'f'},{name:'Autumn',g:'f'},{name:'Alejandra',g:'f'},{name:'Alma',g:'f'},
-    {name:'Aaron',g:'m'},{name:'Ace',g:'m'},{name:'Aiden',g:'m'},{name:'Alvin',g:'m'},{name:'Andre',g:'m'},
-    {name:'Abel',g:'m'},{name:'Abraham',g:'m'},{name:'Adrian',g:'m'},{name:'Ahmad',g:'m'},{name:'Alejandro',g:'m'},{name:'Alonso',g:'m'},{name:'Armando',g:'m'},{name:'Arturo',g:'m'},{name:'Axel',g:'m'},
-    {name:'Alex',g:'n'},{name:'Avery',g:'n'},{name:'Ash',g:'n'},{name:'Ari',g:'n'},{name:'Aspen',g:'n'},{name:'Aubrey',g:'n'},
-  ], trait: ['Achiever','Adventurous','Amazing','Ambitious','Artistic','Attentive','Authentic','Awesome','Adaptive','Assured','Agile','Alert','Alive','Aspiring','Astute'] },
-  B: { first: [
-    {name:'Bianca',g:'f'},{name:'Brianna',g:'f'},{name:'Brooke',g:'f'},{name:'Bella',g:'f'},{name:'Beatrice',g:'f'},
-    {name:'Bethany',g:'f'},{name:'Bonnie',g:'f'},{name:'Bria',g:'f'},{name:'Bridget',g:'f'},{name:'Blossom',g:'f'},{name:'Brenda',g:'f'},{name:'Bernadette',g:'f'},
-    {name:'Ben',g:'m'},{name:'Bobby',g:'m'},{name:'Brandon',g:'m'},{name:'Bruno',g:'m'},{name:'Bryson',g:'m'},{name:'Barrett',g:'m'},
-    {name:'Bradley',g:'m'},{name:'Brendan',g:'m'},{name:'Brett',g:'m'},{name:'Brody',g:'m'},{name:'Byron',g:'m'},{name:'Bernard',g:'m'},{name:'Beau',g:'m'},
-    {name:'Bailey',g:'n'},{name:'Blake',g:'n'},{name:'Blair',g:'n'},{name:'Bay',g:'n'},{name:'Billie',g:'n'},{name:'Brighton',g:'n'},
-  ], trait: ['Balanced','Brave','Bright','Brilliant','Bubbly','Bold','Bouncy','Benevolent','Blossoming','Beaming','Boundless','Blooming','Becoming','Breathtaking','Building'] },
-  C: { first: [
-    {name:'Camila',g:'f'},{name:'Carmen',g:'f'},{name:'Chloe',g:'f'},{name:'Clara',g:'f'},{name:'Cora',g:'f'},{name:'Celeste',g:'f'},
-    {name:'Cassidy',g:'f'},{name:'Catalina',g:'f'},{name:'Cecilia',g:'f'},{name:'Chelsea',g:'f'},{name:'Christina',g:'f'},{name:'Ciara',g:'f'},{name:'Claudia',g:'f'},{name:'Constance',g:'f'},{name:'Crystal',g:'f'},
-    {name:'Caleb',g:'m'},{name:'Carlos',g:'m'},{name:'Cole',g:'m'},{name:'Connor',g:'m'},{name:'Cruz',g:'m'},
-    {name:'Carl',g:'m'},{name:'Cedric',g:'m'},{name:'Christian',g:'m'},{name:'Cody',g:'m'},{name:'Colin',g:'m'},{name:'Cyrus',g:'m'},{name:'Corbin',g:'m'},{name:'Christopher',g:'m'},
-    {name:'Casey',g:'n'},{name:'Charlie',g:'n'},{name:'Corey',g:'n'},{name:'Cedar',g:'n'},{name:'Cypress',g:'n'},
-  ], trait: ['Calm','Capable','Caring','Cheerful','Clever','Compassionate','Confident','Creative','Curious','Courageous','Centered','Charming','Committed','Connected','Consistent'] },
-  D: { first: [
-    {name:'Danika',g:'f'},{name:'Deja',g:'f'},{name:'Diana',g:'f'},{name:'Dahlia',g:'f'},{name:'Destiny',g:'f'},
-    {name:'Daniela',g:'f'},{name:'Daphne',g:'f'},{name:'Daisy',g:'f'},{name:'Delilah',g:'f'},{name:'Delaney',g:'f'},{name:'Demi',g:'f'},{name:'Dominique',g:'f'},{name:'Dora',g:'f'},
-    {name:'Damian',g:'m'},{name:'Danny',g:'m'},{name:'Derek',g:'m'},{name:'Diego',g:'m'},{name:'Dominic',g:'m'},{name:'Damon',g:'m'},
-    {name:'Dale',g:'m'},{name:'Dante',g:'m'},{name:'Darius',g:'m'},{name:'David',g:'m'},{name:'Dean',g:'m'},{name:'Devin',g:'m'},{name:'Donovan',g:'m'},{name:'Duncan',g:'m'},
-    {name:'Dakota',g:'n'},{name:'Dylan',g:'n'},{name:'Drew',g:'n'},{name:'Darcy',g:'n'},{name:'Devyn',g:'n'},
-  ], trait: ['Daring','Dedicated','Delightful','Determined','Devoted','Diligent','Dynamic','Driven','Dazzling','Dependable','Decisive','Deep','Deserving','Dignified','Disciplined'] },
-  E: { first: [
-    {name:'Elena',g:'f'},{name:'Elisa',g:'f'},{name:'Ella',g:'f'},{name:'Emma',g:'f'},{name:'Eva',g:'f'},{name:'Esme',g:'f'},
-    {name:'Ebony',g:'f'},{name:'Eliana',g:'f'},{name:'Ellie',g:'f'},{name:'Emily',g:'f'},{name:'Esperanza',g:'f'},{name:'Estrella',g:'f'},{name:'Evelyn',g:'f'},{name:'Evie',g:'f'},{name:'Elaine',g:'f'},
-    {name:'Eddie',g:'m'},{name:'Eli',g:'m'},{name:'Elijah',g:'m'},{name:'Eric',g:'m'},{name:'Ethan',g:'m'},{name:'Emilio',g:'m'},
-    {name:'Edgar',g:'m'},{name:'Edison',g:'m'},{name:'Eduardo',g:'m'},{name:'Emmanuel',g:'m'},{name:'Enrique',g:'m'},{name:'Enzo',g:'m'},{name:'Evan',g:'m'},{name:'Ezra',g:'m'},
-    {name:'Emery',g:'n'},{name:'Elliot',g:'n'},{name:'Echo',g:'n'},{name:'Ember',g:'n'},{name:'Ever',g:'n'},
-  ], trait: ['Eager','Earnest','Empathetic','Energetic','Enthusiastic','Expressive','Extraordinary','Excellent','Evolving','Enduring','Electric','Elevated','Engaged','Essential','Evolving'] },
-  F: { first: [
-    {name:'Faith',g:'f'},{name:'Florence',g:'f'},{name:'Freya',g:'f'},{name:'Fiona',g:'f'},{name:'Felicity',g:'f'},
-    {name:'Farida',g:'f'},{name:'Fernanda',g:'f'},{name:'Francesca',g:'f'},{name:'Frida',g:'f'},{name:'Fatima',g:'f'},{name:'Flor',g:'f'},
-    {name:'Felix',g:'m'},{name:'Finn',g:'m'},{name:'Francisco',g:'m'},{name:'Freddie',g:'m'},{name:'Flynn',g:'m'},
-    {name:'Fabian',g:'m'},{name:'Fernando',g:'m'},{name:'Fletcher',g:'m'},{name:'Foster',g:'m'},{name:'Franco',g:'m'},{name:'Franklin',g:'m'},
-    {name:'Frankie',g:'n'},{name:'Finley',g:'n'},{name:'Fern',g:'n'},{name:'Fallon',g:'n'},
-  ], trait: ['Fearless','Focused','Forthright','Friendly','Fulfilled','Fantastic','Flourishing','Forgiving','Forward','Fierce','Free','Fresh','Fulfilled','Fueled','Faithful'] },
-  G: { first: [
-    {name:'Gabriela',g:'f'},{name:'Gianna',g:'f'},{name:'Grace',g:'f'},{name:'Greta',g:'f'},{name:'Gloria',g:'f'},
-    {name:'Gemma',g:'f'},{name:'Georgia',g:'f'},{name:'Gracie',g:'f'},{name:'Guadalupe',g:'f'},{name:'Gwen',g:'f'},{name:'Giselle',g:'f'},{name:'Giovanna',g:'f'},
-    {name:'Gage',g:'m'},{name:'Gideon',g:'m'},{name:'Grant',g:'m'},{name:'Grayson',g:'m'},{name:'Garrett',g:'m'},
-    {name:'Gabriel',g:'m'},{name:'Gavin',g:'m'},{name:'George',g:'m'},{name:'Giovanni',g:'m'},{name:'Graham',g:'m'},{name:'Guillermo',g:'m'},{name:'Gunner',g:'m'},
-    {name:'Genesis',g:'n'},{name:'Gray',g:'n'},{name:'Grove',g:'n'},
-  ], trait: ['Generous','Gentle','Gifted','Glowing','Gracious','Grateful','Grounded','Genuine','Growing','Gleaming','Giving','Gallant','Gaining','Glorious','Guiding'] },
-  H: { first: [
-    {name:'Hannah',g:'f'},{name:'Hazel',g:'f'},{name:'Hope',g:'f'},{name:'Holly',g:'f'},{name:'Hana',g:'f'},
-    {name:'Hailey',g:'f'},{name:'Harriet',g:'f'},{name:'Helena',g:'f'},{name:'Heaven',g:'f'},{name:'Hilda',g:'f'},{name:'Honoria',g:'f'},
-    {name:'Harrison',g:'m'},{name:'Henry',g:'m'},{name:'Hudson',g:'m'},{name:'Hugo',g:'m'},{name:'Hector',g:'m'},
-    {name:'Hakeem',g:'m'},{name:'Harold',g:'m'},{name:'Hassan',g:'m'},{name:'Heath',g:'m'},{name:'Henrique',g:'m'},{name:'Howard',g:'m'},
-    {name:'Harley',g:'n'},{name:'Harper',g:'n'},{name:'Hayden',g:'n'},{name:'Hunter',g:'n'},{name:'Haven',g:'n'},
-  ], trait: ['Happy','Hardworking','Harmonious','Helpful','Honest','Hopeful','Humble','Heroic','Heartfelt','Healing','Hands-on','Hearty','High-achieving','Holistic','Hunger-driven'] },
-  I: { first: [
-    {name:'Ida',g:'f'},{name:'Ines',g:'f'},{name:'Isabella',g:'f'},{name:'Ivy',g:'f'},{name:'Iris',g:'f'},
-    {name:'Imara',g:'f'},{name:'India',g:'f'},{name:'Indira',g:'f'},{name:'Irene',g:'f'},{name:'Isa',g:'f'},{name:'Isadora',g:'f'},{name:'Itzel',g:'f'},
-    {name:'Ian',g:'m'},{name:'Isaac',g:'m'},{name:'Isaiah',g:'m'},{name:'Ivan',g:'m'},{name:'Ignacio',g:'m'},
-    {name:'Ibrahim',g:'m'},{name:'Idris',g:'m'},{name:'Isaias',g:'m'},{name:'Isidro',g:'m'},{name:'Ignatius',g:'m'},
-    {name:'Imani',g:'n'},{name:'Indigo',g:'n'},{name:'Indie',g:'n'},
-  ], trait: ['Imaginative','Inclusive','Independent','Industrious','Innovative','Insightful','Inspired','Intuitive','Impactful','Inquisitive','Illuminating','Influential','Intentional','Invested','Incredible'] },
-  J: { first: [
-    {name:'Jade',g:'f'},{name:'Jasmine',g:'f'},{name:'Jenna',g:'f'},{name:'Joy',g:'f'},{name:'Juniper',g:'f'},{name:'Julia',g:'f'},
-    {name:'Jacqueline',g:'f'},{name:'Jada',g:'f'},{name:'Jamila',g:'f'},{name:'Janelle',g:'f'},{name:'Jocelyn',g:'f'},{name:'Josephine',g:'f'},{name:'Juanita',g:'f'},{name:'Juliana',g:'f'},
-    {name:'Javier',g:'m'},{name:'Jayden',g:'m'},{name:'Julian',g:'m'},{name:'Jonas',g:'m'},{name:'Joel',g:'m'},
-    {name:'Jack',g:'m'},{name:'Jacob',g:'m'},{name:'Jaime',g:'m'},{name:'Jalen',g:'m'},{name:'James',g:'m'},{name:'Jarvis',g:'m'},{name:'Jason',g:'m'},{name:'Joaquin',g:'m'},{name:'Jose',g:'m'},{name:'Juan',g:'m'},
-    {name:'Jesse',g:'n'},{name:'Jordan',g:'n'},{name:'Jamie',g:'n'},{name:'Jazz',g:'n'},{name:'Juneau',g:'n'},
-  ], trait: ['Joyful','Jubilant','Just','Jovial','Judicious','Journeying','Jazzy','Justified','Joyous','Jumping','Jazzed','Jewel','Joined','Journeyed','Juiced'] },
-  K: { first: [
-    {name:'Kamila',g:'f'},{name:'Karen',g:'f'},{name:'Keisha',g:'f'},{name:'Kira',g:'f'},{name:'Kylie',g:'f'},
-    {name:'Kaia',g:'f'},{name:'Kalani',g:'f'},{name:'Karla',g:'f'},{name:'Katelyn',g:'f'},{name:'Katrina',g:'f'},{name:'Kendra',g:'f'},{name:'Kiara',g:'f'},
-    {name:'Keanu',g:'m'},{name:'Kevin',g:'m'},{name:'Kyle',g:'m'},{name:'Kane',g:'m'},{name:'Knox',g:'m'},
-    {name:'Kaleb',g:'m'},{name:'Kendrick',g:'m'},{name:'Kenneth',g:'m'},{name:'Khalil',g:'m'},{name:'Kofi',g:'m'},{name:'Kristian',g:'m'},
-    {name:'Kai',g:'n'},{name:'Kelly',g:'n'},{name:'Kennedy',g:'n'},{name:'Kim',g:'n'},{name:'Kit',g:'n'},
-  ], trait: ['Kind','Keen','Kindhearted','Knowledgeable','Kickstarting','Kaleidoscopic','Knowing','Kindling','Key','Kingly','Kindred','Knack','Knockout','Kudos','Kinetic'] },
-  L: { first: [
-    {name:'Lana',g:'f'},{name:'Laura',g:'f'},{name:'Lauren',g:'f'},{name:'Layla',g:'f'},{name:'Lexi',g:'f'},{name:'Lily',g:'f'},{name:'Luna',g:'f'},
-    {name:'Laila',g:'f'},{name:'Lara',g:'f'},{name:'Larissa',g:'f'},{name:'Latoya',g:'f'},{name:'Leah',g:'f'},{name:'Leticia',g:'f'},{name:'Liliana',g:'f'},{name:'Lourdes',g:'f'},
-    {name:'Leo',g:'m'},{name:'Liam',g:'m'},{name:'Lucas',g:'m'},{name:'Luca',g:'m'},{name:'Lance',g:'m'},
-    {name:'Landon',g:'m'},{name:'Lawrence',g:'m'},{name:'Leroy',g:'m'},{name:'Lionel',g:'m'},{name:'Lorenzo',g:'m'},{name:'Luis',g:'m'},{name:'Luke',g:'m'},
-    {name:'Logan',g:'n'},{name:'Lennon',g:'n'},{name:'Lake',g:'n'},{name:'Lark',g:'n'},
-  ], trait: ['Lively','Loyal','Luminous','Loving','Likable','Lighthearted','Leading','Legendary','Limitless','Lifting','Lively','Lasting','Launching','Leaping','Limitbreaking'] },
-  M: { first: [
-    {name:'Makayla',g:'f'},{name:'Maria',g:'f'},{name:'Maya',g:'f'},{name:'Mia',g:'f'},{name:'Mikaela',g:'f'},{name:'Melody',g:'f'},
-    {name:'Marisol',g:'f'},{name:'Mariana',g:'f'},{name:'Marlena',g:'f'},{name:'Megan',g:'f'},{name:'Mercedes',g:'f'},{name:'Michelle',g:'f'},{name:'Miriam',g:'f'},{name:'Monica',g:'f'},
-    {name:'Maddox',g:'m'},{name:'Marcus',g:'m'},{name:'Mason',g:'m'},{name:'Miles',g:'m'},{name:'Myles',g:'m'},{name:'Miguel',g:'m'},
-    {name:'Malcolm',g:'m'},{name:'Manuel',g:'m'},{name:'Mario',g:'m'},{name:'Martin',g:'m'},{name:'Matthew',g:'m'},{name:'Maurice',g:'m'},{name:'Maxwell',g:'m'},
-    {name:'Morgan',g:'n'},{name:'Micah',g:'n'},{name:'Monroe',g:'n'},{name:'Moss',g:'n'},
-  ], trait: ['Magnificent','Mindful','Motivated','Marvelous','Meaningful','Mighty','Masterful','Magnetic','Maturing','Mentoring','Making-moves','Measured','Merciful','Mending','Moonlit'] },
-  N: { first: [
-    {name:'Nadia',g:'f'},{name:'Natalie',g:'f'},{name:'Nicole',g:'f'},{name:'Nora',g:'f'},{name:'Nova',g:'f'},{name:'Nyla',g:'f'},
-    {name:'Nadine',g:'f'},{name:'Naomi',g:'f'},{name:'Natasha',g:'f'},{name:'Nia',g:'f'},{name:'Nina',g:'f'},{name:'Nkechi',g:'f'},
-    {name:'Nathan',g:'m'},{name:'Noah',g:'m'},{name:'Nico',g:'m'},{name:'Noel',g:'m'},{name:'Niko',g:'m'},
-    {name:'Nasir',g:'m'},{name:'Neil',g:'m'},{name:'Nelson',g:'m'},{name:'Nicholas',g:'m'},{name:'Nigel',g:'m'},{name:'Nino',g:'m'},
-    {name:'Naveen',g:'n'},{name:'Navy',g:'n'},{name:'North',g:'n'},
-  ], trait: ['Natural','Nurturing','Noble','Notable','Nice','Nimble','Nifty','Noteworthy','Nourishing','Navigating','Needed','Networked','New','Next-level','Neighborly'] },
-  O: { first: [
-    {name:'Olivia',g:'f'},{name:'Ona',g:'f'},{name:'Odessa',g:'f'},{name:'Opal',g:'f'},
-    {name:'Odette',g:'f'},{name:'Olga',g:'f'},{name:'Olympia',g:'f'},{name:'Ondina',g:'f'},{name:'Orla',g:'f'},
-    {name:'Obi',g:'m'},{name:'Omar',g:'m'},{name:'Orlando',g:'m'},{name:'Oscar',g:'m'},{name:'Owen',g:'m'},{name:'Orion',g:'m'},
-    {name:'Obinna',g:'m'},{name:'Octavio',g:'m'},{name:'Olu',g:'m'},{name:'Oran',g:'m'},{name:'Otis',g:'m'},
-    {name:'Ocean',g:'n'},{name:'Oakley',g:'n'},{name:'Onyx',g:'n'},
-  ], trait: ['Open','Optimistic','Original','Outstanding','Outgoing','Openhearted','Observant','Organic','Overcoming','Owning','Onto-it','Outshining','Outstanding','Onward','One-of-a-kind'] },
-  P: { first: [
-    {name:'Paige',g:'f'},{name:'Penelope',g:'f'},{name:'Phoebe',g:'f'},{name:'Priya',g:'f'},{name:'Paloma',g:'f'},{name:'Pia',g:'f'},
-    {name:'Patricia',g:'f'},{name:'Paula',g:'f'},{name:'Pearl',g:'f'},{name:'Perla',g:'f'},{name:'Petra',g:'f'},{name:'Pilar',g:'f'},
-    {name:'Patrick',g:'m'},{name:'Pierce',g:'m'},{name:'Pablo',g:'m'},{name:'Preston',g:'m'},
-    {name:'Pedro',g:'m'},{name:'Percy',g:'m'},{name:'Philip',g:'m'},{name:'Phoenix',g:'m'},{name:'Primo',g:'m'},{name:'Prince',g:'m'},
-    {name:'Parker',g:'n'},{name:'Peyton',g:'n'},{name:'Pax',g:'n'},{name:'Pine',g:'n'},
-  ], trait: ['Patient','Peaceful','Persistent','Playful','Positive','Powerful','Proactive','Proud','Purpose-driven','Promising','Passionate','Polished','Principled','Progressive','Pioneering'] },
-  Q: { first: [
-    {name:'Queen',g:'f'},{name:'Quinella',g:'f'},{name:'Questa',g:'f'},{name:'Quiana',g:'f'},
-    {name:'Quincy',g:'m'},{name:'Quentin',g:'m'},{name:'Quest',g:'m'},{name:'Quillan',g:'m'},
-    {name:'Quinn',g:'n'},{name:'Quill',g:'n'},
-  ], trait: ['Quick','Qualified','Quality','Quirky','Questioning','Quintessential','Questing','Quiet-strength','Quickwitted','Quenching'] },
-  R: { first: [
-    {name:'Rachel',g:'f'},{name:'Rosa',g:'f'},{name:'Rosalind',g:'f'},{name:'Ruby',g:'f'},
-    {name:'Raquel',g:'f'},{name:'Rebecca',g:'f'},{name:'Renata',g:'f'},{name:'Rhea',g:'f'},{name:'Rita',g:'f'},{name:'Rosario',g:'f'},{name:'Roxanne',g:'f'},{name:'Ruth',g:'f'},
-    {name:'Rafael',g:'m'},{name:'Ramon',g:'m'},{name:'Ricardo',g:'m'},{name:'Roman',g:'m'},{name:'Ryder',g:'m'},
-    {name:'Raul',g:'m'},{name:'Raymond',g:'m'},{name:'Reggie',g:'m'},{name:'Reginald',g:'m'},{name:'Reuben',g:'m'},{name:'Rex',g:'m'},{name:'Rodrigo',g:'m'},{name:'Roland',g:'m'},
-    {name:'Reagan',g:'n'},{name:'Reese',g:'n'},{name:'Riley',g:'n'},{name:'River',g:'n'},{name:'Robin',g:'n'},{name:'Ryan',g:'n'},
-  ], trait: ['Radiant','Reliable','Resilient','Resourceful','Respectful','Remarkable','Righteous','Rising','Reaching','Rooted','Ready','Real','Refreshing','Relentless','Rewarding'] },
-  S: { first: [
-    {name:'Sadie',g:'f'},{name:'Sara',g:'f'},{name:'Savannah',g:'f'},{name:'Selena',g:'f'},{name:'Siena',g:'f'},{name:'Sofia',g:'f'},{name:'Summer',g:'f'},{name:'Stella',g:'f'},
-    {name:'Sandra',g:'f'},{name:'Serena',g:'f'},{name:'Shakira',g:'f'},{name:'Shannon',g:'f'},{name:'Shayla',g:'f'},{name:'Simone',g:'f'},{name:'Sonia',g:'f'},{name:'Stacy',g:'f'},
-    {name:'Sebastian',g:'m'},{name:'Sergio',g:'m'},{name:'Simon',g:'m'},{name:'Sterling',g:'m'},
-    {name:'Samuel',g:'m'},{name:'Santiago',g:'m'},{name:'Scott',g:'m'},{name:'Sean',g:'m'},{name:'Seth',g:'m'},{name:'Solomon',g:'m'},{name:'Stefan',g:'m'},{name:'Steven',g:'m'},
-    {name:'Sam',g:'n'},{name:'Skylar',g:'n'},{name:'Sage',g:'n'},{name:'Scout',g:'n'},{name:'Storm',g:'n'},
-  ], trait: ['Sincere','Smart','Spirited','Splendid','Stellar','Strong','Supportive','Steadfast','Shining','Soaring','Selfless','Serene','Sharp','Skilled','Soulful'] },
-  T: { first: [
-    {name:'Talia',g:'f'},{name:'Tia',g:'f'},{name:'Tori',g:'f'},{name:'Tyra',g:'f'},{name:'Thea',g:'f'},
-    {name:'Tamara',g:'f'},{name:'Tamika',g:'f'},{name:'Tatiana',g:'f'},{name:'Teresa',g:'f'},{name:'Tiffany',g:'f'},{name:'Trinity',g:'f'},{name:'Trisha',g:'f'},
-    {name:'Theodore',g:'m'},{name:'Tobias',g:'m'},{name:'Tommy',g:'m'},{name:'Tristan',g:'m'},{name:'Tyler',g:'m'},{name:'Tanner',g:'m'},
-    {name:'Talon',g:'m'},{name:'Tariq',g:'m'},{name:'Terrence',g:'m'},{name:'Thomas',g:'m'},{name:'Titus',g:'m'},{name:'Travis',g:'m'},{name:'Trevor',g:'m'},
-    {name:'Taylor',g:'n'},{name:'Tatum',g:'n'},{name:'Trace',g:'n'},{name:'True',g:'n'},
-  ], trait: ['Talented','Thoughtful','Thriving','Tenacious','Trustworthy','Terrific','Transformative','True','Trailblazing','Touching','Tireless','Together','Tops','Transcendent','Triumph'] },
-  U: { first: [
-    {name:'Uma',g:'f'},{name:'Ursula',g:'f'},{name:'Ulani',g:'f'},{name:'Usha',g:'f'},{name:'Undine',g:'f'},
-    {name:'Uri',g:'m'},{name:'Umberto',g:'m'},{name:'Upton',g:'m'},{name:'Usher',g:'m'},{name:'Uziel',g:'m'},
-    {name:'Unique',g:'n'},{name:'Unity',g:'n'},
-  ], trait: ['Understanding','United','Upbeat','Uplifting','Unifying','Unstoppable','Unwavering','Upstanding','Unbounded','Unique','Universal','Unyielding'] },
-  V: { first: [
-    {name:'Valencia',g:'f'},{name:'Valentina',g:'f'},{name:'Victoria',g:'f'},{name:'Violet',g:'f'},{name:'Vivian',g:'f'},
-    {name:'Valeria',g:'f'},{name:'Vanessa',g:'f'},{name:'Veronica',g:'f'},{name:'Viviana',g:'f'},{name:'Vera',g:'f'},
-    {name:'Victor',g:'m'},{name:'Vincent',g:'m'},{name:'Vance',g:'m'},{name:'Vito',g:'m'},
-    {name:'Valentino',g:'m'},{name:'Vicente',g:'m'},{name:'Viktor',g:'m'},{name:'Virgil',g:'m'},{name:'Vuong',g:'m'},
-    {name:'Val',g:'n'},{name:'Vesper',g:'n'},{name:'Verse',g:'n'},
-  ], trait: ['Vibrant','Victorious','Visionary','Vivid','Valuable','Versatile','Valiant','Virtuous','Venturing','Vital','Validated','Vast','Venerable','Vibrating','Vocal'] },
-  W: { first: [
-    {name:'Willow',g:'f'},{name:'Whitney',g:'f'},{name:'Willa',g:'f'},
-    {name:'Waverly',g:'f'},{name:'Wendy',g:'f'},{name:'Winona',g:'f'},{name:'Wilda',g:'f'},{name:'Wisteria',g:'f'},
-    {name:'Wade',g:'m'},{name:'Wesley',g:'m'},{name:'Wyatt',g:'m'},{name:'Warren',g:'m'},{name:'Winston',g:'m'},
-    {name:'Walter',g:'m'},{name:'Wayne',g:'m'},{name:'Wendell',g:'m'},{name:'Wilhelm',g:'m'},{name:'Will',g:'m'},{name:'Willis',g:'m'},
-    {name:'Winter',g:'n'},{name:'Wren',g:'n'},{name:'West',g:'n'},{name:'Wild',g:'n'},
-  ], trait: ['Warm','Wise','Wonderful','Witty','Worthy','Welcoming','Wholesome','Winning','Willing','Wide-open','Watchful','Whole','Woven','Wowing','Waking'] },
-  X: { first: [
-    {name:'Xena',g:'f'},{name:'Xiomara',g:'f'},{name:'Xochi',g:'f'},{name:'Ximena',g:'f'},
-    {name:'Xander',g:'m'},{name:'Xavier',g:'m'},{name:'Xavi',g:'m'},{name:'Xerxes',g:'m'},
-    {name:'Xen',g:'n'},{name:'Xo',g:'n'},
-  ], trait: ['Xenial','Extraordinary','Exceptional','Excellent','Expressive','Exploring','Exciting','Expansive','Extra','X-factor'] },
-  Y: { first: [
-    {name:'Yasmine',g:'f'},{name:'Yolanda',g:'f'},{name:'Yvonne',g:'f'},{name:'Yara',g:'f'},{name:'Yesenia',g:'f'},{name:'Yuki',g:'f'},
-    {name:'Yusuf',g:'m'},{name:'Yogi',g:'m'},{name:'Yahya',g:'m'},{name:'Yosef',g:'m'},{name:'Yuma',g:'m'},
-    {name:'Yael',g:'n'},{name:'Yori',g:'n'},{name:'York',g:'n'},
-  ], trait: ['Youthful','Yearning','Yes-minded','Yielding','You-got-this','Yare','Young-hearted','Yesterday-free','Yielding-results','Yellow-sunshine'] },
-  Z: { first: [
-    {name:'Zara',g:'f'},{name:'Zelda',g:'f'},{name:'Zoey',g:'f'},{name:'Zola',g:'f'},{name:'Zuri',g:'f'},
-    {name:'Zahara',g:'f'},{name:'Zena',g:'f'},{name:'Zinnia',g:'f'},{name:'Zoe',g:'f'},
-    {name:'Zach',g:'m'},{name:'Zeke',g:'m'},{name:'Zion',g:'m'},{name:'Zane',g:'m'},
-    {name:'Zachariah',g:'m'},{name:'Zahir',g:'m'},{name:'Zander',g:'m'},{name:'Zeus',g:'m'},
-    {name:'Zen',g:'n'},{name:'Zephyr',g:'n'},{name:'Zero',g:'n'},
-  ], trait: ['Zealous','Zestful','Zenful','Zippy','Zappy','Zingy','Zoned-in','Zeal','Zenith','Zero-limits'] },
+const DEFAULT_COLUMN_MAPPINGS: Record<string, string> = {
+  answer:             'transcript',
+  url:                'media_url',
+  answer_date:        'created_at',
+  question:           'node_text',
+  response_type:      'media_type',
+  share_url:          'raw.share_url',
+  response_duration:  'media_duration_sec',
 };
 
-function djb2(str: string, seed = 5381): number {
-  let h = seed;
-  for (let i = 0; i < str.length; i++) h = (Math.imul(h, 33) ^ str.charCodeAt(i)) >>> 0;
-  return h;
-}
+// Columns auto-generated by the import engine — hide mapping UI for these
+const AUTO_GENERATED_COLS = new Set(['first_name', 'last_name', 'student_email']);
+// Columns set via per-node response config — hide right-panel mapping UI
+const PER_NODE_COLS = new Set(['harvard_attribute', 'casel_attribute', 'crosswalk_attribute', 'question_num']);
 
-// Columns that must be integers in the DB — coerce or null out unparseable values
-// Note: current_grade is TEXT in the DB (holds numbers, "Parent", "Staff", etc.) — not listed here
-const INT_COLUMNS = new Set(['harvard_score', 'casel_score', 'harvard_impacter_score', 'casel_impacter_score']);
-
-function sanitizeRow(row: Record<string, unknown>): void {
-  for (const col of INT_COLUMNS) {
-    if (!(col in row) || row[col] == null) continue;
-    const n = Number(row[col]);
-    row[col] = Number.isFinite(n) ? n : null;
-  }
-  // current_grade: store as string; blank/unrecognised values become null
-  if ('current_grade' in row && row.current_grade != null) {
-    const s = String(row.current_grade).trim();
-    row.current_grade = s.length > 0 ? s : null;
-  }
-}
-
-// contactId: stable per-student ID across forms (raw.contact_id from VideoAsk)
-// usedFirstNames: first names already taken in this run + pre-seeded from DB
-// gender: 'Female' | 'Male' | '' | null — used to pick gender-appropriate first names
-function generateStudentName(
-  contactId: string,
-  usedFirstNames: Set<string>,
-  gender: string | null,
-): { firstName: string; lastName: string; email: string } {
-  const g = (gender ?? '').toLowerCase();
-  const isFemale = g.includes('female') || g === 'f';
-  const isMale   = !isFemale && (g.includes('male') || g === 'm');
-
-  const letters = Object.keys(ALLITERATIVE_NAMES);
-  const h1 = djb2(contactId);
-  const h2 = djb2(contactId + '\x00');
-
-  for (let attempt = 0; attempt < 2000; attempt++) {
-    const letter = letters[(h1 + attempt * 11) % letters.length];
-    const { first, trait } = ALLITERATIVE_NAMES[letter];
-
-    // Filter to gender-appropriate names; fall back to neutral, then all
-    let pool = first.filter(e => isFemale ? e.g === 'f' : isMale ? e.g === 'm' : true);
-    if (pool.length === 0) pool = first.filter(e => e.g === 'n');
-    if (pool.length === 0) pool = first;
-
-    const firstName = pool[(h2 + attempt * 7) % pool.length].name;
-    if (usedFirstNames.has(firstName)) continue; // first name already taken
-
-    const lastName  = trait[(h1 + h2 + attempt * 13) % trait.length];
-    usedFirstNames.add(firstName);
-    return {
-      firstName,
-      lastName,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@student.impacter.com`,
-    };
-  }
-  // Extreme fallback
-  const fb = contactId.slice(0, 6);
-  return { firstName: 'Student', lastName: fb, email: `student.${fb}@student.impacter.com` };
-}
-
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-type NodeRole =
-  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string; crosswalkAttribute?: string; questionNum?: string }
-  | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' }
-  | { role: 'skip' };
-
-type NodeRoles = Record<string, NodeRole>; // keyed by node_id
-
-type RunParams = {
+type FormInfo = {
   formId: string;
-  staticValues: Record<string, string>;
-  columnMappings: Record<string, string>;
-  dryRun?: boolean;
-  nodeRoles?: NodeRoles;
-  updateExisting?: boolean;
-  regenNames?: boolean; // when true + updateExisting, ignore old DB names and regenerate fresh
+  formName: string | null;
+  customLabel: string | null;
+  sampleTitle: string | null;
+  totalSteps: number;
+  imported: number;
+  isImported: boolean;
 };
 
-export type RunResult =
-  | { inserted: number; skipped: number; error?: never }
-  | { updated: number; inserted: number; error?: never }
-  | { wouldInsert: number; wouldSkip: number; totalStepsFetched: number; sample: Record<string, unknown>[]; error?: never }
-  | { error: string };
+type NodeInfo = {
+  nodeId: string;
+  nodeTitle: string;
+  nodeText: string | null;
+  hasMedia: boolean;
+  sampleTranscript: string | null;
+  samplePollOption: string | null;
+  count: number;
+};
 
-// Core import logic — called by both POST handler and update-all route
-export async function runImportCore(params: RunParams): Promise<RunResult> {
-  const { formId, staticValues, columnMappings, dryRun, nodeRoles, updateExisting, regenNames } = params;
-  if (!formId) return { error: 'formId required' };
+type NodeRoleValue =
+  | { role: 'skip' }
+  | { role: 'response'; harvardAttribute?: string; caselAttribute?: string; crosswalkAttribute?: string; questionNum?: string }
+  | { role: 'metadata'; targetColumn: string; sourceField: 'transcript' | 'poll_option' };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const impacter = getImpacterClient() as any;
+type RunResult = {
+  inserted?: number;
+  skipped?: number;
+  wouldInsert?: number;
+  wouldSkip?: number;
+  totalStepsFetched?: number;
+  sample?: Record<string, unknown>[];
+  rowsWithMetadata?: number;
+  error?: string;
+};
 
-  // 1. Fetch ALL steps for this form using cursor pagination (Supabase default cap = 1,000 rows)
-  const steps: Record<string, unknown>[] = [];
-  {
-    const STEP_PAGE = 1000;
-    let lastStepId = '00000000-0000-0000-0000-000000000000';
-    while (true) {
-      const { data: page, error: stepsErr } = await impacter
-        .schema('videoask')
-        .from('steps')
-        .select('id, interaction_id, form_id, node_id, node_title, node_text, media_type, media_url, share_url, transcript, created_at, raw, media_duration_sec')
-        .eq('form_id', formId)
-        .gt('id', lastStepId)
-        .order('id', { ascending: true })
-        .limit(STEP_PAGE);
+// ── Small components ──────────────────────────────────────────────────────
 
-      if (stepsErr) return { error: stepsErr.message };
-      const rows = (page ?? []) as Record<string, unknown>[];
-      steps.push(...rows);
-      if (rows.length < STEP_PAGE) break;
-      lastStepId = String(rows[rows.length - 1].id);
-    }
-  }
-
-  // 1b. Build set of UUIDs from this form's steps — used to scope usedFirstNames to this form only.
-  //     Pre-seeding from ALL districts would exhaust the name pool (~390 names) with large datasets.
-  const formStepUuids = new Set<string>();
-  for (const step of steps) {
-    const uuid = extractUuid(String(step.media_url ?? ''));
-    if (uuid) formStepUuids.add(uuid);
-  }
-
-  // 2. Get existing rows to skip/update already-imported responses.
-  //    Keyed by media URL uuid. Use cursor-based pagination to avoid timeouts.
-  const importedUuids = new Set<string>();
-  const uuidToId      = new Map<string, number>(); // uuid → student_responses.id
-  const uuidToName    = new Map<string, { firstName: string; lastName: string; email: string }>();
-  const usedFirstNames = new Set<string>();
-  const SR_PAGE = 1000;
-  let lastId = 0;
-  while (true) {
-    const { data: urlPage, error: urlErr } = await impacter
-      .from('student_responses')
-      .select('id, url, first_name, last_name, student_email')
-      .not('url', 'is', null)
-      .gt('id', lastId)
-      .order('id', { ascending: true })
-      .limit(SR_PAGE);
-
-    if (urlErr) return { error: urlErr.message };
-
-    const rows = (urlPage ?? []) as { id: number; url: string; first_name?: string; last_name?: string; student_email?: string }[];
-    for (const row of rows) {
-      const uuid = extractUuid(row.url ?? '');
-      if (uuid) {
-        importedUuids.add(uuid);
-        uuidToId.set(uuid, row.id);
-        if (row.first_name) {
-          uuidToName.set(uuid, { firstName: row.first_name, lastName: row.last_name ?? '', email: row.student_email ?? '' });
-          if (formStepUuids.has(uuid)) usedFirstNames.add(row.first_name);
-        }
-      }
-    }
-
-    if (rows.length < SR_PAGE) break;
-    lastId = rows[rows.length - 1].id;
-  }
-
-  // Also load source_id → id for rows without URL (text/poll steps) so Sync can dedup them
-  const sourceIdToId = new Map<string, number>();
-  // Composite key fallback for existing rows that predate source_id (null source_id, null url)
-  const compositeKeyToId = new Map<string, number>();
-  {
-    let srcLastId = 0;
-    while (true) {
-      const { data: srcPage } = await impacter
-        .from('student_responses')
-        .select('id, source_id, student_email, session_name, question_num')
-        .is('url', null)
-        .gt('id', srcLastId)
-        .order('id', { ascending: true })
-        .limit(SR_PAGE);
-      const srcRows = (srcPage ?? []) as { id: number; source_id: string | null; student_email: string | null; session_name: string | null; question_num: string | null }[];
-      for (const row of srcRows) {
-        if (row.source_id) {
-          sourceIdToId.set(String(row.source_id), row.id);
-        } else {
-          const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
-          if (!compositeKeyToId.has(ck)) compositeKeyToId.set(ck, row.id);
-        }
-      }
-      if (srcRows.length < SR_PAGE) break;
-      srcLastId = srcRows[srcRows.length - 1].id;
-    }
-  }
-
-  // 3. Build rows to insert (or update)
-  const toInsert: Record<string, unknown>[] = [];
-  let skipped = 0;
-  // contactIdToName: within a single run, ensures the same contact_id always gets the same name
-  // (relevant when a student has multiple response nodes — each is a separate row but same person)
-  const contactIdToName = new Map<string, { firstName: string; lastName: string; email: string }>();
-
-  const hasNodeRoles = nodeRoles && Object.keys(nodeRoles).length > 0;
-
-  if (hasNodeRoles) {
-    // ── NODE-ROLE MODE: group by contact_id (falls back to interaction_id) ──
-    // VideoAsk text/poll steps can have a null or different interaction_id than
-    // the video/audio steps in the same session, but contact_id is stable across
-    // all node types for the same respondent.
-
-    // Group steps by contact_id (from raw JSONB), falling back to interaction_id
-    const byInteraction = new Map<string, Record<string, unknown>[]>();
-    for (const step of steps) {
-      const raw = (step.raw ?? {}) as Record<string, unknown>;
-      const key = String(raw.contact_id ?? step.interaction_id ?? '');
-      if (!byInteraction.has(key)) byInteraction.set(key, []);
-      byInteraction.get(key)!.push(step);
-    }
-
-    for (const [interactionId, interactionSteps] of byInteraction) {
-      // a. Collect metadata values for this interaction
-      const metadataValues: Record<string, unknown> = {};
-      for (const step of interactionSteps) {
-        const nodeId = String(step.node_id ?? '');
-        const nodeRole = nodeRoles[nodeId];
-        if (!nodeRole || nodeRole.role !== 'metadata') continue;
-        const { targetColumn, sourceField } = nodeRole;
-        if (!SR_COLUMNS.has(targetColumn)) continue;
-
-        let value: unknown = null;
-        if (sourceField === 'transcript') {
-          const raw = (step.raw ?? {}) as Record<string, unknown>;
-          // step.transcript is populated for voice/video transcriptions and some text nodes;
-          // raw.input_text is used by VideoAsk for typed text-input node responses
-          value = step.transcript ?? (typeof raw.input_text === 'string' ? raw.input_text : null) ?? null;
-        } else if (sourceField === 'poll_option') {
-          const raw = (step.raw ?? {}) as Record<string, unknown>;
-          // VideoAsk stores the selected option directly in poll_option_content
-          if (typeof raw.poll_option_content === 'string' && raw.poll_option_content) {
-            value = raw.poll_option_content;
-          } else {
-            // Fallback: poll_options only contains the selected option, field is 'content' not 'label'
-            const pollOptions = raw.poll_options as Array<{ content?: string; label?: string }> | undefined;
-            value = pollOptions?.[0]?.content ?? pollOptions?.[0]?.label ?? null;
-          }
-        }
-
-        if (value != null) {
-          metadataValues[targetColumn] = value;
-        }
-      }
-
-      // b. Build a row for each response-role step in this interaction
-      for (const step of interactionSteps) {
-        const nodeId = String(step.node_id ?? '');
-        const nodeRole = nodeRoles[nodeId];
-        if (!nodeRole || nodeRole.role !== 'response') continue;
-
-        const mediaUrl = String(step.media_url ?? '');
-        const uuid = extractUuid(mediaUrl);
-        const alreadyImported = !!(uuid && importedUuids.has(uuid)) || (!uuid && sourceIdToId.has(String(step.id)));
-        if (!updateExisting && alreadyImported) { skipped++; continue; }
-        // Note: compositeKey check happens at sync-split time for updateExisting path
-
-        const row: Record<string, unknown> = {};
-
-        // Apply static values first
-        for (const [col, val] of Object.entries(staticValues ?? {})) {
-          if (SR_COLUMNS.has(col)) row[col] = val;
-        }
-
-        // Apply column mappings
-        for (const [srCol, stepCol] of Object.entries(columnMappings ?? {})) {
-          if (!SR_COLUMNS.has(srCol) || !stepCol) continue;
-          if (stepCol.startsWith('raw.')) {
-            const rawKey = stepCol.slice(4);
-            const raw = (step.raw ?? {}) as Record<string, unknown>;
-            if (raw[rawKey] !== undefined && raw[rawKey] !== null) {
-              row[srCol] = raw[rawKey];
-            }
-          } else if (step[stepCol] !== undefined && step[stepCol] !== null) {
-            row[srCol] = step[stepCol];
-          }
-        }
-
-        // Always ensure url is populated from media_url
-        if (!row.url && mediaUrl) row.url = mediaUrl;
-
-        // Normalize VideoAsk media_type → human-readable response_type
-        if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type), mediaUrl);
-
-        // Fallback: if question not set by mapping, use node_text then node_title
-        if (!row.question) row.question = step.node_text ?? step.node_title ?? null;
-
-        // Overlay interaction metadata (only fills gaps — explicit mappings take precedence)
-        for (const [col, val] of Object.entries(metadataValues)) {
-          if (row[col] === undefined || row[col] === null || row[col] === '') {
-            row[col] = val;
-          }
-        }
-
-        // Apply per-node attributes (only if not already set by mappings)
-        if (nodeRole.harvardAttribute && !row.harvard_attribute) row.harvard_attribute = nodeRole.harvardAttribute;
-        if (nodeRole.caselAttribute && !row.casel_attribute) row.casel_attribute = nodeRole.caselAttribute;
-        if (nodeRole.crosswalkAttribute && !row.crosswalk_attribute) row.crosswalk_attribute = nodeRole.crosswalkAttribute;
-        if (nodeRole.questionNum != null && row.question_num == null) row.question_num = nodeRole.questionNum;
-
-        // Always set source_id for dedup of non-URL rows on Sync
-        if (!row.source_id) row.source_id = step.id;
-
-        // Auto-generate alliterative name — gender-aware, globally unique first name
-        if (!row.first_name && !row.last_name && !row.student_email) {
-          const contactId = String(
-            (interactionSteps[0]?.raw as Record<string, unknown> | undefined)?.contact_id
-            ?? interactionId
-          );
-          // 1. Already imported under a different question node → reuse same name
-          //    (skipped when regenNames=true — forces fresh gender-aware generation)
-          const existingByUrl = (!regenNames && uuid) ? uuidToName.get(uuid) : undefined;
-          // 2. Same contact_id seen earlier in this run → reuse (always active, ensures same student = same name)
-          const existingByContact = contactIdToName.get(contactId);
-          // 3. Generate fresh
-          const resolved = existingByUrl ?? existingByContact
-            ?? generateStudentName(contactId, usedFirstNames, String(row.gender ?? metadataValues.gender ?? ''));
-          if (!existingByContact) contactIdToName.set(contactId, resolved);
-          row.first_name    = resolved.firstName;
-          row.last_name     = resolved.lastName;
-          row.student_email = resolved.email;
-        }
-
-        sanitizeRow(row);
-        toInsert.push(row);
-      }
-    }
-  } else {
-    // ── FLAT MODE: one row per step (original logic) ──
-    for (const step of steps) {
-      const mediaUrl = String(step.media_url ?? '');
-      const uuid = extractUuid(mediaUrl);
-      const alreadyImported = !!(uuid && importedUuids.has(uuid));
-      if (!updateExisting && alreadyImported) { skipped++; continue; }
-
-      const row: Record<string, unknown> = {};
-
-      // Apply static values first
-      for (const [col, val] of Object.entries(staticValues ?? {})) {
-        if (SR_COLUMNS.has(col)) row[col] = val;
-      }
-
-      // Apply column mappings: srColumn → videoask step column (or raw sub-field)
-      for (const [srCol, stepCol] of Object.entries(columnMappings ?? {})) {
-        if (!SR_COLUMNS.has(srCol) || !stepCol) continue;
-
-        // Support "raw.field_name" to pull from the raw JSONB
-        if (stepCol.startsWith('raw.')) {
-          const rawKey = stepCol.slice(4);
-          const raw = (step.raw ?? {}) as Record<string, unknown>;
-          if (raw[rawKey] !== undefined && raw[rawKey] !== null) {
-            row[srCol] = raw[rawKey];
-          }
-        } else if (step[stepCol] !== undefined && step[stepCol] !== null) {
-          row[srCol] = step[stepCol];
-        }
-      }
-
-      // Always ensure url is populated from media_url
-      if (!row.url && mediaUrl) row.url = mediaUrl;
-
-      // Always capture source_id from VideoAsk step id (unique per step, used for dedup of text/poll rows)
-      if (!row.source_id && step.id) row.source_id = step.id;
-
-      // Normalize VideoAsk media_type → human-readable response_type
-      if (row.response_type) row.response_type = normalizeResponseType(String(row.response_type));
-
-      // Fallback: if question not set by mapping, use node_text then node_title
-      if (!row.question) row.question = step.node_text ?? step.node_title ?? null;
-
-      // Auto-generate alliterative name — gender-aware, globally unique first name
-      if (!row.first_name && !row.last_name && !row.student_email) {
-        const contactId = String(
-          (step.raw as Record<string, unknown> | undefined)?.contact_id
-          ?? step.interaction_id
-          ?? step.id
-          ?? ''
-        );
-        const uuid = extractUuid(String(step.media_url ?? ''));
-        const existingByUrl     = (!regenNames && uuid) ? uuidToName.get(uuid) : undefined;
-        const existingByContact = contactIdToName.get(contactId);
-        const resolved = existingByUrl ?? existingByContact
-          ?? generateStudentName(contactId, usedFirstNames, String(row.gender ?? ''));
-        if (!existingByContact) contactIdToName.set(contactId, resolved);
-        row.first_name    = resolved.firstName;
-        row.last_name     = resolved.lastName;
-        row.student_email = resolved.email;
-      }
-
-      sanitizeRow(row);
-      toInsert.push(row);
-    }
-  }
-
-  if (dryRun) {
-    return { wouldInsert: toInsert.length, wouldSkip: skipped, totalStepsFetched: steps.length, sample: toInsert.slice(0, 3) };
-  }
-
-  // 4a. SYNC mode — update existing rows AND insert new ones
-  if (updateExisting) {
-    const toUpdate    = toInsert.filter(row => {
-      const u = extractUuid(String(row.url ?? ''));
-      if (u && uuidToId.has(u)) return true;
-      if (!u && row.source_id && sourceIdToId.has(String(row.source_id))) return true;
-      const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
-      if (!u && compositeKeyToId.has(ck)) return true;
-      return false;
-    });
-    const toInsertNew = toInsert.filter(row => {
-      const u = extractUuid(String(row.url ?? ''));
-      if (u && uuidToId.has(u)) return false;
-      if (!u && row.source_id && sourceIdToId.has(String(row.source_id))) return false;
-      const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
-      if (!u && compositeKeyToId.has(ck)) return false;
-      return true;
-    });
-
-    // Update existing rows by primary key
-    let updated = 0;
-    const BATCH = 20;
-    for (let i = 0; i < toUpdate.length; i += BATCH) {
-      const results = await Promise.all(
-        toUpdate.slice(i, i + BATCH).map(row => {
-          const uuid = extractUuid(String(row.url ?? ''));
-          const ck = `${row.student_email ?? ''}|${row.session_name ?? ''}|${row.question_num ?? ''}`;
-          const rowId = (uuid ? uuidToId.get(uuid) : undefined)
-            ?? (row.source_id ? sourceIdToId.get(String(row.source_id)) : undefined)
-            ?? compositeKeyToId.get(ck);
-          if (!rowId) return Promise.resolve({ error: null });
-          return impacter.from('student_responses').update(row).eq('id', rowId);
-        })
-      );
-      for (const { error } of results as { error: { message: string } | null }[]) {
-        if (error) return { error: error.message };
-      }
-      updated += Math.min(BATCH, toUpdate.length - i);
-    }
-
-    // Insert brand-new rows
-    let inserted = 0;
-    const CHUNK = 100;
-    for (let i = 0; i < toInsertNew.length; i += CHUNK) {
-      const chunk = toInsertNew.slice(i, i + CHUNK);
-      const { error: insertErr } = await impacter.from('student_responses').insert(chunk);
-      if (insertErr) return { error: insertErr.message };
-      inserted += chunk.length;
-    }
-
-    return { updated, inserted };
-  }
-
-  // 4b. INSERT new rows in chunks
-  let inserted = 0;
-  const CHUNK = 100;
-  for (let i = 0; i < toInsert.length; i += CHUNK) {
-    const chunk = toInsert.slice(i, i + CHUNK);
-    const { error: insertErr } = await impacter.from('student_responses').insert(chunk);
-    if (insertErr) return { error: insertErr.message };
-    inserted += chunk.length;
-  }
-
-  return { inserted, skipped };
+function RoleBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+        active
+          ? 'bg-blue-600 text-white border-blue-600'
+          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
-// POST /api/admin/videoask-import/run
-export async function POST(req: Request) {
-  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+function NodeCard({
+  node,
+  role,
+  formId,
+  onRoleChange,
+}: {
+  node: NodeInfo;
+  role: NodeRoleValue;
+  formId: string;
+  onRoleChange: (r: NodeRoleValue) => void;
+}) {
+  const mediaIcon = node.hasMedia ? '🎥' : node.samplePollOption ? '☑️' : '📝';
+  const preview = node.sampleTranscript ?? node.samplePollOption ?? '';
+  const rawUrl = `/api/admin/videoask-import/raw-sample?formId=${encodeURIComponent(formId)}&nodeId=${encodeURIComponent(node.nodeId)}`;
 
-  const params = await req.json() as RunParams;
-  if (!params.formId) return NextResponse.json({ error: 'formId required' }, { status: 400 });
+  return (
+    <div className="border border-gray-200 rounded-lg p-3 bg-white space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="text-sm font-medium text-gray-900">{mediaIcon} {node.nodeTitle}</span>
+          <span className="ml-2 text-xs text-gray-400">{node.count} responses</span>
+          {node.nodeText && (
+            <p className="text-xs text-blue-700 mt-1 italic line-clamp-3 whitespace-pre-line">{node.nodeText}</p>
+          )}
+        </div>
+        <a href={rawUrl} target="_blank" rel="noreferrer"
+          title="Inspect raw JSON"
+          className="flex-shrink-0 text-xs text-gray-300 hover:text-blue-500 transition-colors font-mono mt-0.5">
+          {'{ }'}
+        </a>
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <RoleBtn active={role.role === 'skip'} onClick={() => onRoleChange({ role: 'skip' })}>Skip</RoleBtn>
+        <RoleBtn active={role.role === 'response'} onClick={() => onRoleChange({ role: 'response' })}>Response</RoleBtn>
+        <RoleBtn active={role.role === 'metadata'} onClick={() => onRoleChange({ role: 'metadata', targetColumn: 'current_grade', sourceField: 'transcript' })}>Metadata →</RoleBtn>
 
-  const result = await runImportCore(params);
-  return NextResponse.json(result, { status: 'error' in result ? 500 : 200 });
+        {role.role === 'metadata' && (
+          <>
+            <select
+              value={role.targetColumn}
+              onChange={e => onRoleChange({ ...role, targetColumn: e.target.value })}
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              {SR_COLUMNS
+                .filter(c => !AUTO_GENERATED_COLS.has(c.col) && !PER_NODE_COLS.has(c.col))
+                .map(c => <option key={c.col} value={c.col}>{c.label}</option>)}
+            </select>
+            <select
+              value={role.sourceField}
+              onChange={e => onRoleChange({ ...role, sourceField: e.target.value as 'transcript' | 'poll_option' })}
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              <option value="transcript">Transcript</option>
+              <option value="poll_option">Poll answer</option>
+            </select>
+          </>
+        )}
+      </div>
+
+      {/* Per-node attribute selectors (only for Response nodes) */}
+      {role.role === 'response' && (
+        <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-gray-100">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500 whitespace-nowrap">Harvard:</span>
+            <select
+              value={role.harvardAttribute ?? ''}
+              onChange={e => onRoleChange({ ...role, harvardAttribute: e.target.value || undefined })}
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              {HARVARD_ATTRIBUTES.map(a => (
+                <option key={a} value={a}>{a || '— none —'}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500 whitespace-nowrap">CASEL:</span>
+            <select
+              value={role.caselAttribute ?? ''}
+              onChange={e => onRoleChange({ ...role, caselAttribute: e.target.value || undefined })}
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              {CASEL_ATTRIBUTES.map(a => (
+                <option key={a} value={a}>{a || '— none —'}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500 whitespace-nowrap">Crosswalk:</span>
+            <input
+              type="text"
+              value={role.crosswalkAttribute ?? ''}
+              onChange={e => onRoleChange({ ...role, crosswalkAttribute: e.target.value || undefined })}
+              placeholder="attr…"
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400 w-24"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500 whitespace-nowrap">Q#:</span>
+            <input
+              type="text"
+              value={role.questionNum ?? ''}
+              onChange={e => onRoleChange({ ...role, questionNum: e.target.value || undefined })}
+              placeholder="e.g. bha_S00_Q01"
+              className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400 w-36"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MappingRow({
+  srCol, label, hint, sourceColumns,
+  mappingType, sourceCol, staticVal,
+  onMappingTypeChange, onSourceColChange, onStaticValChange,
+  autoGenerated, metadataCoveredBy, perNodeControlled,
+}: {
+  srCol: string; label: string; hint?: string; sourceColumns: string[];
+  mappingType: 'source' | 'static' | 'none'; sourceCol: string; staticVal: string;
+  onMappingTypeChange: (t: 'source' | 'static' | 'none') => void;
+  onSourceColChange: (v: string) => void;
+  onStaticValChange: (v: string) => void;
+  autoGenerated?: boolean;
+  metadataCoveredBy?: string | null;
+  perNodeControlled?: boolean;
+}) {
+  if (autoGenerated) {
+    return (
+      <div className="grid grid-cols-[140px_1fr] gap-2 items-center py-1.5 border-b border-gray-100 last:border-0">
+        <div>
+          <span className="text-sm text-gray-700">{label}</span>
+          <span className="block text-xs text-gray-400 font-mono">{srCol}</span>
+        </div>
+        <span className="text-xs text-indigo-500 italic">→ auto-generated per student</span>
+      </div>
+    );
+  }
+
+  if (perNodeControlled) {
+    return (
+      <div className="grid grid-cols-[140px_1fr] gap-2 items-center py-1.5 border-b border-gray-100 last:border-0">
+        <div>
+          <span className="text-sm text-gray-700">{label}</span>
+          {hint && <span className="ml-1 text-xs text-gray-400">({hint})</span>}
+          <span className="block text-xs text-gray-400 font-mono">{srCol}</span>
+        </div>
+        <span className="text-xs text-blue-500 italic">→ set per Response node (left panel)</span>
+      </div>
+    );
+  }
+
+  if (metadataCoveredBy) {
+    return (
+      <div className="grid grid-cols-[140px_1fr] gap-2 items-center py-1.5 border-b border-gray-100 last:border-0">
+        <div>
+          <span className="text-sm text-gray-700">{label}</span>
+          <span className="block text-xs text-gray-400 font-mono">{srCol}</span>
+        </div>
+        <span className="text-xs text-emerald-600 italic">→ from &ldquo;{metadataCoveredBy}&rdquo; metadata</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-[140px_100px_1fr] gap-2 items-center py-1.5 border-b border-gray-100 last:border-0">
+      <div>
+        <span className="text-sm text-gray-700">{label}</span>
+        {hint && <span className="ml-1 text-xs text-gray-400">({hint})</span>}
+        <span className="block text-xs text-gray-400 font-mono">{srCol}</span>
+      </div>
+      <select
+        value={mappingType}
+        onChange={e => onMappingTypeChange(e.target.value as 'source' | 'static' | 'none')}
+        className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+      >
+        <option value="none">— skip —</option>
+        <option value="source">From column</option>
+        <option value="static">Static value</option>
+      </select>
+      {mappingType === 'source' && (
+        <select
+          value={sourceCol}
+          onChange={e => onSourceColChange(e.target.value)}
+          className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        >
+          <option value="">— choose column —</option>
+          {sourceColumns.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      )}
+      {mappingType === 'static' && (
+        <input
+          type="text"
+          value={staticVal}
+          onChange={e => onStaticValChange(e.target.value)}
+          placeholder="Static value…"
+          className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        />
+      )}
+      {mappingType === 'none' && <div />}
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
+
+export default function VideoAskImportPage() {
+  const [view, setView] = useState<'list' | 'configure' | 'result'>('list');
+  const [forms, setForms] = useState<FormInfo[]>([]);
+  const [loadingForms, setLoadingForms] = useState(false);
+  const [formsError, setFormsError] = useState('');
+
+  const [selectedForm, setSelectedForm] = useState<FormInfo | null>(null);
+  const [nodes, setNodes] = useState<NodeInfo[]>([]);
+  const [nodeRoles, setNodeRoles] = useState<Record<string, NodeRoleValue>>({});
+  const [sourceColumns] = useState<string[]>([
+    'id', 'form_id', 'node_id', 'node_title', 'node_text', 'media_type',
+    'media_url', 'share_url', 'transcript', 'created_at', 'contact_email', 'form_share_id',
+    'media_duration_sec', 'raw.share_url', 'raw.input_text',
+  ]);
+  const [totalSteps, setTotalSteps] = useState<number | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
+  const [mappingTypes, setMappingTypes] = useState<Record<string, 'source' | 'static' | 'none'>>({});
+  const [sourceCols, setSourceCols] = useState<Record<string, string>>({});
+  const [staticVals, setStaticVals] = useState<Record<string, string>>({});
+
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+  const [dryRunning, setDryRunning] = useState(false);
+  const [dryResult, setDryResult] = useState<RunResult | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [updateResult, setUpdateResult] = useState<{ updated?: number; inserted?: number; error?: string } | null>(null);
+
+  // Update-all state
+  const [updatingAll, setUpdatingAll] = useState(false);
+  const [updateAllProgress, setUpdateAllProgress] = useState<{ done: number; total: number; totalUpdated: number; totalInserted: number; errors: number } | null>(null);
+
+  // Rename / delete state
+  const [editingFormId, setEditingFormId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState('');
+
+  const [hideImported, setHideImported] = useState(true);
+  const [addByIdInput, setAddByIdInput] = useState('');
+  const [addByIdMsg, setAddByIdMsg] = useState('');
+
+  useEffect(() => {
+    document.title = selectedForm
+      ? `${selectedForm.customLabel ?? selectedForm.formName ?? selectedForm.formId.slice(0, 8)} — VideoAsk Import`
+      : 'VideoAsk Import — Impacter Admin';
+  }, [selectedForm]);
+
+  // Columns covered by metadata nodes: col → node title
+  const metadataCoveredCols = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const [nodeId, role] of Object.entries(nodeRoles)) {
+      if (role.role !== 'metadata') continue;
+      const node = nodes.find(n => n.nodeId === nodeId);
+      map.set(role.targetColumn, node?.nodeTitle ?? nodeId);
+    }
+    return map;
+  }, [nodeRoles, nodes]);
+
+  async function discoverForms() {
+    setLoadingForms(true);
+    setFormsError('');
+    try {
+      const res = await fetch('/api/admin/videoask-import/discover');
+      const json = await res.json();
+      if (json.error) { setFormsError(json.error); return; }
+      setForms(json.forms ?? []);
+    } finally {
+      setLoadingForms(false);
+    }
+  }
+
+  async function resetAndRescan() {
+    setLoadingForms(true);
+    setFormsError('');
+    try {
+      await fetch('/api/admin/videoask-import/discover', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_cache', formId: '__reset__' }),
+      });
+      const res = await fetch('/api/admin/videoask-import/discover');
+      const json = await res.json();
+      if (json.error) { setFormsError(json.error); return; }
+      setForms(json.forms ?? []);
+    } finally {
+      setLoadingForms(false);
+    }
+  }
+
+  const loadFormConfig = useCallback(async (form: FormInfo) => {
+    setSelectedForm(form);
+    setView('configure');
+    setLoadingPreview(true);
+    setDryResult(null);
+    setRunResult(null);
+    setSaveMsg('');
+
+    try {
+      const [previewRes, configRes] = await Promise.all([
+        fetch(`/api/admin/videoask-import/preview?formId=${encodeURIComponent(form.formId)}`),
+        fetch(`/api/admin/videoask-import/configs?formId=${encodeURIComponent(form.formId)}`),
+      ]);
+      const [previewJson, configJson] = await Promise.all([previewRes.json(), configRes.json()]);
+
+      // Set nodes + default roles (media nodes → response, others → skip)
+      const fetchedNodes: NodeInfo[] = previewJson.nodes ?? [];
+      setNodes(fetchedNodes);
+      setTotalSteps(previewJson.totalSteps ?? 0);
+
+      // Init mapping state
+      const initTypes: Record<string, 'source' | 'static' | 'none'> = {};
+      const initSource: Record<string, string> = {};
+      const initStatic: Record<string, string> = {};
+      for (const { col } of SR_COLUMNS) {
+        initTypes[col] = 'none';
+        initSource[col] = '';
+        initStatic[col] = '';
+      }
+      for (const [srCol, stepCol] of Object.entries(DEFAULT_COLUMN_MAPPINGS)) {
+        initTypes[srCol] = 'source';
+        initSource[srCol] = stepCol;
+      }
+
+      // Default node roles:
+      //   poll nodes (no media, has samplePollOption) → skip  (likely metadata)
+      //   all other nodes (media OR text-only)        → response
+      const initRoles: Record<string, NodeRoleValue> = {};
+      for (const n of fetchedNodes) {
+        const isPollOnly = !n.hasMedia && !!n.samplePollOption;
+        initRoles[n.nodeId] = isPollOnly ? { role: 'skip' } : { role: 'response' };
+      }
+
+      // Overlay saved config
+      if (configJson.config) {
+        const saved = configJson.config;
+        for (const [srCol, stepCol] of Object.entries(saved.column_mappings ?? {}) as [string, string][]) {
+          if (stepCol) { initTypes[srCol] = 'source'; initSource[srCol] = stepCol; }
+        }
+        for (const [srCol, val] of Object.entries(saved.static_values ?? {}) as [string, string][]) {
+          if (val) { initTypes[srCol] = 'static'; initStatic[srCol] = val; }
+        }
+        if (saved.nodeRoles) {
+          for (const [nodeId, role] of Object.entries(saved.nodeRoles) as [string, NodeRoleValue][]) {
+            initRoles[nodeId] = role;
+          }
+        }
+      }
+
+      setMappingTypes(initTypes);
+      setSourceCols(initSource);
+      setStaticVals(initStatic);
+      setNodeRoles(initRoles);
+    } finally {
+      setLoadingPreview(false);
+    }
+  }, []);
+
+  function buildConfig() {
+    const columnMappings: Record<string, string> = {};
+    const staticValues: Record<string, string> = {};
+    for (const { col } of SR_COLUMNS) {
+      if (mappingTypes[col] === 'source' && sourceCols[col]) columnMappings[col] = sourceCols[col];
+      else if (mappingTypes[col] === 'static' && staticVals[col]) staticValues[col] = staticVals[col];
+    }
+    return { columnMappings, staticValues };
+  }
+
+  async function saveConfig() {
+    if (!selectedForm) return;
+    setSaving(true);
+    setSaveMsg('');
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles }),
+      });
+      const json = await res.json();
+      setSaveMsg(json.error ? `Error: ${json.error}` : 'Saved.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function dryRun() {
+    if (!selectedForm) return;
+    setDryRunning(true);
+    setDryResult(null);
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles, dryRun: true }),
+      });
+      setDryResult(await res.json());
+    } finally {
+      setDryRunning(false);
+    }
+  }
+
+  async function runUpdate() {
+    if (!selectedForm) return;
+    setUpdating(true);
+    setUpdateResult(null);
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles, updateExisting: true }),
+      });
+      setUpdateResult(await res.json());
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function runImport() {
+    if (!selectedForm) return;
+    setImporting(true);
+    setRunResult(null);
+    const { columnMappings, staticValues } = buildConfig();
+    try {
+      const res = await fetch('/api/admin/videoask-import/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId: selectedForm.formId, columnMappings, staticValues, nodeRoles }),
+      });
+      const json = await res.json();
+      setRunResult(json);
+      if (!json.error) { setView('result'); discoverForms(); }
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function displayName(f: FormInfo) {
+    return f.customLabel ?? f.formName ?? (f.formId.slice(0, 8) + '…');
+  }
+
+  function startRename(f: FormInfo, e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditingFormId(f.formId);
+    setEditingLabel(f.customLabel ?? f.formName ?? '');
+  }
+
+  async function saveRename(formId: string) {
+    const label = editingLabel.trim();
+    setEditingFormId(null);
+    await fetch('/api/admin/videoask-import/discover', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'rename', formId, label }),
+    });
+    setForms(prev => prev.map(f => f.formId === formId ? { ...f, customLabel: label || null } : f));
+  }
+
+  async function addFormById() {
+    const id = addByIdInput.trim();
+    if (!id) return;
+    setAddByIdMsg('Adding…');
+    await fetch('/api/admin/videoask-import/discover', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add_form', formId: id }),
+    });
+    setForms(prev => prev.some(f => f.formId === id)
+      ? prev
+      : [...prev, { formId: id, formName: null, customLabel: null, sampleTitle: null, totalSteps: 0, imported: 0, isImported: false }]
+    );
+    setAddByIdInput('');
+    setAddByIdMsg('Added. Click the form to load its steps.');
+    setTimeout(() => setAddByIdMsg(''), 4000);
+  }
+
+  async function deleteForm(formId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm('Remove this form from the list? It won\'t be deleted from VideoAsk.')) return;
+    await fetch('/api/admin/videoask-import/discover', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', formId }),
+    });
+    setForms(prev => prev.filter(f => f.formId !== formId));
+  }
+
+  async function updateAll() {
+    setUpdatingAll(true);
+    setUpdateAllProgress({ done: 0, total: 0, totalUpdated: 0, totalInserted: 0, errors: 0 });
+    try {
+      const res = await fetch('/api/admin/videoask-import/update-all', { method: 'POST' });
+      if (!res.body) return;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line) as {
+              type: string; total?: number; index?: number;
+              updated?: number; inserted?: number; error?: string; totalUpdated?: number; totalErrors?: number;
+            };
+            if (msg.type === 'start') {
+              setUpdateAllProgress({ done: 0, total: msg.total ?? 0, totalUpdated: 0, totalInserted: 0, errors: 0 });
+            } else if (msg.type === 'form_done') {
+              setUpdateAllProgress(prev => prev ? {
+                ...prev,
+                done: prev.done + 1,
+                totalUpdated: prev.totalUpdated + (msg.updated ?? 0),
+                totalInserted: prev.totalInserted + (msg.inserted ?? 0),
+                errors: prev.errors + (msg.error ? 1 : 0),
+              } : prev);
+            }
+          } catch { /* ignore parse errors */ }
+        }
+      }
+    } finally {
+      setUpdatingAll(false);
+    }
+  }
+
+  const responseNodeCount = Object.values(nodeRoles).filter(r => r.role === 'response').length;
+  const metadataNodeCount = Object.values(nodeRoles).filter(r => r.role === 'metadata').length;
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+          <Link href="/admin/district-finder" className="hover:text-gray-600 transition-colors">District Finder</Link>
+          <span>/</span>
+          {view === 'list' ? (
+            <span className="text-gray-500">VideoAsk Import</span>
+          ) : (
+            <>
+              <button
+                onClick={() => { setView('list'); setSelectedForm(null); }}
+                className="hover:text-gray-600 transition-colors"
+              >VideoAsk Import</button>
+              {selectedForm && (
+                <>
+                  <span>/</span>
+                  <span className="text-gray-500 truncate max-w-[200px]">{displayName(selectedForm)}</span>
+                </>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {view !== 'list' && (
+            <button
+              onClick={() => { setView('list'); setSelectedForm(null); }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900">VideoAsk Import</h1>
+            <p className="text-sm text-gray-500">
+              {view === 'list' && 'Import VideoAsk pilot responses into Student Responses.'}
+              {view === 'configure' && selectedForm && (
+                <>
+                  {displayName(selectedForm)}
+                  {selectedForm.customLabel && selectedForm.formName && (
+                    <span className="ml-1 text-xs text-gray-400">({selectedForm.formName})</span>
+                  )}
+                  {totalSteps !== null && !loadingPreview && (
+                    <span className="ml-2 text-xs text-gray-400">{totalSteps} responses</span>
+                  )}
+                </>
+              )}
+              {view === 'result' && 'Import complete.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-hidden">
+
+        {/* ── LIST VIEW ── */}
+        {view === 'list' && (
+          <div className="h-full overflow-y-auto p-6 max-w-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                onClick={discoverForms}
+                disabled={loadingForms || updatingAll}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {loadingForms ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Scanning…
+                  </>
+                ) : 'Find VideoAsk Pilots'}
+              </button>
+              <a
+                href="/api/admin/videoask-import/export"
+                download="videoask-responses.csv"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Download CSV
+              </a>
+              <button
+                onClick={resetAndRescan}
+                disabled={loadingForms || updatingAll}
+                title="Clear the cursor cache and re-scan all steps from the beginning — use if forms are missing from the list"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                {loadingForms ? 'Scanning…' : 'Reset & Rescan'}
+              </button>
+              <button
+                onClick={updateAll}
+                disabled={updatingAll || loadingForms}
+                className="inline-flex items-center gap-2 px-4 py-2 border border-amber-300 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+              >
+                {updatingAll ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    {updateAllProgress
+                      ? `Syncing ${updateAllProgress.done}/${updateAllProgress.total}…`
+                      : 'Starting…'}
+                  </>
+                ) : 'Sync all'}
+              </button>
+            </div>
+            {!updatingAll && updateAllProgress && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                Synced {updateAllProgress.total} forms · {updateAllProgress.totalUpdated} updated, {updateAllProgress.totalInserted} new
+                {updateAllProgress.errors > 0 && ` · ${updateAllProgress.errors} error${updateAllProgress.errors > 1 ? 's' : ''}`}
+              </div>
+            )}
+
+            {/* Add form by ID */}
+            <div className="flex items-center gap-2 mb-6">
+              <input
+                type="text"
+                value={addByIdInput}
+                onChange={e => setAddByIdInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addFormById()}
+                placeholder="Add form by ID…"
+                className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
+              />
+              <button
+                onClick={addFormById}
+                disabled={!addByIdInput.trim()}
+                className="px-3 py-2 border border-gray-300 text-sm text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors whitespace-nowrap"
+              >
+                Add
+              </button>
+            </div>
+            {addByIdMsg && (
+              <p className="mb-4 text-xs text-blue-600">{addByIdMsg}</p>
+            )}
+
+            {formsError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formsError}</div>
+            )}
+
+            {forms.length > 0 && (
+              <div className="space-y-2">
+                {forms.filter(f => !hideImported || !f.isImported).map(f => (
+                  <div
+                    key={f.formId}
+                    className={`group w-full flex items-center justify-between px-4 py-3 bg-white border rounded-lg transition-colors text-left ${
+                      f.isImported ? 'border-green-200 hover:border-green-300' : 'border-gray-200 hover:border-blue-300'
+                    } ${editingFormId === f.formId ? '' : 'hover:bg-blue-50 cursor-pointer'}`}
+                    onClick={() => editingFormId !== f.formId && loadFormConfig(f)}
+                  >
+                    <div className="min-w-0 flex-1 pr-2">
+                      {editingFormId === f.formId ? (
+                        <input
+                          autoFocus
+                          value={editingLabel}
+                          onChange={e => setEditingLabel(e.target.value)}
+                          onBlur={() => saveRename(f.formId)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') saveRename(f.formId);
+                            if (e.key === 'Escape') setEditingFormId(null);
+                          }}
+                          onClick={e => e.stopPropagation()}
+                          placeholder="Enter a name…"
+                          className="w-full text-sm font-medium border border-blue-400 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 truncate">{displayName(f)}</span>
+                          {f.isImported && (
+                            <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 font-medium">
+                              ✓ Imported
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <span className="block text-xs text-gray-500 mt-0.5 truncate">
+                        {f.totalSteps} response{f.totalSteps !== 1 ? 's' : ''}
+                        {f.isImported && ` · ${f.imported} imported`}
+                        {!f.formName && !f.customLabel && f.sampleTitle && ` · ${f.sampleTitle}`}
+                        {!f.formName && !f.customLabel && ` · ${f.formId}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      {/* Rename button */}
+                      <button
+                        onClick={e => startRename(f, e)}
+                        title="Rename"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                          <path d="M9 2l2 2L4 11H2V9L9 2z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      {/* Delete button */}
+                      <button
+                        onClick={e => deleteForm(f.formId, e)}
+                        title="Remove from list"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                          <path d="M2 3.5h9M5 3.5V2.5h3v1M10 3.5l-.7 7H3.7L3 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      {/* Navigate arrow */}
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-400 ml-0.5">
+                        <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {forms.some(f => f.isImported) && (
+              <button
+                onClick={() => setHideImported(h => !h)}
+                className="mt-3 text-xs text-gray-400 hover:text-gray-500 transition-colors"
+              >
+                {hideImported
+                  ? `Show ${forms.filter(f => f.isImported).length} already-imported`
+                  : 'Hide already-imported'}
+              </button>
+            )}
+
+            {!loadingForms && forms.length === 0 && (
+              <p className="text-sm text-gray-500">Click the button above to scan for VideoAsk pilots.</p>
+            )}
+          </div>
+        )}
+
+        {/* ── CONFIGURE VIEW ── */}
+        {view === 'configure' && selectedForm && (
+          <div className="flex h-full overflow-hidden">
+
+            {/* Left: node roles */}
+            <div className="w-1/2 border-r border-gray-200 flex flex-col overflow-hidden">
+              <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-gray-100 bg-gray-50">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Questions in this form
+                </p>
+                {!loadingPreview && nodes.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {responseNodeCount} response node{responseNodeCount !== 1 ? 's' : ''}
+                    {metadataNodeCount > 0 && ` · ${metadataNodeCount} metadata node${metadataNodeCount !== 1 ? 's' : ''}`}
+                  </p>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {loadingPreview ? (
+                  <p className="text-sm text-gray-400 p-2">Loading…</p>
+                ) : nodes.length > 0 ? nodes.map(node => (
+                  <NodeCard
+                    key={node.nodeId}
+                    node={node}
+                    formId={selectedForm.formId}
+                    role={nodeRoles[node.nodeId] ?? { role: 'skip' }}
+                    onRoleChange={r => setNodeRoles(prev => ({ ...prev, [node.nodeId]: r }))}
+                  />
+                )) : (
+                  <p className="text-sm text-gray-400 p-2">No nodes found.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Right: column mappings + actions */}
+            <div className="w-1/2 flex flex-col overflow-hidden">
+              <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-gray-100 bg-gray-50">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Column mappings
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">Applied to Response nodes</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {SR_COLUMNS.map(({ col, label, hint }) => (
+                  <MappingRow
+                    key={col}
+                    srCol={col} label={label} hint={hint}
+                    sourceColumns={sourceColumns}
+                    mappingType={mappingTypes[col] ?? 'none'}
+                    sourceCol={sourceCols[col] ?? ''}
+                    staticVal={staticVals[col] ?? ''}
+                    onMappingTypeChange={t => setMappingTypes(prev => ({ ...prev, [col]: t }))}
+                    onSourceColChange={v => setSourceCols(prev => ({ ...prev, [col]: v }))}
+                    onStaticValChange={v => setStaticVals(prev => ({ ...prev, [col]: v }))}
+                    autoGenerated={AUTO_GENERATED_COLS.has(col)}
+                    metadataCoveredBy={metadataCoveredCols.get(col) ?? null}
+                    perNodeControlled={PER_NODE_COLS.has(col)}
+                  />
+                ))}
+              </div>
+
+              {/* Actions bar */}
+              <div className="flex-shrink-0 border-t border-gray-200 px-4 pt-3 pb-4 bg-white space-y-2">
+                {saveMsg && (
+                  <p className={`text-xs ${saveMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>{saveMsg}</p>
+                )}
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={saveConfig}
+                    disabled={saving}
+                    className="px-3 py-1.5 border border-gray-300 text-sm text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    {saving ? 'Saving…' : 'Save mapping'}
+                  </button>
+                  <button
+                    onClick={dryRun}
+                    disabled={dryRunning || loadingPreview}
+                    className="px-3 py-1.5 border border-blue-300 text-sm text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
+                  >
+                    {dryRunning ? 'Previewing…' : 'Preview import'}
+                  </button>
+                  <button
+                    onClick={() => runUpdate()}
+                    disabled={updating || loadingPreview}
+                    className="px-3 py-1.5 border border-amber-300 text-sm text-amber-700 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                    title="Update existing rows and add any new responses since last import"
+                  >
+                    {updating ? 'Syncing…' : 'Sync'}
+                  </button>
+                </div>
+                {updateResult && (
+                  <p className={`text-xs ${updateResult.error ? 'text-red-500' : 'text-amber-700'}`}>
+                    {updateResult.error
+                    ? `Sync error: ${updateResult.error}`
+                    : [
+                        updateResult.updated  ? `✓ Updated ${updateResult.updated} rows` : '',
+                        updateResult.inserted ? `+ Added ${updateResult.inserted} new rows` : '',
+                      ].filter(Boolean).join('  ') || '✓ Nothing to sync'
+                  }
+                  </p>
+                )}
+
+                {dryResult && (
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm space-y-2">
+                    {dryResult.error ? (
+                      <p className="text-red-600">Error: {dryResult.error}</p>
+                    ) : (
+                      <>
+                        <p className="text-gray-700">
+                          <strong>{dryResult.wouldInsert}</strong> rows to import
+                          {(dryResult.wouldSkip ?? 0) > 0 && (
+                            <>, <strong>{dryResult.wouldSkip}</strong> already imported (skipped)</>
+                          )}
+                          {dryResult.totalStepsFetched !== undefined && (
+                            <span className="text-gray-400 text-xs ml-2">({dryResult.totalStepsFetched} steps fetched)</span>
+                          )}
+                        </p>
+                        {dryResult.rowsWithMetadata !== undefined && (
+                          <p className="text-xs text-indigo-600">
+                            {dryResult.rowsWithMetadata} of {dryResult.wouldInsert} rows have metadata fields populated
+                            {dryResult.rowsWithMetadata === 0 && ' — check that metadata nodes are configured correctly'}
+                          </p>
+                        )}
+                        {dryResult.sample && dryResult.sample.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-500 mb-1">
+                              Sample output row{dryResult.rowsWithMetadata != null && dryResult.rowsWithMetadata > 0 ? ' (with metadata)' : ''}:
+                            </p>
+                            <pre className="text-xs text-gray-600 bg-white border border-gray-200 rounded p-2 overflow-x-auto max-h-40">
+                              {JSON.stringify(dryResult.sample[0], null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        {(dryResult.wouldInsert ?? 0) > 0 && (
+                          <button
+                            onClick={runImport}
+                            disabled={importing}
+                            className="w-full py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                          >
+                            {importing ? 'Importing…' : `Import ${dryResult.wouldInsert} rows into student_responses`}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {runResult?.error && (
+                  <p className="text-sm text-red-600">Import error: {runResult.error}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── RESULT VIEW ── */}
+        {view === 'result' && runResult && (
+          <div className="h-full overflow-y-auto p-6 max-w-md">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-4">
+              <p className="text-green-800 font-medium">Import complete!</p>
+              <p className="text-sm text-green-700 mt-1">
+                <strong>{runResult.inserted}</strong> rows inserted
+                {(runResult.skipped ?? 0) > 0 && (
+                  <>, <strong>{runResult.skipped}</strong> already existed (skipped)</>
+                )}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setView('list'); setSelectedForm(null); setRunResult(null); }}
+                className="px-4 py-2 border border-gray-300 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Back to list
+              </button>
+              {selectedForm && (
+                <button
+                  onClick={() => loadFormConfig(selectedForm)}
+                  className="px-4 py-2 border border-blue-300 text-sm text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  Re-configure
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
