@@ -91,6 +91,7 @@ type RunResult = {
   wouldSkip?: number;
   totalStepsFetched?: number;
   sample?: Record<string, unknown>[];
+  rowsWithMetadata?: number;
   error?: string;
 };
 
@@ -441,10 +442,13 @@ export default function VideoAskImportPage() {
         initSource[srCol] = stepCol;
       }
 
-      // Default node roles: media → response, else → skip
+      // Default node roles:
+      //   poll nodes (no media, has samplePollOption) → skip  (likely metadata)
+      //   all other nodes (media OR text-only)        → response
       const initRoles: Record<string, NodeRoleValue> = {};
       for (const n of fetchedNodes) {
-        initRoles[n.nodeId] = n.hasMedia ? { role: 'response' } : { role: 'skip' };
+        const isPollOnly = !n.hasMedia && !!n.samplePollOption;
+        initRoles[n.nodeId] = isPollOnly ? { role: 'skip' } : { role: 'response' };
       }
 
       // Overlay saved config
@@ -997,9 +1001,17 @@ export default function VideoAskImportPage() {
                             <span className="text-gray-400 text-xs ml-2">({dryResult.totalStepsFetched} steps fetched)</span>
                           )}
                         </p>
+                        {dryResult.rowsWithMetadata !== undefined && (
+                          <p className="text-xs text-indigo-600">
+                            {dryResult.rowsWithMetadata} of {dryResult.wouldInsert} rows have metadata fields populated
+                            {dryResult.rowsWithMetadata === 0 && ' — check that metadata nodes are configured correctly'}
+                          </p>
+                        )}
                         {dryResult.sample && dryResult.sample.length > 0 && (
                           <div>
-                            <p className="text-xs font-medium text-gray-500 mb-1">Sample output row:</p>
+                            <p className="text-xs font-medium text-gray-500 mb-1">
+                              Sample output row{dryResult.rowsWithMetadata != null && dryResult.rowsWithMetadata > 0 ? ' (with metadata)' : ''}:
+                            </p>
                             <pre className="text-xs text-gray-600 bg-white border border-gray-200 rounded p-2 overflow-x-auto max-h-40">
                               {JSON.stringify(dryResult.sample[0], null, 2)}
                             </pre>
